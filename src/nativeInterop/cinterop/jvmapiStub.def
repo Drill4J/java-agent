@@ -1,0 +1,14 @@
+---
+//stubs for link problems
+
+int checkEx(int errCode, char* fname){
+    return 0;
+}
+
+void* jvmtii(){
+    return 0;
+}
+
+void* currentEnvs(){
+    return 0;
+}
