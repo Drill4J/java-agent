@@ -10,6 +10,7 @@ import kotlinx.serialization.*
 import kotlin.math.*
 
 const val SocketDispatcher = "Lsun/nio/ch/SocketDispatcher;"
+const val SocketOutputStream = "Ljava/net/SocketOutputStream;"
 const val FileDispatcherImpl = "Lsun/nio/ch/FileDispatcherImpl;"
 const val Netty = "Lio/netty/channel/unix/FileDescriptor;"
 
@@ -63,9 +64,11 @@ private fun defineHttp1RequestType(prefix: String, address: DirectBufferAddress,
 }
 
 fun fillRequestToHolder(@Suppress("UNUSED_PARAMETER") request: String) {
+    val exec = exec { requestPattern }
+    val groupValues = exec.find(request)?.groupValues
     val (requestHolderClass, requestHolder: jobject?) = instance("com/epam/drill/ws/RequestHolder")
-    val retrieveClassesData = GetMethodID(requestHolderClass, "storeRequest", "(Ljava/lang/String;)V")
-    CallVoidMethod(requestHolder, retrieveClassesData, NewStringUTF(request))
+    val retrieveClassesData = GetMethodID(requestHolderClass, "storeRequest", "(Ljava/lang/String;Ljava/lang/String;)V")
+    CallVoidMethod(requestHolder, retrieveClassesData, NewStringUTF(request), groupValues?.let { NewStringUTF(it[1]) })
 }
 
 fun sessionId(): String? {
@@ -98,34 +101,67 @@ fun writeAddress(env: CPointer<JNIEnvVar>, clazz: jclass, fd: jint, address: jlo
     }
 }
 
-fun write(address: DirectBufferAddress, len: jint, block: (DirectBufferAddress, jint) -> jint): Int {
+fun socketWrite0(
+    env: CPointer<JNIEnvVar>,
+    clazz: jobject,
+    fd: jobject,
+    address: jbyteArray,
+    off: jint,
+    len: jint
+): jint {
     initRuntimeIfNeeded()
-    val fakeLength: jint
-    val fakeBuffer: DirectBufferAddress
-    val prefix = address.rawString(min(4, len))
-    if (prefix == "HTTP" || prefix == "POST" || prefix == "GET ") {
-        val sessionId = sessionId()
-        val spyHeaders = exec {
-            val adminUrl = if (::secureAdminAddress.isInitialized) {
-                secureAdminAddress.toUrlString(false)
-            } else adminAddress.toUrlString(false)
-            "\n" +
-                    "drill-agent-id: ${if (agentConfig.serviceGroupId.isEmpty()) agentConfig.id else agentConfig.serviceGroupId}\n" +
-                    "drill-admin-url: $adminUrl\n" +
-                    "drill-session-id: ${sessionId ?: "empty"}"
+
+    val prefix = GetByteArrayElements(address, null)!!.readBytes(min(off + 4, len)).decodeToString()
+    if (isAllowedVerb(prefix)) {
+        val spyHeaders = generateHeaders()
+        val contentBodyBytes = GetByteArrayElements(address, null)!!.readBytes(len).decodeToString()
+        if (isSutableContentType(contentBodyBytes)) {
+            val toUtf8Bytes = injectHeaders(contentBodyBytes, spyHeaders)
+            val additionalSize = spyHeaders.toUtf8Bytes().size
+            val fakeLength = len + additionalSize
+            val newByteArray: jbyteArray? = NewByteArray(fakeLength)
+            SetByteArrayRegion(
+                newByteArray, 0, fakeLength,
+                getBytes(newByteArray, toUtf8Bytes)
+            )
+            exec { originalMethod[::socketWrite0] }(env, clazz, fd, newByteArray!!, off, fakeLength)
+        } else {
+            exec { originalMethod[::socketWrite0] }(env, clazz, fd, address, off, len)
         }
+    } else {
+        exec { originalMethod[::socketWrite0] }(env, clazz, fd, address, off, len)
+    }
+    return len
+}
+
+private fun getBytes(
+    newByteArray: jbyteArray?,
+    classData: ByteArray
+): CPointer<jbyteVar>? {
+    val bytess: CPointer<jbyteVar>? = GetByteArrayElements(newByteArray, null)
+    classData.forEachIndexed { index, byte ->
+        bytess!![index] = byte
+    }
+    return bytess
+}
+
+fun write(
+    address: DirectBufferAddress, len: jint,
+    block: (DirectBufferAddress, jint) -> jint
+): Int {
+    initRuntimeIfNeeded()
+
+    val prefix = address.rawString(min(4, len))
+    if (isAllowedVerb(prefix)) {
+        val spyHeaders = generateHeaders()
         val contentBodyBytes = address.toPointer().toKStringFromUtf8()
-        if (contentBodyBytes.contains("text/html")
-            || contentBodyBytes.contains("application/json")
-            || contentBodyBytes.contains("text/plain")
-        ) {
-            val replaceFirst = contentBodyBytes.replaceFirst("\n", "$spyHeaders\n")
-            val toUtf8Bytes = replaceFirst.toUtf8Bytes()
+        if (isSutableContentType(contentBodyBytes)) {
+            val toUtf8Bytes = injectHeaders(contentBodyBytes, spyHeaders)
             val refTo = toUtf8Bytes.refTo(0)
             val scope = Arena()
-            fakeBuffer = refTo.getPointer(scope).toLong()
+            val fakeBuffer: DirectBufferAddress = refTo.getPointer(scope).toLong()
             val additionalSize = spyHeaders.toUtf8Bytes().size
-            fakeLength = len + additionalSize
+            val fakeLength = len + additionalSize
             block(fakeBuffer, fakeLength)
             scope.clear()
         } else {
@@ -135,4 +171,31 @@ fun write(address: DirectBufferAddress, len: jint, block: (DirectBufferAddress, 
         block(address, len)
     }
     return len
+}
+
+private fun injectHeaders(contentBodyBytes: String, spyHeaders: String): ByteArray {
+    val injectHeaders = contentBodyBytes.replaceFirst("\n", "$spyHeaders\n")
+    return injectHeaders.toUtf8Bytes()
+}
+
+private fun isAllowedVerb(prefix: String) = prefix == "HTTP" || prefix == "POST" || prefix == "GET "
+
+private fun isSutableContentType(contentBodyBytes: String): Boolean {
+    return (contentBodyBytes.contains("text/html")
+            || contentBodyBytes.contains("application/json")
+            || contentBodyBytes.contains("text/plain"))
+}
+
+private fun generateHeaders(): String {
+    val sessionId = sessionId()
+    val spyHeaders = exec {
+        val adminUrl = if (::secureAdminAddress.isInitialized) {
+            secureAdminAddress.toUrlString(false)
+        } else adminAddress.toUrlString(false)
+        "\n" +
+                "drill-agent-id: ${if (agentConfig.serviceGroupId.isEmpty()) agentConfig.id else agentConfig.serviceGroupId}\n" +
+                "drill-admin-url: $adminUrl\n" +
+                "drill-session-id: ${sessionId ?: "empty"}"
+    }
+    return spyHeaders
 }

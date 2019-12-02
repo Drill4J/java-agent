@@ -11,12 +11,15 @@ object RequestHolder {
     private var sessionIdHeaderName: String = ""
     private val log = Logger.getLogger(RequestHolder::class.java.name)
 
-    fun storeRequest(rawRequest: String) {
+    fun storeRequest(rawRequest: String, id: String?) {
         var toDrillRequest = parseHttpRequest(rawRequest).toDrillRequest()
-        if (sessionIdHeaderName.isNotEmpty() && toDrillRequest.drillSessionId == null)
-            toDrillRequest = toDrillRequest.copy(drillSessionId = toDrillRequest.get(sessionIdHeaderName))
-        if (toDrillRequest.drillSessionId == null) DrillRequest.threadStorage.remove()
-        else DrillRequest.threadStorage.set(toDrillRequest)
+        if (id != null) toDrillRequest = toDrillRequest.copy(drillSessionId = id)
+        if (toDrillRequest.drillSessionId == null) {
+            DrillRequest.threadStorage.remove()
+        } else {
+            DrillRequest.threadStorage.set(toDrillRequest)
+            println("session saved: ${toDrillRequest.drillSessionId}")
+        }
     }
 
     fun storeSessionId(sessionId: String) {

@@ -67,6 +67,14 @@ val nativeMethodBindMapper =
                 staticCFunction(::writeAddress)
             }
         }
+        ,
+        SocketOutputStream + ::socketWrite0.name to { initialMethod: COpaquePointer ->
+            exec {
+                val reinterpret = initialMethod.reinterpret<CFunction<*>>()
+                originalMethod.misfeatureToFunctionDictionary[::socketWrite0] = reinterpret
+                staticCFunction(::socketWrite0)
+            }
+        }
     )
 
 
