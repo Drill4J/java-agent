@@ -90,7 +90,7 @@ fun topicRegister() =
         topic("/agent/config").withGenericTopic(ServiceConfig.serializer()) { sc ->
             topicLogger.info { "Agent got a system config: $sc" }
             exec { secureAdminAddress = adminAddress.copy(scheme = "https", defaultPort = sc.sslPort.toInt()) }
-            exec { requestPattern = sc.headerName.toRegex() }
+            exec { requestPattern = if(sc.headerName.isEmpty()) null else sc.headerName.toRegex() }
         }
 
         topic("/plugins/unload").rawMessage { pluginId ->

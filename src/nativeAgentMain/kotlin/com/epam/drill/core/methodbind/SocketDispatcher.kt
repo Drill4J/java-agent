@@ -66,9 +66,10 @@ private fun defineHttp1RequestType(prefix: String, address: DirectBufferAddress,
 fun fillRequestToHolder(@Suppress("UNUSED_PARAMETER") request: String) {
     val exec = exec { requestPattern }
     val groupValues = exec?.find(request)?.groupValues
+    val value = if(groupValues.isNullOrEmpty()) null else groupValues[1]
     val (requestHolderClass, requestHolder: jobject?) = instance("com/epam/drill/ws/RequestHolder")
     val retrieveClassesData = GetMethodID(requestHolderClass, "storeRequest", "(Ljava/lang/String;Ljava/lang/String;)V")
-    CallVoidMethod(requestHolder, retrieveClassesData, NewStringUTF(request), groupValues?.let { NewStringUTF(it[1]) })
+    CallVoidMethod(requestHolder, retrieveClassesData, NewStringUTF(request), NewStringUTF(value))
 }
 
 fun sessionId(): String? {
