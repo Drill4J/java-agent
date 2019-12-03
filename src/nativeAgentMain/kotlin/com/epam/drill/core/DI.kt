@@ -13,7 +13,7 @@ class DI {
     lateinit var secureAdminAddress: URL
     lateinit var agentConfig: AgentConfig
     lateinit var drillInstallationDir: String
-    var requestPattern = "".toRegex()
+    var requestPattern: Regex? = null
 
     var pstorage: MutableMap<String, AgentPart<*, *>> = mutableMapOf()
     val originalMethod = NativeMethodBinder()

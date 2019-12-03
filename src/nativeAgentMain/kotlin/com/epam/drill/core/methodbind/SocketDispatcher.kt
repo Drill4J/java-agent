@@ -59,13 +59,13 @@ private fun defineHttp1RequestType(prefix: String, address: DirectBufferAddress,
         }
 
     } catch (ex: Throwable) {
-        println(ex.message)
+        println("socket parse exception: ${ex.message}")
     }
 }
 
 fun fillRequestToHolder(@Suppress("UNUSED_PARAMETER") request: String) {
     val exec = exec { requestPattern }
-    val groupValues = exec.find(request)?.groupValues
+    val groupValues = exec?.find(request)?.groupValues
     val (requestHolderClass, requestHolder: jobject?) = instance("com/epam/drill/ws/RequestHolder")
     val retrieveClassesData = GetMethodID(requestHolderClass, "storeRequest", "(Ljava/lang/String;Ljava/lang/String;)V")
     CallVoidMethod(requestHolder, retrieveClassesData, NewStringUTF(request), groupValues?.let { NewStringUTF(it[1]) })
