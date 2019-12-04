@@ -1,5 +1,5 @@
-import org.apache.tools.ant.taskdefs.condition.Os
-import org.jetbrains.kotlin.konan.target.HostManager
+import org.apache.tools.ant.taskdefs.condition.*
+import org.jetbrains.kotlin.konan.target.*
 
 plugins {
     java
@@ -24,7 +24,7 @@ application {
     applicationDefaultJvmArgs = listOf(
         "-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=5007",
         "-javaagent:${drillDistrDir}/drill-proxy.jar=ttl.agent.logger:STDOUT",
-        "-agentpath:$agentPath=drillInstallationDir=$drillDistrDir,adminAddress=${project.properties["adminAddress"]
+        "-agentpath:$agentPath=adminAddress=${project.properties["adminAddress"]
             ?: "localhost:8090"},agentId=${project.properties["agentId"] ?: "Petclinic"}"
     )
 
