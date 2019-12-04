@@ -1,5 +1,6 @@
 package com.epam.drill.core.agent
 
+import com.epam.drill.*
 import com.epam.drill.common.*
 import com.epam.drill.common.ws.*
 import com.epam.drill.core.*
@@ -16,7 +17,7 @@ fun performAgentInitialization(initialParams: Map<String, String>) {
     val drillInstallationDir = initialParams.getValue("drillInstallationDir")
     exec {
         this.drillInstallationDir = drillInstallationDir
-        this.agentConfig = AgentConfig(agentId, buildVersion, serviceGroupId)
+        this.agentConfig = AgentConfig(agentId, buildVersion, serviceGroupId, AGENT_TYPE)
         this.adminAddress = URL("ws://$adminAddress")
     }
 }
