@@ -4,6 +4,7 @@ package com.epam.drill.ws
 
 import com.epam.drill.plugin.*
 import com.epam.drill.session.DrillRequest
+import java.lang.Exception
 import java.util.logging.*
 
 object RequestHolder {
@@ -11,14 +12,25 @@ object RequestHolder {
     private var sessionIdHeaderName: String = ""
     private val log = Logger.getLogger(RequestHolder::class.java.name)
 
-    fun storeRequest(rawRequest: String, id: String?) {
-        var toDrillRequest = parseHttpRequest(rawRequest).toDrillRequest()
-        if (id != null) toDrillRequest = toDrillRequest.copy(drillSessionId = id)
-        if (toDrillRequest.drillSessionId == null) {
+    fun storeRequest(rawRequest: String, pattern: String?) {
+        var drillRequest = parseHttpRequest(rawRequest).toDrillRequest()
+        if (pattern != null) {
+            val customId = drillRequest.headers[pattern] ?: run {
+                try {
+                    val groupValues = pattern.toRegex().find(rawRequest)?.groupValues
+                    if (groupValues.isNullOrEmpty()) null else groupValues[1]
+                } catch (ex: Exception) {
+                    null
+                }
+            }
+            if (customId != null)
+                drillRequest = drillRequest.copy(drillSessionId = customId)
+        }
+        if (drillRequest.drillSessionId == null) {
             DrillRequest.threadStorage.remove()
         } else {
-            DrillRequest.threadStorage.set(toDrillRequest)
-            println("session saved: ${toDrillRequest.drillSessionId}")
+            DrillRequest.threadStorage.set(drillRequest)
+            println("session saved: ${drillRequest.drillSessionId}")
         }
     }
 
