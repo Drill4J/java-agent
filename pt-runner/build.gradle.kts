@@ -14,9 +14,9 @@ val target = when {
 application {
     mainClassName = "org.springframework.boot.loader.JarLauncher"
     val (pref, ex) = when {
-        Os.isFamily(Os.FAMILY_MAC) -> Pair("lib", "dylib")
-        Os.isFamily(Os.FAMILY_UNIX) -> Pair("lib", "so")
-        else -> Pair("", "dll")
+        Os.isFamily(Os.FAMILY_MAC) -> "lib" to "dylib"
+        Os.isFamily(Os.FAMILY_UNIX) -> "lib" to "so"
+        else -> "" to "dll"
     }
     val drillDistrDir =
         project(":agent:java").buildDir.resolve("install").resolve(if (isDevMode) "nativeAgent" else target).absolutePath
@@ -24,7 +24,7 @@ application {
     applicationDefaultJvmArgs = listOf(
         "-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=5007",
         "-javaagent:${drillDistrDir}/drill-proxy.jar=ttl.agent.logger:STDOUT",
-        "-agentpath:$agentPath=adminAddress=${project.properties["adminAddress"]
+        "-agentpath:$agentPath=drillInstallationDir=$drillDistrDir,adminAddress=${project.properties["adminAddress"]
             ?: "localhost:8090"},agentId=${project.properties["agentId"] ?: "Petclinic"}"
     )
 

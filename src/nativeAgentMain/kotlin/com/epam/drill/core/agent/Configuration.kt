@@ -16,7 +16,7 @@ fun performAgentInitialization(initialParams: Map<String, String>) {
     val agentId = initialParams.getValue("agentId")
     val buildVersion = initialParams["buildVersion"] ?: ""
     val serviceGroupId = initialParams["serviceGroupId"] ?: ""
-    val drillInstallationDir = javaProcess().firstAgentPath
+    val drillInstallationDir = initialParams["drillInstallationDir"] ?: javaProcess().firstAgentPath
     exec {
         this.drillInstallationDir = drillInstallationDir
         this.agentConfig = AgentConfig(agentId, buildVersion, serviceGroupId, AGENT_TYPE)
