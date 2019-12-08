@@ -25,7 +25,7 @@ application {
         "-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=5007",
         "-javaagent:${drillDistrDir}/drill-proxy.jar=ttl.agent.logger:STDOUT",
         "-agentpath:$agentPath=drillInstallationDir=$drillDistrDir,adminAddress=${project.properties["adminAddress"]
-            ?: "localhost:8090"},agentId=${project.properties["agentId"] ?: "Petclinic"}"
+            ?: "localhost:8090"},agentId=${project.properties["agentId"] ?: "Petclinic"},serviceGroupId=petclinic-services"
     )
 
 }
