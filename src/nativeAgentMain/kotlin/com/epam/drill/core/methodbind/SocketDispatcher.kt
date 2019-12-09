@@ -114,7 +114,7 @@ fun socketWrite0(
     if (isAllowedVerb(prefix)) {
         val spyHeaders = generateHeaders()
         val contentBodyBytes = GetByteArrayElements(address, null)!!.readBytes(len).decodeToString()
-        if (isSutableContentType(contentBodyBytes)) {
+        if (isSutableContentType(contentBodyBytes) && !contentBodyBytes.contains("drill-session-id")) {
             val toUtf8Bytes = injectHeaders(contentBodyBytes, spyHeaders)
             val additionalSize = spyHeaders.toUtf8Bytes().size
             val fakeLength = len + additionalSize
@@ -154,7 +154,7 @@ fun write(
     if (isAllowedVerb(prefix)) {
         val spyHeaders = generateHeaders()
         val contentBodyBytes = address.toPointer().toKStringFromUtf8()
-        if (isSutableContentType(contentBodyBytes)) {
+        if (isSutableContentType(contentBodyBytes)&& !contentBodyBytes.contains("drill-session-id")) {
             val toUtf8Bytes = injectHeaders(contentBodyBytes, spyHeaders)
             val refTo = toUtf8Bytes.refTo(0)
             val scope = Arena()
@@ -193,8 +193,8 @@ private fun generateHeaders(): String {
         } else adminAddress.toUrlString(false)
         "\n" +
                 "drill-agent-id: ${if (agentConfig.serviceGroupId.isEmpty()) agentConfig.id else agentConfig.serviceGroupId}\n" +
-                "drill-admin-url: $adminUrl\n" +
-                "drill-session-id: ${sessionId ?: "empty"}"
+                "drill-admin-url: $adminUrl" +
+                "${if (sessionId != null) "\ndrill-session-id: $sessionId" else ""}"
     }
     return spyHeaders
 }
