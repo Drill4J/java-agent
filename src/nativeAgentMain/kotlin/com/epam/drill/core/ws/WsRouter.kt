@@ -57,7 +57,10 @@ fun topicRegister() =
         topic<Communication.Agent.UpdateConfigEvent, ServiceConfig> { sc ->
             topicLogger.info { "Agent got a system config: $sc" }
             exec { secureAdminAddress = adminAddress.copy(scheme = "https", defaultPort = sc.sslPort.toInt()) }
-            exec { requestPattern = if (sc.headerName.isEmpty()) null else sc.headerName }
+        }
+        topic<Communication.Agent.ChangeHeaderNameEvent> { headerName ->
+            topicLogger.info { "Agent got a new headerMapping: $headerName" }
+            exec { requestPattern = if (headerName.isEmpty()) null else headerName }
         }
 
         topic<Communication.Agent.SetPackagePrefixesEvent> { payload ->
