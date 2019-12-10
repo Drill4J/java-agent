@@ -111,11 +111,15 @@ kotlin {
 
 tasks.withType<KotlinNativeCompile> {
     kotlinOptions.freeCompilerArgs += "-Xuse-experimental=kotlinx.io.core.ExperimentalIoApi"
+    kotlinOptions.freeCompilerArgs += "-Xuse-experimental=kotlinx.serialization.ImplicitReflectionSerializer"
     kotlinOptions.freeCompilerArgs += "-Xuse-experimental=kotlin.ExperimentalUnsignedTypes"
     kotlinOptions.freeCompilerArgs += "-Xuse-experimental=kotlinx.coroutines.ExperimentalCoroutinesApi"
     kotlinOptions.freeCompilerArgs += "-XXLanguage:+InlineClasses"
 }
 
+tasks.withType<org.jetbrains.kotlin.gradle.targets.native.tasks.KotlinNativeTest> {
+    testLogging.showStandardStreams = true
+}
 tasks {
 
     val agentShadow by registering(ShadowJar::class) {

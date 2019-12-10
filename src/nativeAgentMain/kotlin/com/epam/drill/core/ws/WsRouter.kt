@@ -1,6 +1,7 @@
 package com.epam.drill.core.ws
 
 import com.epam.drill.*
+import com.epam.drill.api.*
 import com.epam.drill.common.*
 import com.epam.drill.common.ws.*
 import com.epam.drill.core.*
@@ -12,7 +13,6 @@ import com.epam.drill.plugin.*
 import com.epam.drill.plugin.api.processing.*
 import kotlinx.cinterop.*
 import kotlinx.coroutines.*
-import kotlinx.serialization.*
 import kotlin.collections.set
 import kotlin.native.concurrent.*
 
@@ -21,19 +21,7 @@ val topicLogger = DLogger("topicLogger")
 
 fun topicRegister() =
     WsRouter {
-
-        topic("/agent/do-idle").rawMessage {
-            topicLogger.info { "Change the state of the AGENT!" }
-        }
-        topic("/agent/do-busy").rawMessage {
-            topicLogger.info { "Change the state of the AGENT!" }
-        }
-        topic(DrillEvent.SYNC_STARTED.name).rawMessage {
-            topicLogger.info { "Agent synchronization is started" }
-        }
-
-
-        topic("/plugins/load").withPluginTopic { pluginMeta, file ->
+        topic<Communication.Agent.PluginLoadEvent>().withPluginTopic { pluginMeta, file ->
             if (exec { pstorage[pluginMeta.id] } != null) {
                 topicLogger.info { "Plugin '${pluginMeta.id}' is already loaded" }
                 sendMessage(Message.serializer() stringify Message(MessageType.MESSAGE_DELIVERED, "/plugins/load"))
@@ -67,12 +55,7 @@ fun topicRegister() =
 
         }
 
-        topic(DrillEvent.SYNC_FINISHED.name).rawMessage {
-            exec { agentConfig.needSync = false }
-            topicLogger.info { "Agent synchronization is finished" }
-        }
-
-        topic("/agent/load-classes-data").rawMessage {
+        topic<Communication.Agent.LoadClassesDataEvent>().rawMessage {
             val base64Classes = getClassesByConfig()
             sendMessage(Message.serializer() stringify Message(MessageType.START_CLASSES_TRANSFER, "", ""))
             base64Classes.forEach {
@@ -82,18 +65,18 @@ fun topicRegister() =
             topicLogger.info { "Agent's application classes processing by config triggered" }
         }
 
-        topic("/agent/set-packages-prefixes").rawMessage { payload ->
+        topic<Communication.Agent.SetPackagePrefixesEvent>().rawMessage { payload ->
             setPackagesPrefixes(payload)
             topicLogger.info { "Agent packages prefixes have been changed" }
         }
 
-        topic("/agent/config").withGenericTopic(ServiceConfig.serializer()) { sc ->
+        topic<Communication.Agent.UpdateConfigEvent>().withGenericTopic(ServiceConfig.serializer()) { sc ->
             topicLogger.info { "Agent got a system config: $sc" }
             exec { secureAdminAddress = adminAddress.copy(scheme = "https", defaultPort = sc.sslPort.toInt()) }
-            exec { requestPattern = if(sc.headerName.isEmpty()) null else sc.headerName }
+            exec { requestPattern = if (sc.headerName.isEmpty()) null else sc.headerName }
         }
 
-        topic("/plugins/unload").rawMessage { pluginId ->
+        topic<Communication.Agent.PluginUnloadEvent>().rawMessage { pluginId ->
             topicLogger.warn { "Unload event. Plugin id is $pluginId" }
             PluginManager[pluginId]?.unload(UnloadReason.ACTION_FROM_ADMIN)
             println(
@@ -107,11 +90,7 @@ fun topicRegister() =
             )
         }
 
-        topic("/plugins/agent-attached").rawMessage {
-            topicLogger.warn { "Agent is attached" }
-        }
-
-        topic("/plugins/updatePluginConfig").withGenericTopic(PluginConfig.serializer()) { config ->
+        topic<Communication.Plugin.UpdateConfigEvent>().withGenericTopic(PluginConfig.serializer()) { config ->
             topicLogger.warn { "UpdatePluginConfig event: message is $config " }
             val agentPluginPart = PluginManager[config.id]
             if (agentPluginPart != null) {
@@ -126,14 +105,14 @@ fun topicRegister() =
                 topicLogger.warn { "Plugin ${config.id} not loaded to agent" }
         }
 
-        topic("/plugins/action").withGenericTopic(PluginAction.serializer()) { m ->
+        topic<Communication.Plugin.DispatchEvent>().withGenericTopic(PluginAction.serializer()) { m ->
             topicLogger.warn { "actionPluign event: message is ${m.message} " }
             val agentPluginPart = PluginManager[m.id]
             agentPluginPart?.doRawAction(m.message)
 
         }
 
-        topic("/plugins/togglePlugin").withGenericTopic(TogglePayload.serializer()) { (pluginId, forceValue) ->
+        topic<Communication.Plugin.ToggleEvent>().withGenericTopic(TogglePayload.serializer()) { (pluginId, forceValue) ->
             val agentPluginPart = PluginManager[pluginId]
             if (agentPluginPart == null) {
                 topicLogger.warn { "Plugin $pluginId not loaded to agent" }
@@ -143,10 +122,6 @@ fun topicRegister() =
                 agentPluginPart.setEnabled(newValue)
                 if (newValue) agentPluginPart.on() else agentPluginPart.off()
             }
-        }
-
-        topic("agent/toggleStandBy").rawMessage {
-            topicLogger.warn { "toggleStandBy event" }
         }
     }
 
@@ -166,73 +141,3 @@ private fun generatePluginPath(id: String): String {
     val path = "$pluginDir/$ajar"
     return path
 }
-
-
-@ThreadLocal
-object WsRouter {
-
-    val mapper = mutableMapOf<String, Topic>()
-    operator fun invoke(alotoftopics: WsRouter.() -> Unit) {
-        alotoftopics(this)
-    }
-
-
-    @Suppress("ClassName")
-    open class inners(open val destination: String) {
-        fun <T> withGenericTopic(des: KSerializer<T>, block: suspend (T) -> Unit): GenericTopic<T> {
-            val genericTopic = GenericTopic(destination, des, block)
-            mapper[destination] = genericTopic
-            return genericTopic
-        }
-
-
-        @Suppress("unused")
-        fun withPluginTopic(block: suspend (message: PluginMetadata, file: ByteArray) -> Unit): PluginTopic {
-            val fileTopic = PluginTopic(destination, block)
-            mapper[destination] = fileTopic
-            return fileTopic
-        }
-
-
-        fun rawMessage(block: suspend (String) -> Unit): InfoTopic {
-            val infoTopic = InfoTopic(destination, block)
-            mapper[destination] = infoTopic
-            return infoTopic
-        }
-
-    }
-
-    operator fun get(topic: String): Topic? {
-        return mapper[topic]
-    }
-
-}
-
-@Suppress("unused")
-fun WsRouter.topic(url: String): WsRouter.inners {
-    return WsRouter.inners(url)
-}
-
-open class Topic(open val destination: String)
-
-class GenericTopic<T>(
-    override val destination: String,
-    private val deserializer: KSerializer<T>,
-    val block: suspend (T) -> Unit
-) : Topic(destination) {
-    suspend fun deserializeAndRun(message: String) {
-        block(deserializer parse message)
-    }
-}
-
-class InfoTopic(
-    override val destination: String,
-    val block: suspend (String) -> Unit
-) : Topic(destination)
-
-
-open class PluginTopic(
-    override val destination: String,
-    @Suppress("unused") open val block: suspend (message: PluginMetadata, file: ByteArray) -> Unit
-) : Topic(destination)
-
