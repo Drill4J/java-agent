@@ -13,20 +13,14 @@ fun sendNativeMessage(pluginId: CPointer<ByteVar>, content: CPointer<ByteVar>) {
 
 fun sendMessage(pluginId: String, content: String) {
     val drillRequest = drillRequest()
-    val message =
-
-        Message.serializer() stringify Message(
-            MessageType.PLUGIN_DATA, "",
-
-
-            MessageWrapper.serializer() stringify
-                    MessageWrapper(
-                        pluginId, DrillMessage(
-                            drillRequest?.drillSessionId ?: "", content
-                        )
-                    )
+    Sender.send(
+        Message(
+            MessageType.PLUGIN_DATA,
+            "",
+            MessageWrapper.serializer() stringify MessageWrapper(
+                pluginId,
+                DrillMessage(drillRequest?.drillSessionId ?: "", content)
+            )
         )
-
-
-    Sender.send(message)
+    )
 }

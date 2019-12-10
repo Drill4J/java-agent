@@ -60,7 +60,7 @@ object WsSocket : CoroutineScope {
         }
 
         wsClient.onAnyMessage.add {
-            Sender.send(Message.serializer() stringify Message(MessageType.DEBUG, "", ""))
+            Sender.send(Message(MessageType.DEBUG, "", ""))
         }
 
         wsClient.onStringMessage.add { rawMessage ->
@@ -75,11 +75,11 @@ object WsSocket : CoroutineScope {
                     }
                     is InfoTopic -> {
                         topic.block(message.data)
-                        Sender.send(Message.serializer() stringify Message(MessageType.MESSAGE_DELIVERED, destination))
+                        Sender.send(Message(MessageType.MESSAGE_DELIVERED, destination))
                     }
                     is GenericTopic<*> -> {
                         topic.deserializeAndRun(message.data)
-                        Sender.send(Message.serializer() stringify Message(MessageType.MESSAGE_DELIVERED, destination))
+                        Sender.send(Message(MessageType.MESSAGE_DELIVERED, destination))
                     }
                 }
             } else {
@@ -95,7 +95,7 @@ object WsSocket : CoroutineScope {
             binaryTopicsStorage.remove(metadata)?.block?.invoke(metadata, rawFile) ?: run {
                 wsLogger.warn { "can't find corresponded config fo'$md5FileHash' hash" }
             }
-            Sender.send(Message.serializer() stringify Message(MessageType.MESSAGE_DELIVERED, "/agent/load"))
+            Sender.send(Message(MessageType.MESSAGE_DELIVERED, "/agent/load"))
         }
 
         wsClient.onError.add {
