@@ -24,7 +24,6 @@ fun topicRegister() =
         topic<Communication.Agent.PluginLoadEvent>().withPluginTopic { pluginMeta, file ->
             if (exec { pstorage[pluginMeta.id] } != null) {
                 topicLogger.info { "Plugin '${pluginMeta.id}' is already loaded" }
-                sendMessage(Message.serializer() stringify Message(MessageType.MESSAGE_DELIVERED, "/plugins/load"))
                 return@withPluginTopic
             }
             val pluginId = pluginMeta.id
@@ -50,33 +49,23 @@ fun topicRegister() =
                 }
                 topicLogger.info { "$id plugin loaded" }
 
-                sendMessage(Message.serializer() stringify Message(MessageType.MESSAGE_DELIVERED, "/plugins/load"))
             }
 
         }
 
-        topic<Communication.Agent.LoadClassesDataEvent>().rawMessage {
-            val base64Classes = getClassesByConfig()
-            sendMessage(Message.serializer() stringify Message(MessageType.START_CLASSES_TRANSFER, "", ""))
-            base64Classes.forEach {
-                sendMessage(Message.serializer() stringify Message(MessageType.CLASSES_DATA, "", it))
-            }
-            sendMessage(Message.serializer() stringify Message(MessageType.FINISH_CLASSES_TRANSFER, "", ""))
-            topicLogger.info { "Agent's application classes processing by config triggered" }
-        }
 
-        topic<Communication.Agent.SetPackagePrefixesEvent>().rawMessage { payload ->
-            setPackagesPrefixes(payload)
-            topicLogger.info { "Agent packages prefixes have been changed" }
-        }
-
-        topic<Communication.Agent.UpdateConfigEvent>().withGenericTopic(ServiceConfig.serializer()) { sc ->
+        topic<Communication.Agent.UpdateConfigEvent, ServiceConfig> { sc ->
             topicLogger.info { "Agent got a system config: $sc" }
             exec { secureAdminAddress = adminAddress.copy(scheme = "https", defaultPort = sc.sslPort.toInt()) }
             exec { requestPattern = if (sc.headerName.isEmpty()) null else sc.headerName }
         }
 
-        topic<Communication.Agent.PluginUnloadEvent>().rawMessage { pluginId ->
+        topic<Communication.Agent.SetPackagePrefixesEvent> { payload ->
+            setPackagesPrefixes(payload)
+            topicLogger.info { "Agent packages prefixes have been changed" }
+        }
+
+        topic<Communication.Agent.PluginUnloadEvent> { pluginId ->
             topicLogger.warn { "Unload event. Plugin id is $pluginId" }
             PluginManager[pluginId]?.unload(UnloadReason.ACTION_FROM_ADMIN)
             println(
@@ -89,8 +78,17 @@ fun topicRegister() =
             """.trimMargin()
             )
         }
+        topic<Communication.Agent.LoadClassesDataEvent> {
+            val base64Classes = getClassesByConfig()
+            sendMessage(Message.serializer() stringify Message(MessageType.START_CLASSES_TRANSFER, "", ""))
+            base64Classes.forEach {
+                sendMessage(Message.serializer() stringify Message(MessageType.CLASSES_DATA, "", it))
+            }
+            sendMessage(Message.serializer() stringify Message(MessageType.FINISH_CLASSES_TRANSFER, "", ""))
+            topicLogger.info { "Agent's application classes processing by config triggered" }
+        }
 
-        topic<Communication.Plugin.UpdateConfigEvent>().withGenericTopic(PluginConfig.serializer()) { config ->
+        topic<Communication.Plugin.UpdateConfigEvent, PluginConfig> { config ->
             topicLogger.warn { "UpdatePluginConfig event: message is $config " }
             val agentPluginPart = PluginManager[config.id]
             if (agentPluginPart != null) {
@@ -105,14 +103,14 @@ fun topicRegister() =
                 topicLogger.warn { "Plugin ${config.id} not loaded to agent" }
         }
 
-        topic<Communication.Plugin.DispatchEvent>().withGenericTopic(PluginAction.serializer()) { m ->
+        topic<Communication.Plugin.DispatchEvent, PluginAction> { m ->
             topicLogger.warn { "actionPluign event: message is ${m.message} " }
             val agentPluginPart = PluginManager[m.id]
             agentPluginPart?.doRawAction(m.message)
 
         }
 
-        topic<Communication.Plugin.ToggleEvent>().withGenericTopic(TogglePayload.serializer()) { (pluginId, forceValue) ->
+        topic<Communication.Plugin.ToggleEvent, TogglePayload> { (pluginId, forceValue) ->
             val agentPluginPart = PluginManager[pluginId]
             if (agentPluginPart == null) {
                 topicLogger.warn { "Plugin $pluginId not loaded to agent" }

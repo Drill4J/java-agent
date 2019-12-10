@@ -111,6 +111,7 @@ suspend fun websocket(adminUrl: String) {
         binaryTopicsStorage.remove(metadata)?.block?.invoke(metadata, rawFile) ?: run {
             wsLogger.warn { "can't find corresponded config fo'$md5FileHash' hash" }
         }
+        sendMessage(Message.serializer() stringify Message(MessageType.MESSAGE_DELIVERED, "/agent/load"))
     }
 
     wsClient.onError.add {

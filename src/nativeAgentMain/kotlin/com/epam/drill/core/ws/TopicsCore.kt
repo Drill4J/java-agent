@@ -16,25 +16,12 @@ object WsRouter {
 
     @Suppress("ClassName")
     open class inners(open val destination: String) {
-        fun <T> withGenericTopic(des: KSerializer<T>, block: suspend (T) -> Unit): GenericTopic<T> {
-            val genericTopic = GenericTopic(destination, des, block)
-            mapper[destination] = genericTopic
-            return genericTopic
-        }
-
 
         @Suppress("unused")
         fun withPluginTopic(block: suspend (message: PluginMetadata, file: ByteArray) -> Unit): PluginTopic {
             val fileTopic = PluginTopic(destination, block)
             mapper[destination] = fileTopic
             return fileTopic
-        }
-
-
-        fun rawMessage(block: suspend (String) -> Unit): InfoTopic {
-            val infoTopic = InfoTopic(destination, block)
-            mapper[destination] = infoTopic
-            return infoTopic
         }
 
     }
@@ -49,6 +36,20 @@ object WsRouter {
 inline fun <reified TopicUrl : Any> WsRouter.topic(): WsRouter.inners {
     val serializer = TopicUrl::class.topicUrl()
     return WsRouter.inners(serializer)
+}
+
+@Suppress("unused")
+inline fun <reified TopicUrl : Any, reified Generic : Any> WsRouter.topic(noinline block: suspend (Generic) -> Unit) {
+    val destination = TopicUrl::class.topicUrl()
+    val infoTopic = GenericTopic(destination, Generic::class.serializer(), block)
+    mapper[destination] = infoTopic
+}
+
+@Suppress("unused")
+inline fun <reified TopicUrl : Any> WsRouter.topic(noinline block: suspend (String) -> Unit) {
+    val destination = TopicUrl::class.topicUrl()
+    val infoTopic = InfoTopic(destination, block)
+    mapper[destination] = infoTopic
 }
 
 open class Topic(open val destination: String)
