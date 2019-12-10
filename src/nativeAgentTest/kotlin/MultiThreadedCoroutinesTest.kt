@@ -22,6 +22,22 @@ val dispatcher1 = newSingleThreadContext("1")
 @SharedImmutable
 val dispatcher2 = newSingleThreadContext("2")
 
+
+@SharedImmutable
+lateinit var xx: String
+
+object wtf : CoroutineScope {
+    operator fun invoke(block: suspend () -> Unit) {
+        launch {
+            block()
+        }
+
+    }
+
+    override val coroutineContext: CoroutineContext = dispatcher1
+
+}
+
 class Context(override val coroutineContext: CoroutineContext = dispatcher) : CoroutineScope {
     fun run() {
         launch(dispatcher2) {
@@ -45,9 +61,14 @@ class MultiThreadedCoroutinesTest {
 
     @Test
     fun easy() {
-        Context().run()
-        sleep(1)
+        xx = "xx"
+        wtf {
+            println("OMG")
+        }
+//        Context().run()
+        sleep(10)
         println("test main")
+        println(xx)
 
     }
 }

@@ -194,7 +194,7 @@ private fun generateHeaders(): String {
         "\n" +
                 "drill-agent-id: ${if (agentConfig.serviceGroupId.isEmpty()) agentConfig.id else agentConfig.serviceGroupId}\n" +
                 "drill-admin-url: $adminUrl" +
-                "${if (sessionId != null) "\ndrill-session-id: $sessionId" else ""}"
+                if (sessionId != null) "\ndrill-session-id: $sessionId" else ""
     }
     return spyHeaders
 }

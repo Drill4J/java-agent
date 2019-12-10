@@ -3,6 +3,7 @@ package com.epam.drill.core.messanger
 import com.epam.drill.api.*
 import com.epam.drill.common.*
 import com.epam.drill.core.plugin.dto.*
+import com.epam.drill.core.ws.*
 import kotlinx.cinterop.*
 
 
@@ -27,5 +28,5 @@ fun sendMessage(pluginId: String, content: String) {
         )
 
 
-    com.epam.drill.core.ws.sendMessage(message)
+    Sender.send(message)
 }
