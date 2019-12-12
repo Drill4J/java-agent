@@ -5,12 +5,16 @@ plugins {
     java
     application
 }
-val isDevMode = System.getProperty("idea.active") == "true"
+
 val target = when {
+    isDevMode -> "nativeAgent"
     HostManager.hostIsMingw -> "mingwX64"
     HostManager.hostIsLinux -> "linuxX64"
     else -> "macosX64"
 }
+
+val agentJavaProject = rootProject.project(":agent:java")
+
 application {
     mainClassName = "org.springframework.boot.loader.JarLauncher"
     val (pref, ex) = when {
@@ -18,8 +22,7 @@ application {
         Os.isFamily(Os.FAMILY_UNIX) -> "lib" to "so"
         else -> "" to "dll"
     }
-    val drillDistrDir =
-        project(":agent:java").buildDir.resolve("install").resolve(if (isDevMode) "nativeAgent" else target).absolutePath
+    val drillDistrDir = agentJavaProject.buildDir.resolve("install").resolve(target).absolutePath
     val agentPath = "${file("$drillDistrDir/${pref}drill_agent.$ex")}"
     applicationDefaultJvmArgs = listOf(
         "-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=5007",
@@ -40,9 +43,7 @@ dependencies {
 }
 tasks {
     named("run") {
-        if (isDevMode)
-            dependsOn(rootProject.tasks.getByPath(":agent:java:installNativeAgentDist"))
-        else
-            dependsOn(rootProject.tasks.getByPath(":agent:java:install${target.capitalize()}Dist"))
+        val installTaskName = "install${target.capitalize()}Dist"
+        dependsOn(agentJavaProject.tasks.named(installTaskName))
     }
 }
