@@ -2,6 +2,7 @@
 
 package com.epam.drill.ws
 
+import com.alibaba.ttl.*
 import com.epam.drill.plugin.*
 import com.epam.drill.session.DrillRequest
 import java.lang.Exception
@@ -11,6 +12,10 @@ object RequestHolder {
 
     private var sessionIdHeaderName: String = ""
     private val log = Logger.getLogger(RequestHolder::class.java.name)
+
+    init {
+        DrillRequest.threadStorage = TransmittableThreadLocal<com.epam.drill.plugin.DrillRequest>()
+    }
 
     fun storeRequest(rawRequest: String, pattern: String?) {
         var drillRequest = parseHttpRequest(rawRequest).toDrillRequest()
