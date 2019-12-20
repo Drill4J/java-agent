@@ -75,11 +75,11 @@ fun javaProcess(): JavaProcess = getProcessInfo()
 
 fun calculateBuildVersion() {
     val agentConfig = exec { agentConfig }
+    val initializerClass = FindClass("com/epam/drill/ws/Initializer")
+    val selfMethodId: jfieldID? =
+        GetStaticFieldID(initializerClass, "INSTANCE", "Lcom/epam/drill/ws/Initializer;")
+    val initializer: jobject? = GetStaticObjectField(initializerClass, selfMethodId)
     if (agentConfig.buildVersion.isEmpty()) {
-        val initializerClass = FindClass("com/epam/drill/ws/Initializer")
-        val selfMethodId: jfieldID? =
-            GetStaticFieldID(initializerClass, "INSTANCE", "Lcom/epam/drill/ws/Initializer;")
-        val initializer: jobject? = GetStaticObjectField(initializerClass, selfMethodId)
         val calculateBuild: jmethodID? = GetMethodID(initializerClass, "calculateBuild", "()I")
         val buildVersion = CallIntMethod(initializer, calculateBuild)
 

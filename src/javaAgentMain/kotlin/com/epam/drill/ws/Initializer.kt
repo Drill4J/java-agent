@@ -2,13 +2,20 @@
 
 package com.epam.drill.ws
 
+import com.alibaba.ttl.*
 import com.epam.drill.*
+import com.epam.drill.plugin.*
+import com.epam.drill.session.DrillRequest
 import kotlinx.coroutines.*
 import java.util.logging.*
 import kotlin.system.*
 
 object Initializer {
     private val log = Logger.getLogger(Initializer::class.java.name)
+    
+    init {
+        DrillRequest.threadStorage = TransmittableThreadLocal<com.epam.drill.plugin.DrillRequest>()
+    }
 
     fun calculateBuild() = runBlocking(Dispatchers.IO) {
         val scanItPlease = ClassPath().scanItPlease(ClassLoader.getSystemClassLoader())

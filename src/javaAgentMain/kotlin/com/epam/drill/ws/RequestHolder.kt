@@ -13,10 +13,6 @@ object RequestHolder {
     private var sessionIdHeaderName: String = ""
     private val log = Logger.getLogger(RequestHolder::class.java.name)
 
-    init {
-        DrillRequest.threadStorage = TransmittableThreadLocal<com.epam.drill.plugin.DrillRequest>()
-    }
-
     fun storeRequest(rawRequest: String, pattern: String?) {
         var drillRequest = parseHttpRequest(rawRequest).toDrillRequest()
         if (pattern != null) {
