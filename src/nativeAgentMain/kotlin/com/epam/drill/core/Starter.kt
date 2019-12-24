@@ -43,9 +43,9 @@ private fun runAgent(options: String?) {
             alloc.can_retransform_classes = 1.toUInt()
             alloc.can_retransform_any_class = 1.toUInt()
             alloc.can_generate_native_method_bind_events = 1.toUInt()
+            alloc.can_maintain_original_method_order = 1.toUInt()
             AddCapabilities(alloc.ptr)
         }
-//        AddCapabilities(GetPotentialCapabilities())
         AddToBootstrapClassLoaderSearch("$drillInstallationDir/drillRuntime.jar")
         SetNativeMethodPrefix("xxx_")
         callbackRegister()
