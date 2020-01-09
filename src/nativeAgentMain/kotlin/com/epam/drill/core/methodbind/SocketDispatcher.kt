@@ -13,6 +13,8 @@ const val SocketDispatcher = "Lsun/nio/ch/SocketDispatcher;"
 const val SocketOutputStream = "Ljava/net/SocketOutputStream;"
 const val FileDispatcherImpl = "Lsun/nio/ch/FileDispatcherImpl;"
 const val Netty = "Lio/netty/channel/unix/FileDescriptor;"
+const val CR: Byte = 13
+const val CF: Byte = 10
 
 fun readAddress(
     env: CPointer<JNIEnvVar>,
@@ -113,17 +115,22 @@ fun socketWrite0(
     val prefix = GetByteArrayElements(address, null)!!.readBytes(min(off + 4, len)).decodeToString()
     if (isAllowedVerb(prefix)) {
         val spyHeaders = generateHeaders()
-        val contentBodyBytes = GetByteArrayElements(address, null)!!.readBytes(len).decodeToString()
-        if (isSutableContentType(contentBodyBytes) && !contentBodyBytes.contains("drill-session-id")) {
-            val toUtf8Bytes = injectHeaders(contentBodyBytes, spyHeaders)
-            val additionalSize = spyHeaders.toUtf8Bytes().size
-            val fakeLength = len + additionalSize
-            val newByteArray: jbyteArray? = NewByteArray(fakeLength)
+        val contentBytes = GetByteArrayElements(address, null)!!.readBytes(len)
+        val headersEndIndex = headersFinishIndex(contentBytes)
+        val headersBytes = contentBytes.take(headersEndIndex)
+        val headersString = headersBytes.toByteArray().decodeToString()
+
+        if (isSutableContentType(headersString) && !headersString.contains("drill-session-id")) {
+            val contentBody = contentBytes.copyOfRange(headersEndIndex, len)
+            val modifiedHeaders = injectHeaders(headersString, spyHeaders)
+            val modifiedContent = modifiedHeaders.plus(contentBody)
+            val modifiedContentLenght = modifiedContent.size
+            val newByteArray: jbyteArray? = NewByteArray(modifiedContentLenght)
             SetByteArrayRegion(
-                newByteArray, 0, fakeLength,
-                getBytes(newByteArray, toUtf8Bytes)
+                newByteArray, 0, modifiedContentLenght,
+                getBytes(newByteArray, modifiedContent)
             )
-            exec { originalMethod[::socketWrite0] }(env, clazz, fd, newByteArray!!, off, fakeLength)
+            exec { originalMethod[::socketWrite0] }(env, clazz, fd, newByteArray!!, off, modifiedContentLenght)
         } else {
             exec { originalMethod[::socketWrite0] }(env, clazz, fd, address, off, len)
         }
@@ -151,17 +158,23 @@ fun write(
     initRuntimeIfNeeded()
 
     val prefix = address.rawString(min(4, len))
+
     if (isAllowedVerb(prefix)) {
         val spyHeaders = generateHeaders()
-        val contentBodyBytes = address.toPointer().toKStringFromUtf8()
-        if (isSutableContentType(contentBodyBytes)&& !contentBodyBytes.contains("drill-session-id")) {
-            val toUtf8Bytes = injectHeaders(contentBodyBytes, spyHeaders)
-            val refTo = toUtf8Bytes.refTo(0)
+        val contentBytes = address.toPointer().readBytes(len)
+        val headersEndIndex = headersFinishIndex(contentBytes)
+        val headersBytes = contentBytes.take(headersEndIndex)
+        val headersString = headersBytes.toByteArray().decodeToString()
+
+        if (isSutableContentType(headersString) && !headersString.contains("drill-session-id")) {
+            val headersLenght = headersBytes.size
+            val contentBody = contentBytes.copyOfRange(headersLenght, len)
             val scope = Arena()
-            val fakeBuffer: DirectBufferAddress = refTo.getPointer(scope).toLong()
-            val additionalSize = spyHeaders.toUtf8Bytes().size
-            val fakeLength = len + additionalSize
-            block(fakeBuffer, fakeLength)
+            val modifiedHeaders = injectHeaders(headersString, spyHeaders)
+            val modifiedContent = modifiedHeaders.plus(contentBody)
+            val refToModifiedContent = modifiedContent.refTo(0)
+            val bufferAddress: DirectBufferAddress = refToModifiedContent.getPointer(scope).toLong()
+            block(bufferAddress, modifiedContent.size)
             scope.clear()
         } else {
             block(address, len)
@@ -170,6 +183,23 @@ fun write(
         block(address, len)
     }
     return len
+}
+
+private fun headersFinishIndex(contentBytes: ByteArray): Int {
+    var headersEndIndex = 0
+
+    contentBytes.forEachIndexed { index, byte ->
+        if ((index + 3) < contentBytes.size
+            && byte == CR
+            && contentBytes[index + 1] == CF
+            && contentBytes[index + 2] == CR
+            && contentBytes[index + 3] == CF
+        ) {
+            headersEndIndex = index
+            return@forEachIndexed
+        }
+    }
+    return headersEndIndex
 }
 
 private fun injectHeaders(contentBodyBytes: String, spyHeaders: String): ByteArray {
