@@ -13,8 +13,8 @@ const val SocketDispatcher = "Lsun/nio/ch/SocketDispatcher;"
 const val SocketOutputStream = "Ljava/net/SocketOutputStream;"
 const val FileDispatcherImpl = "Lsun/nio/ch/FileDispatcherImpl;"
 const val Netty = "Lio/netty/channel/unix/FileDescriptor;"
-const val CR: Byte = 13
-const val LF: Byte = 10
+@SharedImmutable
+val HEADERS_DELIMITER = byteArrayOf(13, 10, 13, 10)
 
 fun readAddress(
     env: CPointer<JNIEnvVar>,
@@ -116,7 +116,7 @@ fun socketWrite0(
     if (isAllowedVerb(prefix)) {
         val spyHeaders = generateHeaders()
         val contentBytes = GetByteArrayElements(address, null)!!.readBytes(len)
-        val headersDelimiterIndex = contentBytes.indexOf(byteArrayOf(CR, LF, CR, LF))
+        val headersDelimiterIndex = contentBytes.indexOf(HEADERS_DELIMITER)
         val headersBytes = contentBytes.take(headersDelimiterIndex)
         val headersDecoded = headersBytes.toByteArray().decodeToString()
 
@@ -162,7 +162,7 @@ fun write(
     if (isAllowedVerb(prefix)) {
         val spyHeaders = generateHeaders()
         val contentBytes = address.toPointer().readBytes(len)
-        val headersDelimiterIndex = contentBytes.indexOf(byteArrayOf(CR, LF, CR, LF))
+        val headersDelimiterIndex = contentBytes.indexOf(HEADERS_DELIMITER)
         val headersBytes = contentBytes.take(headersDelimiterIndex)
         val headersDecoded = headersBytes.toByteArray().decodeToString()
 
