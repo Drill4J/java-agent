@@ -14,7 +14,7 @@ const val SocketOutputStream = "Ljava/net/SocketOutputStream;"
 const val FileDispatcherImpl = "Lsun/nio/ch/FileDispatcherImpl;"
 const val Netty = "Lio/netty/channel/unix/FileDescriptor;"
 const val CR: Byte = 13
-const val CF: Byte = 10
+const val LF: Byte = 10
 
 fun readAddress(
     env: CPointer<JNIEnvVar>,
@@ -116,21 +116,21 @@ fun socketWrite0(
     if (isAllowedVerb(prefix)) {
         val spyHeaders = generateHeaders()
         val contentBytes = GetByteArrayElements(address, null)!!.readBytes(len)
-        val headersEndIndex = headersFinishIndex(contentBytes)
-        val headersBytes = contentBytes.take(headersEndIndex)
-        val headersString = headersBytes.toByteArray().decodeToString()
+        val headersDelimiterIndex = contentBytes.indexOf(byteArrayOf(CR, LF, CR, LF))
+        val headersBytes = contentBytes.take(headersDelimiterIndex)
+        val headersDecoded = headersBytes.toByteArray().decodeToString()
 
-        if (isSutableContentType(headersString) && !headersString.contains("drill-session-id")) {
-            val contentBody = contentBytes.copyOfRange(headersEndIndex, len)
-            val modifiedHeaders = injectHeaders(headersString, spyHeaders)
+        if (headersDelimiterIndex > 0 && isSutableContentType(headersDecoded) && !headersDecoded.contains("drill-session-id")) {
+            val contentBody = contentBytes.copyOfRange(headersDelimiterIndex, len)
+            val modifiedHeaders = injectHeaders(headersDecoded, spyHeaders)
             val modifiedContent = modifiedHeaders.plus(contentBody)
-            val modifiedContentLenght = modifiedContent.size
-            val newByteArray: jbyteArray? = NewByteArray(modifiedContentLenght)
+            val modifiedContentLength = modifiedContent.size
+            val newByteArray: jbyteArray? = NewByteArray(modifiedContentLength)
             SetByteArrayRegion(
-                newByteArray, 0, modifiedContentLenght,
+                newByteArray, 0, modifiedContentLength,
                 getBytes(newByteArray, modifiedContent)
             )
-            exec { originalMethod[::socketWrite0] }(env, clazz, fd, newByteArray!!, off, modifiedContentLenght)
+            exec { originalMethod[::socketWrite0] }(env, clazz, fd, newByteArray!!, off, modifiedContentLength)
         } else {
             exec { originalMethod[::socketWrite0] }(env, clazz, fd, address, off, len)
         }
@@ -162,15 +162,15 @@ fun write(
     if (isAllowedVerb(prefix)) {
         val spyHeaders = generateHeaders()
         val contentBytes = address.toPointer().readBytes(len)
-        val headersEndIndex = headersFinishIndex(contentBytes)
-        val headersBytes = contentBytes.take(headersEndIndex)
-        val headersString = headersBytes.toByteArray().decodeToString()
+        val headersDelimiterIndex = contentBytes.indexOf(byteArrayOf(CR, LF, CR, LF))
+        val headersBytes = contentBytes.take(headersDelimiterIndex)
+        val headersDecoded = headersBytes.toByteArray().decodeToString()
 
-        if (isSutableContentType(headersString) && !headersString.contains("drill-session-id")) {
-            val headersLenght = headersBytes.size
-            val contentBody = contentBytes.copyOfRange(headersLenght, len)
+        if (headersDelimiterIndex > 0 && isSutableContentType(headersDecoded) && !headersDecoded.contains("drill-session-id")) {
+            val headersLength = headersBytes.size
+            val contentBody = contentBytes.copyOfRange(headersLength, len)
             val scope = Arena()
-            val modifiedHeaders = injectHeaders(headersString, spyHeaders)
+            val modifiedHeaders = injectHeaders(headersDecoded, spyHeaders)
             val modifiedContent = modifiedHeaders.plus(contentBody)
             val refToModifiedContent = modifiedContent.refTo(0)
             val bufferAddress: DirectBufferAddress = refToModifiedContent.getPointer(scope).toLong()
@@ -185,21 +185,19 @@ fun write(
     return len
 }
 
-private fun headersFinishIndex(contentBytes: ByteArray): Int {
-    var headersEndIndex = 0
+fun ByteArray.indexOf(arr: ByteArray): Int {
 
-    contentBytes.forEachIndexed { index, byte ->
-        if ((index + 3) < contentBytes.size
-            && byte == CR
-            && contentBytes[index + 1] == CF
-            && contentBytes[index + 2] == CR
-            && contentBytes[index + 3] == CF
-        ) {
-            headersEndIndex = index
-            return@forEachIndexed
-        }
+    for (index in indices) {
+
+        if (index + arr.size <= size) {
+            val regionMatches = arr.foldIndexed(true) { i, acc, byte ->
+                acc && this[index + i] == byte
+            }
+
+            if (regionMatches) return index
+        } else break
     }
-    return headersEndIndex
+    return -1
 }
 
 private fun injectHeaders(contentBodyBytes: String, spyHeaders: String): ByteArray {
