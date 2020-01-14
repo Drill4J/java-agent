@@ -24,7 +24,8 @@ private val binaryTopicsStorage = HashMap<PluginMetadata, PluginTopic>()
 @SharedImmutable
 private val dispatcher = newSingleThreadContext("sender coroutine")
 
-object WsSocket : CoroutineScope {
+class WsSocket : CoroutineScope {
+
     override val coroutineContext: CoroutineContext = dispatcher + CoroutineExceptionHandler { _, ex ->
         wsLogger.error { "WS error: ${ex.message}" }
         wsLogger.debug { "try reconnect" }
@@ -107,6 +108,14 @@ object WsSocket : CoroutineScope {
             throw WsClosedException("")
         }
         while (true) wsClient.send(msChannel.receive())
+    }
+
+    fun close() {
+        try {
+            coroutineContext.cancelChildren()
+        } catch (_: Exception) {
+        }
+
     }
 }
 

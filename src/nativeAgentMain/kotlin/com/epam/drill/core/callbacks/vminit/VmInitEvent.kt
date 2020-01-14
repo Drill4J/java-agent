@@ -17,7 +17,7 @@ val wsThread = Worker.start(true)
 fun jvmtiEventVMInitEvent(env: CPointer<jvmtiEnvVar>?, jniEnv: CPointer<JNIEnvVar>?, thread: jthread?) {
     wsThread.execute(TransferMode.UNSAFE, {}) {
         calculateBuildVersion()
-        WsSocket.connect(exec { adminAddress.toString() })
+        WsSocket().connect(exec { adminAddress.toString() })
     }
 }
 

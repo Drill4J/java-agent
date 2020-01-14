@@ -1,4 +1,3 @@
-
 import com.github.jengelman.gradle.plugins.shadow.tasks.*
 import org.jetbrains.kotlin.gradle.plugin.mpp.*
 import org.jetbrains.kotlin.gradle.tasks.*
@@ -52,15 +51,25 @@ kotlin {
         jvm("javaAgent")
 
     }
-    targets.filterIsInstance<KotlinNativeTarget>().forEach { it.compilations["test"].cinterops?.create("jvmapiStub") }
+    targets.filterIsInstance<KotlinNativeTarget>().forEach {
+        val cinterops = it.compilations["test"].cinterops
+        cinterops?.create("jvmapiStub")
+        cinterops?.create("testSocket")
+    }
 
     sourceSets {
         val commonNativeMain = maybeCreate("nativeAgentMain")
         @Suppress("UNUSED_VARIABLE") val commonNativeTest = maybeCreate("nativeAgentTest")
         if (!isDevMode) {
-            @Suppress("UNUSED_VARIABLE") val mingwX64Main by getting { dependsOn(commonNativeMain) }
-            @Suppress("UNUSED_VARIABLE") val linuxX64Main by getting { dependsOn(commonNativeMain) }
-            @Suppress("UNUSED_VARIABLE") val macosX64Main by getting { dependsOn(commonNativeMain) }
+            nativeTargets.forEach {
+                it.compilations.forEach { knCompilation ->
+                    if (knCompilation.name == "main")
+                        knCompilation.defaultSourceSet { dependsOn(commonNativeMain) }
+                    else
+                        knCompilation.defaultSourceSet { dependsOn(commonNativeTest) }
+
+                }
+            }
         }
         jvm("javaAgent").compilations["main"].defaultSourceSet {
             dependencies {
@@ -113,6 +122,7 @@ tasks.withType<KotlinNativeCompile> {
     kotlinOptions.freeCompilerArgs += "-Xuse-experimental=kotlinx.io.core.ExperimentalIoApi"
     kotlinOptions.freeCompilerArgs += "-Xuse-experimental=kotlinx.serialization.ImplicitReflectionSerializer"
     kotlinOptions.freeCompilerArgs += "-Xuse-experimental=kotlin.ExperimentalUnsignedTypes"
+    kotlinOptions.freeCompilerArgs += "-Xuse-experimental=kotlin.time.ExperimentalTime"
     kotlinOptions.freeCompilerArgs += "-Xuse-experimental=kotlinx.coroutines.ExperimentalCoroutinesApi"
     kotlinOptions.freeCompilerArgs += "-XXLanguage:+InlineClasses"
 }
