@@ -3,8 +3,8 @@ import com.epam.drill.internal.socket.*
 import com.epam.drill.internal.socket.socket_get_error
 import com.epam.drill.io.ktor.utils.io.internal.utils.test.kx_init_sockets
 import com.epam.drill.io.ktor.utils.io.internal.utils.test.make_socket_non_blocking
-import com.epam.drill.net.*
-import com.epam.drill.ws.*
+import com.epam.drill.transport.net.*
+import com.epam.drill.transport.ws.*
 import kotlinx.cinterop.*
 import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.*

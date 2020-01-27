@@ -5,7 +5,7 @@ import com.epam.drill.core.*
 import com.epam.drill.core.exceptions.*
 import com.epam.drill.crypto.*
 import com.epam.drill.logger.*
-import com.epam.drill.ws.*
+import com.epam.drill.transport.ws.*
 import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.*
 import kotlinx.serialization.*

@@ -3,8 +3,8 @@ package ws
 import Echo.startServer
 import TestBase
 import com.epam.drill.common.ws.*
-import com.epam.drill.net.*
-import com.epam.drill.ws.*
+import com.epam.drill.transport.net.*
+import com.epam.drill.transport.ws.*
 import kotlin.test.*
 import kotlin.time.*
 
