@@ -4,8 +4,7 @@ package com.epam.drill.ws
 
 import com.alibaba.ttl.*
 import com.epam.drill.*
-import com.epam.drill.plugin.*
-import com.epam.drill.session.DrillRequest
+import com.epam.drill.session.*
 import kotlinx.coroutines.*
 import java.util.logging.*
 import kotlin.system.*

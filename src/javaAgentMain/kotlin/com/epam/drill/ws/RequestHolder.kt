@@ -2,10 +2,8 @@
 
 package com.epam.drill.ws
 
-import com.alibaba.ttl.*
 import com.epam.drill.plugin.*
 import com.epam.drill.session.DrillRequest
-import java.lang.Exception
 import java.util.logging.*
 
 object RequestHolder {
