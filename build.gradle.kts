@@ -131,73 +131,23 @@ tasks.withType<KotlinNativeCompile> {
 tasks.withType<org.jetbrains.kotlin.gradle.targets.native.tasks.KotlinNativeTest> {
     testLogging.showStandardStreams = true
 }
-tasks {
 
-    val agentShadow by registering(ShadowJar::class) {
-        mergeServiceFiles()
-        isZip64 = true
-        relocate("kotlin", "kruntime")
-        archiveFileName.set("drillRuntime.jar")
-        from(javaAgentJar)
-    }
-
-    named<Jar>("javaAgentJar") {
-        archiveFileName.set("drillRuntime-temp.jar")
-        from(provider {
-            kotlin.targets["javaAgent"].compilations["main"].compileDependencyFiles.map {
-                if (it.isDirectory) it else zipTree(it)
-            }
-        })
-    }
-    if (gccIsNeeded)
-        register("link${libName.capitalize()}DebugSharedLinuxX64", Exec::class) {
-            mustRunAfter("link${libName.capitalize()}DebugStaticLinuxX64")
-            group = LifecycleBasePlugin.BUILD_GROUP
-            val linuxTarget = kotlin.targets["linuxX64"] as KotlinNativeTarget
-            val linuxStaticLib = linuxTarget
-                .binaries
-                .findStaticLib(libName, NativeBuildType.DEBUG)!!
-                .outputFile.toPath()
-
-            val linuxBuildDir = linuxStaticLib.parent.parent
-            val targetSo = linuxBuildDir.resolve("${libName}DebugShared").resolve("lib${libName.replace("-", "_")}.so")
-            outputs.file(targetSo)
-            doFirst {
-
-                targetSo.parent.toFile().mkdirs()
-                commandLine = listOf(
-                    "docker-compose",
-                    "run",
-                    "--rm",
-                    "gcc",
-                    "-shared",
-                    "-o",
-                    "/home/project/${project.name}/${projectDir.toPath().relativize(targetSo)
-                        .toString()
-                        .replace(
-                            "\\",
-                            "/"
-                        )}",
-                    "-Wl,--whole-archive",
-                    "/home/project/${project.name}/${projectDir.toPath().relativize(linuxStaticLib)
-                        .toString()
-                        .replace(
-                            "\\",
-                            "/"
-                        )}",
-                    "-Wl,--no-whole-archive",
-                    "-static-libgcc",
-                    "-static-libstdc++",
-                    "-lstdc++"
-                )
-
-            }
+val javaAgentJar by tasks.getting(Jar::class) {
+    from(provider {
+        kotlin.targets["javaAgent"].compilations["main"].compileDependencyFiles.map {
+            if (it.isDirectory) it else zipTree(it)
         }
+    })
 }
 
 
-val javaAgentJar: Jar by tasks
-val agentShadow: ShadowJar by tasks
+val agentShadow by tasks.registering(ShadowJar::class) {
+    mergeServiceFiles()
+    isZip64 = true
+    relocate("kotlin", "kruntime")
+    archiveFileName.set("drillRuntime.jar")
+    from(javaAgentJar)
+}
 
 afterEvaluate {
     val availableTarget = nativeTargets.filter { HostManager().isEnabled(it.konanTarget) }
