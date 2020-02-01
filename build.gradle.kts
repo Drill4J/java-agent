@@ -26,27 +26,26 @@ allprojects {
 }
 
 val libName = "drill-agent"
-val nativeTargets = mutableSetOf<KotlinNativeTarget>()
 
 kotlin {
     targets {
         if (isDevMode) {
             currentTarget("nativeAgent") {
                 binaries { sharedLib(libName, setOf(DEBUG)) }
-            }.apply {
-                nativeTargets.add(this)
+                binaries.forEach {
+                    if (HostManager.hostIsMingw)
+                        it.linkerOpts("-lpsapi", "-lwsock32", "-lws2_32", "-lmswsock")
+                }
             }
         } else {
-            mingwX64 { binaries { sharedLib(libName, setOf(DEBUG)) } }.apply { nativeTargets.add(this) }
-            macosX64 { binaries { sharedLib(libName, setOf(DEBUG)) } }.apply { nativeTargets.add(this) }
-            linuxX64 {
-                binaries {
-                    if (!gccIsNeeded) sharedLib(libName, setOf(DEBUG))
-                    else staticLib(libName, setOf(DEBUG))
+            mingwX64 {
+                binaries { sharedLib(libName, setOf(DEBUG)) }
+                binaries.forEach {
+                    it.linkerOpts("-lpsapi", "-lwsock32", "-lws2_32", "-lmswsock")
                 }
-            }.apply {
-                nativeTargets.add(this)
             }
+            macosX64 { binaries { sharedLib(libName, setOf(DEBUG)) } }
+            linuxX64 { binaries { sharedLib(libName, setOf(DEBUG)) } }
         }
         jvm("javaAgent")
 
@@ -61,7 +60,7 @@ kotlin {
         val commonNativeMain = maybeCreate("nativeAgentMain")
         @Suppress("UNUSED_VARIABLE") val commonNativeTest = maybeCreate("nativeAgentTest")
         if (!isDevMode) {
-            nativeTargets.forEach {
+            targets.filterIsInstance<KotlinNativeTarget>().forEach {
                 it.compilations.forEach { knCompilation ->
                     if (knCompilation.name == "main")
                         knCompilation.defaultSourceSet { dependsOn(commonNativeMain) }
@@ -106,9 +105,10 @@ kotlin {
         named("nativeAgentMain") {
             dependencies {
                 implementation("org.jetbrains.kotlinx:kotlinx-serialization-runtime-native:$serializationRuntimeVersion")
-                implementation("com.epam.drill:jvmapi-native:$drillJvmApiLibVerison")
+                implementation("com.epam.drill:jvmapi-native:$drillJvmApiLibVersion")
                 implementation("com.epam.drill.transport:core:0.1.0")
                 implementation("com.benasher44:uuid:0.0.6")
+                implementation("com.epam.drill.hook:platform:$drillHookVersion")
                 implementation(project(":plugin-api:drill-agent-part"))
                 implementation(project(":common"))
                 implementation(project(":agent:core"))
@@ -150,7 +150,8 @@ val agentShadow by tasks.registering(ShadowJar::class) {
 }
 
 afterEvaluate {
-    val availableTarget = nativeTargets.filter { HostManager().isEnabled(it.konanTarget) }
+    val availableTarget =
+        kotlin.targets.filterIsInstance<KotlinNativeTarget>().filter { HostManager().isEnabled(it.konanTarget) }
 
     distributions {
         availableTarget.forEach {
