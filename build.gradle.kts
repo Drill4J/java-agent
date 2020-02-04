@@ -76,8 +76,8 @@ kotlin {
                 implementation(kotlin("reflect")) //TODO jarhell quick fix for kotlin jvm apps
                 implementation("org.jetbrains.kotlinx:kotlinx-serialization-runtime:$serializationRuntimeVersion")
                 implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:$coroutinesVersion")
-                implementation(project(":common"))
-                implementation(project(":plugin-api:drill-agent-part"))
+                implementation("com.epam.drill:common-jvm:$drillApiVersion")
+                implementation("com.epam.drill:drill-agent-part-jvm:$drillApiVersion")
                 implementation("com.alibaba:transmittable-thread-local:2.11.0")
             }
         }
@@ -91,8 +91,8 @@ kotlin {
             dependencies {
                 implementation("org.jetbrains.kotlin:kotlin-stdlib-common")
                 implementation("org.jetbrains.kotlinx:kotlinx-serialization-runtime-common:$serializationRuntimeVersion")
-                implementation(project(":common"))
-                implementation(project(":plugin-api:drill-agent-part"))
+                implementation("com.epam.drill:common:$drillApiVersion")
+                implementation("com.epam.drill:drill-agent-part:$drillApiVersion")
             }
         }
         named("commonTest") {
@@ -106,13 +106,13 @@ kotlin {
             dependencies {
                 implementation("org.jetbrains.kotlinx:kotlinx-serialization-runtime-native:$serializationRuntimeVersion")
                 implementation("com.epam.drill:jvmapi-native:$drillJvmApiLibVersion")
-                implementation("com.epam.drill.transport:core:0.1.0")
+                implementation("com.epam.drill.transport:core:$drillTransportLibVerison")
                 implementation("com.benasher44:uuid:0.0.6")
                 implementation("com.epam.drill.hook:platform:$drillHookVersion")
-                implementation(project(":plugin-api:drill-agent-part"))
-                implementation(project(":common"))
-                implementation(project(":agent:core"))
-                implementation(project(":agent:util"))
+                implementation("com.epam.drill:drill-agent-part:$drillApiVersion")
+                implementation("com.epam.drill:common:$drillApiVersion")
+                implementation(project(":core"))
+                implementation(project(":util"))
             }
         }
     }
@@ -125,7 +125,6 @@ tasks.withType<KotlinNativeCompile> {
     kotlinOptions.freeCompilerArgs += "-Xuse-experimental=kotlin.ExperimentalUnsignedTypes"
     kotlinOptions.freeCompilerArgs += "-Xuse-experimental=kotlin.time.ExperimentalTime"
     kotlinOptions.freeCompilerArgs += "-Xuse-experimental=kotlinx.coroutines.ExperimentalCoroutinesApi"
-    kotlinOptions.freeCompilerArgs += "-XXLanguage:+InlineClasses"
 }
 
 tasks.withType<org.jetbrains.kotlin.gradle.targets.native.tasks.KotlinNativeTest> {
@@ -159,7 +158,7 @@ afterEvaluate {
             create(name) {
                 baseName = name
                 contents {
-                    from(tasks.getByPath(":agent:java:proxy-agent:jar"))
+                    from(tasks.getByPath(":java:proxy-agent:jar"))
                     from(agentShadow)
                     from(tasks.getByPath("link${libName.capitalize()}DebugShared${name.capitalize()}"))
                 }

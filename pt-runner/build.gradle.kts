@@ -13,7 +13,7 @@ val target = when {
     else -> "macosX64"
 }
 
-val agentJavaProject = rootProject.project(":agent:java")
+val agentJavaProject = rootProject.project(":java")
 
 application {
     mainClassName = "org.springframework.boot.loader.JarLauncher"
