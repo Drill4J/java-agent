@@ -4,8 +4,8 @@ import com.epam.drill.api.*
 import com.epam.drill.core.agent.*
 import com.epam.drill.jvmapi.*
 import com.epam.drill.jvmapi.gen.*
-import com.epam.drill.logger.*
 import kotlinx.cinterop.*
+import mu.*
 import platform.posix.*
 import kotlin.native.concurrent.*
 
@@ -30,7 +30,7 @@ private fun initAgentGlobals(vmPointer: CPointer<JavaVMVar>) {
 
 private fun runAgent(options: String?) {
     options.asAgentParams().apply {
-        val logger = DLogger("StartLogger")
+        val logger = KotlinLogging.logger("StartLogger")
         logger.info { "init params: $this" }
         performAgentInitialization(this)
         setUnhandledExceptionHook({ x: Throwable ->
@@ -83,14 +83,14 @@ private fun callbackRegister() {
 
 @Suppress("UNUSED_PARAMETER")
 fun vmDeathEvent(jvmtiEnv: CPointer<jvmtiEnvVar>?, jniEnv: CPointer<JNIEnvVar>?) {
-    DLogger("vmDeathEvent").info { "vmDeathEvent" }
+    KotlinLogging.logger("vmDeathEvent").info { "vmDeathEvent" }
 }
 
 
 @Suppress("UNUSED_PARAMETER", "UNUSED")
 @CName("Agent_OnUnload")
 fun agentOnUnload(vmPointer: CPointer<JavaVMVar>) {
-    DLogger("Agent_OnUnload").info { "Agent_OnUnload" }
+    KotlinLogging.logger("Agent_OnUnload").info { "Agent_OnUnload" }
 }
 
 

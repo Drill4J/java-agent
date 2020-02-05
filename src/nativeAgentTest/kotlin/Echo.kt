@@ -5,12 +5,12 @@ import com.epam.drill.io.ktor.utils.io.internal.utils.test.kx_init_sockets
 import com.epam.drill.io.ktor.utils.io.internal.utils.test.make_socket_non_blocking
 import com.epam.drill.transport.net.*
 import com.epam.drill.transport.ws.*
+import io.ktor.utils.io.bits.*
+import io.ktor.utils.io.core.*
+import io.ktor.utils.io.internal.utils.*
 import kotlinx.cinterop.*
 import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.*
-import kotlinx.io.bits.*
-import kotlinx.io.core.*
-import kotlinx.io.internal.utils.*
 import platform.posix.*
 import kotlin.test.*
 
@@ -102,16 +102,13 @@ object Echo {
     }
 
     private fun processHeaders(accepted: KX_SOCKET): String {
-        val buffer = IoBuffer.Pool.borrow()
-        buffer.resetForWrite()
+        val buffer = ByteArray(2048)
+        val offset = 0
         //read connect headers
-        val headersSize = kotlinx.io.streams.recv(accepted, buffer, 0)
-        val dst = ByteArray(headersSize.convert())
-        buffer.readFully(dst, 0, headersSize.convert())
-        val headers = dst.decodeToString()
-        buffer.resetForWrite()
-        buffer.writeFully("101 OK\n\n".toByteArray())
-        kotlinx.io.streams.send(accepted, buffer, 0)
+        val headersSize = recv(accepted, buffer.refTo(offset), 2048, 0.convert())
+        val headers = buffer.copyOfRange(0, headersSize.toInt() - 1).decodeToString()
+        val message = "101 OK\n\n".toByteArray()
+        send(accepted,  message.refTo(0), message.size.convert(), 0)
         return headers
     }
 

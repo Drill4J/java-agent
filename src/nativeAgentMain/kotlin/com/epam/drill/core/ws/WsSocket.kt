@@ -10,13 +10,14 @@ import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.*
 import kotlinx.serialization.*
 import kotlinx.serialization.cbor.*
+import mu.*
 import kotlin.coroutines.*
 import kotlin.native.concurrent.*
 
 const val DELAY = 3000L
 
 @SharedImmutable
-private val wsLogger = DLogger("DrillWebsocket")
+private val wsLogger = KotlinLogging.logger("DrillWebsocket")
 
 @ThreadLocal
 private val binaryTopicsStorage = HashMap<PluginMetadata, PluginTopic>()

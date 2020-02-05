@@ -8,16 +8,16 @@ import com.epam.drill.core.*
 import com.epam.drill.core.agent.*
 import com.epam.drill.core.messanger.*
 import com.epam.drill.core.plugin.loader.*
-import com.epam.drill.logger.*
 import com.epam.drill.plugin.*
 import com.epam.drill.plugin.api.processing.*
 import kotlinx.cinterop.*
 import kotlinx.coroutines.*
+import mu.*
 import kotlin.collections.set
 import kotlin.native.concurrent.*
 
 @SharedImmutable
-private val topicLogger = DLogger("topicLogger")
+private val topicLogger = KotlinLogging.logger("topicLogger")
 
 @SharedImmutable
 private val loader = Worker.start(true)

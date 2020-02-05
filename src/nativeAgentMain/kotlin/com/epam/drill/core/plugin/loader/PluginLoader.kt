@@ -5,13 +5,13 @@ import com.epam.drill.core.*
 import com.epam.drill.core.exceptions.*
 import com.epam.drill.jvmapi.*
 import com.epam.drill.jvmapi.gen.*
-import com.epam.drill.logger.*
 import kotlinx.cinterop.*
+import mu.*
 import kotlin.collections.set
 
 
 @SharedImmutable
-val plLogger = DLogger("plLogger")
+val plLogger = KotlinLogging.logger("plLogger")
 
 fun loadPlugin(pluginFilePath: String, pluginConfig: PluginMetadata) {
     AttachNativeThreadToJvm()

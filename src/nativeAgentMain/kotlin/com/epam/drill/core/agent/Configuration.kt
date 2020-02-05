@@ -7,9 +7,9 @@ import com.epam.drill.common.ws.*
 import com.epam.drill.core.*
 import com.epam.drill.jvmapi.*
 import com.epam.drill.jvmapi.gen.*
-import com.epam.drill.logger.*
 import kotlinx.cinterop.*
 import kotlinx.serialization.*
+import mu.*
 import platform.posix.*
 
 fun performAgentInitialization(initialParams: Map<String, String>) {
@@ -85,7 +85,7 @@ fun calculateBuildVersion() {
 
         agentConfig.buildVersion = buildVersion.toString()
     }
-    DLogger("BuildVersionLogger").info { "Calculated build version: ${agentConfig.buildVersion}" }
+    KotlinLogging.logger("BuildVersionLogger").info { "Calculated build version: ${agentConfig.buildVersion}" }
 }
 
 fun getClassesByConfig(): List<String> {

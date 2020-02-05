@@ -10,20 +10,6 @@ plugins {
     `maven-publish`
     id("com.github.johnrengelman.shadow") version "5.1.0"
 }
-val gccIsNeeded = (project.property("gccIsNeeded") as String).toBoolean()
-
-allprojects {
-
-    repositories {
-        mavenCentral()
-        jcenter()
-        mavenLocal()
-        maven(url = "https://dl.bintray.com/kotlin/kotlinx/")
-        maven(url = "https://dl.bintray.com/kotlin/ktor/")
-        maven(url = "https://oss.jfrog.org/artifactory/list/oss-release-local")
-    }
-
-}
 
 val libName = "drill-agent"
 
@@ -91,8 +77,8 @@ kotlin {
             dependencies {
                 implementation("org.jetbrains.kotlin:kotlin-stdlib-common")
                 implementation("org.jetbrains.kotlinx:kotlinx-serialization-runtime-common:$serializationRuntimeVersion")
-                implementation("com.epam.drill:common:$drillApiVersion")
                 implementation("com.epam.drill:drill-agent-part:$drillApiVersion")
+                implementation("com.epam.drill:common:$drillApiVersion")
             }
         }
         named("commonTest") {
@@ -120,7 +106,6 @@ kotlin {
 }
 
 tasks.withType<KotlinNativeCompile> {
-    kotlinOptions.freeCompilerArgs += "-Xuse-experimental=kotlinx.io.core.ExperimentalIoApi"
     kotlinOptions.freeCompilerArgs += "-Xuse-experimental=kotlinx.serialization.ImplicitReflectionSerializer"
     kotlinOptions.freeCompilerArgs += "-Xuse-experimental=kotlin.ExperimentalUnsignedTypes"
     kotlinOptions.freeCompilerArgs += "-Xuse-experimental=kotlin.time.ExperimentalTime"
