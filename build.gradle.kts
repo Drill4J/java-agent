@@ -97,6 +97,7 @@ kotlin {
                 implementation("com.epam.drill.hook:platform:$drillHookVersion")
                 implementation("com.epam.drill:drill-agent-part:$drillApiVersion")
                 implementation("com.epam.drill:common:$drillApiVersion")
+                implementation("com.epam.drill.logger:logger:$drillLogger")
                 implementation(project(":core"))
                 implementation(project(":util"))
             }

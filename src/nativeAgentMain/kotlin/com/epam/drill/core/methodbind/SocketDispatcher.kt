@@ -4,6 +4,11 @@ import com.epam.drill.core.*
 import com.epam.drill.hook.http.*
 import com.epam.drill.jvmapi.*
 import com.epam.drill.jvmapi.gen.*
+import mu.*
+
+@SharedImmutable
+val httpRequestLogger = KotlinLogging.logger("http requestLogger")
+
 
 fun configureHttp() {
     configureHttpHooks()

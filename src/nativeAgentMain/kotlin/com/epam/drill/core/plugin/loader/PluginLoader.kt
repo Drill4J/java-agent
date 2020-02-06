@@ -16,7 +16,7 @@ val plLogger = KotlinLogging.logger("plLogger")
 fun loadPlugin(pluginFilePath: String, pluginConfig: PluginMetadata) {
     AttachNativeThreadToJvm()
     AddToSystemClassLoaderSearch(pluginFilePath)
-    plLogger.warn { "System classLoader extends by '$pluginFilePath' path" }
+    plLogger.info { "System classLoader extends by '$pluginFilePath' path" }
     try {
         val pluginId = pluginConfig.id
         val initializerClass = FindClass("com/epam/drill/ws/ClassLoadingUtil")

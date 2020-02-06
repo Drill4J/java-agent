@@ -4,7 +4,6 @@ import com.epam.drill.common.*
 import com.epam.drill.core.*
 import com.epam.drill.core.exceptions.*
 import com.epam.drill.crypto.*
-import com.epam.drill.logger.*
 import com.epam.drill.transport.ws.*
 import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.*
@@ -14,7 +13,7 @@ import mu.*
 import kotlin.coroutines.*
 import kotlin.native.concurrent.*
 
-const val DELAY = 3000L
+const val DELAY = 1000L
 
 @SharedImmutable
 private val wsLogger = KotlinLogging.logger("DrillWebsocket")
@@ -25,11 +24,14 @@ private val binaryTopicsStorage = HashMap<PluginMetadata, PluginTopic>()
 @SharedImmutable
 private val dispatcher = newSingleThreadContext("sender coroutine")
 
+private val attemptCounter = AtomicInt(0.freeze()).freeze()
+
 class WsSocket : CoroutineScope {
 
     override val coroutineContext: CoroutineContext = dispatcher + CoroutineExceptionHandler { _, ex ->
         wsLogger.error { "WS error: ${ex.message}" }
         wsLogger.debug { "try reconnect" }
+        attemptCounter.increment()
         connect(exec { adminAddress.toString() })
     }
 
@@ -40,7 +42,7 @@ class WsSocket : CoroutineScope {
     }
 
     fun connect(adminUrl: String) = launch {
-        delay(DELAY)
+        delay(((DELAY + attemptCounter.value * 1000)))
         val url = "$adminUrl/agent/attach"
         wsLogger.debug { "try to create websocket $url" }
         process(url, mainChannel)
@@ -108,6 +110,7 @@ class WsSocket : CoroutineScope {
             wsClient.close()
             throw WsClosedException("")
         }
+        attemptCounter.value = 0.freeze()
         while (true) wsClient.send(msChannel.receive())
     }
 
