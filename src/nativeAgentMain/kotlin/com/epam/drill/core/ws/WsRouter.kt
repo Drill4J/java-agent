@@ -1,5 +1,6 @@
 package com.epam.drill.core.ws
 
+import api.dto.*
 import com.epam.drill.*
 import com.epam.drill.api.*
 import com.epam.drill.common.*
@@ -8,6 +9,7 @@ import com.epam.drill.core.*
 import com.epam.drill.core.agent.*
 import com.epam.drill.core.messanger.*
 import com.epam.drill.core.plugin.loader.*
+import com.epam.drill.logger.*
 import com.epam.drill.plugin.*
 import com.epam.drill.plugin.api.processing.*
 import kotlinx.cinterop.*
@@ -56,11 +58,16 @@ fun topicRegister() =
 
         }
 
+        topic<Communication.Agent.UpdateLoggingConfigEvent, LoggingConfig> { lc ->
+            topicLogger.info { "Agent got a logging config: $lc" }
+            logConfig.value = LoggerConfig(lc.trace, lc.debug, lc.info, lc.warn)
+        }
 
         topic<Communication.Agent.UpdateConfigEvent, ServiceConfig> { sc ->
             topicLogger.info { "Agent got a system config: $sc" }
             exec { secureAdminAddress = adminAddress.copy(scheme = "https", defaultPort = sc.sslPort.toInt()) }
         }
+
         topic<Communication.Agent.ChangeHeaderNameEvent> { headerName ->
             topicLogger.info { "Agent got a new headerMapping: $headerName" }
             exec { requestPattern = if (headerName.isEmpty()) null else headerName }
