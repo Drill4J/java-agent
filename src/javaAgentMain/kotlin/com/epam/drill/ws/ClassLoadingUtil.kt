@@ -32,7 +32,7 @@ object ClassLoadingUtil {
         val scanItPlease = ClassPath().scanItPlease(ClassLoader.getSystemClassLoader())
         val filter = scanItPlease
             .filter { (classPath, _) ->
-                isTopLevelClass(classPath) && pp.packagesPrefixes.any { packageName ->
+                classPath.endsWith(".class") && isTopLevelClass(classPath) && pp.packagesPrefixes.any { packageName ->
                     isAllowedClass(classPath, packageName)
                 }
             }
