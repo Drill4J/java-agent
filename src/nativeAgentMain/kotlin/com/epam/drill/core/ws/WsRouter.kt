@@ -1,8 +1,8 @@
 package com.epam.drill.core.ws
 
-import api.dto.*
 import com.epam.drill.*
 import com.epam.drill.api.*
+import com.epam.drill.api.dto.*
 import com.epam.drill.common.*
 import com.epam.drill.common.ws.*
 import com.epam.drill.core.*
@@ -60,7 +60,7 @@ fun topicRegister() =
 
         topic<Communication.Agent.UpdateLoggingConfigEvent, LoggingConfig> { lc ->
             topicLogger.info { "Agent got a logging config: $lc" }
-            logConfig.value = LoggerConfig(lc.trace, lc.debug, lc.info, lc.warn)
+            logConfig.value = LoggerConfig(lc.trace, lc.debug, lc.info, lc.warn).freeze()
         }
 
         topic<Communication.Agent.UpdateConfigEvent, ServiceConfig> { sc ->
