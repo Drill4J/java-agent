@@ -35,7 +35,7 @@ object ClassLoadingUtil {
                 classPath.endsWith(".class") && isTopLevelClass(classPath) && pp.packagesPrefixes.any { packageName ->
                     isAllowedClass(classPath, packageName)
                 }
-            }
+            }.excludePackages("com/epam/drill")
 
         AgentPluginData.classMap = filter.map { (resourceName, classInfo) ->
             val className = resourceName
@@ -52,5 +52,8 @@ object ClassLoadingUtil {
 
         return String.serializer().list stringify encodedClasses
     }
+
+    private fun Map<String, ClassLoader>.excludePackages(prefix: String) =
+        filterKeys { classPath -> !classPath.startsWith(prefix) }
 
 }
