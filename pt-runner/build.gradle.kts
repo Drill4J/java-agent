@@ -7,7 +7,6 @@ plugins {
 }
 
 val target = when {
-    isDevMode -> "nativeAgent"
     HostManager.hostIsMingw -> "mingwX64"
     HostManager.hostIsLinux -> "linuxX64"
     else -> "macosX64"

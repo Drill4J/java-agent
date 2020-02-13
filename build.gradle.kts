@@ -8,34 +8,46 @@ plugins {
     id("kotlinx-serialization")
     distribution
     `maven-publish`
+    id("com.epam.drill.cross-compilation")
     id("com.github.johnrengelman.shadow") version "5.1.0"
 }
 
 val libName = "drill-agent"
 
 kotlin {
-    targets {
-        if (isDevMode) {
-            currentTarget("nativeAgent") {
-                binaries { sharedLib(libName, setOf(DEBUG)) }
-                binaries.forEach {
-                    if (HostManager.hostIsMingw)
-                        it.linkerOpts("-lpsapi", "-lwsock32", "-lws2_32", "-lmswsock")
-                }
-            }
-        } else {
-            mingwX64 {
-                binaries { sharedLib(libName, setOf(DEBUG)) }
-                binaries.forEach {
-                    it.linkerOpts("-lpsapi", "-lwsock32", "-lws2_32", "-lmswsock")
-                }
-            }
-            macosX64 { binaries { sharedLib(libName, setOf(DEBUG)) } }
-            linuxX64 { binaries { sharedLib(libName, setOf(DEBUG)) } }
-        }
-        jvm("javaAgent")
+    crossCompilation {
 
+        common {
+            defaultSourceSet {
+                dependsOn(sourceSets.named("commonMain").get())
+                dependencies {
+                    implementation("org.jetbrains.kotlinx:kotlinx-serialization-runtime-native:$serializationRuntimeVersion")
+                    implementation("com.epam.drill:jvmapi-native:$drillJvmApiLibVersion")
+                    implementation("com.epam.drill.transport:core:$drillTransportLibVerison")
+                    implementation("com.benasher44:uuid:0.0.6")
+                    implementation("com.epam.drill.interceptor:http:$drillHttpInterceptorVersion")
+                    implementation("com.epam.drill:drill-agent-part:$drillApiVersion")
+                    implementation("com.epam.drill:common:$drillApiVersion")
+                    implementation("com.epam.drill.logger:logger:$drillLogger")
+                    implementation(project(":util"))
+                }
+            }
+        }
     }
+    setOf(
+        linuxX64(),
+        mingwX64(),
+        macosX64()
+    ).forEach {
+        it.binaries { sharedLib(libName, setOf(DEBUG)) }
+        it.binaries.forEach {
+            if (HostManager.hostIsMingw)
+                it.linkerOpts("-lpsapi", "-lwsock32", "-lws2_32", "-lmswsock")
+        }
+    }
+
+    jvm("javaAgent")
+
     targets.filterIsInstance<KotlinNativeTarget>().forEach {
         val cinterops = it.compilations["test"].cinterops
         cinterops?.create("jvmapiStub")
@@ -43,19 +55,6 @@ kotlin {
     }
 
     sourceSets {
-        val commonNativeMain = maybeCreate("nativeAgentMain")
-        @Suppress("UNUSED_VARIABLE") val commonNativeTest = maybeCreate("nativeAgentTest")
-        if (!isDevMode) {
-            targets.filterIsInstance<KotlinNativeTarget>().forEach {
-                it.compilations.forEach { knCompilation ->
-                    if (knCompilation.name == "main")
-                        knCompilation.defaultSourceSet { dependsOn(commonNativeMain) }
-                    else
-                        knCompilation.defaultSourceSet { dependsOn(commonNativeTest) }
-
-                }
-            }
-        }
         jvm("javaAgent").compilations["main"].defaultSourceSet {
             dependencies {
                 implementation(kotlin("stdlib"))
@@ -88,20 +87,6 @@ kotlin {
             }
         }
 
-        named("nativeAgentMain") {
-            dependencies {
-                implementation("org.jetbrains.kotlinx:kotlinx-serialization-runtime-native:$serializationRuntimeVersion")
-                implementation("com.epam.drill:jvmapi-native:$drillJvmApiLibVersion")
-                implementation("com.epam.drill.transport:core:$drillTransportLibVerison")
-                implementation("com.benasher44:uuid:0.0.6")
-                implementation("com.epam.drill.hook:platform:$drillHookVersion")
-                implementation("com.epam.drill:drill-agent-part:$drillApiVersion")
-                implementation("com.epam.drill:common:$drillApiVersion")
-                implementation("com.epam.drill.logger:logger:$drillLogger")
-                implementation(project(":core"))
-                implementation(project(":util"))
-            }
-        }
     }
 
 }

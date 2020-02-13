@@ -1,25 +1,23 @@
 package com.epam.drill.core.methodbind
 
 import com.epam.drill.core.*
-import com.epam.drill.hook.http.*
 import com.epam.drill.jvmapi.*
 import com.epam.drill.jvmapi.gen.*
+import com.epam.drill.interceptor.configureHttpInterceptor
+import com.epam.drill.interceptor.headersForInject
 import mu.*
+import com.epam.drill.interceptor.readHttpCallback
+import com.epam.drill.interceptor.writeHttpCallback
+import kotlin.native.SharedImmutable
+import kotlin.native.concurrent.*
 
 @SharedImmutable
 val httpRequestLogger = KotlinLogging.logger("http requestLogger")
 
 
 fun configureHttp() {
-    configureHttpHooks()
-
-    addHttpReadCallbacks { bytes ->
-        bytes?.let {
-            fillRequestToHolder(it.decodeToString())
-        }
-    }
-
-    addHttpWriteCallback {
+    configureHttpInterceptor()
+    headersForInject.value = {
         val agentId = generateId()
         val adminUrl = retrieveAdminUrl()
         val sessionId = sessionId()
@@ -29,7 +27,12 @@ fun configureHttp() {
         ) + if (sessionId != null)
             mapOf("drill-session-id" to sessionId)
         else emptyMap()
-    }
+    }.freeze()
+    readHttpCallback.value = { bytes: ByteArray ->
+        fillRequestToHolder(bytes.decodeToString())
+        httpRequestLogger.debug { "READ" }
+    }.freeze()
+    writeHttpCallback.value = { _: ByteArray -> httpRequestLogger.debug { "WRITE" } }.freeze()
 
 }
 
