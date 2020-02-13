@@ -2,11 +2,16 @@
 
 package com.epam.drill.ws
 
+import com.alibaba.ttl.*
 import com.epam.drill.plugin.*
 import com.epam.drill.session.DrillRequest
 import java.util.logging.*
 
 object RequestHolder {
+
+    init {
+        DrillRequest.threadStorage = TransmittableThreadLocal<com.epam.drill.plugin.DrillRequest>()
+    }
 
     private var sessionIdHeaderName: String = ""
     private val log = Logger.getLogger(RequestHolder::class.java.name)
@@ -41,6 +46,5 @@ object RequestHolder {
     fun sessionId(): String? {
         return DrillRequest.threadStorage.get()?.drillSessionId
     }
-
 
 }

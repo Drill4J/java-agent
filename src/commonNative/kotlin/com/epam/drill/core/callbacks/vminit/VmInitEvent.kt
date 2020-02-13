@@ -2,9 +2,8 @@
 
 package com.epam.drill.core.callbacks.vminit
 
-import com.epam.drill.core.*
-import com.epam.drill.core.agent.*
-import com.epam.drill.core.methodbind.*
+import com.epam.drill.*
+import com.epam.drill.core.transport.*
 import com.epam.drill.core.ws.*
 import com.epam.drill.jvmapi.gen.*
 import kotlinx.cinterop.*
@@ -19,7 +18,6 @@ fun jvmtiEventVMInitEvent(env: CPointer<jvmtiEnvVar>?, jniEnv: CPointer<JNIEnvVa
     initRuntimeIfNeeded()
     configureHttp()
     wsThread.execute(TransferMode.UNSAFE, {}) {
-        calculateBuildVersion()
         WsSocket().connect(exec { adminAddress.toString() })
     }
 }

@@ -1,6 +1,6 @@
 package com.epam.drill.core.callbacks.classloading
 
-import com.epam.drill.core.*
+import com.epam.drill.*
 import com.epam.drill.core.plugin.loader.*
 import com.epam.drill.jvmapi.gen.*
 import kotlinx.cinterop.*

@@ -1,10 +1,14 @@
 package com.epam.drill.core
 
+import com.epam.drill.*
+import com.epam.drill.agent.*
 import com.epam.drill.api.*
-import com.epam.drill.core.agent.*
+import com.epam.drill.common.*
+import com.epam.drill.core.transport.*
 import com.epam.drill.jvmapi.*
 import com.epam.drill.jvmapi.gen.*
 import kotlinx.cinterop.*
+import kotlinx.serialization.*
 import mu.*
 import platform.posix.*
 import kotlin.native.concurrent.*
@@ -29,6 +33,25 @@ private fun initAgentGlobals(vmPointer: CPointer<JavaVMVar>) {
 }
 
 private fun runAgent(options: String?) {
+
+    getClassesByConfig = {
+        val packagesPrefixes = exec { agentConfig.packagesPrefixes }
+        val classLoadingUtilClass = FindClass("com/epam/drill/ws/ClassLoadingUtil")
+        val selfMethodId: jfieldID? =
+            GetStaticFieldID(classLoadingUtilClass, "INSTANCE", "Lcom/epam/drill/ws/ClassLoadingUtil;")
+        val classLoadingUtil: jobject? = GetStaticObjectField(classLoadingUtilClass, selfMethodId)
+        val retrieveClassesData: jmethodID? =
+            GetMethodID(classLoadingUtilClass, "retrieveClassesData", "(Ljava/lang/String;)Ljava/lang/String;")
+        val jsonClasses = CallObjectMethod(classLoadingUtil, retrieveClassesData, NewStringUTF(packagesPrefixes))
+        String.serializer().list parse (jsonClasses.toKString() ?: "[]")
+    }
+
+    setPackagesPrefixes = { prefixes -> exec { agentConfig.packagesPrefixes = prefixes } }
+
+    sessionStorage = { sessionId -> fillRequestToHolder(sessionId) }
+    drillSessionId = { sessionId() }
+
+
     options.asAgentParams().apply {
         val logger = KotlinLogging.logger("StartLogger")
         logger.info { "init params: $this" }

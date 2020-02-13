@@ -38,7 +38,7 @@ kotlin {
                     implementation("com.epam.drill:drill-agent-part:$drillApiVersion")
                     implementation("com.epam.drill:common:$drillApiVersion")
                     implementation("com.epam.drill.logger:logger:$drillLogger")
-                    implementation(project(":util"))
+                    implementation("com.epam.drill.agent:agent-core:$version")
                 }
             }
         }

@@ -1,27 +1,22 @@
-package com.epam.drill.core.agent
+package com.epam.drill.agent
 
 import com.benasher44.uuid.*
 import com.epam.drill.*
 import com.epam.drill.common.*
 import com.epam.drill.common.ws.*
-import com.epam.drill.core.*
-import com.epam.drill.jvmapi.*
-import com.epam.drill.jvmapi.gen.*
 import kotlinx.cinterop.*
-import kotlinx.serialization.*
-import mu.*
 import platform.posix.*
 
 fun performAgentInitialization(initialParams: Map<String, String>) {
     val adminAddress = initialParams.getValue("adminAddress")
     val agentId = initialParams.getValue("agentId")
-    val buildVersion = initialParams["buildVersion"] ?: ""
-    val instanceId = initialParams["instanceId"]?: uuid4().toString()
-    val serviceGroupId = initialParams["serviceGroupId"] ?: ""
+    val buildVersion = initialParams["buildVersion"] ?: "unspecified"
+    val instanceId = initialParams["instanceId"] ?: uuid4().toString()
+    val groupId = initialParams["groupId"] ?: initialParams["serviceGroupId"] ?: ""
     val drillInstallationDir = initialParams["drillInstallationDir"] ?: javaProcess().firstAgentPath
     exec {
         this.drillInstallationDir = drillInstallationDir
-        this.agentConfig = AgentConfig(agentId, instanceId, buildVersion, serviceGroupId, AGENT_TYPE)
+        this.agentConfig = AgentConfig(agentId, instanceId, buildVersion, groupId, AGENT_TYPE)
         this.adminAddress = URL("ws://$adminAddress")
     }
 }
@@ -72,37 +67,6 @@ fun javaProcess(): JavaProcess = getProcessInfo()
         javaProcess
     }
 
-
-fun calculateBuildVersion() {
-    val agentConfig = exec { agentConfig }
-    val initializerClass = FindClass("com/epam/drill/ws/Initializer")
-    val selfMethodId: jfieldID? =
-        GetStaticFieldID(initializerClass, "INSTANCE", "Lcom/epam/drill/ws/Initializer;")
-    val initializer: jobject? = GetStaticObjectField(initializerClass, selfMethodId)
-    if (agentConfig.buildVersion.isEmpty()) {
-        val calculateBuild: jmethodID? = GetMethodID(initializerClass, "calculateBuild", "()I")
-        val buildVersion = CallIntMethod(initializer, calculateBuild)
-
-        agentConfig.buildVersion = buildVersion.toString()
-    }
-    KotlinLogging.logger("BuildVersionLogger").info { "Calculated build version: ${agentConfig.buildVersion}" }
-}
-
-fun getClassesByConfig(): List<String> {
-    val packagesPrefixes = exec { agentConfig.packagesPrefixes }
-    val classLoadingUtilClass = FindClass("com/epam/drill/ws/ClassLoadingUtil")
-    val selfMethodId: jfieldID? =
-        GetStaticFieldID(classLoadingUtilClass, "INSTANCE", "Lcom/epam/drill/ws/ClassLoadingUtil;")
-    val classLoadingUtil: jobject? = GetStaticObjectField(classLoadingUtilClass, selfMethodId)
-    val retrieveClassesData: jmethodID? =
-        GetMethodID(classLoadingUtilClass, "retrieveClassesData", "(Ljava/lang/String;)Ljava/lang/String;")
-    val jsonClasses = CallObjectMethod(classLoadingUtil, retrieveClassesData, NewStringUTF(packagesPrefixes))
-    return String.serializer().list parse (jsonClasses.toKString() ?: "[]")
-}
-
-fun setPackagesPrefixes(prefixes: String) {
-    exec { agentConfig.packagesPrefixes = prefixes }
-}
 
 fun getProcessInfo(bufferSize: Int = 128): List<String> = memScoped {
     val buffer = " ".repeat(bufferSize).cstr.getPointer(this)
