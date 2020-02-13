@@ -6,15 +6,24 @@ import org.jetbrains.kotlin.konan.target.*
 plugins {
     id("kotlin-multiplatform")
     id("kotlinx-serialization")
-    distribution
-    `maven-publish`
     id("com.epam.drill.cross-compilation")
     id("com.github.johnrengelman.shadow") version "5.1.0"
+    distribution
+    `maven-publish`
 }
 
 val libName = "drill-agent"
 
 kotlin {
+    setOf(
+        mingwX64 { binaries.all { linkerOpts("-lpsapi", "-lwsock32", "-lws2_32", "-lmswsock") } },
+        linuxX64(),
+        macosX64()
+    ).forEach { target ->
+        target.compilations["test"]?.cinterops?.apply { create("jvmapiStub");create("testSocket") }
+        target.binaries { sharedLib(libName, setOf(DEBUG)) }
+    }
+
     crossCompilation {
 
         common {
@@ -34,28 +43,9 @@ kotlin {
             }
         }
     }
-    setOf(
-        linuxX64(),
-        mingwX64(),
-        macosX64()
-    ).forEach {
-        it.binaries { sharedLib(libName, setOf(DEBUG)) }
-        it.binaries.forEach {
-            if (HostManager.hostIsMingw)
-                it.linkerOpts("-lpsapi", "-lwsock32", "-lws2_32", "-lmswsock")
-        }
-    }
 
-    jvm("javaAgent")
-
-    targets.filterIsInstance<KotlinNativeTarget>().forEach {
-        val cinterops = it.compilations["test"].cinterops
-        cinterops?.create("jvmapiStub")
-        cinterops?.create("testSocket")
-    }
-
-    sourceSets {
-        jvm("javaAgent").compilations["main"].defaultSourceSet {
+    jvm {
+        compilations["main"].defaultSourceSet {
             dependencies {
                 implementation(kotlin("stdlib"))
                 implementation(kotlin("reflect")) //TODO jarhell quick fix for kotlin jvm apps
@@ -66,13 +56,15 @@ kotlin {
                 implementation("com.alibaba:transmittable-thread-local:2.11.0")
             }
         }
-        jvm("javaAgent").compilations["test"].defaultSourceSet {
+        compilations["test"].defaultSourceSet {
             dependencies {
                 implementation(kotlin("test-junit"))
             }
         }
+    }
 
-        named("commonMain") {
+    sourceSets {
+        commonMain {
             dependencies {
                 implementation("org.jetbrains.kotlin:kotlin-stdlib-common")
                 implementation("org.jetbrains.kotlinx:kotlinx-serialization-runtime-common:$serializationRuntimeVersion")
@@ -80,7 +72,7 @@ kotlin {
                 implementation("com.epam.drill:common:$drillApiVersion")
             }
         }
-        named("commonTest") {
+        commonTest {
             dependencies {
                 implementation("org.jetbrains.kotlin:kotlin-test-common")
                 implementation("org.jetbrains.kotlin:kotlin-test-annotations-common")
@@ -89,6 +81,20 @@ kotlin {
 
     }
 
+}
+
+val jvmJar by tasks.getting(Jar::class) {
+    from(provider {
+        kotlin.jvm().compilations["main"].compileDependencyFiles.map { if (it.isDirectory) it else zipTree(it) }
+    })
+}
+
+val agentShadow by tasks.registering(ShadowJar::class) {
+    mergeServiceFiles()
+    isZip64 = true
+    relocate("kotlin", "kruntime")
+    archiveFileName.set("drillRuntime.jar")
+    from(jvmJar)
 }
 
 tasks.withType<KotlinNativeCompile> {
@@ -102,23 +108,6 @@ tasks.withType<org.jetbrains.kotlin.gradle.targets.native.tasks.KotlinNativeTest
     testLogging.showStandardStreams = true
 }
 
-val javaAgentJar by tasks.getting(Jar::class) {
-    from(provider {
-        kotlin.targets["javaAgent"].compilations["main"].compileDependencyFiles.map {
-            if (it.isDirectory) it else zipTree(it)
-        }
-    })
-}
-
-
-val agentShadow by tasks.registering(ShadowJar::class) {
-    mergeServiceFiles()
-    isZip64 = true
-    relocate("kotlin", "kruntime")
-    archiveFileName.set("drillRuntime.jar")
-    from(javaAgentJar)
-}
-
 afterEvaluate {
     val availableTarget =
         kotlin.targets.filterIsInstance<KotlinNativeTarget>().filter { HostManager().isEnabled(it.konanTarget) }
@@ -127,6 +116,7 @@ afterEvaluate {
         availableTarget.forEach {
             val name = it.name
             create(name) {
+                @Suppress("DEPRECATION")
                 baseName = name
                 contents {
                     from(tasks.getByPath(":java:proxy-agent:jar"))
