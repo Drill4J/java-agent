@@ -7,11 +7,34 @@ plugins {
     id("kotlin-multiplatform")
     id("kotlinx-serialization")
     id("com.epam.drill.cross-compilation")
+    id("com.epam.drill.version.plugin")
     id("com.github.johnrengelman.shadow") version "5.1.0"
     distribution
     `maven-publish`
 }
 
+allprojects {
+    repositories {
+        mavenLocal()
+        mavenCentral()
+        jcenter()
+        maven(url = "https://dl.bintray.com/kotlin/kotlinx/")
+        maven(url = "https://dl.bintray.com/kotlin/ktor/")
+        maven(url = "https://oss.jfrog.org/artifactory/list/oss-release-local")
+    }
+
+    apply(plugin = "com.epam.drill.version.plugin")
+    tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile> {
+        kotlinOptions.allWarningsAsErrors = true
+    }
+    tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinNativeCompile> {
+        kotlinOptions.allWarningsAsErrors = true
+    }
+    configurations.all {
+        resolutionStrategy.force("org.jetbrains.kotlinx:kotlinx-coroutines-core-native:$coroutinesVersion")
+    }
+
+}
 val libName = "drill-agent"
 
 kotlin {
@@ -38,7 +61,7 @@ kotlin {
                     implementation("com.epam.drill:drill-agent-part:$drillApiVersion")
                     implementation("com.epam.drill:common:$drillApiVersion")
                     implementation("com.epam.drill.logger:logger:$drillLogger")
-                    implementation("com.epam.drill.agent:agent-core:$version")
+                    implementation("com.epam.drill.agent:agent-core:0.5.0-+")
                 }
             }
         }
@@ -119,7 +142,7 @@ afterEvaluate {
                 @Suppress("DEPRECATION")
                 baseName = name
                 contents {
-                    from(tasks.getByPath(":java:proxy-agent:jar"))
+                    from(tasks.getByPath(":proxy-agent:jar"))
                     from(agentShadow)
                     from(tasks.getByPath("link${libName.capitalize()}DebugShared${name.capitalize()}"))
                 }

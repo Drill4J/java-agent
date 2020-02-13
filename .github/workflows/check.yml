@@ -1,0 +1,59 @@
+name: Check agent
+on:
+  pull_request:
+    branches:
+      - develop
+
+jobs:
+  check_nix:
+    name: Check for nix platforms (Linux)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v1
+      - name: Gradle Cache
+        id: cache-gradle
+        uses: actions/cache@v1
+        with:
+          path: ~/.gradle/caches
+          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle.kts') }}
+          restore-keys: |
+            ${{ runner.os }}-gradle-
+      - uses: actions/checkout@v1
+      - name: Konan Cache
+        id: cache-konan
+        uses: actions/cache@v1
+        with:
+          path: ~/.konan
+          key: ${{ runner.os }}-konan-${{ hashFiles('**/*.gradle.kts') }}
+          restore-keys: |
+            ${{ runner.os }}-gradle-
+      - uses: actions/checkout@v1
+      - name: Check
+        run: |
+          gradle --no-daemon -si check
+  check_windlows:
+    name: Check for windows platform
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v1
+      - name: Gradle Cache
+        id: cache-gradle
+        uses: actions/cache@v1
+        with:
+          path: ~/.gradle/caches
+          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle.kts') }}
+          restore-keys: |
+            ${{ runner.os }}-gradle-
+      - uses: actions/checkout@v1
+      - name: Konan Cache
+        id: cache-konan
+        uses: actions/cache@v1
+        with:
+          path: ~/.konan
+          key: ${{ runner.os }}-konan-${{ hashFiles('**/*.gradle.kts') }}
+          restore-keys: |
+            ${{ runner.os }}-gradle-
+      - uses: actions/checkout@v1
+      - name: Check
+        run: |
+          gradle --no-daemon -si check
