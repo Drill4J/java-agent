@@ -24,10 +24,10 @@ allprojects {
     }
 
     apply(plugin = "com.epam.drill.version.plugin")
-    tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile> {
+    tasks.withType<KotlinCompile> {
         kotlinOptions.allWarningsAsErrors = true
     }
-    tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinNativeCompile> {
+    tasks.withType<KotlinNativeCompile> {
         kotlinOptions.allWarningsAsErrors = true
     }
     configurations.all {
@@ -61,7 +61,7 @@ kotlin {
                     implementation("com.epam.drill:drill-agent-part:$drillApiVersion")
                     implementation("com.epam.drill:common:$drillApiVersion")
                     implementation("com.epam.drill.logger:logger:$drillLogger")
-                    implementation("com.epam.drill.agent:agent-core:0.5.0-+")
+                    implementation("com.epam.drill.agent:agent:$drillAgentCoreVersion")
                 }
             }
         }
