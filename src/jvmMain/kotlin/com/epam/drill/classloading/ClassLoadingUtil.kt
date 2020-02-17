@@ -1,6 +1,6 @@
 @file:Suppress("unused")
 
-package com.epam.drill.ws
+package com.epam.drill.classloading
 
 import com.epam.drill.*
 import com.epam.drill.common.*
@@ -29,9 +29,17 @@ object ClassLoadingUtil {
 
     fun retrieveClassesData(config: String): String {
         val pp = PackagesPrefixes.serializer() parse config
-        val scanItPlease = ClassPath().scanItPlease(ClassLoader.getSystemClassLoader())
-        val filter = scanItPlease
-            .filter { (classPath, _) ->
+        val systemClassLoader = ClassLoader.getSystemClassLoader()
+        val classLoaders = getAllThreadsClassLoaders().filter { classLoader ->
+            systemClassLoader in classLoader.hierarchies(arrayListOf(classLoader))
+        }
+        val scanItPlease: Map<String, ClassLoader> =
+            classLoaders.map { cl -> ClassPath().scanItPlease(cl) }
+                .flatMap { it.entries }
+                .map { it.key to it.value }
+                .toMap()
+        val filter: Map<String, ClassLoader> = scanItPlease
+            .filterKeys { classPath ->
                 classPath.endsWith(".class") && isTopLevelClass(classPath) && pp.packagesPrefixes.any { packageName ->
                     isAllowedClass(classPath, packageName)
                 }
@@ -55,5 +63,15 @@ object ClassLoadingUtil {
 
     private fun Map<String, ClassLoader>.excludePackages(prefix: String) =
         filterKeys { classPath -> !classPath.startsWith(prefix) }
+
+
+    private tailrec fun ClassLoader.hierarchies(result: ArrayList<ClassLoader>): ArrayList<ClassLoader> =
+        when (parent) {
+            null -> result
+            else -> {
+                result.add(parent)
+                parent.hierarchies(result)
+            }
+        }
 
 }

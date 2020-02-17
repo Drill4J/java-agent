@@ -1,4 +1,4 @@
-package com.epam.drill.ws
+package com.epam.drill.classloading
 
 import java.util.*
 
@@ -13,3 +13,6 @@ fun convertClassPathToBytecodeView(classPath: String) = classPath
     .replace(".", "/")
 
 fun ByteArray.encode(): String = Base64.getEncoder().encodeToString(this)
+
+fun getAllThreadsClassLoaders() =
+    (Thread.getAllStackTraces().keys.mapNotNull { it.contextClassLoader } + ClassLoader.getSystemClassLoader()).distinct()
