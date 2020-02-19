@@ -36,10 +36,7 @@ private fun runAgent(options: String?) {
 
     getClassesByConfig = {
         val packagesPrefixes = exec { agentConfig.packagesPrefixes }
-        val classLoadingUtilClass = FindClass("com/epam/drill/ws/ClassLoadingUtil")
-        val selfMethodId: jfieldID? =
-            GetStaticFieldID(classLoadingUtilClass, "INSTANCE", "Lcom/epam/drill/ws/ClassLoadingUtil;")
-        val classLoadingUtil: jobject? = GetStaticObjectField(classLoadingUtilClass, selfMethodId)
+        val (classLoadingUtilClass, classLoadingUtil) = classLoadingUtilInstance()
         val retrieveClassesData: jmethodID? =
             GetMethodID(classLoadingUtilClass, "retrieveClassesData", "(Ljava/lang/String;)Ljava/lang/String;")
         val jsonClasses = CallObjectMethod(classLoadingUtil, retrieveClassesData, NewStringUTF(packagesPrefixes))
@@ -103,6 +100,13 @@ private fun callbackRegister() {
     enableJvmtiEventNativeMethodBind()
 }
 
+fun classLoadingUtilInstance(): Pair<jclass?, jobject?> {
+    val initializerClass = FindClass("com/epam/drill/classloading/ClassLoadingUtil")
+    val selfMethodId: jfieldID? =
+        GetStaticFieldID(initializerClass, "INSTANCE", "Lcom/epam/drill/classloading/ClassLoadingUtil;")
+    val initializer: jobject? = GetStaticObjectField(initializerClass, selfMethodId)
+    return initializerClass to initializer
+}
 
 @Suppress("UNUSED_PARAMETER")
 fun vmDeathEvent(jvmtiEnv: CPointer<jvmtiEnvVar>?, jniEnv: CPointer<JNIEnvVar>?) {

@@ -1,4 +1,4 @@
-package com.epam.drill.ws
+package com.epam.drill.classloading
 
 import java.util.*
 
