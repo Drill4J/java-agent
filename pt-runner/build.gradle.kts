@@ -6,11 +6,7 @@ plugins {
     application
 }
 
-val target = when {
-    HostManager.hostIsMingw -> "mingwX64"
-    HostManager.hostIsLinux -> "linuxX64"
-    else -> "macosX64"
-}
+val target = HostManager.host.presetName
 
 val agentJavaProject = rootProject
 

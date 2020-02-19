@@ -4,6 +4,7 @@ import com.epam.drill.*
 import com.epam.drill.agent.*
 import com.epam.drill.api.*
 import com.epam.drill.common.*
+import com.epam.drill.core.plugin.loader.*
 import com.epam.drill.core.transport.*
 import com.epam.drill.jvmapi.*
 import com.epam.drill.jvmapi.gen.*
@@ -36,18 +37,19 @@ private fun runAgent(options: String?) {
 
     getClassesByConfig = {
         val packagesPrefixes = exec { agentConfig.packagesPrefixes }
-        val (classLoadingUtilClass, classLoadingUtil) = classLoadingUtilInstance()
+        val (serviceClass, service) = dataService()
         val retrieveClassesData: jmethodID? =
-            GetMethodID(classLoadingUtilClass, "retrieveClassesData", "(Ljava/lang/String;)Ljava/lang/String;")
-        val jsonClasses = CallObjectMethod(classLoadingUtil, retrieveClassesData, NewStringUTF(packagesPrefixes))
+            GetMethodID(serviceClass, "retrieveClassesData", "(Ljava/lang/String;)Ljava/lang/String;")
+        val jsonClasses = CallObjectMethod(service, retrieveClassesData, NewStringUTF(packagesPrefixes))
         String.serializer().list parse (jsonClasses.toKString() ?: "[]")
     }
 
     setPackagesPrefixes = { prefixes -> exec { agentConfig.packagesPrefixes = prefixes } }
 
-    sessionStorage = { sessionId -> fillRequestToHolder(sessionId) }
-    drillSessionId = { sessionId() }
+    sessionStorage = ::fillRequestToHolder
+    drillSessionId = ::sessionId
 
+    loadPlugin = ::loadPluginForJvm
 
     options.asAgentParams().apply {
         val logger = KotlinLogging.logger("StartLogger")
@@ -98,14 +100,6 @@ private fun callbackRegister() {
     enableJvmtiEventVmInit()
     enableJvmtiEventClassFileLoadHook()
     enableJvmtiEventNativeMethodBind()
-}
-
-fun classLoadingUtilInstance(): Pair<jclass?, jobject?> {
-    val initializerClass = FindClass("com/epam/drill/classloading/ClassLoadingUtil")
-    val selfMethodId: jfieldID? =
-        GetStaticFieldID(initializerClass, "INSTANCE", "Lcom/epam/drill/classloading/ClassLoadingUtil;")
-    val initializer: jobject? = GetStaticObjectField(initializerClass, selfMethodId)
-    return initializerClass to initializer
 }
 
 @Suppress("UNUSED_PARAMETER")

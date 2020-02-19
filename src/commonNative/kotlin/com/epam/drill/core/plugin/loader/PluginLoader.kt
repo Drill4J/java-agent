@@ -2,7 +2,6 @@ package com.epam.drill.core.plugin.loader
 
 import com.epam.drill.*
 import com.epam.drill.common.*
-import com.epam.drill.core.*
 import com.epam.drill.core.exceptions.*
 import com.epam.drill.jvmapi.*
 import com.epam.drill.jvmapi.gen.*
@@ -13,26 +12,36 @@ import mu.*
 @SharedImmutable
 val plLogger = KotlinLogging.logger("plLogger")
 
-fun loadPlugin(pluginFilePath: String, pluginConfig: PluginMetadata) {
+fun dataService(): Pair<jclass?, jobject?> {
+    val className = "com/epam/drill/agent/DataService"
+    val initializerClass = FindClass(className)
+    val selfMethodId: jfieldID? =
+        GetStaticFieldID(initializerClass, "INSTANCE", "L$className;")
+    val initializer: jobject? = GetStaticObjectField(initializerClass, selfMethodId)
+    return initializerClass to initializer
+}
+
+fun loadPluginForJvm(pluginFilePath: String, pluginConfig: PluginMetadata) {
     AttachNativeThreadToJvm()
     AddToSystemClassLoaderSearch(pluginFilePath)
     plLogger.info { "System classLoader extends by '$pluginFilePath' path" }
     try {
         val pluginId = pluginConfig.id
-        val (initializerClass, initializer) = classLoadingUtilInstance()
+        val (serviceClass, service) = dataService()
         val retrieveApiClass: jmethodID? =
-            GetMethodID(initializerClass, "retrieveApiClass", "(Ljava/lang/String;)Ljava/lang/Class;")
-        val pluginApiClass: jclass = CallObjectMethod(initializer, retrieveApiClass, NewStringUTF(pluginFilePath))!!
+            GetMethodID(serviceClass, "retrieveApiClass", "(Ljava/lang/String;)Ljava/lang/Class;")
+        val pluginApiClass: jclass = CallObjectMethod(service, retrieveApiClass, NewStringUTF(pluginFilePath))!!
 
+        val pluginPayloadClassName = "com/epam/drill/plugin/api/PluginPayload"
         val getPayloadClass: jmethodID? =
-            GetMethodID(initializerClass, "getPluginPayload", "(Ljava/lang/String;)Lcom/epam/drill/plugin/api/PluginPayload;")
-        val payload: jobject = CallObjectMethod(initializer, getPayloadClass, NewStringUTF(pluginId))!!
+            GetMethodID(serviceClass, "getPluginPayload", "(Ljava/lang/String;)L$pluginPayloadClassName;")
+        val payload: jobject = CallObjectMethod(service, getPayloadClass, NewStringUTF(pluginId))!!
 
         val userPlugin: jobject =
             NewGlobalRef(
                 NewObjectA(
                     pluginApiClass,
-                    GetMethodID(pluginApiClass, "<init>", "(Lcom/epam/drill/plugin/api/PluginPayload;)V"),
+                    GetMethodID(pluginApiClass, "<init>", "(L$pluginPayloadClassName;)V"),
                     nativeHeap.allocArray(1.toLong()) {
                         l = payload
                     }
@@ -63,4 +72,3 @@ fun loadPlugin(pluginFilePath: String, pluginConfig: PluginMetadata) {
         }
     }
 }
-

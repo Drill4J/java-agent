@@ -1,15 +1,11 @@
-package com.epam.drill.classloading
+package com.epam.drill.agent.classloading
 
 import java.io.*
 import java.net.*
 import java.util.*
 import java.util.jar.*
 
-fun MutableMap<String, ClassLoader>.getByteCodeOf(className: String) = this[className]?.url(className)?.readBytes()
-fun ClassLoader.url(resourceName: String): URL {
-    return this.getResource(resourceName) ?: throw NoSuchElementException(resourceName)
-}
-
+//TODO Kotlinize
 class ClassPath {
     val scannedUris = mutableSetOf<File>()
     val resources = mutableMapOf<ClassLoader, MutableSet<String>>()
@@ -20,7 +16,7 @@ class ClassPath {
             scan(key, value)
         }
         val map = resources.map { (k, v) ->
-            v.associate { it to k }
+            v.associateWith { k }
         }
         val mutableMapOf = mutableMapOf<String, ClassLoader>()
         map.forEach {
