@@ -2,6 +2,7 @@ package com.epam.drill.core.plugin.loader
 
 import com.epam.drill.*
 import com.epam.drill.common.*
+import com.epam.drill.core.*
 import com.epam.drill.core.exceptions.*
 import com.epam.drill.jvmapi.*
 import com.epam.drill.jvmapi.gen.*
@@ -18,10 +19,7 @@ fun loadPlugin(pluginFilePath: String, pluginConfig: PluginMetadata) {
     plLogger.info { "System classLoader extends by '$pluginFilePath' path" }
     try {
         val pluginId = pluginConfig.id
-        val initializerClass = FindClass("com/epam/drill/ws/ClassLoadingUtil")
-        val selfMethodId: jfieldID? =
-            GetStaticFieldID(initializerClass, "INSTANCE", "Lcom/epam/drill/ws/ClassLoadingUtil;")
-        val initializer: jobject? = GetStaticObjectField(initializerClass, selfMethodId)
+        val (initializerClass, initializer) = classLoadingUtilInstance()
         val retrieveApiClass: jmethodID? =
             GetMethodID(initializerClass, "retrieveApiClass", "(Ljava/lang/String;)Ljava/lang/Class;")
         val pluginApiClass: jclass = CallObjectMethod(initializer, retrieveApiClass, NewStringUTF(pluginFilePath))!!

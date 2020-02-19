@@ -82,6 +82,7 @@ kotlin {
         compilations["test"].defaultSourceSet {
             dependencies {
                 implementation(kotlin("test-junit"))
+                implementation("org.junit.jupiter:junit-jupiter:5.5.2")
             }
         }
     }

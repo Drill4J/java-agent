@@ -1,6 +1,6 @@
 @file:Suppress("unused")
 
-package com.epam.drill.ws
+package com.epam.drill.classloading
 
 import com.epam.drill.*
 import com.epam.drill.common.*
