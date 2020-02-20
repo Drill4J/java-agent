@@ -5,15 +5,20 @@ import java.net.*
 import java.util.*
 import java.util.jar.*
 
+private const val DRILL_PACKAGE = "com/epam/drill"
+
 //TODO Kotlinize
-class ClassPath {
-    val scannedUris = mutableSetOf<File>()
+class ClassPath(
+    private val packagePrefixes: Iterable<String>
+) {
+    val scannedUris = mutableSetOf<URL>()
     val resources = mutableMapOf<ClassLoader, MutableSet<String>>()
 
-
-    fun scanItPlease(classLoader: ClassLoader): MutableMap<String, ClassLoader> {
-        for ((key, value) in getClassPathEntries(classLoader)) {
-            scan(key, value)
+    fun scan(classLoaders: Iterable<ClassLoader>): MutableMap<String, ClassLoader> {
+        classLoaders.forEach { classLoader ->
+            getClassPathEntries(classLoader).forEach { (key, value) ->
+                scan(key, value)
+            }
         }
         val map = resources.map { (k, v) ->
             v.associateWith { k }
@@ -25,44 +30,61 @@ class ClassPath {
         return mutableMapOf
     }
 
-
     @Throws(IOException::class)
-    fun scan(file: File, classloader: ClassLoader) {
-        if (scannedUris.add(file.canonicalFile)) {
-            scanFrom(file, classloader)
+    fun scan(url: URL, classloader: ClassLoader) {
+        if (scannedUris.add(url)) {
+            scanFrom(url, classloader)
         }
     }
 
     @Throws(IOException::class)
-    private fun scanFrom(file: File, classloader: ClassLoader) {
-        try {
-            if (!file.exists()) {
-                return
+    private fun scanFrom(url: URL, classloader: ClassLoader) {
+        when (url.protocol) {
+            "file" -> {
+                val file = toFile(url)
+
+                try {
+                    if (!file.exists()) {
+                        return
+                    }
+                } catch (e: SecurityException) {
+
+                    return
+                }
+                if (file.isDirectory) {
+                    scanDirectory(classloader, file)
+                } else {
+                    scanJar(url, classloader)
+                }
             }
-        } catch (e: SecurityException) {
-
-            return
+            "jar" -> {
+                scanJar(url, classloader)
+            }
+            else -> Unit
         }
 
-        if (file.isDirectory) {
-            scanDirectory(classloader, file)
-        } else {
-            scanJar(file, classloader)
-        }
     }
 
     @Throws(IOException::class)
-    private fun scanJar(file: File, classloader: ClassLoader) {
-        val jarFile: JarFile
-        try {
-            jarFile = JarFile(file)
+    private fun scanJar(jarUrl: URL, classloader: ClassLoader) {
+
+        val jarFile: JarFile = try {
+            when (jarUrl.protocol) {
+                "file" -> JarFile(toFile(jarUrl))
+                "jar" -> {
+                    val jarURLConnection = jarUrl.openConnection() as? JarURLConnection
+                    jarURLConnection?.jarFile ?: return
+                }
+                else -> return
+            }
+
         } catch (e: IOException) {
             // Not a jar file
             return
         }
 
         try {
-            for (path in getClassPathFromManifest(file, jarFile.manifest)) {
+            for (path in getClassPathFromManifest(jarUrl, jarFile.manifest)) {
                 scan(path, classloader)
             }
             scanJarFile(classloader, jarFile)
@@ -75,46 +97,43 @@ class ClassPath {
         }
     }
 
-    @Throws(MalformedURLException::class)
-    fun getClassPathEntry(jarFile: File, path: String): URL {
-        return URL(jarFile.toURI().toURL(), path)
-    }
-
-    private fun getClassPathFromManifest(jarFile: File, manifest: Manifest?): Set<File> {
+    private fun getClassPathFromManifest(jarUrl: URL, manifest: Manifest?): Set<URL> {
         if (manifest == null) {
             return setOf()
         }
-        val builder = mutableSetOf<File>()
+        val builder = mutableSetOf<URL>()
         val classpathAttribute = manifest.mainAttributes.getValue(Attributes.Name.CLASS_PATH.toString())
         if (classpathAttribute != null) {
             for (path in classpathAttribute.split(" ")) {
                 val url: URL
                 try {
-                    url = getClassPathEntry(jarFile, path)
+                    url = URL(jarUrl, path)
                 } catch (e: MalformedURLException) {
                     continue
                 }
 
                 if (url.protocol == "file") {
-                    builder.add(toFile(url))
+                    builder.add(url)
                 }
             }
         }
         return builder
     }
 
-    fun getClassPathEntries(classloader: ClassLoader): MutableMap<File, ClassLoader> {
-        val entries = mutableMapOf<File, ClassLoader>()
+    private fun getClassPathEntries(classloader: ClassLoader): MutableMap<URL, ClassLoader> {
+        val entries = mutableMapOf<URL, ClassLoader>()
         val parent = classloader.parent
         if (parent != null) {
             entries.putAll(getClassPathEntries(parent))
         }
         for (url in getClassLoaderUrls(classloader)) {
-            if (url.protocol == "file") {
-                val file = toFile(url)
-                if (!entries.containsKey(file)) {
-                    entries[file] = classloader
+            when (url.protocol) {
+                "file", "jar" -> {
+                    if (!entries.containsKey(url)) {
+                        entries[url] = classloader
+                    }
                 }
+                else -> Unit
             }
         }
         return entries
@@ -160,13 +179,12 @@ class ClassPath {
         val entries = file.entries()
         while (entries.hasMoreElements()) {
             val entry = entries.nextElement()
-            if (entry.isDirectory || entry.name == JarFile.MANIFEST_NAME) {
-                continue
+            if (entry.name.isAllowed()) {
+                if (resources[classloader] == null) {
+                    resources[classloader] = mutableSetOf()
+                }
+                resources[classloader]?.add(entry.name)
             }
-            if (resources[classloader] == null) {
-                resources[classloader] = mutableSetOf()
-            }
-            resources[classloader]?.add(entry.name)
         }
     }
 
@@ -194,7 +212,7 @@ class ClassPath {
                 }
             } else {
                 val resourceName = packagePrefix + name
-                if (resourceName != JarFile.MANIFEST_NAME) {
+                if (resourceName.isAllowed()) {
                     if (resources[classloader] == null) {
                         resources[classloader] = mutableSetOf()
                     }
@@ -204,5 +222,10 @@ class ClassPath {
         }
     }
 
-
+    private fun String.isAllowed(): Boolean = run {
+        !startsWith(DRILL_PACKAGE) && endsWith(".class") && !contains("$") &&
+            packagePrefixes.any { prefix ->
+                startsWith(prefix)
+            }
+    }
 }
