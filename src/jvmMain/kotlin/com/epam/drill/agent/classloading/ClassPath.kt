@@ -12,7 +12,7 @@ class ClassPath(
     private val packagePrefixes: Iterable<String>
 ) {
     val scannedUris = mutableSetOf<URL>()
-    val resources = mutableMapOf<ClassLoader, MutableSet<String>>()
+    val resources = IdentityHashMap<ClassLoader, MutableSet<String>>()
 
     fun scan(classLoaders: Iterable<ClassLoader>): MutableMap<String, ClassLoader> {
         classLoaders.forEach { classLoader ->
