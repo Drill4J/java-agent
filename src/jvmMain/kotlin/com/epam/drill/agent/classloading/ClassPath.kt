@@ -6,6 +6,7 @@ import java.util.*
 import java.util.jar.*
 
 private const val DRILL_PACKAGE = "com/epam/drill"
+private const val ALIBABA_PACKAGE = "com/alibaba"
 
 //TODO Kotlinize
 class ClassPath(
@@ -223,9 +224,10 @@ class ClassPath(
     }
 
     private fun String.isAllowed(): Boolean = run {
-        !startsWith(DRILL_PACKAGE) && endsWith(".class") && !contains("$") &&
-            packagePrefixes.any { prefix ->
-                startsWith(prefix)
-            }
+        !startsWith(DRILL_PACKAGE) && !startsWith(ALIBABA_PACKAGE) &&
+                endsWith(".class") && !contains("$") &&
+                packagePrefixes.any { prefix ->
+                    startsWith(prefix)
+                }
     }
 }
