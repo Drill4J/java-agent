@@ -2,8 +2,9 @@ package com.epam.drill.core
 
 import com.epam.drill.*
 import com.epam.drill.agent.*
-import com.epam.drill.api.*
 import com.epam.drill.common.*
+import com.epam.drill.core.callbacks.classloading.*
+import com.epam.drill.core.callbacks.vminit.*
 import com.epam.drill.core.plugin.loader.*
 import com.epam.drill.core.transport.*
 import com.epam.drill.jvmapi.*
@@ -28,9 +29,9 @@ fun agentOnLoad(vmPointer: CPointer<JavaVMVar>, options: String, reservedPtr: Lo
 }
 
 @Jvmapi
-private fun initAgentGlobals(vmPointer: CPointer<JavaVMVar>) {
-    agentSetup(vmPointer.pointed.value)
-    saveVmToGlobal(vmPointer)
+private fun initAgentGlobals(vmPointer: CPointer<JavaVMVar>) = memScoped {
+    vmGlobal.value = vmPointer.freeze()
+    jvmti.value = getJvmti(vmPointer.pointed).value.freeze()
 }
 
 private fun runAgent(options: String?) {
@@ -50,6 +51,28 @@ private fun runAgent(options: String?) {
     drillSessionId = ::sessionId
 
     loadPlugin = ::loadPluginForJvm
+    nativePlugin = { _, _, _ ->
+        memScoped {
+            //            val callbacks: jvmtiEventCallbacks? = gjavaVMGlob?.pointed?.callbackss
+//            val reinterpret =
+//                initPlugin?.reinterpret<CFunction<(CPointer<ByteVar>, CPointer<com.epam.drill.jvmapi.gen.jvmtiEnvVar>?, CPointer<JavaVMVar>?, CPointer<jvmtiEventCallbacks>?, CPointer<CFunction<(pluginId: CPointer<ByteVar>, message: CPointer<ByteVar>) -> Unit>>) -> COpaquePointer>>()
+//            val id = pluginId.cstr.getPointer(this)
+//            val jvmti = gdata?.pointed?.jvmti
+//            val jvm = gjavaVMGlob?.pointed?.jvm
+//            val clb = callbacks?.ptr
+//            reinterpret!!(
+//                id,
+//                jvmti,
+//                jvm,
+//                clb,
+//                sender
+//            )?.asStableRef<NativePart<*>>()?.get()
+            null
+        }
+
+    }
+
+
 
     options.asAgentParams().apply {
         val logger = KotlinLogging.logger("StartLogger")
@@ -81,25 +104,23 @@ fun String?.asAgentParams(): Map<String, String> {
     if (this.isNullOrEmpty()) return mutableMapOf()
     return try {
         this.split(",").associate {
-            val split = it.split("=")
-            split[0] to split[1]
+            val (key, value) = it.split("=")
+            key to value
         }
     } catch (parseException: Exception) {
         throw IllegalArgumentException("wrong agent parameters: $this")
     }
 }
 
-private fun callbackRegister() {
-    generateDefaultCallbacks().useContents {
-        SetEventCallbacks(this.ptr, sizeOf<jvmtiEventCallbacks>().toInt())
-        null
-    }
-    SetEventCallbacks(gjavaVMGlob?.pointed?.callbackss?.ptr, sizeOf<jvmtiEventCallbacks>().toInt())
-    gjavaVMGlob?.pointed?.callbackss?.VMDeath = staticCFunction(::vmDeathEvent)
-    enableJvmtiEventVmDeath()
-    enableJvmtiEventVmInit()
-    enableJvmtiEventClassFileLoadHook()
-    enableJvmtiEventNativeMethodBind()
+private fun callbackRegister() = memScoped {
+    val alloc = alloc<jvmtiEventCallbacks>()
+    alloc.VMInit = staticCFunction(::jvmtiEventVMInitEvent)
+    alloc.VMDeath = staticCFunction(::vmDeathEvent)
+    alloc.ClassFileLoadHook = staticCFunction(::classLoadEvent)
+    SetEventCallbacks(alloc.ptr, sizeOf<jvmtiEventCallbacks>().toInt())
+    SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_CLASS_FILE_LOAD_HOOK, null)
+    SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_VM_INIT, null)
+    SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_VM_DEATH, null)
 }
 
 @Suppress("UNUSED_PARAMETER")
@@ -117,3 +138,10 @@ fun agentOnUnload(vmPointer: CPointer<JavaVMVar>) {
 
 val drillInstallationDir: String
     get() = exec { drillInstallationDir }
+
+
+fun MemScope.getJvmti(vm: JavaVMVar): CPointerVar<jvmtiEnvVar> {
+    val jvmtiEnvPtr = alloc<CPointerVar<jvmtiEnvVar>>()
+    vm.value!!.pointed.GetEnv!!(vm.ptr, jvmtiEnvPtr.ptr.reinterpret(), JVMTI_VERSION.convert())
+    return jvmtiEnvPtr
+}

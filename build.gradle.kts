@@ -16,11 +16,11 @@ plugins {
 allprojects {
     repositories {
         mavenLocal()
-        mavenCentral()
-        jcenter()
+        maven(url = "https://oss.jfrog.org/artifactory/list/oss-release-local")
         maven(url = "https://dl.bintray.com/kotlin/kotlinx/")
         maven(url = "https://dl.bintray.com/kotlin/ktor/")
-        maven(url = "https://oss.jfrog.org/artifactory/list/oss-release-local")
+        mavenCentral()
+        jcenter()
     }
 
     apply(plugin = "com.epam.drill.version.plugin")

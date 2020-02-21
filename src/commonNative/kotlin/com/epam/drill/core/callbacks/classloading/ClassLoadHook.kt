@@ -12,13 +12,14 @@ fun classLoadEvent(
     jniEnv: CPointer<JNIEnvVar>?,
     classBeingRedefined: jclass?,
     loader: jobject?,
-    kClassName: String?,
+    clsName: CPointer<ByteVar>?,
     protection_domain: jobject?,
     classDataLen: jint,
     classData: CPointer<UByteVar>?,
     newClassDataLen: CPointer<jintVar>?,
     newData: CPointer<CPointerVar<UByteVar>>?
 ) {
+    val kClassName = clsName?.toKString()
     if (isNotSuitableClass(kClassName, classData, loader, protection_domain)) return
 
     exec { pstorage.values.filterIsInstance<InstrumentationNativePlugin>() }.forEach { instrumentedPlugin ->
