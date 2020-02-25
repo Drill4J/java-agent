@@ -8,8 +8,8 @@ import kotlinx.cinterop.*
 import platform.posix.*
 
 fun performAgentInitialization(initialParams: Map<String, String>) {
-    val adminAddress = initialParams.getValue("adminAddress")
-    val agentId = initialParams.getValue("agentId")
+    val adminAddress = initialParams["adminAddress"] ?: throw RuntimeException("")
+    val agentId = initialParams["agentId"] ?:throw RuntimeException("")
     val buildVersion = initialParams["buildVersion"] ?: "unspecified"
     val instanceId = initialParams["instanceId"] ?: uuid4().toString()
     val groupId = initialParams["groupId"] ?: initialParams["serviceGroupId"] ?: ""
