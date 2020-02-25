@@ -5,14 +5,19 @@ import java.net.*
 import java.util.*
 import java.util.jar.*
 
-private const val DRILL_PACKAGE = "com/epam/drill"
+private val excludedPaths = listOf(
+    "com/epam/drill",
+    "com/alibaba/ttl"
+)
 
 //TODO Kotlinize
 class ClassPath(
-    private val packagePrefixes: Iterable<String>
+    private val includedPaths: Iterable<String>
 ) {
     val scannedUris = mutableSetOf<URL>()
     val resources = IdentityHashMap<ClassLoader, MutableSet<String>>()
+
+    private val scannedClassLoaders = mutRefSet<ClassLoader>()
 
     fun scan(classLoaders: Iterable<ClassLoader>): MutableMap<String, ClassLoader> {
         classLoaders.forEach { classLoader ->
@@ -126,7 +131,11 @@ class ClassPath(
         if (parent != null) {
             entries.putAll(getClassPathEntries(parent))
         }
-        for (url in getClassLoaderUrls(classloader)) {
+        val urls = if (classloader !in scannedClassLoaders) {
+            scannedClassLoaders.add(classloader)
+            classloader.getUrls()
+        } else emptyList()
+        for (url in urls) {
             when (url.protocol) {
                 "file", "jar" -> {
                     if (!entries.containsKey(url)) {
@@ -148,13 +157,10 @@ class ClassPath(
 
     }
 
-    private fun getClassLoaderUrls(classloader: ClassLoader): List<URL> {
-        if (classloader is URLClassLoader) {
-            return classloader.urLs.toList()
-        }
-        return if (classloader == ClassLoader.getSystemClassLoader()) {
-            parseJavaClassPath()
-        } else listOf()
+    private fun ClassLoader.getUrls(): List<URL> = when (this) {
+        is URLClassLoader -> urLs.toList()
+        ClassLoader.getSystemClassLoader() -> parseJavaClassPath()
+        else -> emptyList()
     }
 
     private fun parseJavaClassPath(): List<URL> {
@@ -223,9 +229,9 @@ class ClassPath(
     }
 
     private fun String.isAllowed(): Boolean = run {
-        !startsWith(DRILL_PACKAGE) && endsWith(".class") && !contains("$") &&
-            packagePrefixes.any { prefix ->
-                startsWith(prefix)
-            }
+        !startsWithAnyOf(excludedPaths) && !contains("$") &&
+            startsWithAnyOf(includedPaths) && endsWith(".class")
     }
 }
+
+private fun String.startsWithAnyOf(prefixes: Iterable<String>): Boolean = prefixes.any { startsWith(it) }

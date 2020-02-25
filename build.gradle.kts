@@ -8,7 +8,7 @@ plugins {
     id("kotlinx-serialization")
     id("com.epam.drill.cross-compilation")
     id("com.epam.drill.version.plugin")
-    id("com.github.johnrengelman.shadow") version "5.1.0"
+    id("com.github.johnrengelman.shadow")
     distribution
     `maven-publish`
 }
@@ -116,9 +116,9 @@ val jvmJar by tasks.getting(Jar::class) {
 val agentShadow by tasks.registering(ShadowJar::class) {
     mergeServiceFiles()
     isZip64 = true
-    relocate("kotlin", "kruntime")
     archiveFileName.set("drillRuntime.jar")
     from(jvmJar)
+    relocate("kotlin", "kruntime")
 }
 
 tasks.withType<KotlinNativeCompile> {
@@ -140,10 +140,9 @@ afterEvaluate {
         availableTarget.forEach {
             val name = it.name
             create(name) {
-                @Suppress("DEPRECATION")
-                baseName = name
+                distributionBaseName.set(name)
                 contents {
-                    from(tasks.getByPath(":proxy-agent:jar"))
+                    from(tasks.getByPath(":proxy-agent:shadowJar"))
                     from(agentShadow)
                     from(tasks.getByPath("link${libName.capitalize()}DebugShared${name.capitalize()}"))
                 }

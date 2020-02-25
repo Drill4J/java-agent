@@ -37,7 +37,7 @@ dependencies {
     implementation("org.springframework.samples:spring-petclinic:2.1.0")
 }
 tasks {
-    named("run") {
+    (run) {
         val installTaskName = "install${target.capitalize()}Dist"
         dependsOn(agentJavaProject.tasks.named(installTaskName))
     }
