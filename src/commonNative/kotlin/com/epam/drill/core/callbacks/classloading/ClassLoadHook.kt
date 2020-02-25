@@ -4,9 +4,14 @@ import com.epam.drill.*
 import com.epam.drill.core.plugin.loader.*
 import com.epam.drill.jvmapi.gen.*
 import kotlinx.cinterop.*
+import mu.*
+import kotlin.native.concurrent.SharedImmutable
+
+
+@SharedImmutable
+private val logger = KotlinLogging.logger("jvmtiEventClassFileLoadHookEvent")
 
 @Suppress("unused", "UNUSED_PARAMETER")
-@CName("jvmtiEventClassFileLoadHookEvent")
 fun classLoadEvent(
     jvmtiEnv: CPointer<jvmtiEnvVar>?,
     jniEnv: CPointer<JNIEnvVar>?,
@@ -19,9 +24,10 @@ fun classLoadEvent(
     newClassDataLen: CPointer<jintVar>?,
     newData: CPointer<CPointerVar<UByteVar>>?
 ) {
+    initRuntimeIfNeeded()
     val kClassName = clsName?.toKString()
     if (isNotSuitableClass(kClassName, classData, loader, protection_domain)) return
-
+    logger.debug { kClassName }
     exec { pstorage.values.filterIsInstance<InstrumentationNativePlugin>() }.forEach { instrumentedPlugin ->
         instrumentedPlugin.instrument(kClassName!!, classData!!.readBytes(classDataLen))?.let { instrumentedBytes ->
             val instrumentedSize = instrumentedBytes.size
