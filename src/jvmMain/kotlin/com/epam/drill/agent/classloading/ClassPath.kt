@@ -158,8 +158,8 @@ class ClassPath(
     }
 
     private fun ClassLoader.getUrls(): List<URL> = when (this) {
-        is URLClassLoader -> urLs.toList()
         ClassLoader.getSystemClassLoader() -> parseJavaClassPath()
+        is URLClassLoader -> urLs.toList()
         else -> emptyList()
     }
 
