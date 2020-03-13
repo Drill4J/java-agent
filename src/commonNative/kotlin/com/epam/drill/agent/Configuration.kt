@@ -9,10 +9,16 @@ import platform.posix.*
 
 fun performAgentInitialization(initialParams: Map<String, String>) {
     val adminAddress = initialParams["adminAddress"] ?: throw RuntimeException("")
-    val agentId = initialParams["agentId"] ?:throw RuntimeException("")
+    val agentId = initialParams["agentId"] ?: throw RuntimeException("")
     val buildVersion = initialParams["buildVersion"] ?: "unspecified"
     val instanceId = initialParams["instanceId"] ?: uuid4().toString()
     val groupId = initialParams["groupId"] ?: initialParams["serviceGroupId"] ?: ""
+    initialParams["type"]?.let {
+        state = when (enumValueOf<ApplicationType>(it)) {
+            ApplicationType.WAR -> state.copy(isWebAppInitialized = false)
+            ApplicationType.EAR -> state.copy(isWebAppInitialized = false)
+        }
+    }
     val drillInstallationDir = initialParams["drillInstallationDir"] ?: javaProcess().firstAgentPath
     exec {
         this.drillInstallationDir = drillInstallationDir

@@ -1,25 +1,23 @@
 package com.epam.drill.agent.classloading
 
-import java.net.*
-import java.util.*
+import com.epam.drill.agent.classloading.source.*
 
-fun Map<String, ClassLoader>.loadClassData(): Map<String, ByteArray> = map { (resourceName, classLoader) ->
-    val bytes = classLoader.url(resourceName).readBytes()
-    val className = resourceName.removeSuffix(".class")
-    className to bytes
-}.toMap()
+fun scanResourceMap(packagePrefixes: Iterable<String>): List<ClassSource> {
+    return scanAvailableClassLoaders(packagePrefixes) + scanExternalSources(packagePrefixes)
+}
 
+fun scanExternalSources(packagePrefixes: Iterable<String>): List<ClassSource> {
+    return WebContainerSource.additionalSources.filter { source -> packagePrefixes.any { source.className.startsWith(it) } }
+}
 
-fun scanResourceMap(packagePrefixes: Iterable<String>): Map<String, ClassLoader> {
-    val threadClassLoaders = Thread.getAllStackTraces().keys
-        .mapNotNull(Thread::getContextClassLoader)
+fun scanAvailableClassLoaders(packagePrefixes: Iterable<String>): List<ClassSource> {
+    val threadClassLoaders = Thread.getAllStackTraces().keys.mapNotNull(Thread::getContextClassLoader)
     val leafClassLoaders = threadClassLoaders
         .leaves(ClassLoader::getParent)
         .toListWith(ClassLoader.getSystemClassLoader())
-    val classPath = ClassPath(packagePrefixes)
-    return classPath.scan(leafClassLoaders)
-}
+    return ClassPath(packagePrefixes)
+        .scan(leafClassLoaders)
+        .entries
+        .map { (clsName, loader) -> ClassLoaderSource(clsName.removeSuffix(".class"), loader) }
 
-private fun ClassLoader.url(resourceName: String): URL {
-    return getResource(resourceName) ?: throw NoSuchElementException(resourceName)
 }
