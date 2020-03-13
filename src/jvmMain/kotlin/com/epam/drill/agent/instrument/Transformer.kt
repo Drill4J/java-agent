@@ -18,7 +18,7 @@ object Transformer {
                     val qualifiedName = WebContainerSource::class.qualifiedName
                     val fillWeSourceMethodName = WebContainerSource::fillWebAppSource.name
                     declaredMethods.first { it.name == "contextInitialized" }.insertBefore(
-                        "$qualifiedName.INSTANCE.$fillWeSourceMethodName(\$1.getServletContext().getRealPath(\"\"));"
+                        "try{$qualifiedName.INSTANCE.$fillWeSourceMethodName(\$1.getServletContext().getRealPath(\"\"));}catch(java.lang.Throwable e){}"
                     )
                     return toBytecode()
                 } else

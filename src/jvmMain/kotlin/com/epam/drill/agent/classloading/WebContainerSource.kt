@@ -20,11 +20,11 @@ object WebContainerSource {
                 jar.entries()
                     .toList()
                     .filter { it.name.endsWith(classSuffix) }
-                    .map { JarSource(it.name.removeSuffix(classSuffix).replace(File.pathSeparator, "/"), file) }
+                    .map { JarSource(it.name.removeSuffix(classSuffix).replace(File.separator, "/"), file) }
             }.asSequence()
         }
         val classSources = classesDir.walkTopDown().filter { it.extension == "class" }.map {
-            FileSource(it.toRelativeString(classesDir).removeSuffix(classSuffix).replace(File.pathSeparator, "/"), it)
+            FileSource(it.toRelativeString(classesDir).removeSuffix(classSuffix).replace(File.separator, "/"), it)
         }
         additionalSources.addAll(jarSources + classSources)
         webAppStarted(deployedApp.absolutePath)
