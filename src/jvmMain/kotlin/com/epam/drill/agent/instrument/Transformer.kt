@@ -14,7 +14,7 @@ object Transformer {
         return try {
             classPool.appendClassPath(LoaderClassPath(loader))
             classPool.makeClass(ByteArrayInputStream(classfileBuffer))?.run {
-                if (interfaces.map { it.name }.contains("javax.servlet.ServletContextListener")) {
+                if (interfaces.isNotEmpty() && interfaces.map { it.name }.contains("javax.servlet.ServletContextListener")) {
                     val qualifiedName = WebContainerSource::class.qualifiedName
                     val fillWeSourceMethodName = WebContainerSource::fillWebAppSource.name
                     declaredMethods.first { it.name == "contextInitialized" }.insertBefore(
