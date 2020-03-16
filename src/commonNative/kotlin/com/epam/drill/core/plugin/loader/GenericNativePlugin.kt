@@ -20,7 +20,7 @@ open class GenericNativePlugin(
     private val pluginLogger = KotlinLogging.logger("GenericNativePlugin")
 
     init {
-        updateRawConfig(pluginConfig.toPluginConfig())
+        updateRawConfig(PluginConfig(pluginConfig.id, pluginConfig.config))
         javaEnabled(pluginConfig.enabled)
         val agentIsEnabled = true
         load(pluginConfig.enabled && agentIsEnabled)

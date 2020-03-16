@@ -10,25 +10,26 @@ object WebContainerSource {
 
     val additionalSources = mutableSetOf<ClassSource>()
 
-    fun fillWebAppSource(cl: String) {
-        val deployedApp = File(cl)
-        val webInfDir = deployedApp.resolve("WEB-INF")
-        val classesDir = webInfDir.resolve("classes")
-        val jarsDir = webInfDir.resolve("lib")
-        val jarSources = jarsDir.walkTopDown().filter { it.extension == "jar" }.flatMap { file ->
-            JarFile(file).use { jar ->
-                jar.entries()
-                    .toList()
-                    .filter { it.name.endsWith(classSuffix) }
-                    .map { JarSource(it.name.removeSuffix(classSuffix).replace(File.separator, "/"), file) }
-            }.asSequence()
+    fun fillWebAppSource(cl: String?) {
+        cl?.let { path ->
+            val deployedApp = File(path)
+            val webInfDir = deployedApp.resolve("WEB-INF")
+            val classesDir = webInfDir.resolve("classes")
+            val jarsDir = webInfDir.resolve("lib")
+            val jarSources = jarsDir.walkTopDown().filter { it.extension == "jar" }.flatMap { file ->
+                JarFile(file).use { jar ->
+                    jar.entries()
+                        .toList()
+                        .filter { it.name.endsWith(classSuffix) }
+                        .map { JarSource(it.name.removeSuffix(classSuffix).replace(File.separator, "/"), file) }
+                }.asSequence()
+            }
+            val classSources = classesDir.walkTopDown().filter { it.extension == "class" }.map {
+                FileSource(it.toRelativeString(classesDir).removeSuffix(classSuffix).replace(File.separator, "/"), it)
+            }
+            additionalSources.addAll(jarSources + classSources)
+            webAppStarted(deployedApp.absolutePath)
         }
-        val classSources = classesDir.walkTopDown().filter { it.extension == "class" }.map {
-            FileSource(it.toRelativeString(classesDir).removeSuffix(classSuffix).replace(File.separator, "/"), it)
-        }
-        additionalSources.addAll(jarSources + classSources)
-        webAppStarted(deployedApp.absolutePath)
-
     }
 
     private external fun webAppStarted(appPath: String)

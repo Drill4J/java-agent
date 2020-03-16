@@ -1,4 +1,4 @@
-@file:Suppress("unused")
+@file:Suppress("unused", "FunctionName")
 
 package com.epam.drill.core
 
@@ -15,6 +15,27 @@ fun currentEnvs(): JNIEnvPointer {
 @CName("jvmtii")
 fun jvmtii(): CPointer<jvmtiEnvVar>? {
     return com.epam.drill.jvmapi.jvmtii()
+}
+
+@CName("getJvm")
+fun getJvm(): CPointer<JavaVMVar>? {
+    return vmGlobal.value
+}
+
+@CName("JNI_OnUnload")
+fun JNI_OnUnload() {
+}
+
+@CName("JNI_GetCreatedJavaVMs")
+fun JNI_GetCreatedJavaVMs() {
+}
+
+@CName("JNI_CreateJavaVM")
+fun JNI_CreateJavaVM() {
+}
+
+@CName("JNI_GetDefaultJavaVMInitArgs")
+fun JNI_GetDefaultJavaVMInitArgs() {
 }
 
 @CName("checkEx")
