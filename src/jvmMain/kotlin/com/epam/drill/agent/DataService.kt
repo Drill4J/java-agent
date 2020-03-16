@@ -7,7 +7,7 @@ import com.epam.drill.agent.classloading.*
 import com.epam.drill.common.*
 import com.epam.drill.plugin.api.*
 import com.epam.drill.plugin.api.processing.*
-import kotlinx.serialization.*
+import kotlinx.serialization.builtins.*
 import java.util.*
 import java.util.jar.*
 import java.util.logging.*

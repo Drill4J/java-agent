@@ -6,7 +6,6 @@ import com.epam.drill.core.callbacks.classloading.*
 import com.epam.drill.core.callbacks.vminit.*
 import com.epam.drill.jvmapi.*
 import com.epam.drill.jvmapi.gen.*
-import com.epam.drill.logger.*
 import com.epam.drill.transport.common.ws.*
 import kotlinx.cinterop.*
 import mu.*
@@ -20,12 +19,6 @@ private val logger = KotlinLogging.logger("MainLogger")
 @Suppress("UNUSED_PARAMETER", "UNUSED")
 @CName("Agent_OnLoad")
 fun agentOnLoad(vmPointer: CPointer<JavaVMVar>, options: String, reservedPtr: Long) = memScoped {
-    logConfig.value = LoggerConfig(
-        isTraceEnabled = true,
-        isDebugEnabled = true,
-        isInfoEnabled = true,
-        isWarnEnabled = true
-    ).freeze()
     try {
         val agentParameters = options.asAgentParams().validate()
         initAgentGlobals(vmPointer)
@@ -54,8 +47,6 @@ private fun runAgent(agentParameters: Map<String, String>) {
     memScoped {
         val jvmtiCapabilities = alloc<jvmtiCapabilities>()
         jvmtiCapabilities.can_retransform_classes = 1.toUInt()
-        jvmtiCapabilities.can_retransform_any_class = 1.toUInt()
-        jvmtiCapabilities.can_generate_native_method_bind_events = 1.toUInt()
         jvmtiCapabilities.can_maintain_original_method_order = 1.toUInt()
         AddCapabilities(jvmtiCapabilities.ptr)
     }
@@ -83,7 +74,6 @@ private fun callbackRegister() = memScoped {
     alloc.VMInit = staticCFunction(::jvmtiEventVMInitEvent)
     alloc.VMDeath = staticCFunction(::vmDeathEvent)
     alloc.ClassFileLoadHook = staticCFunction(::classLoadEvent)
-    println("all is ok")
     SetEventCallbacks(alloc.ptr, sizeOf<jvmtiEventCallbacks>().toInt())
     SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_CLASS_FILE_LOAD_HOOK, null)
     SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_VM_INIT, null)

@@ -31,7 +31,10 @@ allprojects {
         kotlinOptions.allWarningsAsErrors = true
     }
     configurations.all {
-        resolutionStrategy.force("org.jetbrains.kotlinx:kotlinx-coroutines-core-native:$coroutinesVersion")
+        resolutionStrategy.dependencySubstitution {
+            substitute(module("org.jetbrains.kotlinx:kotlinx-coroutines-core-native:$coroutinesVersion")).with(module("com.epam.drill.fork.coroutines:kotlinx-coroutines-core-native:$coroutinesVersion"))
+        }
+
     }
 
 }
@@ -43,7 +46,6 @@ kotlin {
         linuxX64(),
         macosX64()
     ).forEach { target ->
-        target.compilations["test"]?.cinterops?.apply { create("jvmapiStub");create("testSocket") }
         target.binaries { sharedLib(libName, setOf(DEBUG)) }
     }
 
@@ -56,7 +58,7 @@ kotlin {
                     implementation("org.jetbrains.kotlinx:kotlinx-serialization-runtime-native:$serializationRuntimeVersion")
                     implementation("com.epam.drill:jvmapi-native:$drillJvmApiLibVersion")
                     implementation("com.epam.drill.transport:core:$drillTransportLibVerison")
-                    implementation("com.benasher44:uuid:0.0.6")
+                    implementation("com.benasher44:uuid:$uuidVersion")
                     implementation("com.epam.drill.interceptor:http:$drillHttpInterceptorVersion")
                     implementation("com.epam.drill:drill-agent-part:$drillApiVersion")
                     implementation("com.epam.drill:common:$drillApiVersion")

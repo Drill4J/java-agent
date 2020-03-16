@@ -9,7 +9,7 @@ import com.epam.drill.jvmapi.*
 import com.epam.drill.jvmapi.gen.*
 import kotlinx.cinterop.*
 import kotlinx.coroutines.*
-import kotlinx.serialization.*
+import kotlinx.serialization.builtins.*
 import mu.*
 
 @kotlin.native.concurrent.SharedImmutable
