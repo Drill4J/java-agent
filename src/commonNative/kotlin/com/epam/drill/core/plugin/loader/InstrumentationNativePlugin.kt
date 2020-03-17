@@ -11,24 +11,17 @@ class InstrumentationNativePlugin(
     userPlugin: jobject,
     pluginConfig: PluginMetadata,
     private val qs: jmethodID? = GetMethodID(pluginApiClass, "instrument", "(Ljava/lang/String;[B)[B")
-) : GenericNativePlugin(pluginId, pluginApiClass, userPlugin, pluginConfig),
-    InstrumentationPlugin {
-
+) : GenericNativePlugin(pluginId, pluginApiClass, userPlugin, pluginConfig), InstrumentationPlugin {
 
     override fun instrument(className: String, initialBytes: ByteArray) = memScoped {
         val classDataLen = initialBytes.size
         val newByteArray: jbyteArray? = NewByteArray(classDataLen)
-        SetByteArrayRegion(
-            newByteArray, 0, classDataLen,
-            getBytes(newByteArray, initialBytes)
-        )
-
+        SetByteArrayRegion(newByteArray, 0, classDataLen, getBytes(newByteArray, initialBytes))
         val callObjectMethod = CallObjectMethod(userPlugin, qs, NewStringUTF(className), newByteArray) ?: return null
-
-        val size = GetArrayLength(callObjectMethod)
         val getByteArrayElements: CPointer<ByteVarOf<jbyte>>? = GetByteArrayElements(callObjectMethod, null)
-        val readBytes = getByteArrayElements?.readBytes(size)
+        val readBytes = getByteArrayElements?.readBytes( GetArrayLength(callObjectMethod))
         DeleteLocalRef(newByteArray)
+        ReleaseByteArrayElements(callObjectMethod, getByteArrayElements, JNI_ABORT)
         readBytes
     }
 
@@ -36,10 +29,7 @@ class InstrumentationNativePlugin(
         CallVoidMethodA(userPlugin, GetMethodID(pluginApiClass, "retransform", "()V"), null)
     }
 
-    private fun getBytes(
-        newByteArray: jbyteArray?,
-        classData: ByteArray
-    ): CPointer<jbyteVar>? {
+    private fun getBytes(newByteArray: jbyteArray?, classData: ByteArray): CPointer<jbyteVar>? {
         val bytess: CPointer<jbyteVar>? = GetByteArrayElements(newByteArray, null)
         classData.forEachIndexed { index, byte ->
             bytess!![index] = byte

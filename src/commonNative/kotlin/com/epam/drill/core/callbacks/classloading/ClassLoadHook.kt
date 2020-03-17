@@ -3,7 +3,6 @@ package com.epam.drill.core.callbacks.classloading
 import com.epam.drill.*
 import com.epam.drill.agent.jvmapi.*
 import com.epam.drill.core.plugin.loader.*
-import com.epam.drill.core.transport.*
 import com.epam.drill.jvmapi.gen.*
 import kotlinx.cinterop.*
 import mu.*
@@ -34,22 +33,27 @@ fun classLoadEvent(
     val (requestHolderClass, requestHolder: jobject?) = instance("com/epam/drill/agent/instrument/Transformer")
     val retrieveClassesData =
         GetMethodID(requestHolderClass, "transform", "(Ljava/lang/String;[BLjava/lang/ClassLoader;)[B")
-    val newByteArray: jbyteArray? = NewByteArray(classDataLen)
-    SetByteArrayRegion(newByteArray, 0, classDataLen, getBytes(newByteArray, classData!!.readBytes(classDataLen)))
-
-    val instrumentedBytes: jbyteArray? =
-        CallObjectMethod(requestHolder, retrieveClassesData, NewStringUTF(kClassName), newByteArray, loader)
-
-    if (instrumentedBytes != null) {
-        logger.debug { kClassName }
-        convertToNativePointers(instrumentedBytes.toByteArray(), newData, newClassDataLen)
-    } else {
-        exec { pstorage.values.filterIsInstance<InstrumentationNativePlugin>() }.forEach { instrumentedPlugin ->
-            instrumentedPlugin.instrument(kClassName!!, classData.readBytes(classDataLen))?.let { instrumentedBytes ->
-                convertToNativePointers(instrumentedBytes, newData, newClassDataLen)
+    val classBytesInJBytesArray: jbyteArray = NewByteArray(classDataLen)!!
+    val readBytes = classData!!.readBytes(classDataLen)
+    classBytesInJBytesArray.toByteArrayWithRelease(readBytes) {
+        SetByteArrayRegion(classBytesInJBytesArray, 0, classDataLen, it.refTo(0))
+        val jClassName = NewStringUTF(kClassName)
+        val instrumentedBytes: jbyteArray? =
+            CallObjectMethod(requestHolder, retrieveClassesData, jClassName, classBytesInJBytesArray, loader)
+        DeleteLocalRef(jClassName)
+        if (instrumentedBytes != null) {
+            logger.debug { kClassName }
+            instrumentedBytes.toByteArrayWithRelease {
+                convertToNativePointers(it, newData, newClassDataLen)
+            }
+        } else {
+            exec { pstorage.values.filterIsInstance<InstrumentationNativePlugin>() }.forEach { instrumentedPlugin ->
+                instrumentedPlugin.instrument(kClassName!!, classData.readBytes(classDataLen))
+                    ?.let { instrumentedBytes -> convertToNativePointers(instrumentedBytes, newData, newClassDataLen) }
             }
         }
     }
+    DeleteLocalRef(classBytesInJBytesArray)
 }
 
 private fun convertToNativePointers(
@@ -66,14 +70,16 @@ private fun convertToNativePointers(
     newClassDataLen!!.pointed.value = instrumentedSize
 }
 
-private fun jobject.toByteArray() = GetByteArrayElements(this, null)!!.readBytes(GetArrayLength(this))
-
-private fun getBytes(newByteArray: jbyteArray?, classData: ByteArray) =
-    GetByteArrayElements(newByteArray, null)?.apply {
-        classData.forEachIndexed { index, byte ->
-            this[index] = byte
-        }
+inline fun jbyteArray.toByteArrayWithRelease(bytes: ByteArray = byteArrayOf(), block: (ByteArray) -> Unit) {
+    val nativeArray = GetByteArrayElements(this, null)?.apply {
+        bytes.forEachIndexed { index, byte -> this[index] = byte }
     }
+    try {
+        block(nativeArray!!.readBytes(GetArrayLength(this)))
+    } finally {
+        ReleaseByteArrayElements(this, nativeArray, JNI_ABORT)
+    }
+}
 
 
 private fun isNotSuitableClass(name: String?, data: CPointer<UByteVar>?, loader: jobject?, protectionDomain: jobject?) =
