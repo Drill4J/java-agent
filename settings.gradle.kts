@@ -6,5 +6,4 @@ pluginManagement {
     }
 }
 
-include("proxy-agent")
 include("pt-runner")

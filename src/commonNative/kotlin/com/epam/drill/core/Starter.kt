@@ -75,9 +75,7 @@ private fun callbackRegister() = memScoped {
     alloc.VMDeath = staticCFunction(::vmDeathEvent)
     alloc.ClassFileLoadHook = staticCFunction(::classLoadEvent)
     SetEventCallbacks(alloc.ptr, sizeOf<jvmtiEventCallbacks>().toInt())
-    SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_CLASS_FILE_LOAD_HOOK, null)
     SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_VM_INIT, null)
-    SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_VM_DEATH, null)
 }
 
 @Suppress("UNUSED_PARAMETER")

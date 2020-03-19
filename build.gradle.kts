@@ -64,6 +64,7 @@ kotlin {
                     implementation("com.epam.drill:common:$drillApiVersion")
                     implementation("com.epam.drill.logger:logger:$drillLogger")
                     implementation("com.epam.drill.agent:agent:$drillAgentCoreVersion")
+                    implementation("com.epam.drill.knasm:knasm:0.1.0")
                 }
             }
         }
@@ -144,7 +145,6 @@ afterEvaluate {
             create(name) {
                 distributionBaseName.set(name)
                 contents {
-                    from(tasks.getByPath(":proxy-agent:shadowJar"))
                     from(agentShadow)
                     from(tasks.getByPath("link${libName.capitalize()}DebugShared${name.capitalize()}"))
                 }
