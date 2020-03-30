@@ -32,7 +32,7 @@ allprojects {
     }
     configurations.all {
         resolutionStrategy.dependencySubstitution {
-            substitute(module("org.jetbrains.kotlinx:kotlinx-coroutines-core-native:$coroutinesVersion")).with(module("com.epam.drill.fork.coroutines:kotlinx-coroutines-core-native:$coroutinesVersion"))
+            substitute(module("org.jetbrains.kotlinx:kotlinx-coroutines-core-native:$coroutinesVersion")).with(module("org.jetbrains.kotlinx:kotlinx-coroutines-core-native:$coroutinesVersion-native-mt"))
         }
 
     }
@@ -59,7 +59,6 @@ kotlin {
                     implementation("com.epam.drill:jvmapi-native:$drillJvmApiLibVersion")
                     implementation("com.epam.drill.transport:core:$drillTransportLibVerison")
                     implementation("com.benasher44:uuid:$uuidVersion")
-                    implementation("com.epam.drill.interceptor:http:$drillHttpInterceptorVersion")
                     implementation("com.epam.drill:drill-agent-part:$drillApiVersion")
                     implementation("com.epam.drill:common:$drillApiVersion")
                     implementation("com.epam.drill.logger:logger:$drillLogger")
