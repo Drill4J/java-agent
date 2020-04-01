@@ -11,7 +11,10 @@ var state: State
     }
 
 
-data class State(val isWebAppInitialized: Boolean = true)
+data class State(
+    val isWebAppInitialized: Boolean = true,
+    val packagePrefixes: List<String> = emptyList()
+)
 
 enum class ApplicationType {
     WAR, EAR;

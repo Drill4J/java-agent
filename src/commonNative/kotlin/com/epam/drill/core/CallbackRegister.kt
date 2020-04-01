@@ -16,6 +16,7 @@ import mu.*
 private val logger = KotlinLogging.logger("CallbackLogger")
 
 private const val waitingTimeout: Long = 90000 //move to config or admin
+
 @Suppress("unused")
 @SharedImmutable
 val CallbackRegister: Unit = run {
@@ -36,7 +37,11 @@ val CallbackRegister: Unit = run {
         }
     }
 
-    setPackagesPrefixes = { prefixes -> exec { agentConfig.packagesPrefixes = prefixes } }
+    setPackagesPrefixes = { prefixes ->
+        exec { agentConfig.packagesPrefixes = prefixes }
+        val parsedPrefixes = (PackagesPrefixes.serializer() parse prefixes).packagesPrefixes
+        state = state.copy(packagePrefixes = parsedPrefixes)
+    }
 
     sessionStorage = ::fillRequestToHolder
     drillSessionId = ::sessionId

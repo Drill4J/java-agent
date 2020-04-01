@@ -10,7 +10,7 @@ class InstrumentationNativePlugin(
     pluginApiClass: jclass,
     userPlugin: jobject,
     pluginConfig: PluginMetadata,
-    private val qs: jmethodID? = GetMethodID(pluginApiClass, "instrument", "(Ljava/lang/String;[B)[B")
+    internal val qs: jmethodID? = GetMethodID(pluginApiClass, "instrument", "(Ljava/lang/String;[B)[B")
 ) : GenericNativePlugin(pluginId, pluginApiClass, userPlugin, pluginConfig), InstrumentationPlugin {
 
     override fun instrument(className: String, initialBytes: ByteArray) = memScoped {

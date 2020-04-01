@@ -3,6 +3,7 @@
 package com.epam.drill.core.callbacks.classloading
 
 import com.epam.drill.*
+import com.epam.drill.agent.*
 import com.epam.drill.core.callbacks.vminit.*
 import com.epam.drill.core.plugin.loader.*
 import com.epam.drill.jvmapi.gen.*
@@ -35,66 +36,69 @@ fun classLoadEvent(
     newData: CPointer<CPointerVar<UByteVar>>?
 ) {
     initRuntimeIfNeeded()
+    if (isBootstrapClassLoading(loader, protection_domain)) return
     val kClassName = clsName?.toKString()
-    if (isNotSuitableClass(kClassName, classData, loader, protection_domain)) return
-    checkNotNull(kClassName)
-    val classReader = ClassReader(classData!!.readBytes(classDataLen))
-    if (classReader.interfaces.contains("javax/servlet/ServletContextListener")) {
-        val classBytesInJBytesArray: jbyteArray = NewByteArray(classDataLen)!!
-        val readBytes = classData.readBytes(classDataLen)
-        classBytesInJBytesArray.toByteArrayWithRelease(readBytes) {
-            SetByteArrayRegion(classBytesInJBytesArray, 0, classDataLen, it.refTo(0))
-            val jClassName = NewStringUTF(kClassName)
-            val instrumentedBytes: jbyteArray? =
-                CallObjectMethod(
-                    transformerObject.value,
-                    transformMethod.value,
-                    jClassName,
-                    classBytesInJBytesArray,
-                    loader
-                )
-            DeleteLocalRef(jClassName)
-            if (instrumentedBytes != null) {
-                logger.error { kClassName }
-                instrumentedBytes.toByteArrayWithRelease { convertToNativePointers(it, newData, newClassDataLen) }
-            }
-        }
-        DeleteLocalRef(classBytesInJBytesArray)
-    } else {
-        if (directTtlClasses.contains(kClassName) || (kClassName != "java/util/TimerTask" && classReader.interfaces.contains(
-                "java/lang/Runnable"
-            )) || classReader.superName == "java/util/concurrent/ThreadPoolExecutor"
-        ) {
-            val classBytesInJBytesArray: jbyteArray = NewByteArray(classDataLen)!!
-            val readBytes = classData.readBytes(classDataLen)
-            classBytesInJBytesArray.toByteArrayWithRelease(readBytes) {
-                SetByteArrayRegion(classBytesInJBytesArray, 0, classDataLen, it.refTo(0))
-                val jClassName = NewStringUTF(kClassName)
-                val instrumentedBytes: jbyteArray? =
-                    CallObjectMethod(
-                        ttlTransformerObject.value,
-                        ttlTransformMethod.value,
-                        loader,
-                        jClassName,
-                        classBeingRedefined,
-                        protection_domain,
-                        classBytesInJBytesArray,
-                        loader
-                    )
-                DeleteLocalRef(jClassName)
-                if (instrumentedBytes != null) {
-                    println("$kClassName transformed...")
-                    instrumentedBytes.toByteArrayWithRelease { convertToNativePointers(it, newData, newClassDataLen) }
-                }
-            }
-            DeleteLocalRef(classBytesInJBytesArray)
-        }
-        exec { pstorage.values.filterIsInstance<InstrumentationNativePlugin>() }.forEach { instrumentedPlugin ->
-            instrumentedPlugin.instrument(kClassName, classData.readBytes(classDataLen))
-                ?.let { instrumentedBytes -> convertToNativePointers(instrumentedBytes, newData, newClassDataLen) }
+    if (kClassName == null || classData == null || kClassName.startsWith("com/epam/drill")) return
+    val classBytes = classData.readBytes(classDataLen)
+    val classReader = ClassReader(classBytes)
+    val transformers = mutableListOf<(jstring, jbyteArray) -> jbyteArray?>()
+    if (!state.isWebAppInitialized &&
+        "javax/servlet/ServletContextListener" in classReader.interfaces
+    ) transformers += { jname, jbytes ->
+        CallObjectMethod(
+            transformerObject.value,
+            transformMethod.value,
+            jname,
+            jbytes,
+            loader
+        )
+    }
+    if (kClassName in directTtlClasses ||
+        kClassName != "java/util/TimerTask" && "java/lang/Runnable" in classReader.interfaces ||
+        classReader.superName == "java/util/concurrent/ThreadPoolExecutor"
+    ) transformers += { jname, jbytes ->
+        CallObjectMethod(
+            ttlTransformerObject.value,
+            ttlTransformMethod.value,
+            loader,
+            jname,
+            classBeingRedefined,
+            protection_domain,
+            jbytes,
+            loader
+        )
+    }
+    if (state.packagePrefixes.any { kClassName.startsWith(it) }) exec {
+        pstorage.values.filterIsInstance<InstrumentationNativePlugin>()
+    }.forEach { plugin ->
+        transformers += { jname, jbytes ->
+            CallObjectMethod(
+                plugin.userPlugin,
+                plugin.qs,
+                jname,
+                jbytes
+            )
         }
     }
-
+    if (transformers.any()) {
+        val jClassBytes: jbyteArray = NewByteArray(classDataLen)!!
+        val jClassName: jstring = NewStringUTF(kClassName)!!
+        try {
+            jClassBytes.toByteArrayWithRelease(classBytes) { kClassBytes ->
+                SetByteArrayRegion(jClassBytes, 0, classDataLen, kClassBytes.refTo(0))
+                transformers.fold(jClassBytes) { jbytes, transformer ->
+                    transformer(jClassName, jbytes) ?: jbytes
+                }.takeIf { it !== jClassBytes }
+                    ?.toByteArrayWithRelease {
+                        logger.debug { "$kClassName transformed" }
+                        convertToNativePointers(it, newData, newClassDataLen)
+                    }
+            }
+        } finally {
+            DeleteLocalRef(jClassBytes)
+            DeleteLocalRef(jClassName)
+        }
+    }
 }
 
 private fun convertToNativePointers(
@@ -111,7 +115,10 @@ private fun convertToNativePointers(
     newClassDataLen!!.pointed.value = instrumentedSize
 }
 
-inline fun jbyteArray.toByteArrayWithRelease(bytes: ByteArray = byteArrayOf(), block: (ByteArray) -> Unit) {
+inline fun jbyteArray.toByteArrayWithRelease(
+    bytes: ByteArray = byteArrayOf(),
+    block: (ByteArray) -> Unit
+) {
     val nativeArray = GetByteArrayElements(this, null)?.apply {
         bytes.forEachIndexed { index, byte -> this[index] = byte }
     }
@@ -123,13 +130,6 @@ inline fun jbyteArray.toByteArrayWithRelease(bytes: ByteArray = byteArrayOf(), b
 }
 
 
-private fun isNotSuitableClass(name: String?, data: CPointer<UByteVar>?, loader: jobject?, protectionDomain: jobject?) =
-    (isSyntheticClass(name, data) || isBootstrapClassLoading(loader, protectionDomain))
-
-
 private fun isBootstrapClassLoading(loader: jobject?, protection_domain: jobject?) =
     loader == null || protection_domain == null
-
-private fun isSyntheticClass(kClassName: String?, classData: CPointer<UByteVar>?) =
-    kClassName == null || classData == null
 
