@@ -32,7 +32,11 @@ allprojects {
     }
     configurations.all {
         resolutionStrategy.dependencySubstitution {
-            substitute(module("org.jetbrains.kotlinx:kotlinx-coroutines-core-native:$coroutinesVersion")).with(module("org.jetbrains.kotlinx:kotlinx-coroutines-core-native:$coroutinesVersion-native-mt"))
+            substitute(
+                module("org.jetbrains.kotlinx:kotlinx-coroutines-core-native:$coroutinesVersion")
+            ).with(
+                module("org.jetbrains.kotlinx:kotlinx-coroutines-core-native:$coroutinesVersion-native-mt")
+            )
         }
 
     }
@@ -145,7 +149,9 @@ afterEvaluate {
                 distributionBaseName.set(name)
                 contents {
                     from(agentShadow)
-                    from(tasks.getByPath("link${libName.capitalize()}DebugShared${name.capitalize()}"))
+                    from(tasks.getByPath("link${libName.capitalize()}DebugShared${name.capitalize()}")) {
+                        duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+                    }
                 }
             }
         }
