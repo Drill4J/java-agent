@@ -19,7 +19,7 @@ class ClassPath(
 
     private val scannedClassLoaders = mutRefSet<ClassLoader>()
 
-    fun scan(classLoaders: Iterable<ClassLoader>): MutableMap<String, ClassLoader> {
+    fun scan(classLoaders: Iterable<ClassLoader>): Map<String, ClassLoader> {
         classLoaders.forEach { classLoader ->
             getClassPathEntries(classLoader).forEach { (key, value) ->
                 scan(key, value)
@@ -53,7 +53,6 @@ class ClassPath(
                         return
                     }
                 } catch (e: SecurityException) {
-
                     return
                 }
                 if (file.isDirectory) {

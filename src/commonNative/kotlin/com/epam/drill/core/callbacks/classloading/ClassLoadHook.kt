@@ -68,7 +68,7 @@ fun classLoadEvent(
             loader
         )
     }
-    if (state.packagePrefixes.any { kClassName.startsWith(it) }) exec {
+    if ("$" !in kClassName && state.packagePrefixes.any { kClassName.startsWith(it) }) exec {
         pstorage.values.filterIsInstance<InstrumentationNativePlugin>()
     }.forEach { plugin ->
         transformers += { jname, jbytes ->

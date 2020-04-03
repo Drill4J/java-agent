@@ -27,11 +27,12 @@ object DataService {
     fun getPluginPayload(pluginId: String): PluginPayload = PluginPayload(pluginId, AgentPluginData)
 
     fun retrieveClassesData(config: String): String {
-        val packagesPrefixes = PackagesPrefixes.serializer() parse config
-        val classResources = scanResourceMap(packagesPrefixes.packagesPrefixes)
+        val packagesPrefixes = (PackagesPrefixes.serializer() parse config).packagesPrefixes
+        val classResources = scanResourceMap(packagesPrefixes)
         val loadedClassData = classResources.associate {
-            log.log(Level.INFO, it.toString())
-            it.className to it.bytes() }
+            it.className to it.bytes()
+        }
+        log.log(Level.INFO, "Classes loaded: ${loadedClassData.count()}, package prefixes: $packagesPrefixes")
         AgentPluginData.classMap = loadedClassData
         val encodedClasses = loadedClassData.map { (className, bytes) ->
             Base64Class.serializer() stringify Base64Class(className, Base64.getEncoder().encodeToString(bytes))

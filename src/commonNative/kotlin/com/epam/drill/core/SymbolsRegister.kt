@@ -75,15 +75,15 @@ fun RetransformClasses(env: JNIEnv, thiz: jobject, count: jint, classes: jobject
 @Suppress("UNUSED_PARAMETER")
 @CName("Java_com_epam_drill_session_DrillRequest_GetAllLoadedClasses")
 fun GetAllLoadedClasses(env: JNIEnv, thiz: jobject) = memScoped {
-    val cout = alloc<jintVar>()
+    val count = alloc<jintVar>()
     val classes = alloc<CPointerVar<jclassVar>>()
-    GetLoadedClasses(cout.ptr, classes.ptr)
+    GetLoadedClasses(count.ptr, classes.ptr)
     println()
     val reinterpret = classes.value!!
-    val len = cout.value
+    val len = count.value
     val newByteArray = NewObjectArray(len, FindClass("java/lang/Class"), null)
 
-    for (i in 0 until cout.value) {
+    for (i in 0 until count.value) {
         val cPointer = reinterpret[i]
         SetObjectArrayElement(newByteArray, i, cPointer)
     }

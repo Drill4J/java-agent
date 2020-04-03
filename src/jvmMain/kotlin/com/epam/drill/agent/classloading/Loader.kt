@@ -19,5 +19,4 @@ fun scanAvailableClassLoaders(packagePrefixes: Iterable<String>): List<ClassSour
         .scan(leafClassLoaders)
         .entries
         .map { (clsName, loader) -> ClassLoaderSource(clsName.removeSuffix(".class"), loader) }
-
 }
