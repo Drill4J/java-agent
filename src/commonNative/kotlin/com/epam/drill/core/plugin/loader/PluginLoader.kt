@@ -54,7 +54,6 @@ fun loadPluginForJvm(pluginFilePath: String, pluginConfig: PluginMetadata) {
                 exec {
                     pstorage[pluginConfig.id] = inst
                 }
-                inst.retransform()
             }
             Family.GENERIC -> {
                 GenericNativePlugin(pluginId, pluginApiClass, userPlugin, pluginConfig).apply {

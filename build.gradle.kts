@@ -1,5 +1,4 @@
 import com.github.jengelman.gradle.plugins.shadow.tasks.*
-import org.jetbrains.kotlin.gradle.dsl.*
 import org.jetbrains.kotlin.gradle.plugin.mpp.*
 import org.jetbrains.kotlin.gradle.tasks.*
 import org.jetbrains.kotlin.konan.target.*
@@ -25,7 +24,7 @@ allprojects {
     }
 
     apply(plugin = "com.epam.drill.version.plugin")
-    tasks.withType<org.jetbrains.kotlin.gradle.dsl.KotlinCompile<KotlinCommonOptions>> {
+    tasks.withType<KotlinCompile> {
         kotlinOptions.allWarningsAsErrors = true
     }
     tasks.withType<KotlinNativeCompile> {
@@ -128,7 +127,7 @@ val agentShadow by tasks.registering(ShadowJar::class) {
     relocate("kotlin", "kruntime")
 }
 
-tasks.withType<org.jetbrains.kotlin.gradle.dsl.KotlinCompile<KotlinCommonOptions>> {
+tasks.withType<KotlinNativeCompile> {
     kotlinOptions.freeCompilerArgs += "-Xuse-experimental=kotlinx.serialization.ImplicitReflectionSerializer"
     kotlinOptions.freeCompilerArgs += "-Xuse-experimental=kotlin.ExperimentalUnsignedTypes"
     kotlinOptions.freeCompilerArgs += "-Xuse-experimental=kotlin.time.ExperimentalTime"
