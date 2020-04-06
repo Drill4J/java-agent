@@ -3,6 +3,7 @@ package com.epam.drill.core.plugin.loader
 import com.epam.drill.*
 import com.epam.drill.common.*
 import com.epam.drill.core.exceptions.*
+import com.epam.drill.core.ws.*
 import com.epam.drill.jvmapi.*
 import com.epam.drill.jvmapi.gen.*
 import kotlinx.cinterop.*
@@ -63,6 +64,8 @@ fun loadPluginForJvm(pluginFilePath: String, pluginConfig: PluginMetadata) {
                 }
             }
         }
+        //TODO move to the api
+        Sender.send(Message(MessageType.MESSAGE_DELIVERED, "/plugin/$pluginId"))
     } catch (ex: Exception) {
         when (ex) {
             is PluginLoadException ->
