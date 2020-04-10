@@ -22,7 +22,6 @@ private const val waitingTimeout: Long = 90000 //move to config or admin
 val CallbackRegister: Unit = run {
     getClassesByConfig = {
         runBlocking {
-            delay(1500) //initial delay, quick fix
             withTimeoutOrNull(waitingTimeout) {
                 while (!state.isWebAppInitialized) {
                     delay(1500)
