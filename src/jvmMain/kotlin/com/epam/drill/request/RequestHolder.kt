@@ -5,7 +5,6 @@ package com.epam.drill.request
 import com.alibaba.ttl.*
 import com.epam.drill.plugin.*
 import com.epam.drill.session.*
-import kotlinx.serialization.*
 import kotlinx.serialization.cbor.*
 import java.util.logging.*
 
@@ -18,7 +17,7 @@ actual object RequestHolder {
     private var sessionIdHeaderName: String = ""
     private val log = Logger.getLogger(RequestHolder::class.java.name)
 
-    actual fun storeRequest(rawRequest: String, pattern: String?){
+    actual fun store(rawRequest: String, pattern: String?){
         var drillRequest = parseHttpRequest(rawRequest).toDrillRequest()
         if (pattern != null) {
             val customId = drillRequest.headers[pattern] ?: run {
@@ -46,8 +45,8 @@ actual object RequestHolder {
 
     fun request() = threadStorage.get() ?: null
 
-    actual fun drillRequest(): Any? {
-        return threadStorage.get()?.let { Cbor.dumps(DrillRequest.serializer(), it) }
+    actual fun dump(): ByteArray? {
+        return threadStorage.get()?.let { Cbor.dump(DrillRequest.serializer(), it) }
     }
 
 }
