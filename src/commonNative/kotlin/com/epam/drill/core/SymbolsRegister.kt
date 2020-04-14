@@ -49,22 +49,8 @@ fun sendFromJava(env: JNIEnv, thiz: jobject, pluginId: jstring, message: jstring
     sendToSocket(pluginId.toKString()!!, message.toKString()!!)
 }
 
-
 @Suppress("UNUSED_PARAMETER")
-@CName("Java_com_epam_drill_session_DrillRequest_currentSession")
-fun currentsession4java(env: JNIEnv, thiz: jobject): jobject? {
-    return NewStringUTF(drillRequest()?.drillSessionId)
-
-}
-
-@Suppress("UNUSED_PARAMETER")
-@CName("Java_com_epam_drill_session_DrillRequest_get")
-fun getHeader4java(env: JNIEnv, thiz: jobject, key: jstring): jobject? {
-    return NewStringUTF(drillRequest()?.get(key.toKString()))
-}
-
-@Suppress("UNUSED_PARAMETER")
-@CName("Java_com_epam_drill_session_DrillRequest_RetransformClasses")
+@CName("Java_com_epam_drill_plugin_api_Native_RetransformClasses")
 fun RetransformClasses(env: JNIEnv, thiz: jobject, count: jint, classes: jobjectArray) = memScoped {
     val allocArray = allocArray<jclassVar>(count) { index ->
         value = GetObjectArrayElement(classes, index)
@@ -73,12 +59,9 @@ fun RetransformClasses(env: JNIEnv, thiz: jobject, count: jint, classes: jobject
 }
 
 @Suppress("UNUSED_PARAMETER")
-@CName("Java_com_epam_drill_session_DrillRequest_GetAllLoadedClasses")
+@CName("Java_com_epam_drill_plugin_api_Native_GetAllLoadedClasses")
 fun GetAllLoadedClasses(env: JNIEnv, thiz: jobject) = memScoped {
-    val count = alloc<jintVar>()
-    val classes = alloc<CPointerVar<jclassVar>>()
-    GetLoadedClasses(count.ptr, classes.ptr)
-    println()
+    val (count, classes) = getLoadedClasses()
     val reinterpret = classes.value!!
     val len = count.value
     val newByteArray = NewObjectArray(len, FindClass("java/lang/Class"), null)
@@ -88,4 +71,11 @@ fun GetAllLoadedClasses(env: JNIEnv, thiz: jobject) = memScoped {
         SetObjectArrayElement(newByteArray, i, cPointer)
     }
     newByteArray
+}
+
+private fun MemScope.getLoadedClasses(): Pair<jintVar, CPointerVar<jclassVar>> {
+    val count = alloc<jintVar>()
+    val classes = alloc<CPointerVar<jclassVar>>()
+    GetLoadedClasses(count.ptr, classes.ptr)
+    return count to classes
 }

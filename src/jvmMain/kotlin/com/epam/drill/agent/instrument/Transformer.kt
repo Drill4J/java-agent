@@ -7,14 +7,15 @@ import com.epam.drill.agent.classloading.*
 import java.io.*
 
 
-object Transformer {
+actual object Transformer {
     private val classPool = ClassPool()
 
     fun transform(className: String, classfileBuffer: ByteArray, loader: ClassLoader): ByteArray? {
         return try {
             classPool.appendClassPath(LoaderClassPath(loader))
             classPool.makeClass(ByteArrayInputStream(classfileBuffer))?.run {
-                if (interfaces.isNotEmpty() && interfaces.map { it.name }.contains("javax.servlet.ServletContextListener")) {
+                if (interfaces.isNotEmpty() && interfaces.map { it.name }
+                        .contains("javax.servlet.ServletContextListener")) {
                     val qualifiedName = WebContainerSource::class.qualifiedName
                     val fillWeSourceMethodName = WebContainerSource::fillWebAppSource.name
                     declaredMethods.first { it.name == "contextInitialized" }.insertBefore(

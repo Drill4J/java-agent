@@ -3,6 +3,7 @@
 package com.epam.drill.core.callbacks.vminit
 
 import com.epam.drill.*
+import com.epam.drill.agent.instrument.*
 import com.epam.drill.agent.jvmapi.*
 import com.epam.drill.core.transport.*
 import com.epam.drill.core.ws.*
@@ -48,22 +49,22 @@ fun jvmtiEventVMInitEvent(env: CPointer<jvmtiEnvVar>?, jniEnv: CPointer<JNIEnvVa
 }
 
 private fun initializeTtlTransformer() {
-    val (clazz, instance: jobject?) = instance("com/epam/drill/agent/instrument/TTLTransformer")
+    val (clazz, instance: jobject?) = instance<TTLTransformer>()
     _ttlTransformerObject.value = NewGlobalRef(instance).freeze()
     val method: CPointer<_jmethodID>? =
         GetMethodID(
             clazz,
-            "transform",
+            TTLTransformer::transform.name,
             "(Ljava/lang/ClassLoader;Ljava/lang/String;Ljava/lang/Class;Ljava/security/ProtectionDomain;[B)[B"
         )
     _ttlTranformMethod.value = method.freeze()
 }
 
 private fun initializeMainTransformer() {
-    val (clazz, instance: jobject?) = instance("com/epam/drill/agent/instrument/Transformer")
+    val (clazz, instance: jobject?) = instance<Transformer>()
     _transformerObject.value = NewGlobalRef(instance).freeze()
     val method: CPointer<_jmethodID>? =
-        GetMethodID(clazz, "transform", "(Ljava/lang/String;[BLjava/lang/ClassLoader;)[B")
+        GetMethodID(clazz, Transformer::transform.name, "(Ljava/lang/String;[BLjava/lang/ClassLoader;)[B")
     _tranformMethod.value = method.freeze()
 }
 

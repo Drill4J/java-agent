@@ -1,22 +1,24 @@
 @file:Suppress("unused")
 
-package com.epam.drill.ws
+package com.epam.drill.request
 
 import com.alibaba.ttl.*
 import com.epam.drill.plugin.*
-import com.epam.drill.session.DrillRequest
+import com.epam.drill.session.*
+import kotlinx.serialization.*
+import kotlinx.serialization.cbor.*
 import java.util.logging.*
 
-object RequestHolder {
+actual object RequestHolder {
 
     init {
-        DrillRequest.threadStorage = TransmittableThreadLocal<com.epam.drill.plugin.DrillRequest>()
+        threadStorage = TransmittableThreadLocal()
     }
 
     private var sessionIdHeaderName: String = ""
     private val log = Logger.getLogger(RequestHolder::class.java.name)
 
-    fun storeRequest(rawRequest: String, pattern: String?) {
+    actual fun storeRequest(rawRequest: String, pattern: String?){
         var drillRequest = parseHttpRequest(rawRequest).toDrillRequest()
         if (pattern != null) {
             val customId = drillRequest.headers[pattern] ?: run {
@@ -31,9 +33,9 @@ object RequestHolder {
                 drillRequest = drillRequest.copy(drillSessionId = customId)
         }
         if (drillRequest.drillSessionId == null) {
-            DrillRequest.threadStorage.remove()
+            threadStorage.remove()
         } else {
-            DrillRequest.threadStorage.set(drillRequest)
+            threadStorage.set(drillRequest)
             println("session saved: ${drillRequest.drillSessionId}")
         }
     }
@@ -42,9 +44,10 @@ object RequestHolder {
         this.sessionIdHeaderName = sessionId
     }
 
-    fun request() = DrillRequest.threadStorage.get() ?: null
-    fun sessionId(): String? {
-        return DrillRequest.threadStorage.get()?.drillSessionId
+    fun request() = threadStorage.get() ?: null
+
+    actual fun drillRequest(): Any? {
+        return threadStorage.get()?.let { Cbor.dumps(DrillRequest.serializer(), it) }
     }
 
 }

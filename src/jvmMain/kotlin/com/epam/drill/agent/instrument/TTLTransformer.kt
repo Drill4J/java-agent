@@ -11,7 +11,7 @@ import java.security.*
 import java.util.*
 
 
-object TTLTransformer : ClassFileTransformer {
+actual object TTLTransformer : ClassFileTransformer {
     private val transformletList: MutableList<JavassistTransformlet> = ArrayList()
 
     init {
