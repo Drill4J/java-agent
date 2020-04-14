@@ -6,7 +6,6 @@ import com.epam.drill.common.*
 import com.epam.drill.core.plugin.loader.*
 import com.epam.drill.jvmapi.*
 import com.epam.drill.jvmapi.gen.*
-import com.epam.drill.plugin.*
 import com.epam.drill.request.*
 import kotlinx.cinterop.*
 import kotlinx.coroutines.*
@@ -44,9 +43,8 @@ val CallbackRegister: Unit = run {
         state = state.copy(packagePrefixes = parsedPrefixes)
     }
 
-    sessionStorage = RequestHolder::storeRequest
-    @Suppress("UNCHECKED_CAST")
-    drillRequest = RequestHolder::drillRequest as (()->DrillRequest?)
+    sessionStorage = RequestHolder::store
+    drillRequest = RequestHolder::get
 
     loadPlugin = ::loadPluginForJvm
     nativePlugin = { _, _, _ ->

@@ -2,25 +2,26 @@ package com.epam.drill.request
 
 import com.epam.drill.*
 import com.epam.drill.agent.jvmapi.*
-import com.epam.drill.jvmapi.*
 import com.epam.drill.jvmapi.gen.*
 import com.epam.drill.plugin.*
-import kotlinx.serialization.*
 import kotlinx.serialization.cbor.*
 
 actual object RequestHolder {
 
-    actual fun drillRequest(): Any? {
+    fun get(): DrillRequest? {
+        return dump()?.let { Cbor.load(DrillRequest.serializer(), it) }
+    }
+
+    actual fun dump(): ByteArray? {
         val (requestHolderClass, requestHolder: jobject?) = instance<RequestHolder>()
-        val drillRequest = GetMethodID(requestHolderClass, RequestHolder::drillRequest.name, "()Ljava/lang/Object;")
-        val jRawString = CallObjectMethod(requestHolder, drillRequest)
-        return jRawString?.let { Cbor.loads(DrillRequest.serializer(), it.toKString()!!) }
+        val drillRequest = GetMethodID(requestHolderClass, RequestHolder::dump.name, "()[B")
+        return CallObjectMethod(requestHolder, drillRequest).readBytes()
     }
 
 
-    actual fun storeRequest(rawRequest: String, pattern: String?) {
+    actual fun store(rawRequest: String, pattern: String?) {
         val (requestHolderClass, requestHolder: jobject?) = instance<RequestHolder>()
-        val storeRequest = GetMethodID(requestHolderClass, RequestHolder::storeRequest.name, "(Ljava/lang/String;Ljava/lang/String;)V")
+        val storeRequest = GetMethodID(requestHolderClass, RequestHolder::store.name, "(Ljava/lang/String;Ljava/lang/String;)V")
         CallVoidMethod(requestHolder, storeRequest, NewStringUTF(rawRequest), NewStringUTF(exec { this.requestPattern }))
     }
 
