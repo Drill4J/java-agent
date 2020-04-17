@@ -2,10 +2,13 @@
 
 package com.epam.drill.core
 
+import com.epam.drill.agent.jvmapi.*
 import com.epam.drill.api.*
 import com.epam.drill.jvmapi.*
 import com.epam.drill.jvmapi.gen.*
 import kotlinx.cinterop.*
+import kotlinx.serialization.builtins.*
+import kotlinx.serialization.cbor.*
 
 @CName("currentEnvs")
 fun currentEnvs(): JNIEnvPointer {
@@ -50,6 +53,18 @@ fun sendFromJava(env: JNIEnv, thiz: jobject, pluginId: jstring, message: jstring
 }
 
 @Suppress("UNUSED_PARAMETER")
+@CName("Java_com_epam_drill_plugin_api_Native_RetransformClassesByPackagePrefixes")
+fun RetransformClassesByPackagePrefixes(env: JNIEnv, thiz: jobject, prefixes: jbyteArray): jint = memScoped {
+    val packagesPrefixes =
+        prefixes.readBytes()?.let { Cbor.load(String.serializer().set, it).map { "L$it;" } } ?: return@memScoped 0
+    getLoadedClasses()
+        .associateBy { alloc<CPointerVar<ByteVar>>().apply { GetClassSignature(it, ptr, null) }.value!! }
+        .filterKeys { packagesPrefixes.contains(it.toKString()) }.values.toList()
+        .apply { RetransformClasses(size, toCValues()) }
+        .size
+}
+
+@Suppress("UNUSED_PARAMETER")
 @CName("Java_com_epam_drill_plugin_api_Native_RetransformClasses")
 fun RetransformClasses(env: JNIEnv, thiz: jobject, count: jint, classes: jobjectArray) = memScoped {
     val allocArray = allocArray<jclassVar>(count) { index ->
@@ -61,21 +76,19 @@ fun RetransformClasses(env: JNIEnv, thiz: jobject, count: jint, classes: jobject
 @Suppress("UNUSED_PARAMETER")
 @CName("Java_com_epam_drill_plugin_api_Native_GetAllLoadedClasses")
 fun GetAllLoadedClasses(env: JNIEnv, thiz: jobject) = memScoped {
-    val (count, classes) = getLoadedClasses()
-    val reinterpret = classes.value!!
-    val len = count.value
-    val newByteArray = NewObjectArray(len, FindClass("java/lang/Class"), null)
+    val loadedClasses = getLoadedClasses().toList()
+    val javaArray = NewObjectArray(loadedClasses.size, FindClass("java/lang/Class"), null)
 
-    for (i in 0 until count.value) {
-        val cPointer = reinterpret[i]
-        SetObjectArrayElement(newByteArray, i, cPointer)
+    for (i in loadedClasses.indices) {
+        val cPointer = loadedClasses[i]
+        SetObjectArrayElement(javaArray, i, cPointer)
     }
-    newByteArray
+    javaArray
 }
 
-private fun MemScope.getLoadedClasses(): Pair<jintVar, CPointerVar<jclassVar>> {
+private fun MemScope.getLoadedClasses() = run {
     val count = alloc<jintVar>()
     val classes = alloc<CPointerVar<jclassVar>>()
     GetLoadedClasses(count.ptr, classes.ptr)
-    return count to classes
+    classes.value!!.sequenceOf(count.value)
 }

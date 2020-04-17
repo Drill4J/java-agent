@@ -25,3 +25,12 @@ fun jbyteArray?.readBytes() = this?.let { jbytes ->
     }
 
 }
+
+@Suppress("NOTHING_TO_INLINE")
+inline fun <T : CPointer<*>> CPointer<CPointerVarOf<T>>.sequenceOf(count: Int): Sequence<T> {
+    var current = 0
+    return generateSequence<T> {
+        if (current == count) null
+        else this[current++]
+    }
+}
