@@ -22,8 +22,7 @@ open class GenericNativePlugin(
     init {
         updateRawConfig(PluginConfig(pluginConfig.id, pluginConfig.config))
         javaEnabled(pluginConfig.enabled)
-        val agentIsEnabled = true
-        load(pluginConfig.enabled && agentIsEnabled)
+        load(false)
     }
 
     override suspend fun doRawAction(rawAction: String) {
@@ -40,7 +39,6 @@ open class GenericNativePlugin(
 
     override suspend fun setEnabled(value: Boolean) {
         javaEnabled(value)
-        if (value) on() else off()
         val pluginConfigById = pluginConfigById(id)
         pluginConfigById.enabled = value
 
