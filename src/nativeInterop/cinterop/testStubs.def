@@ -1,0 +1,13 @@
+---
+void* _currentEnvs(){
+}
+void* currentEnvs(){
+}
+void* _jvmtii(){
+}
+void* jvmtii(){
+}
+void* _checkEx(){
+}
+void* checkEx(){
+}

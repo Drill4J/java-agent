@@ -21,8 +21,11 @@ application {
     val agentPath = "${file("$drillDistrDir/${pref}drill_agent.$ex")}"
     applicationDefaultJvmArgs = listOf(
         "-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=5007",
-        "-agentpath:$agentPath=drillInstallationDir=$drillDistrDir,adminAddress=${project.properties["adminAddress"]
-            ?: "localhost:8090"},agentId=${project.properties["agentId"] ?: "Petclinic"}"
+        "-agentpath:$agentPath=" +
+                "drillInstallationDir=$drillDistrDir," +
+                "adminAddress=${project.properties["adminAddress"] ?: "localhost:8090"}," +
+                "agentId=${project.properties["agentId"] ?: "Petclinic"}," +
+                "logLevel=TRACE"
     ).apply { println(this.joinToString (separator = " ")) }
 
 }

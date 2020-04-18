@@ -51,6 +51,7 @@ kotlin {
         macosX64()
     ).forEach { target ->
         target.binaries { sharedLib(libName, setOf(DEBUG)) }
+        target.compilations["test"].cinterops.create("testStubs")
     }
 
     crossCompilation {
@@ -61,6 +62,7 @@ kotlin {
                 dependencies {
                     implementation("org.jetbrains.kotlinx:kotlinx-serialization-runtime-native:$serializationRuntimeVersion")
                     implementation("org.jetbrains.kotlinx:kotlinx-serialization-cbor-native:$serializationRuntimeVersion")
+                    implementation("org.jetbrains.kotlinx:kotlinx-serialization-properties-native:$serializationRuntimeVersion")
                     implementation("com.epam.drill:jvmapi-native:$drillJvmApiLibVersion")
                     implementation("com.epam.drill.transport:core:$drillTransportLibVerison")
                     implementation("com.benasher44:uuid:$uuidVersion")

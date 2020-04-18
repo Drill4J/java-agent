@@ -22,11 +22,14 @@ private const val waitingTimeout: Long = 90000 //move to config or admin
 val CallbackRegister: Unit = run {
     getClassesByConfig = {
         runBlocking {
-            withTimeoutOrNull(waitingTimeout) {
+            when (withTimeoutOrNull(waitingTimeout) {
                 while (!state.isWebAppInitialized) {
                     delay(1500)
                     logger.debug { "Waiting for Web app initialization" }
                 }
+            }) {
+                null -> logger.warn { }
+                else -> logger.info { "app is initialized" }
             }
             val packagesPrefixes = exec { agentConfig.packagesPrefixes }
             val (serviceClass, service) = dataService()
