@@ -2,6 +2,7 @@ package com.epam.drill.core
 
 import com.epam.drill.*
 import com.epam.drill.agent.*
+import com.epam.drill.agent.classloading.*
 import com.epam.drill.common.*
 import com.epam.drill.core.plugin.loader.*
 import com.epam.drill.jvmapi.*
@@ -15,20 +16,16 @@ import mu.*
 @kotlin.native.concurrent.SharedImmutable
 private val logger = KotlinLogging.logger("CallbackLogger")
 
-private const val waitingTimeout: Long = 90000 //move to config or admin
-
 @Suppress("unused")
 @SharedImmutable
 val CallbackRegister: Unit = run {
     getClassesByConfig = {
         runBlocking {
-            when (withTimeoutOrNull(waitingTimeout) {
-                while (!state.isWebAppInitialized) {
-                    delay(1500)
-                    logger.debug { "Waiting for Web app initialization" }
+            when (waitForMultipleWebApps()) {
+                null -> logger.warn {
+                    "Apps: ${state.webApps.filterValues { !it }.keys} have not initialized in ${waitingTimeout}ms.. " +
+                            "Please check the app names or increase the timeout"
                 }
-            }) {
-                null -> logger.warn { }
                 else -> logger.info { "app is initialized" }
             }
             val packagesPrefixes = exec { agentConfig.packagesPrefixes }

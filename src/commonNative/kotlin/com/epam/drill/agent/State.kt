@@ -12,10 +12,8 @@ var state: State
 
 
 data class State(
-    val isWebAppInitialized: Boolean = true,
+    val webApps: Map<String, Boolean> = mapOf(),
     val packagePrefixes: List<String> = emptyList()
 )
 
-enum class ApplicationType {
-    WAR, EAR;
-}
+fun State.allWebAppsInitialized(): Boolean = webApps.isEmpty() || webApps.values.all { it }

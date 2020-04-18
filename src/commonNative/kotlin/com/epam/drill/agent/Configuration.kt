@@ -18,6 +18,9 @@ fun performAgentInitialization(initialParams: Map<String, String>) {
             this.adminAddress = URL("ws://${aa.adminAddress}")
         }
         configureLogger(aa.level)
+        if (aa.webAppNames.isNotEmpty()) {
+            state = state.copy(webApps = aa.webApps.associateWith { false })
+        }
     }
 }
 

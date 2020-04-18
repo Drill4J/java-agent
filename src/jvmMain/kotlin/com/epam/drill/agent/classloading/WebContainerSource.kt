@@ -28,7 +28,7 @@ object WebContainerSource {
                 FileSource(it.toRelativeString(classesDir).removeSuffix(classSuffix).replace(File.separator, "/"), it)
             }
             additionalSources.addAll(jarSources + classSources)
-            webAppStarted(deployedApp.absolutePath)
+            webAppStarted(deployedApp.name)
         }
     }
 
