@@ -37,7 +37,6 @@ private fun MemScope.initAgentGlobals(vmPointer: CPointer<JavaVMVar>) {
 }
 
 private fun runAgent(agentParameters: Map<String, String>) {
-    logger.info { "init params: $agentParameters" }
     performAgentInitialization(agentParameters)
     setUnhandledExceptionHook({ error: Throwable ->
         logger.error { "unhandled event $error" }

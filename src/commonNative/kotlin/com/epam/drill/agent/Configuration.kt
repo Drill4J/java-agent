@@ -1,30 +1,28 @@
 package com.epam.drill.agent
 
-import com.benasher44.uuid.*
 import com.epam.drill.*
 import com.epam.drill.common.*
 import com.epam.drill.common.ws.*
+import com.epam.drill.logger.*
 import kotlinx.cinterop.*
+import kotlinx.serialization.*
 import platform.posix.*
+import kotlin.native.concurrent.*
 
 fun performAgentInitialization(initialParams: Map<String, String>) {
-    val adminAddress = initialParams["adminAddress"] ?: throw RuntimeException("")
-    val agentId = initialParams["agentId"] ?: throw RuntimeException("")
-    val buildVersion = initialParams["buildVersion"] ?: "unspecified"
-    val instanceId = initialParams["instanceId"] ?: uuid4().toString()
-    val groupId = initialParams["groupId"] ?: initialParams["serviceGroupId"] ?: ""
-    initialParams["type"]?.let {
-        state = when (enumValueOf<ApplicationType>(it)) {
-            ApplicationType.WAR -> state.copy(isWebAppInitialized = false)
-            ApplicationType.EAR -> state.copy(isWebAppInitialized = false)
+    val agentArguments = Properties.load<AgentArguments>(initialParams)
+    agentArguments.let { aa ->
+        exec {
+            this.drillInstallationDir = aa.drillInstallationDir
+            this.agentConfig = AgentConfig(aa.agentId, aa.instanceId, aa.buildVersion, aa.groupId, AGENT_TYPE)
+            this.adminAddress = URL("ws://${aa.adminAddress}")
         }
+        configureLogger(aa.level)
     }
-    val drillInstallationDir = initialParams["drillInstallationDir"] ?: javaProcess().firstAgentPath
-    exec {
-        this.drillInstallationDir = drillInstallationDir
-        this.agentConfig = AgentConfig(agentId, instanceId, buildVersion, groupId, AGENT_TYPE)
-        this.adminAddress = URL("ws://$adminAddress")
-    }
+}
+
+private fun configureLogger(logLevel: LogLevel) {
+    logConfig.value = configByLoggerLevel(logLevel).freeze()
 }
 
 data class JavaProcess(
