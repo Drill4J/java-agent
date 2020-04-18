@@ -42,7 +42,7 @@ fun classLoadEvent(
     val classBytes = classData.readBytes(classDataLen)
     val classReader = ClassReader(classBytes)
     val transformers = mutableListOf<(jstring, jbyteArray) -> jbyteArray?>()
-    if (!state.isWebAppInitialized &&
+    if (!state.allWebAppsInitialized() &&
         "javax/servlet/ServletContextListener" in classReader.interfaces
     ) transformers += { jname, jbytes ->
         CallObjectMethod(
