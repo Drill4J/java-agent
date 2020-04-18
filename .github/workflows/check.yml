@@ -34,6 +34,7 @@ jobs:
   check_windlows:
     name: Check for windows platform
     runs-on: windows-latest
+      if: "contains(github.event.head_commit.message, 'mingw check')"
     steps:
       - uses: actions/checkout@v1
       - name: Gradle Cache
