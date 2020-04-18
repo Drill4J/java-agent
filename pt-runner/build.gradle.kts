@@ -4,6 +4,7 @@ import org.jetbrains.kotlin.konan.target.*
 plugins {
     java
     application
+    id("com.epam.drill.agent.runner.app") version "0.1.2"
 }
 
 val target = HostManager.host.presetName
@@ -12,23 +13,24 @@ val agentJavaProject = rootProject
 
 application {
     mainClassName = "org.springframework.boot.loader.JarLauncher"
-    val (pref, ex) = when {
+}
+
+drill {
+    val (prefs, extension) = when {
         Os.isFamily(Os.FAMILY_MAC) -> "lib" to "dylib"
         Os.isFamily(Os.FAMILY_UNIX) -> "lib" to "so"
         else -> "" to "dll"
     }
-    val drillDistrDir = agentJavaProject.buildDir.resolve("install").resolve(target).absolutePath
-    val agentPath = "${file("$drillDistrDir/${pref}drill_agent.$ex")}"
-    applicationDefaultJvmArgs = listOf(
-        "-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=5007",
-        "-agentpath:$agentPath=" +
-                "drillInstallationDir=$drillDistrDir," +
-                "adminAddress=${project.properties["adminAddress"] ?: "localhost:8090"}," +
-                "agentId=${project.properties["agentId"] ?: "Petclinic"}," +
-                "logLevel=TRACE"
-    ).apply { println(this.joinToString (separator = " ")) }
-
+    val drillDistrDir = agentJavaProject.buildDir.resolve("install").resolve(target)
+    val localAgentPath = file(drillDistrDir).resolve("${prefs}drill_agent.$extension")
+    agentId = project.properties["agentId"]?.toString() ?: "Petclinic"
+    agentPath = localAgentPath
+    runtimePath = drillDistrDir
+    adminHost = "localhost"
+    adminPort = 8090
+    logLevel = com.epam.drill.agent.runner.LogLevels.TRACE
 }
+
 repositories {
     mavenLocal()
     maven("https://dl.bintray.com/drill/drill4j")
