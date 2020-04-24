@@ -9,7 +9,7 @@ jobs:
     name: Publish for nix platforms (macOS, Linux)
     runs-on: macOS-latest
     steps:
-      - uses: actions/checkout@v1
+      - uses: actions/checkout@v2
       - name: Publish
         run: |
           gradle --no-daemon -si publish
@@ -22,7 +22,7 @@ jobs:
     name: Publish for Windows platform (Windows platform)
     runs-on: windows-latest
     steps:
-      - uses: actions/checkout@v1
+      - uses: actions/checkout@v2
       - name: Publish
         run: |
           gradle -si publishMingwX64ZipPublicationToMavenRepository

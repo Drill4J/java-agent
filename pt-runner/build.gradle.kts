@@ -1,4 +1,3 @@
-import org.apache.tools.ant.taskdefs.condition.*
 import org.jetbrains.kotlin.konan.target.*
 
 plugins {
@@ -16,19 +15,17 @@ application {
 }
 
 drill {
-    val (prefs, extension) = when {
-        Os.isFamily(Os.FAMILY_MAC) -> "lib" to "dylib"
-        Os.isFamily(Os.FAMILY_UNIX) -> "lib" to "so"
-        else -> "" to "dll"
+    val (prefix, suffix) = HostManager.host.family.run {
+        dynamicPrefix to dynamicSuffix
     }
     val drillDistrDir = agentJavaProject.buildDir.resolve("install").resolve(target)
-    val localAgentPath = file(drillDistrDir).resolve("${prefs}drill_agent.$extension")
+    val localAgentPath = file(drillDistrDir).resolve("${prefix}drill_agent.$suffix")
     agentId = project.properties["agentId"]?.toString() ?: "Petclinic"
     agentPath = localAgentPath
     runtimePath = drillDistrDir
     adminHost = "localhost"
     adminPort = 8090
-    logLevel = com.epam.drill.agent.runner.LogLevels.TRACE
+    logLevel = com.epam.drill.agent.runner.LogLevels.DEBUG
 }
 
 repositories {
@@ -40,6 +37,7 @@ dependencies {
     compileOnly("org.springframework:spring-context:5.1.8.RELEASE")
     implementation("org.springframework.samples:spring-petclinic:2.1.0")
 }
+
 tasks {
     (run) {
         val installTaskName = "install${target.capitalize()}Dist"
