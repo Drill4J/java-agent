@@ -1,5 +1,6 @@
 package com.epam.drill.agent.jvmapi
 
+import com.epam.drill.jvmapi.*
 import com.epam.drill.jvmapi.gen.*
 import kotlinx.cinterop.*
 
@@ -24,6 +25,23 @@ fun jbyteArray?.readBytes() = this?.let { jbytes ->
         ReleasePrimitiveArrayCritical(jbytes, buffer, JNI_ABORT)
     }
 
+}
+
+inline fun withJSting(block: JStingConverter.() -> Unit) {
+    val jStingConverter = JStingConverter()
+    block(jStingConverter)
+    jStingConverter.localStrings.forEach { (x, y) ->
+        jni.ReleaseStringUTFChars!!(env, x, y)
+    }
+}
+
+class JStingConverter {
+    val localStrings = mutableMapOf<jstring, CPointer<ByteVar>?>()
+    fun jstring.toKString(): String {
+        val nativeString = jni.GetStringUTFChars!!(env, this, null)
+        localStrings[this] = nativeString
+        return nativeString?.toKString()!!
+    }
 }
 
 @Suppress("NOTHING_TO_INLINE")

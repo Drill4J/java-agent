@@ -48,8 +48,8 @@ fun checkEx(errCode: jvmtiError, funName: String): jvmtiError {
 
 @Suppress("UNUSED_PARAMETER")
 @CName("Java_com_epam_drill_plugin_api_processing_Sender_sendMessage")
-fun sendFromJava(env: JNIEnv, thiz: jobject, pluginId: jstring, message: jstring) {
-    sendToSocket(pluginId.toKString()!!, message.toKString()!!)
+fun sendFromJava(envs: JNIEnv, thiz: jobject, jpluginId: jstring, jmessage: jstring) = withJSting {
+    sendToSocket(jpluginId.toKString(), jmessage.toKString())
 }
 
 @Suppress("UNUSED_PARAMETER")
