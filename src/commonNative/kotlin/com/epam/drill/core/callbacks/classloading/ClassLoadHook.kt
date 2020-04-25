@@ -90,7 +90,7 @@ fun classLoadEvent(
                     transformer(jClassName, jbytes) ?: jbytes
                 }.takeIf { it !== jClassBytes }
                     ?.toByteArrayWithRelease {
-                        logger.debug { "$kClassName transformed" }
+                        logger.trace { "$kClassName transformed" }
                         convertToNativePointers(it, newData, newClassDataLen)
                     }
             }
