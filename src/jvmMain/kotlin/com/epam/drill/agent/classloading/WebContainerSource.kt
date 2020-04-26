@@ -2,34 +2,32 @@ package com.epam.drill.agent.classloading
 
 import com.epam.drill.agent.classloading.source.*
 import java.io.*
-import java.util.jar.*
-
-private const val classSuffix = ".class"
 
 object WebContainerSource {
 
-    val additionalSources = mutableSetOf<ClassSource>()
+    private val scannedNames = mutableSetOf<String>()
+
+    private val scannedClasses = mutableSetOf<ClassSource>()
+
+    val additionalSources: Set<ClassSource> = scannedClasses
 
     fun fillWebAppSource(cl: String?) {
         cl?.let { path ->
             val deployedApp = File(path)
             val webInfDir = deployedApp.resolve("WEB-INF")
-            val classesDir = webInfDir.resolve("classes")
-            val jarsDir = webInfDir.resolve("lib")
-            val jarSources = jarsDir.walkTopDown().filter { it.extension == "jar" }.flatMap { file ->
-                JarFile(file).use { jar ->
-                    jar.entries()
-                        .toList()
-                        .filter { it.name.endsWith(classSuffix) }
-                        .map { JarSource(it.name.removeSuffix(classSuffix).replace(File.separator, "/"), file) }
-                }.asSequence()
-            }
-            val classSources = classesDir.walkTopDown().filter { it.extension == "class" }.map {
-                FileSource(it.toRelativeString(classesDir).removeSuffix(classSuffix).replace(File.separator, "/"), it)
-            }
-            additionalSources.addAll(jarSources + classSources)
+            webInfDir.resolve("classes").scan(::predicate, ::handler)
+            webInfDir.resolve("lib").walkTopDown()
+                .filter { it.isFile && it.extension == "jar" }
+                .forEach { file -> file.useJarInputStream { it.scan(::predicate, ::handler) } }
             webAppStarted(deployedApp.name)
         }
+    }
+
+    private fun predicate(name: String): Boolean = name !in scannedNames
+
+    private fun handler(source: ClassSource) {
+        scannedNames.add(source.className)
+        scannedClasses.add(source)
     }
 
     private external fun webAppStarted(appPath: String)

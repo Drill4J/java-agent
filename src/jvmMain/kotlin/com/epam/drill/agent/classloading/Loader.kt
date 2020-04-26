@@ -2,21 +2,18 @@ package com.epam.drill.agent.classloading
 
 import com.epam.drill.agent.classloading.source.*
 
-fun scanResourceMap(packagePrefixes: Iterable<String>): List<ClassSource> {
-    return scanAvailableClassLoaders(packagePrefixes) + scanExternalSources(packagePrefixes)
+fun scanResourceMap(packagePrefixes: Iterable<String>): Set<ClassSource> = packagePrefixes.run {
+    scanAvailableClassLoaders().apply { addAll(scanExternalSources()) }
 }
 
-fun scanExternalSources(packagePrefixes: Iterable<String>): List<ClassSource> {
-    return WebContainerSource.additionalSources.filter { source -> packagePrefixes.any { source.className.startsWith(it) } }
+fun Iterable<String>.scanExternalSources(): List<ClassSource> = WebContainerSource.additionalSources.filter {
+    it.className.startsWithAnyOf(this)
 }
 
-fun scanAvailableClassLoaders(packagePrefixes: Iterable<String>): List<ClassSource> {
+fun Iterable<String>.scanAvailableClassLoaders(): MutableSet<ClassSource> {
     val threadClassLoaders = Thread.getAllStackTraces().keys.mapNotNull(Thread::getContextClassLoader)
     val leafClassLoaders = threadClassLoaders
         .leaves(ClassLoader::getParent)
         .toListWith(ClassLoader.getSystemClassLoader())
-    return ClassPath(packagePrefixes)
-        .scan(leafClassLoaders)
-        .entries
-        .map { (clsName, loader) -> ClassLoaderSource(clsName.removeSuffix(".class"), loader) }
+    return ClassPath(this).scan(leafClassLoaders)
 }

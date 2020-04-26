@@ -1,21 +1,20 @@
-@file:Suppress("unused")
-
 package com.epam.drill.request
 
 import com.alibaba.ttl.*
+import com.epam.drill.logging.*
 import com.epam.drill.plugin.*
 import com.epam.drill.session.*
 import kotlinx.serialization.cbor.*
 import java.util.logging.*
 
 actual object RequestHolder {
+    private val log = Logger.getLogger(RequestHolder::class.java.name)
+
+    private var sessionIdHeaderName: String = ""
 
     init {
         threadStorage = TransmittableThreadLocal()
     }
-
-    private var sessionIdHeaderName: String = ""
-    private val log = Logger.getLogger(RequestHolder::class.java.name)
 
     actual fun store(rawRequest: String, pattern: String?){
         var drillRequest = parseHttpRequest(rawRequest).toDrillRequest()
@@ -35,14 +34,16 @@ actual object RequestHolder {
             threadStorage.remove()
         } else {
             threadStorage.set(drillRequest)
-            println("session saved: ${drillRequest.drillSessionId}")
+            log(Level.INFO) { "session saved: ${drillRequest.drillSessionId}" }
         }
     }
 
+    @Suppress("unused")
     fun storeSessionId(sessionId: String) {
         this.sessionIdHeaderName = sessionId
     }
 
+    @Suppress("unused")
     fun request() = threadStorage.get() ?: null
 
     actual fun dump(): ByteArray? {

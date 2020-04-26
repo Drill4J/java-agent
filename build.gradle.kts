@@ -1,6 +1,8 @@
 import com.github.jengelman.gradle.plugins.shadow.tasks.*
+import org.jetbrains.kotlin.gradle.dsl.*
 import org.jetbrains.kotlin.gradle.plugin.mpp.*
 import org.jetbrains.kotlin.gradle.tasks.*
+import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 import org.jetbrains.kotlin.konan.target.*
 
 plugins {
@@ -131,11 +133,13 @@ val agentShadow by tasks.registering(ShadowJar::class) {
     relocate("kotlin", "kruntime")
 }
 
-tasks.withType<KotlinNativeCompile> {
-    kotlinOptions.freeCompilerArgs += "-Xuse-experimental=kotlinx.serialization.ImplicitReflectionSerializer"
-    kotlinOptions.freeCompilerArgs += "-Xuse-experimental=kotlin.ExperimentalUnsignedTypes"
-    kotlinOptions.freeCompilerArgs += "-Xuse-experimental=kotlin.time.ExperimentalTime"
-    kotlinOptions.freeCompilerArgs += "-Xuse-experimental=kotlinx.coroutines.ExperimentalCoroutinesApi"
+tasks.withType<org.jetbrains.kotlin.gradle.dsl.KotlinCompile<KotlinCommonOptions>> {
+    kotlinOptions.freeCompilerArgs += listOf(
+        "-Xuse-experimental=kotlinx.serialization.ImplicitReflectionSerializer",
+        "-Xuse-experimental=kotlin.ExperimentalUnsignedTypes",
+        "-Xuse-experimental=kotlin.time.ExperimentalTime",
+        "-Xuse-experimental=kotlinx.coroutines.ExperimentalCoroutinesApi"
+    )
 }
 
 tasks.withType<org.jetbrains.kotlin.gradle.targets.native.tasks.KotlinNativeTest> {

@@ -5,12 +5,14 @@ package com.epam.drill.agent
 import com.epam.drill.*
 import com.epam.drill.agent.classloading.*
 import com.epam.drill.common.*
+import com.epam.drill.logging.*
 import com.epam.drill.plugin.api.*
 import com.epam.drill.plugin.api.processing.*
 import kotlinx.serialization.builtins.*
 import java.util.*
 import java.util.jar.*
 import java.util.logging.*
+import kotlin.time.*
 
 object DataService {
     private val log = Logger.getLogger(DataService::class.java.name)
@@ -28,15 +30,30 @@ object DataService {
 
     fun retrieveClassesData(config: String): String {
         val packagesPrefixes = (PackagesPrefixes.serializer() parse config).packagesPrefixes
-        val classResources = scanResourceMap(packagesPrefixes)
-        val loadedClassData = classResources.associate {
-            it.className to it.bytes()
+
+        log(Level.INFO) { "Scanning classes, package prefixes: $packagesPrefixes..." }
+        val scanResult = measureTimedValue { scanResourceMap(packagesPrefixes) }
+        val classSources = scanResult.value
+        log(Level.INFO) { "Scanned ${classSources.count()} classes in  ${scanResult.duration}." }
+
+        log(Level.INFO) { "Loading ${classSources.count()} classes..." }
+        val loadingResult = measureTimedValue {
+            classSources.associate { it.className to it.bytes() }
         }
-        log.log(Level.INFO, "Classes loaded: ${loadedClassData.count()}, package prefixes: $packagesPrefixes")
+        val loadedClassData = loadingResult.value
         AgentPluginData.classMap = loadedClassData
-        val encodedClasses = loadedClassData.map { (className, bytes) ->
-            Base64Class.serializer() stringify Base64Class(className, Base64.getEncoder().encodeToString(bytes))
+        val classCount = loadedClassData.count()
+        log(Level.INFO) { "Loaded $classCount classes in ${loadingResult.duration}" }
+
+        log(Level.INFO) { "Encoding $classCount classes..." }
+        val encodingResult = measureTimedValue {
+            val encodedClasses = loadedClassData.map { (className, bytes) ->
+                Base64Class.serializer() stringify Base64Class(className, Base64.getEncoder().encodeToString(bytes))
+            }
+            String.serializer().list stringify encodedClasses
         }
-        return String.serializer().list stringify encodedClasses
+        log(Level.INFO) { "Encoded $classCount classes in ${encodingResult.duration}" }
+
+        return encodingResult.value
     }
 }

@@ -9,6 +9,16 @@ class LeavesTest {
     }
 
     @Test
+    fun `parents simple case`() = with(Node("root")) {
+        child("node") {
+            val leaf = child("leaf")
+            val parents = leaf.parents(Node::parent)
+            assertEquals(listOf("root", "node"), parents.map(Node::data))
+        }
+        assertEquals(emptyList(), parents(Node::parent))
+    }
+
+    @Test
     fun `mutRefSet can store duplicated data`() {
         val mutRefSet = mutRefSet<Node>()
         val node = Node("1")
@@ -16,6 +26,15 @@ class LeavesTest {
         mutRefSet.add(node)
         mutRefSet.add(Node("1"))
         assertEquals(2, mutRefSet.count())
+    }
+
+    @Test
+    fun `mutRefSet preserves order and removes duplications`() {
+        val mutRefSet = mutRefSet<Node>()
+        val node2 = Node("2")
+        val nodes = listOf(Node("3"), node2, node2, Node("1"))
+        mutRefSet.addAll(nodes)
+        assertEquals(listOf("3", "2", "1"), mutRefSet.map(Node::data))
     }
 
     @Test

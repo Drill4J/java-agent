@@ -35,7 +35,7 @@ repositories {
 
 dependencies {
     compileOnly("org.springframework:spring-context:5.1.8.RELEASE")
-    implementation("org.springframework.samples:spring-petclinic:2.1.0")
+    implementation("org.springframework.samples:spring-petclinic:2.1.0") { isTransitive = false }
 }
 
 tasks {
