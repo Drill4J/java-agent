@@ -4,13 +4,11 @@ import com.epam.drill.*
 import com.epam.drill.agent.*
 import com.epam.drill.agent.classloading.*
 import com.epam.drill.common.*
+import com.epam.drill.common.serialization.*
 import com.epam.drill.core.plugin.loader.*
-import com.epam.drill.jvmapi.*
-import com.epam.drill.jvmapi.gen.*
 import com.epam.drill.request.*
 import kotlinx.cinterop.*
-import kotlinx.coroutines.*
-import kotlinx.serialization.builtins.*
+import kotlinx.serialization.protobuf.*
 import mu.*
 
 @kotlin.native.concurrent.SharedImmutable
@@ -20,27 +18,22 @@ private val logger = KotlinLogging.logger("CallbackLogger")
 @SharedImmutable
 val CallbackRegister: Unit = run {
     getClassesByConfig = {
-        runBlocking {
-            when (waitForMultipleWebApps()) {
-                null -> logger.warn {
-                    "Apps: ${state.webApps.filterValues { !it }.keys} have not initialized in ${waitingTimeout}ms.. " +
-                            "Please check the app names or increase the timeout"
-                }
-                else -> logger.info { "app is initialized" }
+        when (waitForMultipleWebApps()) {
+            null -> logger.warn {
+                "Apps: ${state.webApps.filterValues { !it }.keys} have not initialized in ${waitingTimeout}ms.. " +
+                        "Please check the app names or increase the timeout"
             }
-            val packagesPrefixes = exec { agentConfig.packagesPrefixes }
-            val (serviceClass, service) = dataService()
-            val retrieveClassesData: jmethodID? =
-                GetMethodID(serviceClass, "retrieveClassesData", "(Ljava/lang/String;)Ljava/lang/String;")
-            val jsonClasses = CallObjectMethod(service, retrieveClassesData, NewStringUTF(packagesPrefixes))
-            String.serializer().list parse (jsonClasses.toKString() ?: "[]")
+            else -> logger.info { "app is initialized" }
         }
+        val packagesPrefixes = exec { agentConfig.packagesPrefixes }
+        val retrieveClassesData = DataService.retrieveClassesData(PackagesPrefixes.serializer() stringify packagesPrefixes)
+
+        ProtoBuf.load(ByteArrayListWrapper.serializer(), retrieveClassesData).bytesList
     }
 
     setPackagesPrefixes = { prefixes ->
         exec { agentConfig.packagesPrefixes = prefixes }
-        val parsedPrefixes = (PackagesPrefixes.serializer() parse prefixes).packagesPrefixes
-        state = state.copy(packagePrefixes = parsedPrefixes)
+        state = state.copy(packagePrefixes = prefixes.packagesPrefixes)
     }
 
     sessionStorage = RequestHolder::store

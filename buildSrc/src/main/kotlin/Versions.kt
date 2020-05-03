@@ -4,12 +4,12 @@ val coroutinesVersion = "1.3.5"
 
 val drillJvmApiLibVersion = "0.4.1"
 
-val drillApiVersion = "0.5.0-32"
+val drillApiVersion = "0.5.0-36"
 
-val drillAgentCoreVersion = "0.5.0-41"
+val drillAgentCoreVersion = "0.5.0-42"
 
 val drillLogger = "0.1.2"
 
-val drillTransportLibVerison = "0.1.10"
+val drillTransportLibVerison = "0.2.0"
 
 val uuidVersion = "0.1.0"
