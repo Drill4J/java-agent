@@ -25,7 +25,7 @@ drill {
     runtimePath = drillDistrDir
     adminHost = "localhost"
     adminPort = 8090
-    logLevel = com.epam.drill.agent.runner.LogLevels.DEBUG
+    logLevel = com.epam.drill.agent.runner.LogLevels.TRACE
 }
 
 repositories {
