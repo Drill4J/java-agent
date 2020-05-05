@@ -2,13 +2,18 @@
 
 package com.epam.drill.core
 
+import com.epam.drill.agent.*
 import com.epam.drill.agent.jvmapi.*
 import com.epam.drill.api.*
 import com.epam.drill.jvmapi.*
 import com.epam.drill.jvmapi.gen.*
 import kotlinx.cinterop.*
-import kotlinx.serialization.builtins.*
-import kotlinx.serialization.cbor.*
+import mu.*
+import kotlin.native.concurrent.*
+import kotlin.time.*
+
+@SharedImmutable
+private val logger = KotlinLogging.logger("SymbolsRegister")
 
 @CName("currentEnvs")
 fun currentEnvs(): JNIEnvPointer {
@@ -55,13 +60,19 @@ fun sendFromJava(envs: JNIEnv, thiz: jobject, jpluginId: jstring, jmessage: jstr
 @Suppress("UNUSED_PARAMETER")
 @CName("Java_com_epam_drill_plugin_api_Native_RetransformClassesByPackagePrefixes")
 fun RetransformClassesByPackagePrefixes(env: JNIEnv, thiz: jobject, prefixes: jbyteArray): jint = memScoped {
-    val packagesPrefixes =
-        prefixes.readBytes()?.let { Cbor.load(String.serializer().set, it).map { "L$it;" } } ?: return@memScoped 0
-    getLoadedClasses()
-        .associateBy { alloc<CPointerVar<ByteVar>>().apply { GetClassSignature(it, ptr, null) }.value!! }
-        .filterKeys { packagesPrefixes.contains(it.toKString()) }.values.toList()
-        .apply { RetransformClasses(size, toCValues()) }
-        .size
+    val decodedPrefixes = prefixes.readBytes()?.decodePackages() ?: emptyList()
+    val allPrefixes = (state.packagePrefixes + decodedPrefixes).distinct().map { "L$it" }
+    logger.info { "Package prefixes: $allPrefixes." }
+    if (allPrefixes.any()) {
+        getLoadedClasses().filter { jclass ->
+            val classSignature = jclass.signature()
+            '$' !in classSignature && allPrefixes.any { classSignature.startsWith(it) }
+        }.toList().apply {
+            logger.info { "$size classes to retransform." }
+            val duration = measureTime { RetransformClasses(size, toCValues()) }
+            logger.info { "Retransformed $size classes in $duration." }
+        }.size
+    } else 0
 }
 
 @Suppress("UNUSED_PARAMETER")
@@ -86,9 +97,19 @@ fun GetAllLoadedClasses(env: JNIEnv, thiz: jobject) = memScoped {
     javaArray
 }
 
-private fun MemScope.getLoadedClasses() = run {
+private fun MemScope.getLoadedClasses(): Sequence<jclass> = run {
     val count = alloc<jintVar>()
     val classes = alloc<CPointerVar<jclassVar>>()
     GetLoadedClasses(count.ptr, classes.ptr)
     classes.value!!.sequenceOf(count.value)
 }
+
+private fun jclass.signature(): String = memScoped {
+    val ptrVar = alloc<CPointerVar<ByteVar>>()
+    GetClassSignature(this@signature, ptrVar.ptr, null)
+    ptrVar.value!!.toKString()
+}
+
+private fun ByteArray.decodePackages(): List<String> = takeIf { it.any() }?.run {
+    decodeToString().split(',')
+} ?: emptyList()
