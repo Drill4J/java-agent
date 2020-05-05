@@ -4,12 +4,12 @@ import com.epam.drill.*
 import com.epam.drill.agent.jvmapi.*
 import com.epam.drill.jvmapi.gen.*
 import com.epam.drill.plugin.*
-import kotlinx.serialization.cbor.*
+import kotlinx.serialization.protobuf.*
 
 actual object RequestHolder {
 
     fun get(): DrillRequest? {
-        return dump()?.let { Cbor.load(DrillRequest.serializer(), it) }
+        return dump()?.let { ProtoBuf.load(DrillRequest.serializer(), it) }
     }
 
     actual fun dump(): ByteArray? {

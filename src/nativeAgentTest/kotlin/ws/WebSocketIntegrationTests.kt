@@ -10,7 +10,7 @@ import com.epam.drill.io.ktor.utils.io.internal.utils.test.*
 import com.epam.drill.plugin.*
 import kotlinx.coroutines.*
 import kotlinx.serialization.*
-import kotlinx.serialization.cbor.*
+import kotlinx.serialization.protobuf.*
 import kotlin.test.*
 
 class WebSocketIntegrationTests : TestBase() {
@@ -43,7 +43,7 @@ class WebSocketIntegrationTests : TestBase() {
         val headersRequest = parseHttpRequest(headers)
         val rawAgentConfig = headersRequest.headers["agentconfig"]
         assertNotNull(rawAgentConfig)
-        val agentConfig = Cbor.loads(AgentConfig.serializer(), rawAgentConfig)
+        val agentConfig = ProtoBuf.loads(AgentConfig.serializer(), rawAgentConfig)
         assertEquals(agentId, agentConfig.id)
         assertEquals("true", headersRequest.headers["needsync"])
     }

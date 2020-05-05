@@ -4,7 +4,7 @@ import com.alibaba.ttl.*
 import com.epam.drill.logging.*
 import com.epam.drill.plugin.*
 import com.epam.drill.session.*
-import kotlinx.serialization.cbor.*
+import kotlinx.serialization.protobuf.*
 import java.util.logging.*
 
 actual object RequestHolder {
@@ -47,7 +47,7 @@ actual object RequestHolder {
     fun request() = threadStorage.get() ?: null
 
     actual fun dump(): ByteArray? {
-        return threadStorage.get()?.let { Cbor.dump(DrillRequest.serializer(), it) }
+        return threadStorage.get()?.let { ProtoBuf.dump(DrillRequest.serializer(), it) }
     }
 
 }

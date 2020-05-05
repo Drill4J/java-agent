@@ -63,7 +63,6 @@ kotlin {
                 dependsOn(sourceSets.named("commonMain").get())
                 dependencies {
                     implementation("org.jetbrains.kotlinx:kotlinx-serialization-runtime-native:$serializationRuntimeVersion")
-                    implementation("org.jetbrains.kotlinx:kotlinx-serialization-cbor-native:$serializationRuntimeVersion")
                     implementation("org.jetbrains.kotlinx:kotlinx-serialization-protobuf-native:$serializationRuntimeVersion")
                     implementation("org.jetbrains.kotlinx:kotlinx-serialization-properties-native:$serializationRuntimeVersion")
                     implementation("com.epam.drill:jvmapi-native:$drillJvmApiLibVersion")
@@ -85,7 +84,6 @@ kotlin {
                 implementation(kotlin("stdlib"))
                 implementation(kotlin("reflect")) //TODO jarhell quick fix for kotlin jvm apps
                 implementation("org.jetbrains.kotlinx:kotlinx-serialization-runtime:$serializationRuntimeVersion")
-                implementation("org.jetbrains.kotlinx:kotlinx-serialization-cbor:$serializationRuntimeVersion")
                 implementation("org.jetbrains.kotlinx:kotlinx-serialization-protobuf:$serializationRuntimeVersion")
                 implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:$coroutinesVersion")
                 implementation("com.epam.drill:common-jvm:$drillApiVersion")
