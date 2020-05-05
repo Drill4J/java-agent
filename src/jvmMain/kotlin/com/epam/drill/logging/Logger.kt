@@ -1,9 +1,9 @@
 package com.epam.drill.logging
 
-import java.util.logging.*
+enum class Level {
+    INFO
+}
 
-operator fun Logger.invoke(level: Level, msg: () -> String) {
-    if (isLoggable(level)) {
-        log(level, msg())
-    }
+fun log(level: Level, msg: () -> String) {
+    println("[DRILL][${level.name}]: ${msg()}")
 }

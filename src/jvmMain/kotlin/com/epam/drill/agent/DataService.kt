@@ -11,7 +11,6 @@ import com.epam.drill.plugin.api.processing.*
 import kotlinx.serialization.*
 import kotlinx.serialization.protobuf.*
 import java.util.jar.*
-import java.util.logging.*
 import kotlin.time.*
 
 @Serializable
@@ -19,7 +18,6 @@ class ByteArrayListWrapper(val bytesList: List<ByteArray>)
 
 @ExperimentalStdlibApi
 actual object DataService {
-    private val log = Logger.getLogger(DataService::class.java.name)
 
     fun retrieveApiClass(jarPath: String): Class<AgentPart<*, *>>? = JarFile(jarPath).use { jf ->
         val result = retrieveApiClass(

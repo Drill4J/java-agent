@@ -4,6 +4,7 @@ package com.epam.drill.agent.instrument
 
 import com.alibaba.ttl.internal.javassist.*
 import com.epam.drill.agent.classloading.*
+import com.epam.drill.logging.*
 import java.io.*
 
 
@@ -18,9 +19,12 @@ actual object Transformer {
                         .contains("javax.servlet.ServletContextListener")) {
                     val qualifiedName = WebContainerSource::class.qualifiedName
                     val fillWeSourceMethodName = WebContainerSource::fillWebAppSource.name
-                    declaredMethods.first { it.name == "contextInitialized" }.insertBefore(
-                        "try{$qualifiedName.INSTANCE.$fillWeSourceMethodName(\$1.getServletContext().getResource(\"/\").getPath());}catch(java.lang.Throwable e){}"
-                    )
+                    declaredMethods.firstOrNull { it.name == "contextInitialized" }?.insertBefore(
+                        "try{$qualifiedName.INSTANCE.$fillWeSourceMethodName(\$1.getServletContext().getRealPath(\"/\"),\$1.getServletContext().getResource(\"/\"));}catch(java.lang.Throwable e){}"
+                    ) ?: run {
+                        log(Level.INFO) { "!!!Can't find 'contextInitialized' for class ${this.name}. Allowed methods ${declaredMethods.map { it.name }} " }
+                        return null
+                    }
                     return toBytecode()
                 } else
                     null

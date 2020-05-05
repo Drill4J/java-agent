@@ -5,10 +5,8 @@ import com.epam.drill.logging.*
 import com.epam.drill.plugin.*
 import com.epam.drill.session.*
 import kotlinx.serialization.protobuf.*
-import java.util.logging.*
 
 actual object RequestHolder {
-    private val log = Logger.getLogger(RequestHolder::class.java.name)
 
     private var sessionIdHeaderName: String = ""
 
@@ -16,7 +14,7 @@ actual object RequestHolder {
         threadStorage = TransmittableThreadLocal()
     }
 
-    actual fun store(rawRequest: String, pattern: String?){
+    actual fun store(rawRequest: String, pattern: String?) {
         var drillRequest = parseHttpRequest(rawRequest).toDrillRequest()
         if (pattern != null) {
             val customId = drillRequest.headers[pattern] ?: run {
