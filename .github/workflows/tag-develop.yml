@@ -3,6 +3,9 @@ on:
   push:
     branches:
       - develop
+    paths-ignore:
+      - '**.md'
+      - 'LICENSE'
 
 jobs:
   tag:
@@ -19,8 +22,11 @@ jobs:
         uses: Drill4J/semver-tag-action@v0.1.0
         with:
           type: prerelease
-      - name: Tag commit
-        uses: tvdias/github-tagger@v0.0.1
+      - name: Create Prerelease
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.TOKEN }}
         with:
-          repo-token: ${{ secrets.githubUserPassword }}
-          tag: ${{ steps.next_semver.outputs.tag }}
+          tag_name: ${{ steps.next_semver.outputs.tag }}
+          release_name: ${{ steps.next_semver.outputs.tag }}
+          prerelease: true

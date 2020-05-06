@@ -1,24 +1,29 @@
-name: Check agent
+name: Check common
 on:
   pull_request:
     branches:
       - develop
+    paths-ignore:
+      - '**.md'
+      - 'LICENSE'
 
 jobs:
-  check_nix:
-    name: Check for nix platforms (Linux)
-    runs-on: ubuntu-latest
+  check:
+    strategy:
+      matrix:
+        config:
+          - {os: ubuntu-latest, preset: linuxX64}
+          - {os: macos-latest, preset: macosX64}
+          - {os: windows-latest, preset: mingwX64}
+    name: Check on ${{ matrix.config.os }}
+    runs-on: ${{ matrix.config.os }}
     steps:
       - uses: actions/checkout@v2
-      - name: Check
-        run: |
-          gradle --no-daemon -si check
-  check_windlows:
-    name: Check for windows platform
-    runs-on: windows-latest
-    if: "contains(github.event.head_commit.message, 'mingw check')"
-    steps:
-      - uses: actions/checkout@v2
-      - name: Check
-        run: |
-          gradle --no-daemon -si check
+      - uses: actions/setup-java@v1
+        with:
+          java-version: 11
+      - uses: eskatos/gradle-command-action@v1
+        with:
+          arguments: -s ${{ matrix.config.preset }}Test jvmTest
+        env:
+          GRADLE_OPTS: -Dorg.gradle.jvmargs=-Xmx2g
