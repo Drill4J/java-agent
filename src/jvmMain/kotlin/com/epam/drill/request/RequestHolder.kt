@@ -16,6 +16,7 @@ actual object RequestHolder {
 
     actual fun store(rawRequest: String, pattern: String?) {
         var drillRequest = parseHttpRequest(rawRequest).toDrillRequest()
+            .let { if (it.additionalConfig == null) it.copy(additionalConfig = "") else it }
         if (pattern != null) {
             val customId = drillRequest.headers[pattern] ?: run {
                 try {
