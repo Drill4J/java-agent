@@ -3,7 +3,7 @@ import org.jetbrains.kotlin.konan.target.*
 plugins {
     java
     application
-    id("com.epam.drill.agent.runner.app") version "0.1.2"
+    id("com.epam.drill.agent.runner.app")
 }
 
 val target = HostManager.host.presetName
