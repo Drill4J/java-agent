@@ -16,7 +16,6 @@ actual object RequestHolder {
 
     actual fun store(rawRequest: String, pattern: String?) {
         var drillRequest = parseHttpRequest(rawRequest).toDrillRequest()
-            .let { if (it.additionalConfig == null) it.copy(additionalConfig = "") else it }
         if (pattern != null) {
             val customId = drillRequest.headers[pattern] ?: run {
                 try {
@@ -26,10 +25,11 @@ actual object RequestHolder {
                     null
                 }
             }
-            if (customId != null)
+            if (customId != null) {
                 drillRequest = drillRequest.copy(drillSessionId = customId)
+            }
         }
-        if (drillRequest.drillSessionId == null) {
+        if (drillRequest.drillSessionId.isEmpty()) {
             threadStorage.remove()
         } else {
             threadStorage.set(drillRequest)
