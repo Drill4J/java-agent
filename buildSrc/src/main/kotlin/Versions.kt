@@ -6,10 +6,10 @@ val drillJvmApiLibVersion = "0.4.1"
 
 val drillApiVersion = "0.5.0-44"
 
-val drillAgentCoreVersion = "0.5.0-47"
+val drillAgentCoreVersion = "0.5.0-48"
 
 val drillLogger = "0.1.2"
 
-val drillTransportLibVerison = "0.2.0"
+val drillTransportLibVerison = "0.2.1"
 
 val uuidVersion = "0.1.0"
