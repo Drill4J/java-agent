@@ -9,7 +9,7 @@ import kotlin.native.concurrent.*
 
 @SharedImmutable
 private val logger = KotlinLogging.logger("WebApp")
-internal const val waitingTimeout: Long = 90000 //move to config or admin
+internal const val waitingTimeout: Long = 1500000 //move to config or admin
 
 @Suppress("UNUSED_PARAMETER", "unused")
 @CName("Java_com_epam_drill_agent_classloading_WebContainerSource_webAppStarted")
