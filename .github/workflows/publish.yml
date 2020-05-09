@@ -40,3 +40,16 @@ jobs:
           asset_path: ./build/distributions/${{ matrix.config.preset }}-${{ steps.to_version.outputs.result }}.zip
           asset_name: agent-${{ matrix.config.preset }}-${{ steps.to_version.outputs.result }}.zip
           asset_content_type: application/zip
+      - uses: eskatos/gradle-command-action@v1
+        if: ${{ matrix.config.preset == 'linuxX64' }}
+        with:
+          arguments: -s install${{ matrix.config.preset }}
+        env:
+          GRADLE_OPTS: -Dorg.gradle.jvmargs=-Xmx2g
+      - uses: docker/build-push-action@v1
+        if: ${{ matrix.config.preset == 'linuxX64' }}
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+          repository: drill4j/java-agent
+          tags: ${{ steps.to_version.outputs.result }}
