@@ -64,14 +64,17 @@ fun RetransformClassesByPackagePrefixes(env: JNIEnv, thiz: jobject, prefixes: jb
     val allPrefixes = (state.packagePrefixes + decodedPrefixes).distinct().map { "L$it" }
     logger.info { "Package prefixes: $allPrefixes." }
     if (allPrefixes.any()) {
-        getLoadedClasses().filter { jclass ->
-            val classSignature = jclass.signature()
-            '$' !in classSignature && allPrefixes.any { classSignature.startsWith(it) }
-        }.toList().apply {
-            logger.info { "$size classes to retransform." }
-            val duration = measureTime { RetransformClasses(size, toCValues()) }
-            logger.info { "Retransformed $size classes in $duration." }
-        }.size
+        getLoadedClasses()
+            .filter { jclass ->
+                val classSignature = jclass.signature()
+                '$' !in classSignature && allPrefixes.any { classSignature.startsWith(it) }
+            }
+            .filter { it.isValid() }
+            .toList().apply {
+                logger.info { "$size classes to retransform." }
+                val duration = measureTime { RetransformClasses(size, toCValues()) }
+                logger.info { "Retransformed $size classes in $duration." }
+            }.size
     } else 0
 }
 
@@ -102,12 +105,6 @@ private fun MemScope.getLoadedClasses(): Sequence<jclass> = run {
     val classes = alloc<CPointerVar<jclassVar>>()
     GetLoadedClasses(count.ptr, classes.ptr)
     classes.value!!.sequenceOf(count.value)
-}
-
-private fun jclass.signature(): String = memScoped {
-    val ptrVar = alloc<CPointerVar<ByteVar>>()
-    GetClassSignature(this@signature, ptrVar.ptr, null)
-    ptrVar.value!!.toKString()
 }
 
 private fun ByteArray.decodePackages(): List<String> = takeIf { it.any() }?.run {

@@ -44,6 +44,19 @@ class JStingConverter {
     }
 }
 
+fun jclass.signature(): String = memScoped {
+    val ptrVar = alloc<CPointerVar<ByteVar>>()
+    GetClassSignature(this@signature, ptrVar.ptr, null)
+    ptrVar.value!!.toKString()
+}
+
+fun jclass.isValid(): Boolean = memScoped {
+    val alloc = alloc<jintVar>()
+    GetClassStatus(this@isValid, alloc.ptr)
+    val status = alloc.value.toUInt()
+    status != 0.toUInt()
+}
+
 @Suppress("NOTHING_TO_INLINE")
 inline fun <T : CPointer<*>> CPointer<CPointerVarOf<T>>.sequenceOf(count: Int): Sequence<T> {
     var current = 0
