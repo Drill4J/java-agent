@@ -61,16 +61,19 @@ fun sendFromJava(envs: JNIEnv, thiz: jobject, jpluginId: jstring, jmessage: jstr
 @CName("Java_com_epam_drill_plugin_api_Native_RetransformClassesByPackagePrefixes")
 fun RetransformClassesByPackagePrefixes(env: JNIEnv, thiz: jobject, prefixes: jbyteArray): jint = memScoped {
     val decodedPrefixes = prefixes.readBytes()?.decodePackages() ?: emptyList()
-    val allPrefixes = (state.packagePrefixes + decodedPrefixes).distinct().map { "L$it" }
+    val allPrefixes = (state.packagePrefixes + decodedPrefixes).run {
+        filter { !it.startsWith("com/epam/drill") }.distinct().map { "L$it" }
+    }
     logger.info { "Package prefixes: $allPrefixes." }
     if (allPrefixes.any()) {
         getLoadedClasses()
+            .filter { it.status() in 1.toUInt()..7.toUInt() }
             .filter { jclass ->
-                val classSignature = jclass.signature()
-                '$' !in classSignature && allPrefixes.any { classSignature.startsWith(it) }
-            }
-            .filter { it.isValid() }
-            .toList().apply {
+                jclass.signature().run {
+                    startsWith('L') && !contains('$') &&
+                        !startsWith("Lcom/epam/drill") && allPrefixes.any { startsWith(it) }
+                }
+            }.toList().apply {
                 logger.info { "$size classes to retransform." }
                 val duration = measureTime { RetransformClasses(size, toCValues()) }
                 logger.info { "Retransformed $size classes in $duration." }

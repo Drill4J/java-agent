@@ -50,11 +50,10 @@ fun jclass.signature(): String = memScoped {
     ptrVar.value!!.toKString()
 }
 
-fun jclass.isValid(): Boolean = memScoped {
+fun jclass.status(): UInt = memScoped {
     val alloc = alloc<jintVar>()
-    GetClassStatus(this@isValid, alloc.ptr)
-    val status = alloc.value.toUInt()
-    status != 0.toUInt()
+    GetClassStatus(this@status, alloc.ptr)
+    alloc.value.toUInt()
 }
 
 @Suppress("NOTHING_TO_INLINE")
