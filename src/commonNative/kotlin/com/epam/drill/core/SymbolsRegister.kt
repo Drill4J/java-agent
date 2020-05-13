@@ -61,24 +61,45 @@ fun sendFromJava(envs: JNIEnv, thiz: jobject, jpluginId: jstring, jmessage: jstr
 @CName("Java_com_epam_drill_plugin_api_Native_RetransformClassesByPackagePrefixes")
 fun RetransformClassesByPackagePrefixes(env: JNIEnv, thiz: jobject, prefixes: jbyteArray): jint = memScoped {
     val decodedPrefixes = prefixes.readBytes()?.decodePackages() ?: emptyList()
-    val allPrefixes = (state.packagePrefixes + decodedPrefixes).run {
-        filter { !it.startsWith("com/epam/drill") }.distinct().map { "L$it" }
-    }
+    val drillPackage = "Lcom/epam/drill"
+    val allPrefixes = (state.packagePrefixes + decodedPrefixes).map { "L$it" }.filter {
+        !it.startsWith(drillPackage)
+    }.distinct()
     logger.info { "Package prefixes: $allPrefixes." }
-    if (allPrefixes.any()) {
-        getLoadedClasses()
-            .filter { it.status() in 1.toUInt()..7.toUInt() }
-            .filter { jclass ->
-                jclass.signature().run {
-                    startsWith('L') && !contains('$') &&
-                        !startsWith("Lcom/epam/drill") && allPrefixes.any { startsWith(it) }
+    allPrefixes.takeIf { it.any() }?.let { prefixes ->
+        getLoadedClasses().filter {
+            it.status() in 0.toUInt()..7.toUInt()
+        }.filter { jclass ->
+            val signature = jclass.signature()
+            '$' !in signature && !signature.startsWith(drillPackage) && prefixes.any { signature.startsWith(it) }
+        }.partition { it.status() == 7.toUInt() }.let { (loaded, undetermined)  ->
+            logger.info { "${loaded.size + undetermined.size} classes to retransform." }
+            measureTimedValue {
+                val processedCount: Int = measureTimedValue {
+                    RetransformClasses(loaded.size, loaded.toCValues())
+                }.let { (retCode, duration) ->
+                    loaded.size.takeIf { retCode == 0.toUInt() }?.also {
+                        logger.info { "Retransformed ${loaded.size} loaded classes in $duration." }
+                    } ?: 0.also { logger.error { "Error retransforming loaded classes." } }
                 }
-            }.toList().apply {
-                logger.info { "$size classes to retransform." }
-                val duration = measureTime { RetransformClasses(size, toCValues()) }
-                logger.info { "Retransformed $size classes in $duration." }
-            }.size
-    } else 0
+                val failed: List<jclass> = loaded.takeIf { processedCount == 0 } ?: emptyList()
+                (failed + undetermined).chunked(32) { chunk ->
+                    if (RetransformClasses(chunk.size, chunk.toCValues()) != 0.toUInt()) {
+                        logger.error { "Error retransforming chunk, starting per-class retransforming for the chunk." }
+                        chunk.count { jclass ->
+                            (RetransformClasses(1, cValuesOf(jclass)) == 0.toUInt()).also {
+                                if (!it) logger.error {
+                                    "Error retransforming ${jclass.signature()}, status=${jclass.status()}"
+                                }
+                            }
+                        }
+                    } else chunk.size
+                }.sum().plus(processedCount)
+            }.also {
+                logger.info { "Retransformed ${it.value} classes in ${it.duration}." }
+            }.value
+        }
+    } ?: 0
 }
 
 @Suppress("UNUSED_PARAMETER")
