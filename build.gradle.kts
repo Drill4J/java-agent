@@ -6,14 +6,24 @@ import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 import org.jetbrains.kotlin.konan.target.*
 
 plugins {
-    id("kotlin-multiplatform")
-    id("kotlinx-serialization")
+    kotlin("multiplatform")
+    kotlin("plugin.serialization")
     id("com.epam.drill.cross-compilation")
     id("com.epam.drill.version.plugin")
     id("com.github.johnrengelman.shadow")
     distribution
     `maven-publish`
 }
+
+val serializationRuntimeVersion = "0.20.0"
+val coroutinesVersion = "1.3.5"
+val uuidVersion = "0.1.0"
+
+val drillJvmApiLibVersion: String by extra
+val drillApiVersion: String by extra
+val drillAgentCoreVersion: String by extra
+val drillTransportLibVersion: String by extra
+val drillLogger: String by extra
 
 allprojects {
     repositories {
@@ -66,7 +76,7 @@ kotlin {
                     implementation("org.jetbrains.kotlinx:kotlinx-serialization-protobuf-native:$serializationRuntimeVersion")
                     implementation("org.jetbrains.kotlinx:kotlinx-serialization-properties-native:$serializationRuntimeVersion")
                     implementation("com.epam.drill:jvmapi-native:$drillJvmApiLibVersion")
-                    implementation("com.epam.drill.transport:core:$drillTransportLibVerison")
+                    implementation("com.epam.drill.transport:core:$drillTransportLibVersion")
                     implementation("com.benasher44:uuid:$uuidVersion")
                     implementation("com.epam.drill:drill-agent-part:$drillApiVersion")
                     implementation("com.epam.drill:common:$drillApiVersion")
