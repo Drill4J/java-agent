@@ -1,11 +1,13 @@
-name: Check common
+name: Check
 on:
   pull_request:
     branches:
-      - develop
-    paths-ignore:
-      - '**.md'
-      - 'LICENSE'
+      - 'develop'
+      - 'release/*'
+    paths:
+      - '**/src/**'
+      - '**.gradle.kts'
+      - 'gradle.properties'
 
 jobs:
   check:

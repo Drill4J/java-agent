@@ -1,4 +1,4 @@
-name: Publish common artifacts
+name: Publish
 on:
   release:
     types: [published]
@@ -15,6 +15,12 @@ jobs:
     runs-on: ${{ matrix.config.os }}
     steps:
       - uses: actions/checkout@v2
+      - id: to_version
+        uses: actions/github-script@0.9.0
+        with:
+          result-encoding: string
+          script: |
+            return '${{ github.event.release.tag_name }}'.replace(/^v/, '');
       - uses: actions/setup-java@v1
         with:
           java-version: 11
@@ -25,12 +31,6 @@ jobs:
           BINTRAY_USER: ${{ secrets.BINTRAY_USER }}
           BINTRAY_API_KEY: ${{ secrets.BINTRAY_API_KEY }}
           GRADLE_OPTS: -Dorg.gradle.jvmargs=-Xmx2g
-      - id: to_version
-        uses: actions/github-script@0.9.0
-        with:
-          github-token: ${{secrets.GITHUB_TOKEN}}
-          result-encoding: string
-          script: return context.payload.release.tag_name.replace(/^v/, '');
       - name: Upload Release Asset
         uses: actions/upload-release-asset@v1
         env:
