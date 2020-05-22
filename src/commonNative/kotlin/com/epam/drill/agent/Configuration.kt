@@ -6,6 +6,7 @@ import com.epam.drill.common.ws.*
 import com.epam.drill.logger.*
 import kotlinx.cinterop.*
 import kotlinx.serialization.*
+import mu.*
 import platform.posix.*
 import kotlin.native.concurrent.*
 
@@ -17,15 +18,19 @@ fun performAgentInitialization(initialParams: Map<String, String>) {
             this.agentConfig = AgentConfig(aa.agentId, aa.instanceId, aa.buildVersion, aa.groupId, AGENT_TYPE)
             this.adminAddress = URL("ws://${aa.adminAddress}")
         }
-        configureLogger(aa.level)
+        configureLogger(aa)
+
         if (aa.webAppNames.isNotEmpty()) {
             state = state.copy(webApps = aa.webApps.associateWith { false })
         }
     }
 }
 
-private fun configureLogger(logLevel: LogLevel) {
-    logConfig.value = configByLoggerLevel(logLevel).freeze()
+private fun configureLogger(arguments: AgentArguments) {
+    logConfig.value = configByLoggerLevel(arguments.level).freeze()
+    arguments.logFile?.let {
+        KotlinLogging.file = it
+    }
 }
 
 data class JavaProcess(

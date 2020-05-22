@@ -13,6 +13,7 @@ data class AgentArguments(
     val instanceId: String = uuid4().toString(),
     val groupId: String = "",
     val logLevel: String = LogLevel.ERROR.name,
+    val logFile: String? = null,
     val webAppNames: String = ""
 ) {
     val level: LogLevel

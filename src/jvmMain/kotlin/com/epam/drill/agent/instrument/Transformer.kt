@@ -5,10 +5,14 @@ package com.epam.drill.agent.instrument
 import com.alibaba.ttl.internal.javassist.*
 import com.epam.drill.agent.classloading.*
 import com.epam.drill.logging.*
+import mu.*
 import java.io.*
+import java.lang.RuntimeException
+import kotlin.reflect.jvm.*
 
 
 actual object Transformer {
+    private val logger = KotlinLogging.logger(Transformer::class.jvmName)
     private val classPool = ClassPool()
 
     fun transform(className: String, classfileBuffer: ByteArray, loader: ClassLoader): ByteArray? {
@@ -22,7 +26,7 @@ actual object Transformer {
                     declaredMethods.firstOrNull { it.name == "contextInitialized" }?.insertBefore(
                         "try{$qualifiedName.INSTANCE.$fillWeSourceMethodName(\$1.getServletContext().getRealPath(\"/\"),\$1.getServletContext().getResource(\"/\"));}catch(java.lang.Throwable e){}"
                     ) ?: run {
-                        log(Level.INFO) { "!!!Can't find 'contextInitialized' for class ${this.name}. Allowed methods ${declaredMethods.map { it.name }} " }
+                        logger.info { "Can't find 'contextInitialized' for class ${this.name}. Allowed methods ${declaredMethods.map { it.name }} " }
                         return null
                     }
                     return toBytecode()
@@ -31,7 +35,7 @@ actual object Transformer {
 
             }
         } catch (e: Exception) {
-            e.printStackTrace()
+            logger.warn(e) { "Instrumentation error" }
             null
         }
     }
