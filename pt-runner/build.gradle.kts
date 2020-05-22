@@ -26,6 +26,9 @@ drill {
     adminHost = "localhost"
     adminPort = 8090
     logLevel = com.epam.drill.agent.runner.LogLevels.TRACE
+    logFile = rootProject
+        .buildDir
+        .resolve("drill-${project.version}.log")
 }
 
 repositories {

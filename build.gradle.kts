@@ -24,6 +24,7 @@ val drillApiVersion: String by extra
 val drillAgentCoreVersion: String by extra
 val drillTransportLibVersion: String by extra
 val drillLogger: String by extra
+val klockVersion: String by extra
 
 allprojects {
     repositories {
@@ -99,6 +100,8 @@ kotlin {
                 implementation("com.epam.drill:common-jvm:$drillApiVersion")
                 implementation("com.epam.drill:drill-agent-part-jvm:$drillApiVersion")
                 implementation("com.alibaba:transmittable-thread-local:2.11.0")
+                implementation("com.epam.drill.logger:logger:$drillLogger")
+                implementation("com.soywiz.korlibs.klock:klock-jvm:$klockVersion")
             }
         }
         compilations["test"].defaultSourceSet {

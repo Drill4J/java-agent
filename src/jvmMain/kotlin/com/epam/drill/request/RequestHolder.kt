@@ -1,12 +1,14 @@
 package com.epam.drill.request
 
 import com.alibaba.ttl.*
-import com.epam.drill.logging.*
 import com.epam.drill.plugin.*
 import com.epam.drill.session.*
 import kotlinx.serialization.protobuf.*
+import mu.*
+import kotlin.reflect.jvm.*
 
 actual object RequestHolder {
+    private val logger = KotlinLogging.logger(RequestHolder::class.jvmName)
 
     private var sessionIdHeaderName: String = ""
 
@@ -33,7 +35,7 @@ actual object RequestHolder {
             threadStorage.remove()
         } else {
             threadStorage.set(drillRequest)
-            log(Level.INFO) { "session saved: ${drillRequest.drillSessionId}" }
+            logger.trace { "session saved: ${drillRequest.drillSessionId}" }
         }
     }
 

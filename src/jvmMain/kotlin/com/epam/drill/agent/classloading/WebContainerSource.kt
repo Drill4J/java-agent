@@ -2,10 +2,14 @@ package com.epam.drill.agent.classloading
 
 import com.epam.drill.agent.classloading.source.*
 import com.epam.drill.logging.*
+import mu.*
 import java.io.*
 import java.net.*
+import kotlin.reflect.jvm.*
 
 object WebContainerSource {
+    private val logger = KotlinLogging.logger(WebContainerSource::class.jvmName)
+
     private val scannedNames = mutableSetOf<String>()
 
     private val scannedDirs = mutableSetOf<File>()
@@ -16,10 +20,10 @@ object WebContainerSource {
 
     fun fillWebAppSource(warPath: String?, warResource: URL?) {
         if (warPath == null || warResource == null) {
-            log(Level.INFO) { "Can't find web app sources. warPath='${warPath}', warResource='${warResource}'" }
+            logger.warn { "Can't find web app sources. warPath='${warPath}', warResource='${warResource}'" }
             return
         }
-        log(Level.INFO) { "Process web app: warPath='${warPath}', warResource='${warResource}'" }
+        logger.warn { "Process web app: warPath='${warPath}', warResource='${warResource}'" }
         val deployedApp = File(warPath)
         deployedApp.parentFile
             .listFiles { pathname -> pathname?.name?.contains(".jar") ?: false }
