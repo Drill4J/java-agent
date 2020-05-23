@@ -26,7 +26,8 @@ val CallbackRegister: Unit = run {
             else -> logger.info { "app is initialized" }
         }
         val packagesPrefixes = exec { agentConfig.packagesPrefixes }
-        val retrieveClassesData = DataService.retrieveClassesData(PackagesPrefixes.serializer() stringify packagesPrefixes)
+        val retrieveClassesData =
+            DataService.retrieveClassesData(PackagesPrefixes.serializer() stringify packagesPrefixes)
 
         ProtoBuf.load(ByteArrayListWrapper.serializer(), retrieveClassesData).bytesList
     }
@@ -36,7 +37,7 @@ val CallbackRegister: Unit = run {
         state = state.copy(packagePrefixes = prefixes.packagesPrefixes)
     }
 
-    sessionStorage = RequestHolder::store
+    sessionStorage = RequestHolder::storeRequestMetadata
     drillRequest = RequestHolder::get
 
     loadPlugin = ::loadPluginForJvm

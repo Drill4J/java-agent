@@ -76,7 +76,7 @@ kotlin {
                     implementation("org.jetbrains.kotlinx:kotlinx-serialization-runtime-native:$serializationRuntimeVersion")
                     implementation("org.jetbrains.kotlinx:kotlinx-serialization-protobuf-native:$serializationRuntimeVersion")
                     implementation("org.jetbrains.kotlinx:kotlinx-serialization-properties-native:$serializationRuntimeVersion")
-                    implementation("com.epam.drill:jvmapi-native:$drillJvmApiLibVersion")
+                    implementation("com.epam.drill:jvmapi:$drillJvmApiLibVersion")
                     implementation("com.epam.drill.transport:core:$drillTransportLibVersion")
                     implementation("com.benasher44:uuid:$uuidVersion")
                     implementation("com.epam.drill:drill-agent-part:$drillApiVersion")
