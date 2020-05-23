@@ -42,7 +42,6 @@ private fun runAgent(agentParameters: Map<String, String>) {
         logger.error { "unhandled event $error" }
     }.freeze())
 
-    printAllowedCapabilities()
     memScoped {
         val jvmtiCapabilities = alloc<jvmtiCapabilities>()
         jvmtiCapabilities.can_retransform_classes = 1.toUInt()
