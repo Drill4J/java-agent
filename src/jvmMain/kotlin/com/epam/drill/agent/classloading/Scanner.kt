@@ -23,7 +23,7 @@ internal fun JarInputStream.scan(
 ): Unit = forEachFile { entry ->
     val name = entry.name
     when(name.substringAfterLast('.')) {
-        "class" -> name.removeSuffix(".class").let {
+        "class" -> name.toClassName().let {
             val prefix = "BOOT-INF/classes/" //TODO check manifest
             if (it.startsWith(prefix)) {
                 it.removePrefix(prefix)
@@ -39,7 +39,7 @@ internal fun File.scan(
     predicate: (String) -> Boolean,
     handler: (ClassSource) -> Unit
 ) = walkTopDown().filter { it.isFile && it.extension == "class" }.forEach { f ->
-    val name = f.toRelativeString(this).replace(File.separatorChar, '/')
+    val name = f.toRelativeString(this).replace(File.separatorChar, '/').toClassName()
     if (name.isAllowed() && predicate(name)) {
         handler(FileSource(name, f))
     }
@@ -52,5 +52,7 @@ private tailrec fun JarInputStream.forEachFile(block: JarInputStream.(JarEntry) 
     }
     forEachFile(block)
 }
+
+private fun String.toClassName() = removeSuffix(".class")
 
 private fun String.isAllowed() = !contains('$') && !startsWithAnyOf(excludedPaths)
