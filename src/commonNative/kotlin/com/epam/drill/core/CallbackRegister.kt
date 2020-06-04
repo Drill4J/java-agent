@@ -25,7 +25,7 @@ val CallbackRegister: Unit = run {
             }
             else -> logger.info { "app is initialized" }
         }
-        val packagesPrefixes = exec { agentConfig.packagesPrefixes }
+        val packagesPrefixes = agentConfig.packagesPrefixes
         val retrieveClassesData =
             DataService.retrieveClassesData(PackagesPrefixes.serializer() stringify packagesPrefixes)
 
@@ -33,7 +33,7 @@ val CallbackRegister: Unit = run {
     }
 
     setPackagesPrefixes = { prefixes ->
-        exec { agentConfig.packagesPrefixes = prefixes }
+        agentConfig = agentConfig.copy(packagesPrefixes = prefixes)
         state = state.copy(packagePrefixes = prefixes.packagesPrefixes)
     }
 

@@ -13,11 +13,9 @@ import kotlin.native.concurrent.*
 fun performAgentInitialization(initialParams: Map<String, String>) {
     val agentArguments = Properties.load<AgentArguments>(initialParams)
     agentArguments.let { aa ->
-        exec {
-            this.drillInstallationDir = aa.drillInstallationDir
-            this.agentConfig = AgentConfig(aa.agentId, aa.instanceId, aa.buildVersion, aa.groupId, AGENT_TYPE)
-            this.adminAddress = URL("ws://${aa.adminAddress}")
-        }
+        drillInstallationDir = aa.drillInstallationDir
+        agentConfig = AgentConfig(aa.agentId, aa.instanceId, aa.buildVersion, aa.groupId, AGENT_TYPE)
+        adminAddress = URL("ws://${aa.adminAddress}")
         configureLogger(aa)
 
         if (aa.webAppNames.isNotEmpty()) {

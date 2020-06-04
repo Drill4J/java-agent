@@ -45,7 +45,7 @@ fun jvmtiEventVMInitEvent(env: CPointer<jvmtiEnvVar>?, jniEnv: CPointer<JNIEnvVa
 
     SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_CLASS_FILE_LOAD_HOOK, null)
     configureHttp()
-    WsSocket().connect(exec { adminAddress.toString() })
+    WsSocket().connect(adminAddress.toString())
 }
 
 private fun initializeTtlTransformer() {

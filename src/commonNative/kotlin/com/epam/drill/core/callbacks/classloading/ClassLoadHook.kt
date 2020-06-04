@@ -69,19 +69,17 @@ fun classLoadEvent(
                 loader
             )
         }
-        if ("$" !in kClassName && state.packagePrefixes.any { kClassName.startsWith(it) }) exec {
-            pstorage.values.filterIsInstance<InstrumentationNativePlugin>()
-        }.forEach { plugin ->
-
-            transformers += { jname, jbytes ->
-              CallObjectMethod(
-                    plugin.userPlugin,
-                    plugin.qs,
-                    jname,
-                    jbytes
-                )
+        if ("$" !in kClassName && state.packagePrefixes.any { kClassName.startsWith(it) })
+            pstorage.values.filterIsInstance<InstrumentationNativePlugin>().forEach { plugin ->
+                transformers += { jname, jbytes ->
+                    CallObjectMethod(
+                        plugin.userPlugin,
+                        plugin.qs,
+                        jname,
+                        jbytes
+                    )
+                }
             }
-        }
         if (transformers.any()) {
             val jClassBytes: jbyteArray = NewByteArray(classDataLen)!!
             val jClassName: jstring = NewStringUTF(kClassName)!!
@@ -102,7 +100,9 @@ fun classLoadEvent(
             }
         }
     } catch (throwable: Throwable) {
-        logger.error(throwable) { "Can't retransform class: $kClassName, ${classData.readBytes(classDataLen).contentToString()}" }
+        logger.error(throwable) {
+            "Can't retransform class: $kClassName, ${classData.readBytes(classDataLen).contentToString()}"
+        }
     }
 }
 

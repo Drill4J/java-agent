@@ -48,7 +48,7 @@ private fun runAgent(agentParameters: Map<String, String>) {
         jvmtiCapabilities.can_maintain_original_method_order = 1.toUInt()
         AddCapabilities(jvmtiCapabilities.ptr)
     }
-    AddToBootstrapClassLoaderSearch(exec { "$drillInstallationDir/drillRuntime.jar" })
+    AddToBootstrapClassLoaderSearch("$drillInstallationDir/drillRuntime.jar")
     callbackRegister()
 
     logger.info { "The native agent was loaded" }
