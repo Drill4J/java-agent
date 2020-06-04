@@ -14,7 +14,14 @@ fun performAgentInitialization(initialParams: Map<String, String>) {
     agentArguments.let { aa ->
         exec {
             this.drillInstallationDir = aa.drillInstallationDir
-            this.agentConfig = AgentConfig(aa.agentId, aa.instanceId, aa.buildVersion, aa.groupId, AGENT_TYPE)
+            agentConfig = AgentConfig(
+                id = aa.agentId,
+                instanceId = aa.instanceId,
+                agentVersion = agentVersion,
+                buildVersion = aa.buildVersion,
+                serviceGroupId = aa.groupId,
+                agentType = AGENT_TYPE
+            )
             this.adminAddress = URL("ws://${aa.adminAddress}")
         }
         configureLogger(aa.level)
