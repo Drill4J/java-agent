@@ -14,7 +14,14 @@ fun performAgentInitialization(initialParams: Map<String, String>) {
     val agentArguments = Properties.load<AgentArguments>(initialParams)
     agentArguments.let { aa ->
         drillInstallationDir = aa.drillInstallationDir
-        agentConfig = AgentConfig(aa.agentId, aa.instanceId, aa.buildVersion, aa.groupId, AGENT_TYPE)
+        agentConfig = AgentConfig(
+            id = aa.agentId,
+            instanceId = aa.instanceId,
+            agentVersion = agentVersion,
+            buildVersion = aa.buildVersion,
+            serviceGroupId = aa.groupId,
+            agentType = AGENT_TYPE
+        )
         adminAddress = URL("ws://${aa.adminAddress}")
         configureLogger(aa)
 
