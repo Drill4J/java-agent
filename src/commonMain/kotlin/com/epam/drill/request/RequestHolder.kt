@@ -8,4 +8,5 @@ expect object RequestHolder {
 
     fun store(drillRequest: ByteArray)
 
+    fun closeSession()
 }

@@ -36,5 +36,10 @@ actual object RequestHolder {
         store(ProtoBuf.dump(DrillRequest.serializer(), request))
     }
 
+    actual fun closeSession() {
+        val (requestHolderClass, requestHolder: jobject?) = instance<RequestHolder>()
+        val closeSession = GetMethodID(requestHolderClass, RequestHolder::closeSession.name, "()V")
+        return CallVoidMethod(requestHolder, closeSession)
+    }
 
 }

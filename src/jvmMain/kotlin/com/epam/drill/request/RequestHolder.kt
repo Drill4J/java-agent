@@ -24,4 +24,9 @@ actual object RequestHolder {
         return threadStorage.get()?.let { ProtoBuf.dump(DrillRequest.serializer(), it) }
     }
 
+    actual fun closeSession() {
+        logger.trace { "session ${threadStorage.get()} closed" }
+        threadStorage.remove()
+    }
+
 }

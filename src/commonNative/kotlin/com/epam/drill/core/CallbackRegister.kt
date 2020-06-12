@@ -38,6 +38,7 @@ val CallbackRegister: Unit = run {
     }
 
     sessionStorage = RequestHolder::storeRequestMetadata
+    closeSession = RequestHolder::closeSession
     drillRequest = RequestHolder::get
 
     loadPlugin = ::loadPluginForJvm
