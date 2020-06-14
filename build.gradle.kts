@@ -47,10 +47,10 @@ allprojects {
 
 kotlin.sourceSets.commonMain {
     kotlin.srcDir(
-        file("$buildDir/generated/kotlin").apply {
+        file("src/generated/kotlin").apply {
             mkdirs()
             resolve("Version.kt").writeText(
-                "package com.epam.drill.agent; internal val agentVersion = \"${project.version}\""
+                "package com.epam.drill.agent internal val agentVersion = \"${project.version}\""
             )
         }
     )
