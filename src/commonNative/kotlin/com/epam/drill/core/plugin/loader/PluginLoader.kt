@@ -49,16 +49,12 @@ fun loadPluginForJvm(pluginFilePath: String, pluginConfig: PluginMetadata) {
             )!!
 
         when (pluginConfig.family) {
-            Family.INSTRUMENTATION -> {
-                val inst = InstrumentationNativePlugin(pluginId, pluginApiClass, userPlugin, pluginConfig)
-                pstorage[pluginConfig.id] = inst
+            Family.INSTRUMENTATION -> InstrumentationNativePlugin(pluginId, pluginApiClass, userPlugin, pluginConfig)
+            Family.GENERIC -> GenericNativePlugin(pluginId, pluginApiClass, userPlugin, pluginConfig)
+        }.run {
+            pstorage[pluginConfig.id] = this
+            load(false)
 
-            }
-            Family.GENERIC -> {
-                GenericNativePlugin(pluginId, pluginApiClass, userPlugin, pluginConfig).apply {
-                    pstorage[this@apply.id] = this@apply
-                }
-            }
         }
     } catch (ex: Exception) {
         when (ex) {

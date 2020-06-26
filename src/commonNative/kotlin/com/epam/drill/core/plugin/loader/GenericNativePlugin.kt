@@ -22,7 +22,6 @@ open class GenericNativePlugin(
     init {
         updateRawConfig(PluginConfig(pluginConfig.id, pluginConfig.config))
         javaEnabled(pluginConfig.enabled)
-        load(false)
     }
 
     override suspend fun doRawAction(rawAction: String) {
