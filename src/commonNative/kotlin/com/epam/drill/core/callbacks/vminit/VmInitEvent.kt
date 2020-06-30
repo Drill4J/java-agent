@@ -2,14 +2,20 @@
 
 package com.epam.drill.core.callbacks.vminit
 
+import cnames.structs._jmethodID
 import com.epam.drill.*
+import com.epam.drill.agent.*
 import com.epam.drill.agent.instrument.*
 import com.epam.drill.agent.jvmapi.*
 import com.epam.drill.core.transport.*
 import com.epam.drill.core.ws.*
 import com.epam.drill.jvmapi.gen.*
+import com.epam.drill.logger.*
 import kotlinx.cinterop.*
+import kotlinx.coroutines.*
 import kotlin.native.concurrent.*
+
+private val logger = Logging.logger("VmInitEvent")
 
 private val _transformerObject = AtomicReference<jobject?>(null).freeze()
 private val _tranformMethod = AtomicReference<CPointer<_jmethodID>?>(null).freeze()
@@ -46,6 +52,25 @@ fun jvmtiEventVMInitEvent(env: CPointer<jvmtiEnvVar>?, jniEnv: CPointer<JNIEnvVa
     SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_CLASS_FILE_LOAD_HOOK, null)
     configureHttp()
     WsSocket().connect(adminAddress.toString())
+    runBlocking {
+        for (i in 1..5) {
+            logger.info { "Agent is not alive. Waiting for package settings from $adminAddress..." }
+            delay(500L)
+            if (state.alive) {
+                logger.info { "Agent is alive! Waiting for loading of at least one plugin..." }
+                while (pstorage.none()) {
+                    delay(500L)
+                }
+                logger.info {
+                    "At least on plugin is loaded (plugins ${pstorage.keys.toList()}), continue vm initializing."
+                }
+                break
+            }
+        }
+        if (pstorage.none()) {
+            logger.info { "No plugins loaded from $adminAddress." }
+        }
+    }
 }
 
 private fun initializeTtlTransformer() {

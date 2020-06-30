@@ -12,6 +12,7 @@ var state: State
 
 
 data class State(
+    val alive: Boolean = false, //true if the agent successfully received package prefixes
     val webApps: Map<String, Boolean> = mapOf(),
     val packagePrefixes: List<String> = emptyList()
 )
