@@ -34,7 +34,10 @@ val CallbackRegister: Unit = run {
 
     setPackagesPrefixes = { prefixes ->
         agentConfig = agentConfig.copy(packagesPrefixes = prefixes)
-        state = state.copy(packagePrefixes = prefixes.packagesPrefixes)
+        state = state.copy(
+            alive = true,
+            packagePrefixes = prefixes.packagesPrefixes
+        )
     }
 
     sessionStorage = RequestHolder::storeRequestMetadata
