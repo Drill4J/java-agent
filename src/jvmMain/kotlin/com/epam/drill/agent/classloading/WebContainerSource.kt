@@ -1,14 +1,13 @@
 package com.epam.drill.agent.classloading
 
 import com.epam.drill.agent.classloading.source.*
-import com.epam.drill.logging.*
-import mu.*
+import com.epam.drill.logger.*
 import java.io.*
 import java.net.*
 import kotlin.reflect.jvm.*
 
 object WebContainerSource {
-    private val logger = KotlinLogging.logger(WebContainerSource::class.jvmName)
+    private val logger = Logging.logger(WebContainerSource::class.jvmName)
 
     private val scannedNames = mutableSetOf<String>()
 

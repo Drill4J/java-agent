@@ -6,7 +6,7 @@ import com.alibaba.ttl.threadpool.agent.*
 import com.alibaba.ttl.threadpool.agent.internal.logging.*
 import com.alibaba.ttl.threadpool.agent.internal.transformlet.*
 import com.alibaba.ttl.threadpool.agent.internal.transformlet.impl.*
-import mu.*
+import com.epam.drill.logger.*
 import java.lang.instrument.*
 import java.security.*
 import java.util.*
@@ -16,7 +16,7 @@ import kotlin.reflect.jvm.*
 actual object TTLTransformer : ClassFileTransformer {
     private val transformletList: MutableList<JavassistTransformlet> = ArrayList()
 
-    private val logger = KotlinLogging.logger(TTLTransformer::class.jvmName)
+    private val logger = Logging.logger(TTLTransformer::class.jvmName)
 
     init {
         Logger.setLoggerImplType("")

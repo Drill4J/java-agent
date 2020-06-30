@@ -5,12 +5,12 @@ import com.epam.drill.common.*
 import com.epam.drill.core.exceptions.*
 import com.epam.drill.jvmapi.*
 import com.epam.drill.jvmapi.gen.*
+import com.epam.drill.logger.*
 import kotlinx.cinterop.*
-import mu.*
 
 
 @SharedImmutable
-val plLogger = KotlinLogging.logger("plLogger")
+val plLogger = Logging.logger("plLogger")
 
 fun dataService(): Pair<jclass?, jobject?> {
     val className = "com/epam/drill/agent/DataService"

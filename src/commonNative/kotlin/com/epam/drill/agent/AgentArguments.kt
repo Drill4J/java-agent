@@ -1,7 +1,7 @@
 package com.epam.drill.agent
 
 import com.benasher44.uuid.*
-import com.epam.drill.logger.*
+import com.epam.drill.logger.api.*
 import kotlinx.serialization.Serializable
 
 @Serializable
@@ -16,8 +16,6 @@ data class AgentArguments(
     val logFile: String? = null,
     val webAppNames: String = ""
 ) {
-    val level: LogLevel
-        get() = LogLevel.valueOf(logLevel)
     val webApps: List<String>
         get() = webAppNames.split(":")
 }

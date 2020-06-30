@@ -3,12 +3,12 @@ package com.epam.drill.agent.classloading
 import com.epam.drill.agent.*
 import com.epam.drill.agent.jvmapi.*
 import com.epam.drill.jvmapi.gen.*
+import com.epam.drill.logger.*
 import kotlinx.coroutines.*
-import mu.*
 import kotlin.native.concurrent.*
 
 @SharedImmutable
-private val logger = KotlinLogging.logger("WebApp")
+private val logger = Logging.logger("WebApp")
 internal const val waitingTimeout: Long = 1500000 //move to config or admin
 
 @Suppress("UNUSED_PARAMETER", "unused")

@@ -4,11 +4,10 @@ import com.epam.drill.*
 import com.epam.drill.common.*
 import com.epam.drill.common.ws.*
 import com.epam.drill.logger.*
+import com.epam.drill.logger.api.*
 import kotlinx.cinterop.*
 import kotlinx.serialization.*
-import mu.*
 import platform.posix.*
-import kotlin.native.concurrent.*
 
 fun performAgentInitialization(initialParams: Map<String, String>) {
     val agentArguments = Properties.load<AgentArguments>(initialParams)
@@ -32,10 +31,8 @@ fun performAgentInitialization(initialParams: Map<String, String>) {
 }
 
 private fun configureLogger(arguments: AgentArguments) {
-    logConfig.value = configByLoggerLevel(arguments.level).freeze()
-    arguments.logFile?.let {
-        KotlinLogging.file = it
-    }
+    Logging.logLevel = LogLevel.valueOf(arguments.logLevel)
+    arguments.logFile?.let { Logging.filename = it }
 }
 
 data class JavaProcess(

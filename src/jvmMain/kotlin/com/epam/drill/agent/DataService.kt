@@ -5,11 +5,11 @@ package com.epam.drill.agent
 import com.epam.drill.*
 import com.epam.drill.agent.classloading.*
 import com.epam.drill.common.*
+import com.epam.drill.logger.*
 import com.epam.drill.plugin.api.*
 import com.epam.drill.plugin.api.processing.*
 import kotlinx.serialization.*
 import kotlinx.serialization.protobuf.*
-import mu.*
 import java.util.jar.*
 import kotlin.reflect.jvm.*
 import kotlin.time.*
@@ -19,7 +19,7 @@ class ByteArrayListWrapper(val bytesList: List<ByteArray>)
 
 @ExperimentalStdlibApi
 actual object DataService {
-    private val logger = KotlinLogging.logger(DataService::class.jvmName)
+    private val logger = Logging.logger(DataService::class.jvmName)
 
     fun retrieveApiClass(jarPath: String): Class<AgentPart<*, *>>? = JarFile(jarPath).use { jf ->
         val result = retrieveApiClass(

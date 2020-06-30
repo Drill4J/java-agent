@@ -110,9 +110,9 @@ kotlin {
                 implementation("org.jetbrains.kotlinx:kotlinx-serialization-protobuf:$serializationRuntimeVersion")
                 implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:$coroutinesVersion")
                 implementation("com.epam.drill:common-jvm:$drillApiVersion")
+                implementation("com.epam.drill.logger:logger:$drillLogger")
                 implementation("com.epam.drill:drill-agent-part-jvm:$drillApiVersion")
                 implementation("com.alibaba:transmittable-thread-local:2.11.0")
-                implementation("com.epam.drill.logger:logger:$drillLogger")
                 implementation("com.soywiz.korlibs.klock:klock-jvm:$klockVersion")
             }
         }

@@ -7,12 +7,12 @@ import com.epam.drill.agent.*
 import com.epam.drill.core.callbacks.vminit.*
 import com.epam.drill.core.plugin.loader.*
 import com.epam.drill.jvmapi.gen.*
+import com.epam.drill.logger.*
 import kotlinx.cinterop.*
-import mu.*
 import org.objectweb.asm.*
 
 @SharedImmutable
-private val logger = KotlinLogging.logger("jvmtiEventClassFileLoadHookEvent")
+private val logger = Logging.logger("jvmtiEventClassFileLoadHookEvent")
 
 @SharedImmutable
 private val directTtlClasses = listOf(
