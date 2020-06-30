@@ -1,14 +1,14 @@
 package com.epam.drill.request
 
 import com.alibaba.ttl.*
+import com.epam.drill.logger.*
 import com.epam.drill.plugin.*
 import com.epam.drill.session.*
 import kotlinx.serialization.protobuf.*
-import mu.*
 import kotlin.reflect.jvm.*
 
 actual object RequestHolder {
-    private val logger = KotlinLogging.logger(RequestHolder::class.jvmName)
+    private val logger = Logging.logger(RequestHolder::class.jvmName)
 
     init {
         threadStorage = TransmittableThreadLocal()

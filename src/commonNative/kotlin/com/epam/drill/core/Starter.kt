@@ -6,15 +6,15 @@ import com.epam.drill.core.callbacks.classloading.*
 import com.epam.drill.core.callbacks.vminit.*
 import com.epam.drill.jvmapi.*
 import com.epam.drill.jvmapi.gen.*
+import com.epam.drill.logger.*
 import com.epam.drill.transport.common.ws.*
 import kotlinx.cinterop.*
-import mu.*
 import platform.posix.*
 import kotlin.native.concurrent.*
 import kotlin.test.*
 
 @SharedImmutable
-private val logger = KotlinLogging.logger("MainLogger")
+private val logger = Logging.logger("MainLogger")
 
 @Suppress("UNUSED_PARAMETER", "UNUSED")
 @CName("Agent_OnLoad")

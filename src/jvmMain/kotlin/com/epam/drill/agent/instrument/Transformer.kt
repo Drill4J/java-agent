@@ -4,15 +4,13 @@ package com.epam.drill.agent.instrument
 
 import com.alibaba.ttl.internal.javassist.*
 import com.epam.drill.agent.classloading.*
-import com.epam.drill.logging.*
-import mu.*
+import com.epam.drill.logger.*
 import java.io.*
-import java.lang.RuntimeException
 import kotlin.reflect.jvm.*
 
 
 actual object Transformer {
-    private val logger = KotlinLogging.logger(Transformer::class.jvmName)
+    private val logger = Logging.logger(Transformer::class.jvmName)
     private val classPool = ClassPool()
 
     fun transform(className: String, classfileBuffer: ByteArray, loader: ClassLoader): ByteArray? {

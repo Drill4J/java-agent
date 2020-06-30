@@ -7,13 +7,13 @@ import com.epam.drill.agent.jvmapi.*
 import com.epam.drill.api.*
 import com.epam.drill.jvmapi.*
 import com.epam.drill.jvmapi.gen.*
+import com.epam.drill.logger.*
 import kotlinx.cinterop.*
-import mu.*
 import kotlin.native.concurrent.*
 import kotlin.time.*
 
 @SharedImmutable
-private val logger = KotlinLogging.logger("SymbolsRegister")
+private val logger = Logging.logger("SymbolsRegister")
 
 @CName("currentEnvs")
 fun currentEnvs(): JNIEnvPointer {
