@@ -1,7 +1,7 @@
 package com.epam.drill.agent.classloading
 
 import com.epam.drill.agent.*
-import com.epam.drill.agent.jvmapi.*
+import com.epam.drill.jvmapi.*
 import com.epam.drill.jvmapi.gen.*
 import com.epam.drill.logger.*
 import kotlinx.coroutines.*

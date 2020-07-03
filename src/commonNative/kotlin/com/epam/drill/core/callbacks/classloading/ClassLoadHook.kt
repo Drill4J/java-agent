@@ -6,6 +6,7 @@ import com.epam.drill.*
 import com.epam.drill.agent.*
 import com.epam.drill.core.callbacks.vminit.*
 import com.epam.drill.core.plugin.loader.*
+import com.epam.drill.jvmapi.*
 import com.epam.drill.jvmapi.gen.*
 import com.epam.drill.logger.*
 import kotlinx.cinterop.*
@@ -119,21 +120,6 @@ private fun convertToNativePointers(
     }
     newClassDataLen!!.pointed.value = instrumentedSize
 }
-
-inline fun jbyteArray.toByteArrayWithRelease(
-    bytes: ByteArray = byteArrayOf(),
-    block: (ByteArray) -> Unit
-) {
-    val nativeArray = GetByteArrayElements(this, null)?.apply {
-        bytes.forEachIndexed { index, byte -> this[index] = byte }
-    }
-    try {
-        block(nativeArray!!.readBytes(GetArrayLength(this)))
-    } finally {
-        ReleaseByteArrayElements(this, nativeArray, JNI_ABORT)
-    }
-}
-
 
 private fun isBootstrapClassLoading(loader: jobject?, protection_domain: jobject?) =
     loader == null || protection_domain == null

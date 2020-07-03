@@ -1,6 +1,6 @@
 package com.epam.drill.agent
 
-import com.epam.drill.agent.jvmapi.*
+import com.epam.drill.jvmapi.*
 import com.epam.drill.jvmapi.gen.*
 
 actual object DataService {
