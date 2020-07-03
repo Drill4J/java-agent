@@ -11,7 +11,7 @@ class InstrumentationNativePlugin(
     userPlugin: jobject,
     pluginConfig: PluginMetadata,
     internal val qs: jmethodID? = GetMethodID(pluginApiClass, "instrument", "(Ljava/lang/String;[B)[B")
-) : GenericNativePlugin(pluginId, pluginApiClass, userPlugin, pluginConfig), InstrumentationPlugin {
+) : GenericNativePlugin(pluginId, pluginApiClass, userPlugin, pluginConfig), Instrumenter {
 
     override fun instrument(className: String, initialBytes: ByteArray) = memScoped {
         val classDataLen = initialBytes.size
@@ -23,10 +23,6 @@ class InstrumentationNativePlugin(
         DeleteLocalRef(newByteArray)
         ReleaseByteArrayElements(callObjectMethod, getByteArrayElements, JNI_ABORT)
         readBytes
-    }
-
-    override fun retransform() {
-        CallVoidMethodA(userPlugin, GetMethodID(pluginApiClass, "retransform", "()V"), null)
     }
 
     private fun getBytes(newByteArray: jbyteArray?, classData: ByteArray): CPointer<jbyteVar>? {

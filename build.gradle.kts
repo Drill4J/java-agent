@@ -125,6 +125,16 @@ kotlin {
     }
 
     sourceSets {
+        all {
+            languageSettings.apply {
+                useExperimentalAnnotation("kotlin.ExperimentalStdlibApi")
+                useExperimentalAnnotation("kotlinx.serialization.ImplicitReflectionSerializer")
+                useExperimentalAnnotation("kotlin.ExperimentalUnsignedTypes")
+                useExperimentalAnnotation("kotlin.time.ExperimentalTime")
+                useExperimentalAnnotation("kotlinx.coroutines.ExperimentalCoroutinesApi")
+            }
+        }
+
         commonMain {
             dependencies {
                 implementation("org.jetbrains.kotlin:kotlin-stdlib-common")
@@ -156,15 +166,6 @@ val agentShadow by tasks.registering(ShadowJar::class) {
     archiveFileName.set("drillRuntime.jar")
     from(jvmJar)
     relocate("kotlin", "kruntime")
-}
-
-tasks.withType<org.jetbrains.kotlin.gradle.dsl.KotlinCompile<KotlinCommonOptions>> {
-    kotlinOptions.freeCompilerArgs += listOf(
-        "-Xuse-experimental=kotlinx.serialization.ImplicitReflectionSerializer",
-        "-Xuse-experimental=kotlin.ExperimentalUnsignedTypes",
-        "-Xuse-experimental=kotlin.time.ExperimentalTime",
-        "-Xuse-experimental=kotlinx.coroutines.ExperimentalCoroutinesApi"
-    )
 }
 
 tasks.withType<org.jetbrains.kotlin.gradle.targets.native.tasks.KotlinNativeTest> {
