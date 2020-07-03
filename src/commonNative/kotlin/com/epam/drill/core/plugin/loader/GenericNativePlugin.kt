@@ -9,6 +9,10 @@ import com.epam.drill.logger.*
 import com.epam.drill.plugin.api.*
 import com.epam.drill.plugin.api.processing.*
 import kotlinx.cinterop.*
+import kotlinx.serialization.*
+
+@SharedImmutable
+internal val agentContext = AgentContext(Logging)
 
 @Suppress("LeakingThis")
 open class GenericNativePlugin(
@@ -16,8 +20,13 @@ open class GenericNativePlugin(
     val pluginApiClass: jclass,
     val userPlugin: jobject,
     pluginConfig: PluginMetadata
-) : PluginRepresenter(PluginPayload(pluginId, AgentPluginData)) {
-    private val pluginLogger = Logging.logger("GenericNativePlugin")
+) : AgentPart<Any, Any>(pluginId, agentContext) {
+    private val pluginLogger = agentContext.logging.logger("GenericNativePlugin $pluginId")
+
+    override val id: String = pluginConfig.id
+
+    override val confSerializer: KSerializer<Any> get() = TODO()
+    override val serDe: SerDe<Any> get() = TODO()
 
     init {
         updateRawConfig(PluginConfig(pluginConfig.id, pluginConfig.config))
@@ -31,8 +40,6 @@ open class GenericNativePlugin(
             NewStringUTF(rawAction)
         )
     }
-
-    override val id: String = pluginConfig.id
 
     override suspend fun isEnabled() = pluginConfigById(id).enabled
 
@@ -69,12 +76,12 @@ open class GenericNativePlugin(
     }
 
 
-    override fun load(onImmediately: Boolean) {
+    override fun load(on: Boolean) {
         CallVoidMethodA(
             userPlugin,
             GetMethodID(pluginApiClass, AgentPart<*, *>::load.name, "(Z)V"),
             nativeHeap.allocArray(1.toLong()) {
-                z = if (onImmediately) 1.toUByte() else 0.toUByte()
+                z = if (on) 1.toUByte() else 0.toUByte()
             })
 
     }
@@ -108,4 +115,8 @@ open class GenericNativePlugin(
                 l = newStringUTF
             })
     }
+
+    override fun initPlugin() = TODO()
+    override fun destroyPlugin(unloadReason: UnloadReason) = TODO()
+    override suspend fun doAction(action: Any) = TODO()
 }

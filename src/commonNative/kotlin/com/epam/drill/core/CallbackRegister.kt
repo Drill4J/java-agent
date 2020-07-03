@@ -44,7 +44,7 @@ val CallbackRegister: Unit = run {
     closeSession = RequestHolder::closeSession
     drillRequest = RequestHolder::get
 
-    loadPlugin = ::loadPluginForJvm
+    loadPlugin = ::loadJvmPlugin
     nativePlugin = { _, _, _ ->
         memScoped {
             //            val callbacks: jvmtiEventCallbacks? = gjavaVMGlob?.pointed?.callbackss
