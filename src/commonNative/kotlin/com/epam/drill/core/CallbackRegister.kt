@@ -4,12 +4,10 @@ import com.epam.drill.*
 import com.epam.drill.agent.*
 import com.epam.drill.agent.classloading.*
 import com.epam.drill.common.*
-import com.epam.drill.common.serialization.*
 import com.epam.drill.core.plugin.loader.*
 import com.epam.drill.logger.*
 import com.epam.drill.request.*
 import kotlinx.cinterop.*
-import kotlinx.serialization.protobuf.*
 
 @kotlin.native.concurrent.SharedImmutable
 private val logger = Logging.logger("CallbackLogger")
@@ -25,11 +23,7 @@ val CallbackRegister: Unit = run {
             }
             else -> logger.info { "app is initialized" }
         }
-        val packagesPrefixes = agentConfig.packagesPrefixes
-        val retrieveClassesData =
-            DataService.retrieveClassesData(PackagesPrefixes.serializer() stringify packagesPrefixes)
-
-        ProtoBuf.load(ByteArrayListWrapper.serializer(), retrieveClassesData).bytesList
+        DataService.retrieveClassesData(PackagesPrefixes.serializer() stringify agentConfig.packagesPrefixes)
     }
 
     setPackagesPrefixes = { prefixes ->
