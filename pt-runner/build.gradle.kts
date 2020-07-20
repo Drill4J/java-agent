@@ -14,6 +14,9 @@ application {
     mainClassName = "org.springframework.boot.loader.JarLauncher"
 }
 
+val emulateBigApp: Boolean
+    get() = extra["emulateBigApp"]?.toString()?.toBoolean() ?: false
+
 drill {
     val (prefix, suffix) = HostManager.host.family.run {
         dynamicPrefix to dynamicSuffix
@@ -29,6 +32,8 @@ drill {
     logFile = rootProject
         .buildDir
         .resolve("drill-${project.version}.log")
+    if(emulateBigApp)
+        jvmArgs = jvmArgs + "-Xmx8g"
 }
 
 repositories {
@@ -36,9 +41,12 @@ repositories {
     maven("https://dl.bintray.com/drill/drill4j")
 }
 
+
 dependencies {
     compileOnly("org.springframework:spring-context:5.1.8.RELEASE")
     implementation("org.springframework.samples:spring-petclinic:2.1.0") { isTransitive = false }
+    if (emulateBigApp)
+        implementation("com.epam.drill:petclinic-big-app:1.0.0")
 }
 
 tasks {
