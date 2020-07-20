@@ -9,6 +9,7 @@ import com.epam.drill.core.plugin.loader.*
 import com.epam.drill.jvmapi.*
 import com.epam.drill.jvmapi.gen.*
 import com.epam.drill.logger.*
+import io.ktor.utils.io.bits.*
 import kotlinx.cinterop.*
 import org.objectweb.asm.*
 
@@ -41,7 +42,9 @@ fun classLoadEvent(
     val kClassName = clsName?.toKString()
     if (kClassName == null || classData == null || kClassName.startsWith("com/epam/drill")) return
     try {
-        val classBytes = classData.readBytes(classDataLen)
+        val classBytes = ByteArray(classDataLen).apply {
+            Memory.of(classData, classDataLen).loadByteArray(0, this)
+        }
         val classReader = ClassReader(classBytes)
         val transformers = mutableListOf<(jstring, jbyteArray) -> jbyteArray?>()
         if (!state.allWebAppsInitialized() &&
