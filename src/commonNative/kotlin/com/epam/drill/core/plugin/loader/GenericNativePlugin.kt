@@ -46,7 +46,7 @@ open class GenericNativePlugin(
     override suspend fun setEnabled(value: Boolean) {
         javaEnabled(value)
         val pluginConfigById = pluginConfigById(id)
-        pl[id] = pluginConfigById.copy(enabled = value)
+        addPluginConfig(pluginConfigById.copy(enabled = value))
     }
 
     private fun javaEnabled(value: Boolean) {

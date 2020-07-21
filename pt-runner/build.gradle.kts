@@ -28,7 +28,7 @@ drill {
     runtimePath = drillDistrDir
     adminHost = "localhost"
     adminPort = 8090
-    logLevel = com.epam.drill.agent.runner.LogLevels.TRACE
+    logLevel = com.epam.drill.agent.runner.LogLevels.ERROR
     logFile = rootProject
         .buildDir
         .resolve("drill-${project.version}.log")

@@ -25,7 +25,7 @@ fun loadJvmPlugin(pluginFilePath: String, pluginConfig: PluginMetadata) {
             Family.INSTRUMENTATION -> InstrumentationNativePlugin(pluginId, pluginApiClass, agentPartRef, pluginConfig)
             Family.GENERIC -> GenericNativePlugin(pluginId, pluginApiClass, agentPartRef, pluginConfig)
         }.run {
-            pstorage[pluginConfig.id] = this
+            addPluginToStorage(this)
             load(false)
 
         }
