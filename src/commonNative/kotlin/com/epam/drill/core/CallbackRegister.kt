@@ -6,15 +6,14 @@ import com.epam.drill.agent.classloading.*
 import com.epam.drill.common.*
 import com.epam.drill.core.plugin.loader.*
 import com.epam.drill.logger.*
+import com.epam.drill.plugin.*
 import com.epam.drill.request.*
-import kotlinx.cinterop.*
+import kotlinx.serialization.protobuf.*
 
 @kotlin.native.concurrent.SharedImmutable
 private val logger = Logging.logger("CallbackLogger")
 
-@Suppress("unused")
-@SharedImmutable
-val CallbackRegister: Unit = run {
+fun globalCallbacks(): Unit = run {
     getClassesByConfig = {
         when (waitForMultipleWebApps()) {
             null -> logger.warn {
@@ -39,25 +38,13 @@ val CallbackRegister: Unit = run {
     drillRequest = RequestHolder::get
 
     loadPlugin = ::loadJvmPlugin
-    nativePlugin = { _, _, _ ->
-        memScoped {
-            //            val callbacks: jvmtiEventCallbacks? = gjavaVMGlob?.pointed?.callbackss
-//            val reinterpret =
-//                initPlugin?.reinterpret<CFunction<(CPointer<ByteVar>, CPointer<com.epam.drill.jvmapi.gen.jvmtiEnvVar>?, CPointer<JavaVMVar>?, CPointer<jvmtiEventCallbacks>?, CPointer<CFunction<(pluginId: CPointer<ByteVar>, message: CPointer<ByteVar>) -> Unit>>) -> COpaquePointer>>()
-//            val id = pluginId.cstr.getPointer(this)
-//            val jvmti = gdata?.pointed?.jvmti
-//            val jvm = gjavaVMGlob?.pointed?.jvm
-//            val clb = callbacks?.ptr
-//            reinterpret!!(
-//                id,
-//                jvmti,
-//                jvm,
-//                clb,
-//                sender
-//            )?.asStableRef<NativePart<*>>()?.get()
-            null
-        }
+    nativePlugin = { _, _, _ -> null }
 
-    }
+}
 
+fun RequestHolder.storeRequestMetadata(request: DrillRequest){
+    store(ProtoBuf.dump(DrillRequest.serializer(), request))
+}
+fun RequestHolder.get(): DrillRequest? {
+    return dump()?.let { ProtoBuf.load(DrillRequest.serializer(), it) }
 }

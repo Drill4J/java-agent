@@ -1,8 +1,6 @@
 import com.github.jengelman.gradle.plugins.shadow.tasks.*
-import org.jetbrains.kotlin.gradle.dsl.*
 import org.jetbrains.kotlin.gradle.plugin.mpp.*
 import org.jetbrains.kotlin.gradle.tasks.*
-import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 import org.jetbrains.kotlin.konan.target.*
 
 plugins {
@@ -11,6 +9,7 @@ plugins {
     id("com.epam.drill.cross-compilation")
     id("com.epam.drill.version.plugin")
     id("com.github.johnrengelman.shadow")
+    id("com.epam.drill.gradle.plugin.kni")
     distribution
     `maven-publish`
 }
@@ -25,6 +24,8 @@ val drillAgentCoreVersion: String by extra
 val drillTransportLibVersion: String by extra
 val drillLogger: String by extra
 val klockVersion: String by extra
+val kasmVersion: String by extra
+val kniVersion: String by extra
 
 allprojects {
     repositories {
@@ -68,6 +69,7 @@ kotlin.sourceSets.commonMain {
 }
 
 val libName = "drill-agent"
+val kniOutputDir = "src/kni/kotlin"
 
 kotlin {
     setOf(
@@ -95,12 +97,18 @@ kotlin {
                     implementation("com.epam.drill:common:$drillApiVersion")
                     implementation("com.epam.drill.logger:logger:$drillLogger")
                     implementation("com.epam.drill.agent:agent:$drillAgentCoreVersion")
-                    implementation("com.epam.drill.knasm:knasm:0.1.0")
+                    implementation("com.epam.drill.knasm:knasm:$kasmVersion")
+                    implementation("com.epam.drill.kni:runtime:$kniVersion")
                 }
             }
         }
     }
-
+    kni {
+        jvmTargets = sequenceOf(jvm())
+        additionalJavaClasses = sequenceOf()
+        srcDir = kniOutputDir
+        jvmtiAgentObjectPath = "com.epam.drill.core.Agent"
+    }
     jvm {
         compilations["main"].defaultSourceSet {
             dependencies {
@@ -112,6 +120,7 @@ kotlin {
                 implementation("com.epam.drill:common-jvm:$drillApiVersion")
                 implementation("com.epam.drill.logger:logger:$drillLogger")
                 implementation("com.epam.drill:drill-agent-part-jvm:$drillApiVersion")
+                implementation("com.epam.drill.kni:runtime:$kniVersion")
                 implementation("com.alibaba:transmittable-thread-local:2.11.0")
                 implementation("com.soywiz.korlibs.klock:klock-jvm:$klockVersion")
             }
@@ -141,6 +150,7 @@ kotlin {
                 implementation("org.jetbrains.kotlinx:kotlinx-serialization-runtime-common:$serializationRuntimeVersion")
                 implementation("com.epam.drill:drill-agent-part:$drillApiVersion")
                 implementation("com.epam.drill:common:$drillApiVersion")
+                implementation("com.epam.drill.kni:runtime:$kniVersion")
             }
         }
         commonTest {
@@ -170,6 +180,21 @@ val agentShadow by tasks.registering(ShadowJar::class) {
 
 tasks.withType<org.jetbrains.kotlin.gradle.targets.native.tasks.KotlinNativeTest> {
     testLogging.showStandardStreams = true
+}
+
+tasks {
+    val generateNativeClasses by getting {}
+    withType<KotlinNativeCompile> {
+        dependsOn(generateNativeClasses)
+    }
+    val cleanExtraData by registering(Delete::class) {
+        group = "build"
+        delete(kniOutputDir)
+    }
+
+    clean {
+        dependsOn(cleanExtraData)
+    }
 }
 
 afterEvaluate {

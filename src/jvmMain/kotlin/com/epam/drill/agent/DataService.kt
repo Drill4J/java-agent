@@ -5,6 +5,7 @@ package com.epam.drill.agent
 import com.epam.drill.*
 import com.epam.drill.agent.classloading.*
 import com.epam.drill.common.*
+import com.epam.drill.kni.*
 import com.epam.drill.logger.*
 import com.epam.drill.plugin.api.processing.*
 import kotlinx.serialization.*
@@ -17,6 +18,7 @@ import kotlin.time.*
 class ByteArrayListWrapper(val bytesList: List<ByteArray>)
 
 @ExperimentalStdlibApi
+@Kni
 actual object DataService {
     private val logger = Logging.logger(DataService::class.jvmName)
 
@@ -32,7 +34,7 @@ actual object DataService {
     }
 
 
-    actual fun retrieveClassesData(config: String): ByteArray {
+    actual  fun retrieveClassesData(config: String): ByteArray {
         val packagesPrefixes = (PackagesPrefixes.serializer() parse config).packagesPrefixes
 
         logger.info { "Scanning classes, package prefixes: $packagesPrefixes..." }

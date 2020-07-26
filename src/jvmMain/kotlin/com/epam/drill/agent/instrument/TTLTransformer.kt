@@ -6,14 +6,13 @@ import com.alibaba.ttl.threadpool.agent.*
 import com.alibaba.ttl.threadpool.agent.internal.logging.*
 import com.alibaba.ttl.threadpool.agent.internal.transformlet.*
 import com.alibaba.ttl.threadpool.agent.internal.transformlet.impl.*
+import com.epam.drill.kni.*
 import com.epam.drill.logger.*
-import java.lang.instrument.*
-import java.security.*
 import java.util.*
 import kotlin.reflect.jvm.*
 
-
-actual object TTLTransformer : ClassFileTransformer {
+@Kni
+actual object TTLTransformer {
     private val transformletList: MutableList<JavassistTransformlet> = ArrayList()
 
     private val logger = Logging.logger(TTLTransformer::class.jvmName)
@@ -26,19 +25,17 @@ actual object TTLTransformer : ClassFileTransformer {
             transformletList.add(TtlTimerTaskTransformlet())
     }
 
-    override fun transform(
-        loader: ClassLoader?,
+    actual fun transform(
+        loader: Any?,
         classFile: String?,
-        classBeingRedefined: Class<*>?,
-        protectionDomain: ProtectionDomain?,
+        classBeingRedefined: Any?,
         classFileBuffer: ByteArray
     ): ByteArray? {
         try {
             // Lambda has no class file, no need to transform, just return.
             if (classFile == null) return null
             val className = toClassName(classFile)
-            val classInfo =
-                ClassInfo(className, classFileBuffer, loader)
+            val classInfo = ClassInfo(className, classFileBuffer, (loader as? ClassLoader))
             for (transformlet in transformletList) {
                 transformlet.doTransform(classInfo)
                 if (classInfo.isModified) return classInfo.ctClass.toBytecode()

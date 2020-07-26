@@ -3,3 +3,4 @@ build/
 /build-cache/
 .gradle/
 src/generated/
+src/kni/

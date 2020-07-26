@@ -17,7 +17,7 @@ fun loadJvmPlugin(pluginFilePath: String, pluginConfig: PluginMetadata) {
         val pluginId = pluginConfig.id
 
         @Suppress("UNCHECKED_CAST")
-        val agentPart = DataService.createAgentPart(pluginId, pluginFilePath) as jobject
+        val agentPart = DataService.createAgentPart(pluginId, pluginFilePath) as? jobject
         val pluginApiClass = GetObjectClass(agentPart)!!
         val agentPartRef: jobject = NewGlobalRef(agentPart)!!
 
