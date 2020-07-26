@@ -4,9 +4,8 @@ package com.epam.drill.core.callbacks.classloading
 
 import com.epam.drill.*
 import com.epam.drill.agent.*
-import com.epam.drill.core.callbacks.vminit.*
+import com.epam.drill.agent.instrument.*
 import com.epam.drill.core.plugin.loader.*
-import com.epam.drill.jvmapi.*
 import com.epam.drill.jvmapi.gen.*
 import com.epam.drill.logger.*
 import io.ktor.utils.io.bits.*
@@ -46,62 +45,28 @@ fun classLoadEvent(
             Memory.of(classData, classDataLen).loadByteArray(0, this)
         }
         val classReader = ClassReader(classBytes)
-        val transformers = mutableListOf<(jstring, jbyteArray) -> jbyteArray?>()
-        if (!state.allWebAppsInitialized() &&
-            "javax/servlet/ServletContextListener" in classReader.interfaces
-        ) transformers += { jname, jbytes ->
-            CallObjectMethod(
-                transformerObject.value,
-                transformMethod.value,
-                jname,
-                jbytes,
-                loader
-            )
-        }
-        if (kClassName in directTtlClasses ||
-            kClassName != "java/util/TimerTask" && "java/lang/Runnable" in classReader.interfaces ||
-            classReader.superName == "java/util/concurrent/ThreadPoolExecutor"
-        ) transformers += { jname, jbytes ->
-            CallObjectMethod(
-                ttlTransformerObject.value,
-                ttlTransformMethod.value,
-                loader,
-                jname,
-                classBeingRedefined,
-                protection_domain,
-                jbytes,
-                loader
-            )
-        }
+        val transformers = mutableListOf<() -> ByteArray?>()
+        if (!state.allWebAppsInitialized() && "javax/servlet/ServletContextListener" in classReader.interfaces)
+            transformers += { Transformer.transform(kClassName, classBytes, loader) }
+        if (kClassName in directTtlClasses || kClassName != "java/util/TimerTask" && "java/lang/Runnable" in classReader.interfaces || classReader.superName == "java/util/concurrent/ThreadPoolExecutor")
+            transformers += {
+                TTLTransformer.transform(
+                    loader,
+                    kClassName,
+                    classBeingRedefined,
+                    classBytes
+                )
+            }
         if ("$" !in kClassName && state.packagePrefixes.any { kClassName.startsWith(it) })
             pstorage.values.filterIsInstance<InstrumentationNativePlugin>().forEach { plugin ->
-                transformers += { jname, jbytes ->
-                    CallObjectMethod(
-                        plugin.userPlugin,
-                        plugin.qs,
-                        jname,
-                        jbytes
-                    )
-                }
+                transformers += { plugin.instrument(kClassName, classBytes) }
             }
         if (transformers.any()) {
-            val jClassBytes: jbyteArray = NewByteArray(classDataLen)!!
-            val jClassName: jstring = NewStringUTF(kClassName)!!
-            try {
-                jClassBytes.toByteArrayWithRelease(classBytes) { kClassBytes ->
-                    SetByteArrayRegion(jClassBytes, 0, classDataLen, kClassBytes.refTo(0))
-                    transformers.fold(jClassBytes) { jbytes, transformer ->
-                        transformer(jClassName, jbytes) ?: jbytes
-                    }.takeIf { it !== jClassBytes }
-                        ?.toByteArrayWithRelease {
-                            logger.trace { "$kClassName transformed" }
-                            convertToNativePointers(it, newData, newClassDataLen)
-                        }
+            transformers.fold(classBytes) { jbytes, transformer -> transformer() ?: jbytes }
+                .takeIf { it !== classBytes }?.let {
+                    logger.trace { "$kClassName transformed" }
+                    convertToNativePointers(it, newData, newClassDataLen)
                 }
-            } finally {
-                DeleteLocalRef(jClassBytes)
-                DeleteLocalRef(jClassName)
-            }
         }
     } catch (throwable: Throwable) {
         logger.error(throwable) {

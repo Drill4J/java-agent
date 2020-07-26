@@ -1,12 +1,14 @@
 package com.epam.drill.request
 
 import com.alibaba.ttl.*
+import com.epam.drill.kni.*
 import com.epam.drill.logger.*
 import com.epam.drill.plugin.*
 import com.epam.drill.session.*
 import kotlinx.serialization.protobuf.*
 import kotlin.reflect.jvm.*
 
+@Kni
 actual object RequestHolder {
     private val logger = Logging.logger(RequestHolder::class.jvmName)
 

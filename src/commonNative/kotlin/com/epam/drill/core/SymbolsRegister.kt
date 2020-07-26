@@ -14,42 +14,6 @@ import kotlin.time.*
 @SharedImmutable
 private val logger = Logging.logger("SymbolsRegister")
 
-@CName("currentEnvs")
-fun currentEnvs(): JNIEnvPointer {
-    return com.epam.drill.jvmapi.currentEnvs()
-}
-
-@CName("jvmtii")
-fun jvmtii(): CPointer<jvmtiEnvVar>? {
-    return com.epam.drill.jvmapi.jvmtii()
-}
-
-@CName("getJvm")
-fun getJvm(): CPointer<JavaVMVar>? {
-    return vmGlobal.value
-}
-
-@CName("JNI_OnUnload")
-fun JNI_OnUnload() {
-}
-
-@CName("JNI_GetCreatedJavaVMs")
-fun JNI_GetCreatedJavaVMs() {
-}
-
-@CName("JNI_CreateJavaVM")
-fun JNI_CreateJavaVM() {
-}
-
-@CName("JNI_GetDefaultJavaVMInitArgs")
-fun JNI_GetDefaultJavaVMInitArgs() {
-}
-
-@CName("checkEx")
-fun checkEx(errCode: jvmtiError, funName: String): jvmtiError {
-    return com.epam.drill.jvmapi.checkEx(errCode, funName)
-}
-
 @Suppress("UNUSED_PARAMETER")
 @CName("Java_com_epam_drill_plugin_api_processing_Sender_sendMessage")
 fun sendFromJava(envs: JNIEnv, thiz: jobject, jpluginId: jstring, jmessage: jstring) = withJSting {

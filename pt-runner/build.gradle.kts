@@ -26,9 +26,10 @@ drill {
     agentId = project.properties["agentId"]?.toString() ?: "Petclinic"
     agentPath = localAgentPath
     runtimePath = drillDistrDir
+    buildVersion="0.1.7"
     adminHost = "localhost"
     adminPort = 8090
-    logLevel = com.epam.drill.agent.runner.LogLevels.ERROR
+    logLevel = com.epam.drill.agent.runner.LogLevels.INFO
     logFile = rootProject
         .buildDir
         .resolve("drill-${project.version}.log")

@@ -1,12 +1,14 @@
 package com.epam.drill.agent.classloading
 
 import com.epam.drill.agent.classloading.source.*
+import com.epam.drill.kni.*
 import com.epam.drill.logger.*
 import java.io.*
 import java.net.*
 import kotlin.reflect.jvm.*
 
-object WebContainerSource {
+@Kni
+actual object WebContainerSource {
     private val logger = Logging.logger(WebContainerSource::class.jvmName)
 
     private val scannedNames = mutableSetOf<String>()
@@ -46,5 +48,5 @@ object WebContainerSource {
         scannedClasses.add(source)
     }
 
-    private external fun webAppStarted(appPath: String)
+    actual external fun webAppStarted(appPath: String)
 }

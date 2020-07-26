@@ -26,7 +26,7 @@ jobs:
           java-version: 11
       - uses: eskatos/gradle-command-action@v1
         with:
-          arguments: -s ${{ matrix.config.task }}
+          arguments: -s generateNativeClasses ${{ matrix.config.task }}
         env:
           BINTRAY_USER: ${{ secrets.BINTRAY_USER }}
           BINTRAY_API_KEY: ${{ secrets.BINTRAY_API_KEY }}

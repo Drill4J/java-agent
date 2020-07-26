@@ -11,48 +11,41 @@ import com.epam.drill.transport.common.ws.*
 import kotlinx.cinterop.*
 import platform.posix.*
 import kotlin.native.concurrent.*
+import com.epam.drill.kni.*
 import kotlin.test.*
 
 @SharedImmutable
 private val logger = Logging.logger("MainLogger")
 
-@Suppress("UNUSED_PARAMETER", "UNUSED")
-@CName("Agent_OnLoad")
-fun agentOnLoad(vmPointer: CPointer<JavaVMVar>, options: String, reservedPtr: Long) = memScoped {
-    try {
+object Agent: JvmtiAgent {
+    override fun agentOnLoad(options: String): Int{
+        try {
         val agentParameters = options.asAgentParams().validate()
-        initAgentGlobals(vmPointer)
-        runAgent(agentParameters)
-        JNI_OK
-    } catch (ex: Throwable) {
-        logger.error { "Can't load the agent. Ex: ${ex.message}" }
-        JNI_ERR
+            performAgentInitialization(agentParameters)
+            setUnhandledExceptionHook({ error: Throwable ->
+                logger.error(error) { "unhandled event $error" }
+            }.freeze())
+
+            memScoped {
+                val jvmtiCapabilities = alloc<jvmtiCapabilities>()
+                jvmtiCapabilities.can_retransform_classes = 1.toUInt()
+                jvmtiCapabilities.can_maintain_original_method_order = 1.toUInt()
+                AddCapabilities(jvmtiCapabilities.ptr)
+            }
+            AddToBootstrapClassLoaderSearch("$drillInstallationDir/drillRuntime.jar")
+            callbackRegister()
+
+            logger.info { "The native agent was loaded" }
+            logger.info { "Pid is: " + getpid() }
+        } catch (ex: Throwable) {
+            logger.error { "Can't load the agent. Ex: ${ex.message}" }
+            JNI_ERR
+        }
+        return JNI_OK
     }
-}
-
-@Jvmapi
-private fun MemScope.initAgentGlobals(vmPointer: CPointer<JavaVMVar>) {
-    vmGlobal.value = vmPointer.freeze()
-    jvmti.value = getJvmti(vmPointer.pointed).value.freeze()
-}
-
-private fun runAgent(agentParameters: Map<String, String>) {
-    performAgentInitialization(agentParameters)
-    setUnhandledExceptionHook({ error: Throwable ->
-        logger.error(error) { "unhandled event $error" }
-    }.freeze())
-
-    memScoped {
-        val jvmtiCapabilities = alloc<jvmtiCapabilities>()
-        jvmtiCapabilities.can_retransform_classes = 1.toUInt()
-        jvmtiCapabilities.can_maintain_original_method_order = 1.toUInt()
-        AddCapabilities(jvmtiCapabilities.ptr)
+    override fun agentOnUnload(){
+        logger.info { "Agent_OnUnload" }
     }
-    AddToBootstrapClassLoaderSearch("$drillInstallationDir/drillRuntime.jar")
-    callbackRegister()
-
-    logger.info { "The native agent was loaded" }
-    logger.info { "Pid is: " + getpid() }
 }
 
 fun String?.asAgentParams(): AgentParameters {
@@ -79,19 +72,6 @@ private fun callbackRegister() = memScoped {
 @Suppress("UNUSED_PARAMETER")
 fun vmDeathEvent(jvmtiEnv: CPointer<jvmtiEnvVar>?, jniEnv: CPointer<JNIEnvVar>?) {
     logger.info { "vmDeathEvent" }
-}
-
-
-@Suppress("UNUSED_PARAMETER", "UNUSED")
-@CName("Agent_OnUnload")
-fun agentOnUnload(vmPointer: CPointer<JavaVMVar>) {
-    logger.info { "Agent_OnUnload" }
-}
-
-private fun MemScope.getJvmti(vm: JavaVMVar): CPointerVar<jvmtiEnvVar> {
-    val jvmtiEnvPtr = alloc<CPointerVar<jvmtiEnvVar>>()
-    vm.value!!.pointed.GetEnv!!(vm.ptr, jvmtiEnvPtr.ptr.reinterpret(), JVMTI_VERSION.convert())
-    return jvmtiEnvPtr
 }
 
 private typealias AgentParameters = Map<String, String>
