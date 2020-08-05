@@ -4,4 +4,5 @@ expect object RequestHolder {
     fun store(drillRequest: ByteArray)
     fun dump(): ByteArray?
     fun closeSession()
+    fun setAsyncMode(isAsync: Boolean)
 }

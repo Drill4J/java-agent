@@ -5,12 +5,13 @@ import com.epam.drill.common.*
 import com.epam.drill.common.ws.*
 import com.epam.drill.logger.*
 import com.epam.drill.logger.api.*
+import com.epam.drill.util.*
 import kotlinx.cinterop.*
 import kotlinx.serialization.*
 import platform.posix.*
 
 fun performAgentInitialization(initialParams: Map<String, String>) {
-    val agentArguments = Properties.load<AgentArguments>(initialParams)
+    val agentArguments = Properties.loadStringValued<AgentArguments>(initialParams)
     agentArguments.let { aa ->
         drillInstallationDir = aa.drillInstallationDir
         agentConfig = AgentConfig(
@@ -21,6 +22,7 @@ fun performAgentInitialization(initialParams: Map<String, String>) {
             serviceGroupId = aa.groupId,
             agentType = AGENT_TYPE
         )
+        isAsyncApp = aa.isAsyncApp
         adminAddress = URL("ws://${aa.adminAddress}")
         configureLogger(aa)
 

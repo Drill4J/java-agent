@@ -13,4 +13,8 @@ actual object RequestHolder {
         RequestHolderStub.closeSession()
     }
 
+    actual fun setAsyncMode(isAsync: Boolean) {
+        RequestHolderStub.setAsyncMode(isAsync)
+    }
+
 }
