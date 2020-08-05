@@ -4,12 +4,12 @@ package com.epam.drill.core.callbacks.vminit
 
 import com.epam.drill.*
 import com.epam.drill.agent.*
-import com.epam.drill.agent.classloading.*
 import com.epam.drill.core.*
 import com.epam.drill.core.transport.*
 import com.epam.drill.core.ws.*
 import com.epam.drill.jvmapi.gen.*
 import com.epam.drill.logger.*
+import com.epam.drill.request.*
 import kotlinx.cinterop.*
 import kotlinx.coroutines.*
 
@@ -22,6 +22,7 @@ fun jvmtiEventVMInitEvent(env: CPointer<jvmtiEnvVar>?, jniEnv: CPointer<JNIEnvVa
     configureHttp()
     globalCallbacks()
     WsSocket().connect(adminAddress.toString())
+    RequestHolder.setAsyncMode(isAsyncApp)
     runBlocking {
         for (i in 1..5) {
             logger.info { "Agent is not alive. Waiting for package settings from $adminAddress..." }

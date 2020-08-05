@@ -15,14 +15,6 @@ import org.objectweb.asm.*
 @SharedImmutable
 private val logger = Logging.logger("jvmtiEventClassFileLoadHookEvent")
 
-@SharedImmutable
-private val directTtlClasses = listOf(
-    "java/util/concurrent/ScheduledThreadPoolExecutor",
-    "java/util/concurrent/ThreadPoolExecutor",
-    "java/util/concurrent/ForkJoinTask",
-    "java/util/concurrent/ForkJoinPool"
-)
-
 @Suppress("unused", "UNUSED_PARAMETER")
 fun classLoadEvent(
     jvmtiEnv: CPointer<jvmtiEnvVar>?,
@@ -46,9 +38,15 @@ fun classLoadEvent(
         }
         val classReader = ClassReader(classBytes)
         val transformers = mutableListOf<() -> ByteArray?>()
-        if (!state.allWebAppsInitialized() && "javax/servlet/ServletContextListener" in classReader.interfaces)
+        if (!state.allWebAppsInitialized() && Transformer.servletListener in classReader.interfaces)
             transformers += { Transformer.transform(kClassName, classBytes, loader) }
-        if (kClassName in directTtlClasses || kClassName != "java/util/TimerTask" && "java/lang/Runnable" in classReader.interfaces || classReader.superName == "java/util/concurrent/ThreadPoolExecutor")
+        if (
+            isAsyncApp &&
+            kClassName in TTLTransformer.directTtlClasses ||
+            kClassName != TTLTransformer.timerTaskClass &&
+            TTLTransformer.runnableInterface in classReader.interfaces ||
+            classReader.superName == TTLTransformer.poolExecutor
+        )
             transformers += {
                 TTLTransformer.transform(
                     loader,

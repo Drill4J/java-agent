@@ -10,6 +10,13 @@ var state: State
         _state.value = value.freeze()
     }
 
+private val _isAsyncApp = AtomicReference(false).freeze()
+
+var isAsyncApp: Boolean
+    get() = _isAsyncApp.value
+    set(value) {
+        _isAsyncApp.value = value.freeze()
+    }
 
 data class State(
     val alive: Boolean = false, //true if the agent successfully received package prefixes

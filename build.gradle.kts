@@ -141,6 +141,7 @@ kotlin {
                 useExperimentalAnnotation("kotlin.ExperimentalUnsignedTypes")
                 useExperimentalAnnotation("kotlin.time.ExperimentalTime")
                 useExperimentalAnnotation("kotlinx.coroutines.ExperimentalCoroutinesApi")
+                useExperimentalAnnotation("kotlinx.serialization.InternalSerializationApi")
             }
         }
 

@@ -13,7 +13,7 @@ actual object RequestHolder {
     private val logger = Logging.logger(RequestHolder::class.jvmName)
 
     init {
-        threadStorage = TransmittableThreadLocal()
+        threadStorage = InheritableThreadLocal()
     }
 
     actual fun store(drillRequest: ByteArray) {
@@ -29,6 +29,10 @@ actual object RequestHolder {
     actual fun closeSession() {
         logger.trace { "session ${threadStorage.get()} closed" }
         threadStorage.remove()
+    }
+
+    actual fun setAsyncMode(isAsync: Boolean) {
+        threadStorage = if (isAsync) TransmittableThreadLocal() else InheritableThreadLocal()
     }
 
 }
