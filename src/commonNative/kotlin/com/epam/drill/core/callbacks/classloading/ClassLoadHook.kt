@@ -42,10 +42,10 @@ fun classLoadEvent(
             transformers += { Transformer.transform(kClassName, classBytes, loader) }
         if (
             isAsyncApp &&
-            kClassName in TTLTransformer.directTtlClasses ||
-            kClassName != TTLTransformer.timerTaskClass &&
-            TTLTransformer.runnableInterface in classReader.interfaces ||
-            classReader.superName == TTLTransformer.poolExecutor
+            (kClassName in TTLTransformer.directTtlClasses ||
+                    kClassName != TTLTransformer.timerTaskClass) &&
+            (TTLTransformer.runnableInterface in classReader.interfaces ||
+                    classReader.superName == TTLTransformer.poolExecutor)
         )
             transformers += {
                 TTLTransformer.transform(
