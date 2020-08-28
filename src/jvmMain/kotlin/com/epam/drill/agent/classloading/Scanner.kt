@@ -9,8 +9,10 @@ private val excludedPaths = listOf(
     "com/alibaba/ttl"
 )
 
-internal fun String.startsWithAnyOf(prefixes: Iterable<String>): Boolean {
-    return prefixes.none() || prefixes.any { startsWith(it) }
+internal fun String.startsWithAnyOf(prefixes: Iterable<String>): Boolean = prefixes.none() || run {
+    prefixes.any { startsWith(it) } && prefixes.none {
+        it.startsWith('!') && startsWith(it.substring(1))
+    }
 }
 
 internal fun File.useJarInputStream(block: (JarInputStream) -> Unit) {
