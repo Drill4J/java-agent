@@ -1,5 +1,6 @@
 package com.epam.drill.agent.classloading
 
+import com.epam.drill.agent.*
 import com.epam.drill.agent.classloading.source.*
 
 fun scanResourceMap(packagePrefixes: Iterable<String>): Set<ClassSource> = packagePrefixes.run {
@@ -7,7 +8,7 @@ fun scanResourceMap(packagePrefixes: Iterable<String>): Set<ClassSource> = packa
 }
 
 fun Iterable<String>.scanExternalSources(): List<ClassSource> = WebContainerSource.additionalSources.filter {
-    it.className.startsWithAnyOf(this)
+    it.className.matches(this)
 }
 
 fun Iterable<String>.scanAvailableClassLoaders(): MutableSet<ClassSource> {

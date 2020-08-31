@@ -1,19 +1,9 @@
 package com.epam.drill.agent.classloading
 
+import com.epam.drill.*
 import com.epam.drill.agent.classloading.source.*
 import java.io.*
 import java.util.jar.*
-
-private val excludedPaths = listOf(
-    "com/epam/drill",
-    "com/alibaba/ttl"
-)
-
-internal fun String.startsWithAnyOf(prefixes: Iterable<String>): Boolean = prefixes.none() || run {
-    prefixes.any { startsWith(it) } && prefixes.none {
-        it.startsWith('!') && startsWith(it.substring(1))
-    }
-}
 
 internal fun File.useJarInputStream(block: (JarInputStream) -> Unit) {
     JarInputStream(inputStream().buffered(256 * 1024)).use(block)
@@ -57,4 +47,6 @@ private tailrec fun JarInputStream.forEachFile(block: JarInputStream.(JarEntry) 
 
 private fun String.toClassName() = removeSuffix(".class")
 
-private fun String.isAllowed() = !contains('$') && !startsWithAnyOf(excludedPaths)
+private fun String.isAllowed(): Boolean = run {
+    '$' !in this && !startsWith(DRILL_PACKAGE) && !startsWith("com/alibaba/ttl")
+}

@@ -31,7 +31,7 @@ fun classLoadEvent(
     initRuntimeIfNeeded()
     if (isBootstrapClassLoading(loader, protection_domain)) return
     val kClassName = clsName?.toKString()
-    if (kClassName == null || classData == null || kClassName.startsWith("com/epam/drill")) return
+    if (kClassName == null || classData == null || kClassName.startsWith(DRILL_PACKAGE)) return
     try {
         val classBytes = ByteArray(classDataLen).apply {
             Memory.of(classData, classDataLen).loadByteArray(0, this)
@@ -55,7 +55,7 @@ fun classLoadEvent(
                     classBytes
                 )
             }
-        if ("$" !in kClassName && state.packagePrefixes.any { kClassName.startsWith(it) })
+        if ("$" !in kClassName &&  kClassName.matches(state.packagePrefixes))
             pstorage.values.filterIsInstance<InstrumentationNativePlugin>().forEach { plugin ->
                 transformers += { plugin.instrument(kClassName, classBytes) }
             }

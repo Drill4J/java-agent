@@ -2,6 +2,7 @@
 
 package com.epam.drill.core
 
+import com.epam.drill.*
 import com.epam.drill.agent.*
 import com.epam.drill.api.*
 import com.epam.drill.jvmapi.*
@@ -24,9 +25,8 @@ fun sendFromJava(envs: JNIEnv, thiz: jobject, jpluginId: jstring, jmessage: jstr
 @CName("Java_com_epam_drill_plugin_api_Native_RetransformClassesByPackagePrefixes")
 fun RetransformClassesByPackagePrefixes(env: JNIEnv, thiz: jobject, prefixes: jbyteArray): jint = memScoped {
     val decodedPrefixes = prefixes.readBytes()?.decodePackages() ?: emptyList()
-    val drillPackage = "Lcom/epam/drill"
-    val allPrefixes = (state.packagePrefixes + decodedPrefixes).map { "L$it" }.filter {
-        !it.startsWith(drillPackage)
+    val allPrefixes = (state.packagePrefixes + decodedPrefixes).filter {
+        !it.startsWith(DRILL_PACKAGE)
     }.distinct()
     logger.info { "Package prefixes: $allPrefixes." }
     allPrefixes.takeIf { it.any() }?.let { prefixes ->
@@ -34,7 +34,7 @@ fun RetransformClassesByPackagePrefixes(env: JNIEnv, thiz: jobject, prefixes: jb
             it.status() in 0.toUInt()..7.toUInt()
         }.filter { jclass ->
             val signature = jclass.signature()
-            '$' !in signature && !signature.startsWith(drillPackage) && prefixes.any { signature.startsWith(it) }
+            '$' !in signature && signature.matches(prefixes, 1)
         }.partition { it.status() == 7.toUInt() }.let { (loaded, undetermined)  ->
             logger.info { "${loaded.size + undetermined.size} classes to retransform." }
             measureTimedValue {
