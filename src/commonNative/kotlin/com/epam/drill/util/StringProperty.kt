@@ -25,7 +25,7 @@ class StringProperty(val map: Map<String, String>) : NamedValueDecoder() {
     }
 
     override fun decodeTaggedBoolean(tag: String): Boolean {
-        return tag.toBoolean()
+        return map.getValue(tag).toBoolean()
     }
 
     override fun decodeTaggedEnum(tag: String, enumDescription: SerialDescriptor): Int {
