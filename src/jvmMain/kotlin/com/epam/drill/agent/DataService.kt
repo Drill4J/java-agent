@@ -34,7 +34,7 @@ actual object DataService {
     }
 
 
-    actual  fun retrieveClassesData(config: String): ByteArray {
+    actual fun retrieveClassesData(config: String): ByteArray {
         val packagesPrefixes = (PackagesPrefixes.serializer() parse config).packagesPrefixes
 
         logger.info { "Scanning classes, package prefixes: $packagesPrefixes..." }

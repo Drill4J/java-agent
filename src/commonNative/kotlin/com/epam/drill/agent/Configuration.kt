@@ -23,6 +23,7 @@ fun performAgentInitialization(initialParams: Map<String, String>) {
             agentType = AGENT_TYPE
         )
         isAsyncApp = aa.isAsyncApp
+        classScanDelay = aa.classScanDelay
         adminAddress = URL("ws://${aa.adminAddress}")
         configureLogger(aa)
 
