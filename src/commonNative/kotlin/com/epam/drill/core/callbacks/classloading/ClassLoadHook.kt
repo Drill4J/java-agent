@@ -38,7 +38,7 @@ fun classLoadEvent(
         }
         val classReader = ClassReader(classBytes)
         val transformers = mutableListOf<() -> ByteArray?>()
-        if (!state.allWebAppsInitialized() && Transformer.servletListener in classReader.interfaces)
+        if (Transformer.servletListener in classReader.interfaces)
             transformers += { Transformer.transform(kClassName, classBytes, loader) }
         if (
             isAsyncApp &&
@@ -55,7 +55,7 @@ fun classLoadEvent(
                     classBytes
                 )
             }
-        if ("$" !in kClassName &&  kClassName.matches(state.packagePrefixes))
+        if ("$" !in kClassName && kClassName.matches(state.packagePrefixes))
             pstorage.values.filterIsInstance<InstrumentationNativePlugin>().forEach { plugin ->
                 transformers += { plugin.instrument(kClassName, classBytes) }
             }

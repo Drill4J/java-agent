@@ -28,6 +28,10 @@ class StringProperty(val map: Map<String, String>) : NamedValueDecoder() {
         return map.getValue(tag).toBoolean()
     }
 
+    override fun decodeTaggedLong(tag: String): Long {
+        return map.getValue(tag).toLong()
+    }
+
     override fun decodeTaggedEnum(tag: String, enumDescription: SerialDescriptor): Int {
         return enumDescription.getElementIndex(map[tag]!!)
     }

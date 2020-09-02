@@ -15,6 +15,7 @@ private val logger = Logging.logger("CallbackLogger")
 
 fun globalCallbacks(): Unit = run {
     getClassesByConfig = {
+        latch?.join()?.also { latch = null }
         when (waitForMultipleWebApps()) {
             null -> logger.warn {
                 "Apps: ${state.webApps.filterValues { !it }.keys} have not initialized in ${waitingTimeout}ms.. " +
@@ -42,9 +43,10 @@ fun globalCallbacks(): Unit = run {
 
 }
 
-fun RequestHolder.storeRequestMetadata(request: DrillRequest){
+fun RequestHolder.storeRequestMetadata(request: DrillRequest) {
     store(ProtoBuf.dump(DrillRequest.serializer(), request))
 }
+
 fun RequestHolder.get(): DrillRequest? {
     return dump()?.let { ProtoBuf.load(DrillRequest.serializer(), it) }
 }

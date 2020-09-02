@@ -2,7 +2,7 @@ package com.epam.drill.agent
 
 import com.benasher44.uuid.*
 import com.epam.drill.logger.api.*
-import kotlinx.serialization.Serializable
+import kotlinx.serialization.*
 
 @Serializable
 data class AgentArguments(
@@ -15,7 +15,8 @@ data class AgentArguments(
     val logLevel: String = LogLevel.ERROR.name,
     val logFile: String? = null,
     val webAppNames: String = "",
-    val isAsyncApp: Boolean = false
+    val isAsyncApp: Boolean = false,
+    val classScanDelay: Long = 0
 ) {
     val webApps: List<String>
         get() = webAppNames.split(":")
