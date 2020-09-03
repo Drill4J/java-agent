@@ -36,35 +36,41 @@ fun classLoadEvent(
         val classBytes = ByteArray(classDataLen).apply {
             Memory.of(classData, classDataLen).loadByteArray(0, this)
         }
-        val classReader = ClassReader(classBytes)
-        val transformers = mutableListOf<() -> ByteArray?>()
-        if (Transformer.servletListener in classReader.interfaces)
-            transformers += { Transformer.transform(kClassName, classBytes, loader) }
-        if (
-            isAsyncApp &&
-            (kClassName in TTLTransformer.directTtlClasses ||
+        val transformers = mutableListOf<(ByteArray) -> ByteArray?>()
+        if (config.isAsyncApp || config.isWebApp) {
+            val classReader = ClassReader(classBytes)
+            if (
+                config.isAsyncApp &&
+                (kClassName in TTLTransformer.directTtlClasses ||
                     kClassName != TTLTransformer.timerTaskClass) &&
-            (TTLTransformer.runnableInterface in classReader.interfaces ||
+                (TTLTransformer.runnableInterface in classReader.interfaces ||
                     classReader.superName == TTLTransformer.poolExecutor)
-        )
-            transformers += {
-                TTLTransformer.transform(
-                    loader,
-                    kClassName,
-                    classBeingRedefined,
-                    classBytes
-                )
-            }
-        if ("$" !in kClassName && kClassName.matches(state.packagePrefixes))
-            pstorage.values.filterIsInstance<InstrumentationNativePlugin>().forEach { plugin ->
-                transformers += { plugin.instrument(kClassName, classBytes) }
-            }
-        if (transformers.any()) {
-            transformers.fold(classBytes) { jbytes, transformer -> transformer() ?: jbytes }
-                .takeIf { it !== classBytes }?.let {
-                    logger.trace { "$kClassName transformed" }
-                    convertToNativePointers(it, newData, newClassDataLen)
+            ) {
+                transformers += { bytes ->
+                    TTLTransformer.transform(
+                        loader,
+                        kClassName,
+                        classBeingRedefined,
+                        bytes
+                    )
                 }
+            }
+            if (config.isWebApp && Transformer.servletListener in classReader.interfaces) {
+                transformers += { bytes -> Transformer.transform(kClassName, bytes, loader) }
+            }
+        }
+        if ('$' !in kClassName && kClassName.matches(state.packagePrefixes)) {
+            pstorage.values.filterIsInstance<InstrumentationNativePlugin>().forEach { plugin ->
+                transformers += { bytes -> plugin.instrument(kClassName, bytes) }
+            }
+        }
+        if (transformers.any()) {
+            transformers.fold(classBytes) { bytes, transformer ->
+                transformer(bytes) ?: bytes
+            }.takeIf { it !== classBytes }?.let { newBytes ->
+                logger.trace { "$kClassName transformed" }
+                convertToNativePointers(newBytes, newData, newClassDataLen)
+            }
         }
     } catch (throwable: Throwable) {
         logger.error(throwable) {

@@ -18,14 +18,11 @@ private val logger = Logging.logger("VmInitEvent")
 @Suppress("UNUSED_PARAMETER")
 fun jvmtiEventVMInitEvent(env: CPointer<jvmtiEnvVar>?, jniEnv: CPointer<JNIEnvVar>?, thread: jthread?) {
     initRuntimeIfNeeded()
-    GlobalScope.launch {
-        latch = launch { delay(classScanDelay) }
-    }
     SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_CLASS_FILE_LOAD_HOOK, null)
     configureHttp()
     globalCallbacks()
     WsSocket().connect(adminAddress.toString())
-    RequestHolder.setAsyncMode(isAsyncApp)
+    RequestHolder.setAsyncMode(config.isAsyncApp)
     runBlocking {
         for (i in 1..5) {
             logger.info { "Agent is not alive. Waiting for package settings from $adminAddress..." }
