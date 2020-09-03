@@ -8,6 +8,7 @@ import com.epam.drill.core.plugin.loader.*
 import com.epam.drill.logger.*
 import com.epam.drill.plugin.*
 import com.epam.drill.request.*
+import kotlinx.coroutines.*
 import kotlinx.serialization.protobuf.*
 
 @kotlin.native.concurrent.SharedImmutable
@@ -15,11 +16,16 @@ private val logger = Logging.logger("CallbackLogger")
 
 fun globalCallbacks(): Unit = run {
     getClassesByConfig = {
-        latch?.join()?.also { latch = null }
-        when (waitForMultipleWebApps()) {
+        val classScanDelay = config.classScanDelay - state.startMark.elapsedNow()
+        if (classScanDelay.isPositive()) {
+            logger.debug { "Waiting class scan delay ($classScanDelay left)..." }
+            delay(classScanDelay)
+        }
+        when (waitForMultipleWebApps(config.webAppLoadingTimeout)) {
             null -> logger.warn {
-                "Apps: ${state.webApps.filterValues { !it }.keys} have not initialized in ${waitingTimeout}ms.. " +
-                        "Please check the app names or increase the timeout"
+                val timedOut = state.webApps.filterValues { !it }.keys
+                "Apps: $timedOut have not initialized in ${config.webAppLoadingTimeout}. " +
+                    "Please check the app names or increase the timeout"
             }
             else -> logger.info { "app is initialized" }
         }
@@ -28,10 +34,12 @@ fun globalCallbacks(): Unit = run {
 
     setPackagesPrefixes = { prefixes ->
         agentConfig = agentConfig.copy(packagesPrefixes = prefixes)
-        state = state.copy(
-            alive = true,
-            packagePrefixes = prefixes.packagesPrefixes
-        )
+        updateState {
+            copy(
+                alive = true,
+                packagePrefixes = prefixes.packagesPrefixes
+            )
+        }
     }
 
     sessionStorage = RequestHolder::storeRequestMetadata

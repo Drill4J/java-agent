@@ -14,9 +14,10 @@ data class AgentArguments(
     val groupId: String = "",
     val logLevel: String = LogLevel.ERROR.name,
     val logFile: String? = null,
-    val webAppNames: String = "",
+    val isWebApp: Boolean = false,
     val isAsyncApp: Boolean = false,
-    val classScanDelay: Long = 0
+    val webAppNames: String = "",
+    val classScanDelay: Long = 0L
 ) {
     val webApps: List<String>
         get() = webAppNames.split(":")

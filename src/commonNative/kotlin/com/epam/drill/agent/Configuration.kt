@@ -1,17 +1,17 @@
 package com.epam.drill.agent
 
 import com.epam.drill.*
+import com.epam.drill.agent.serialization.*
 import com.epam.drill.common.*
 import com.epam.drill.common.ws.*
 import com.epam.drill.logger.*
 import com.epam.drill.logger.api.*
-import com.epam.drill.util.*
 import kotlinx.cinterop.*
-import kotlinx.serialization.*
 import platform.posix.*
+import kotlin.time.*
 
 fun performAgentInitialization(initialParams: Map<String, String>) {
-    val agentArguments = Properties.loadStringValued<AgentArguments>(initialParams)
+    val agentArguments = initialParams.parseAs<AgentArguments>()
     agentArguments.let { aa ->
         drillInstallationDir = aa.drillInstallationDir
         agentConfig = AgentConfig(
@@ -22,13 +22,20 @@ fun performAgentInitialization(initialParams: Map<String, String>) {
             serviceGroupId = aa.groupId,
             agentType = AGENT_TYPE
         )
-        isAsyncApp = aa.isAsyncApp
-        classScanDelay = aa.classScanDelay
+        updateConfig {
+            val webApps = aa.webAppNames.split("")
+            copy(
+                classScanDelay = aa.classScanDelay.toDuration(DurationUnit.MILLISECONDS),
+                isAsyncApp = aa.isAsyncApp,
+                isWebApp = aa.isWebApp || webApps.any(),
+                webApps = webApps
+            )
+        }
         adminAddress = URL("ws://${aa.adminAddress}")
         configureLogger(aa)
 
         if (aa.webAppNames.isNotEmpty()) {
-            state = state.copy(webApps = aa.webApps.associateWith { false })
+            updateState { copy(webApps = aa.webApps.associateWith { false }) }
         }
     }
 }
@@ -37,6 +44,8 @@ private fun configureLogger(arguments: AgentArguments) {
     Logging.logLevel = LogLevel.valueOf(arguments.logLevel)
     arguments.logFile?.let { Logging.filename = it }
 }
+
+//TODO remove this code
 
 data class JavaProcess(
     val javaAgents: MutableList<String> = mutableListOf(),
