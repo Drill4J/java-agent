@@ -5,6 +5,7 @@ package com.epam.drill.core.callbacks.classloading
 import com.epam.drill.*
 import com.epam.drill.agent.*
 import com.epam.drill.agent.instrument.*
+import com.epam.drill.agent.instrument.SSLTransformer.SSL_ENGINE_CLASS_NAME
 import com.epam.drill.core.plugin.loader.*
 import com.epam.drill.jvmapi.gen.*
 import com.epam.drill.logger.*
@@ -29,7 +30,7 @@ fun classLoadEvent(
     newData: CPointer<CPointerVar<UByteVar>>?
 ) {
     initRuntimeIfNeeded()
-    if (isBootstrapClassLoading(loader, protection_domain)) return
+    if (isBootstrapClassLoading(loader, protection_domain) && !config.isTlsApp) return
     val kClassName = clsName?.toKString()
     if (kClassName == null || classData == null || kClassName.startsWith(DRILL_PACKAGE)) return
     try {
@@ -42,9 +43,9 @@ fun classLoadEvent(
             if (
                 config.isAsyncApp &&
                 (kClassName in TTLTransformer.directTtlClasses ||
-                    kClassName != TTLTransformer.timerTaskClass) &&
+                        kClassName != TTLTransformer.timerTaskClass) &&
                 (TTLTransformer.runnableInterface in classReader.interfaces ||
-                    classReader.superName == TTLTransformer.poolExecutor)
+                        classReader.superName == TTLTransformer.poolExecutor)
             ) {
                 transformers += { bytes ->
                     TTLTransformer.transform(
@@ -57,6 +58,10 @@ fun classLoadEvent(
             }
             if (config.isWebApp && Transformer.servletListener in classReader.interfaces) {
                 transformers += { bytes -> Transformer.transform(kClassName, bytes, loader) }
+            } else {
+                if (classReader.superName == SSL_ENGINE_CLASS_NAME) {
+                    transformers += { bytes -> SSLTransformer.transform(kClassName, bytes, loader) }
+                }
             }
         }
         if ('$' !in kClassName && kClassName.matches(state.packagePrefixes)) {

@@ -4,7 +4,6 @@ import com.epam.drill.*
 import com.epam.drill.agent.*
 import com.epam.drill.core.callbacks.classloading.*
 import com.epam.drill.core.callbacks.vminit.*
-import com.epam.drill.jvmapi.*
 import com.epam.drill.jvmapi.gen.*
 import com.epam.drill.logger.*
 import com.epam.drill.transport.common.ws.*
@@ -17,8 +16,8 @@ import kotlin.test.*
 @SharedImmutable
 private val logger = Logging.logger("MainLogger")
 
-object Agent: JvmtiAgent {
-    override fun agentOnLoad(options: String): Int{
+object Agent : JvmtiAgent {
+    override fun agentOnLoad(options: String): Int {
         try {
         val agentParameters = options.asAgentParams().validate()
             performAgentInitialization(agentParameters)
@@ -43,7 +42,8 @@ object Agent: JvmtiAgent {
         }
         return JNI_OK
     }
-    override fun agentOnUnload(){
+
+    override fun agentOnUnload() {
         logger.info { "Agent_OnUnload" }
     }
 }

@@ -17,9 +17,13 @@ actual object RequestHolder {
     }
 
     actual fun store(drillRequest: ByteArray) {
-        val drillRequestObject = ProtoBuf.load(DrillRequest.serializer(), drillRequest)
-        threadStorage.set(drillRequestObject)
-        logger.trace { "session ${drillRequestObject.drillSessionId} saved" }
+        store(ProtoBuf.load(DrillRequest.serializer(), drillRequest))
+
+    }
+
+    fun store(drillRequest: DrillRequest) {
+        threadStorage.set(drillRequest)
+        logger.trace { "session ${drillRequest.drillSessionId} saved" }
     }
 
     actual fun dump(): ByteArray? {
