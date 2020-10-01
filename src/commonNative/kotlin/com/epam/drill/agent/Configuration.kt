@@ -28,6 +28,7 @@ fun performAgentInitialization(initialParams: Map<String, String>) {
                 classScanDelay = aa.classScanDelay.toDuration(DurationUnit.MILLISECONDS),
                 isAsyncApp = aa.isAsyncApp,
                 isWebApp = aa.isWebApp || webApps.any(),
+                isTlsApp = aa.isTlsApp,
                 webApps = webApps
             )
         }
