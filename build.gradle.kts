@@ -7,12 +7,13 @@ plugins {
     kotlin("multiplatform")
     kotlin("plugin.serialization")
     id("com.epam.drill.cross-compilation")
-    id("com.epam.drill.version.plugin")
     id("com.github.johnrengelman.shadow")
     id("com.epam.drill.gradle.plugin.kni")
     distribution
     `maven-publish`
 }
+
+val scriptUrl: String by extra
 
 val serializationRuntimeVersion = "0.20.0"
 val coroutinesVersion = "1.3.5"
@@ -28,6 +29,8 @@ val kasmVersion: String by extra
 val kniVersion: String by extra
 
 allprojects {
+    apply(from = rootProject.uri("$scriptUrl/git-version.gradle.kts"))
+
     repositories {
         mavenLocal()
         maven(url = "https://oss.jfrog.org/artifactory/list/oss-release-local")
@@ -37,7 +40,6 @@ allprojects {
         jcenter()
     }
 
-    apply(plugin = "com.epam.drill.version.plugin")
     tasks.withType<KotlinCompile> {
         kotlinOptions.allWarningsAsErrors = true
     }
