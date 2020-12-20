@@ -19,7 +19,12 @@ private val logger = Logging.logger("VmInitEvent")
 fun jvmtiEventVMInitEvent(env: CPointer<jvmtiEnvVar>?, jniEnv: CPointer<JNIEnvVar>?, thread: jthread?) {
     initRuntimeIfNeeded()
     SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_CLASS_FILE_LOAD_HOOK, null)
-    configureHttp()
+    if (isHttpHookEnabled()) {
+        logger.info { "run with http hook" }
+        configureHttp()
+    } else {
+        logger.warn { "run without http hook" }
+    }
     globalCallbacks()
     WsSocket().connect(adminAddress.toString())
     RequestHolder.setAsyncMode(config.isAsyncApp)
@@ -43,3 +48,10 @@ fun jvmtiEventVMInitEvent(env: CPointer<jvmtiEnvVar>?, jniEnv: CPointer<JNIEnvVa
         }
     }
 }
+
+private fun isHttpHookEnabled() = memScoped {
+    alloc<CPointerVar<ByteVar>>().apply {
+        GetSystemProperty("drill.http.hook.enabled", this.ptr)
+    }.value?.toKString()?.toBoolean() ?: true
+}
+
