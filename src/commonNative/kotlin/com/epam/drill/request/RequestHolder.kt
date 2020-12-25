@@ -1,6 +1,10 @@
 package com.epam.drill.request
 
 actual object RequestHolder {
+    actual fun init(isAsync: Boolean) {
+        RequestHolderStub.init(isAsync)
+    }
+
     actual fun store(drillRequest: ByteArray) {
         RequestHolderStub.store(drillRequest)
     }
@@ -12,9 +16,4 @@ actual object RequestHolder {
     actual fun closeSession() {
         RequestHolderStub.closeSession()
     }
-
-    actual fun setAsyncMode(isAsync: Boolean) {
-        RequestHolderStub.setAsyncMode(isAsync)
-    }
-
 }

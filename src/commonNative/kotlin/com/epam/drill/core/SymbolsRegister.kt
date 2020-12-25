@@ -16,7 +16,7 @@ import kotlin.time.*
 private val logger = Logging.logger("SymbolsRegister")
 
 @Suppress("UNUSED_PARAMETER")
-@CName("Java_com_epam_drill_plugin_api_processing_Sender_sendMessage")
+@CName("Java_com_epam_drill_plugin_PluginSender_send")
 fun sendFromJava(envs: JNIEnv, thiz: jobject, jpluginId: jstring, jmessage: jstring) = withJSting {
     sendToSocket(jpluginId.toKString(), jmessage.toKString())
 }

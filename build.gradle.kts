@@ -120,6 +120,7 @@ kotlin {
                 implementation("com.epam.drill:common-jvm:$drillApiVersion")
                 implementation("com.epam.drill.logger:logger:$drillLogger")
                 implementation("com.epam.drill:drill-agent-part-jvm:$drillApiVersion")
+                implementation("com.epam.drill.agent:agent-jvm:$drillAgentCoreVersion")
                 implementation("com.epam.drill.kni:runtime:$kniVersion")
                 implementation("com.alibaba:transmittable-thread-local:2.11.0")
                 implementation("com.soywiz.korlibs.klock:klock-jvm:$klockVersion")
