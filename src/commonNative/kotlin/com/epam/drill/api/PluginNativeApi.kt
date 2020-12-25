@@ -6,7 +6,6 @@ import com.epam.drill.core.messanger.*
 import com.epam.drill.jvmapi.*
 import com.epam.drill.jvmapi.gen.*
 import com.epam.drill.plugin.*
-import com.epam.drill.plugin.api.processing.*
 import kotlinx.cinterop.*
 
 /**
@@ -431,28 +430,4 @@ fun disableJvmtiEventVmObjectAlloc(thread: jthread? = null) {
 fun disableJvmtiEventVmStart(thread: jthread? = null) {
     SetEventNotificationMode(JVMTI_DISABLE, JVMTI_EVENT_VM_START, thread)
     
-}
-
-@CName("getPlugin")
-fun getPlugin(id: CPointer<ByteVar>): NativePart<*>? {
-    return PluginManager[id.toKString()]?.np
-}
-
-
-@Suppress("UNCHECKED_CAST")
-@CName("addPluginToRegistry")
-fun addPluginToRegistry(plugin: NativePart<*>) {
-    println("[TEMP] Try to addNativePluginPart to registry")
-    try {
-        val agentPluginPart: AgentPart<Any, Any>? = PluginManager[plugin.id] as AgentPart<Any, Any>?
-        if (agentPluginPart != null) {
-            agentPluginPart.np = plugin as NativePart<Any>
-            println("[TEMP] native part added.")
-        } else {
-            println("[WARNING!!!!!!!] CANT FIND THE ${plugin.id} plug in manager. ")
-        }
-
-    } catch (ex: Throwable) {
-        ex.printStackTrace()
-    }
 }

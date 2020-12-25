@@ -7,7 +7,11 @@ import com.epam.drill.agent.classloading.*
 import com.epam.drill.common.*
 import com.epam.drill.kni.*
 import com.epam.drill.logger.*
+import com.epam.drill.logger.api.*
+import com.epam.drill.plugin.*
 import com.epam.drill.plugin.api.processing.*
+import com.epam.drill.request.*
+import kotlinx.coroutines.*
 import kotlinx.serialization.*
 import kotlinx.serialization.protobuf.*
 import java.util.jar.*
@@ -22,17 +26,16 @@ class ByteArrayListWrapper(val bytesList: List<ByteArray>)
 actual object DataService {
     private val logger = Logging.logger(DataService::class.jvmName)
 
-    private val agentContext = AgentContext(Logging)
-
     actual fun createAgentPart(id: String, jarPath: String): Any? = run {
         val agentPartClass = retrieveApiClass(jarPath)!!
         val constructor = agentPartClass.getConstructor(
             String::class.java,
-            AgentContext::class.java
+            AgentContext::class.java,
+            Sender::class.java,
+            LoggerFactory::class.java
         )
-        constructor.newInstance(id, agentContext)
+        constructor.newInstance(id, RequestHolder.agentContext, PluginSender, Logging)
     }
-
 
     actual fun retrieveClassesData(config: String): ByteArray {
         val packagesPrefixes = (PackagesPrefixes.serializer() parse config).packagesPrefixes
@@ -62,12 +65,19 @@ actual object DataService {
         return encodingResult.value
     }
 
-    private fun retrieveApiClass(jarPath: String): Class<AgentPart<*, *>>? = JarFile(jarPath).use { jf ->
+    actual fun doRawActionBlocking(
+        agentPart: Any,
+        data: String
+    ): Any = with(agentPart as AgentPart<*>) {
+        runBlocking { doRawAction(data) }
+    }
+
+    private fun retrieveApiClass(jarPath: String): Class<AgentPart<*>>? = JarFile(jarPath).use { jf ->
         val result = retrieveApiClass(
             AgentPart::class.java, jf.entries().iterator().asSequence().toSet(),
             ClassLoader.getSystemClassLoader()
         )
         @Suppress("UNCHECKED_CAST")
-        result as Class<AgentPart<*, *>>?
+        result as Class<AgentPart<*>>?
     }
 }

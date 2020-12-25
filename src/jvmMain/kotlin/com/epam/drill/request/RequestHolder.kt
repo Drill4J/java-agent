@@ -4,7 +4,7 @@ import com.alibaba.ttl.*
 import com.epam.drill.kni.*
 import com.epam.drill.logger.*
 import com.epam.drill.plugin.*
-import com.epam.drill.session.*
+import com.epam.drill.plugin.api.processing.*
 import kotlinx.serialization.protobuf.*
 import kotlin.reflect.jvm.*
 
@@ -12,8 +12,12 @@ import kotlin.reflect.jvm.*
 actual object RequestHolder {
     private val logger = Logging.logger(RequestHolder::class.jvmName)
 
-    init {
-        threadStorage = InheritableThreadLocal()
+    private lateinit var threadStorage: InheritableThreadLocal<DrillRequest>
+
+    val agentContext: AgentContext = RequestAgentContext { threadStorage.get() }
+
+    actual fun init(isAsync: Boolean) {
+        threadStorage = if (isAsync) TransmittableThreadLocal() else InheritableThreadLocal()
     }
 
     actual fun store(drillRequest: ByteArray) {
@@ -34,9 +38,4 @@ actual object RequestHolder {
         logger.trace { "session ${threadStorage.get()} closed" }
         threadStorage.remove()
     }
-
-    actual fun setAsyncMode(isAsync: Boolean) {
-        threadStorage = if (isAsync) TransmittableThreadLocal() else InheritableThreadLocal()
-    }
-
 }

@@ -27,7 +27,7 @@ fun jvmtiEventVMInitEvent(env: CPointer<jvmtiEnvVar>?, jniEnv: CPointer<JNIEnvVa
     }
     globalCallbacks()
     WsSocket().connect(adminAddress.toString())
-    RequestHolder.setAsyncMode(config.isAsyncApp)
+    RequestHolder.init(isAsync = config.isAsyncApp)
     runBlocking {
         for (i in 1..5) {
             logger.info { "Agent is not alive. Waiting for package settings from $adminAddress..." }
