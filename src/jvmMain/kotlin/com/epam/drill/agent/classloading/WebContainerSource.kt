@@ -11,13 +11,37 @@ import kotlin.reflect.jvm.*
 actual object WebContainerSource {
     private val logger = Logging.logger(WebContainerSource::class.jvmName)
 
-    private val scannedNames = mutableSetOf<String>()
+    private val webPaths = mutableSetOf<File>()
 
-    private val scannedDirs = mutableSetOf<File>()
+    val additionalSources: Set<ClassSource>
+        get() {
+            val scannedNames = mutableSetOf<String>()
+            val scannedDirs = mutableSetOf<File>()
+            val scannedClasses = mutableSetOf<ClassSource>()
 
-    private val scannedClasses = mutableSetOf<ClassSource>()
+            fun predicate(name: String): Boolean = name !in scannedNames
 
-    val additionalSources: Set<ClassSource> = scannedClasses
+            fun handler(source: ClassSource) {
+                scannedNames.add(source.className)
+                scannedClasses.add(source)
+            }
+
+            webPaths.forEach { deployedApp ->
+                deployedApp.parentFile
+                    .listFiles { pathname -> pathname?.name?.contains(".jar") ?: false }
+                    ?.filter { !scannedDirs.contains(it) }?.forEach {
+                        it.walkTopDown()
+                            .filter { it.isFile && it.extension == "jar" }
+                            .forEach { file -> file.useJarInputStream { it.scan(::predicate, ::handler) } }
+                    }
+                val webInfDir = deployedApp.resolve("WEB-INF")
+                webInfDir.resolve("classes").scan(::predicate, ::handler)
+                webInfDir.resolve("lib").walkTopDown()
+                    .filter { it.isFile && it.extension == "jar" }
+                    .forEach { file -> file.useJarInputStream { it.scan(::predicate, ::handler) } }
+            }
+            return scannedClasses
+        }
 
     fun fillWebAppSource(warPath: String?, warResource: URL?) {
         if (warPath == null || warResource == null) {
@@ -26,26 +50,8 @@ actual object WebContainerSource {
         }
         logger.warn { "Process web app: warPath='${warPath}', warResource='${warResource}'" }
         val deployedApp = File(warPath)
-        deployedApp.parentFile
-            .listFiles { pathname -> pathname?.name?.contains(".jar") ?: false }
-            ?.filter { !scannedDirs.contains(it) }?.forEach {
-                it.walkTopDown()
-                    .filter { it.isFile && it.extension == "jar" }
-                    .forEach { file -> file.useJarInputStream { it.scan(::predicate, ::handler) } }
-            }
-        val webInfDir = deployedApp.resolve("WEB-INF")
-        webInfDir.resolve("classes").scan(::predicate, ::handler)
-        webInfDir.resolve("lib").walkTopDown()
-            .filter { it.isFile && it.extension == "jar" }
-            .forEach { file -> file.useJarInputStream { it.scan(::predicate, ::handler) } }
+        webPaths += deployedApp
         webAppStarted(File(warResource.path).name)
-    }
-
-    private fun predicate(name: String): Boolean = name !in scannedNames
-
-    private fun handler(source: ClassSource) {
-        scannedNames.add(source.className)
-        scannedClasses.add(source)
     }
 
     actual external fun webAppStarted(appPath: String)
