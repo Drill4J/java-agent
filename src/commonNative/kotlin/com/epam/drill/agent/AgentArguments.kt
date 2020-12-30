@@ -21,5 +21,5 @@ data class AgentArguments(
     val classScanDelay: Long = 0L
 ) {
     val webApps: List<String>
-        get() = webAppNames.split(":")
+        get() = webAppNames.split(":", ",")
 }
