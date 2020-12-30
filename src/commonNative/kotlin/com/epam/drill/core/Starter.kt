@@ -5,12 +5,14 @@ import com.epam.drill.agent.*
 import com.epam.drill.core.callbacks.classloading.*
 import com.epam.drill.core.callbacks.vminit.*
 import com.epam.drill.jvmapi.gen.*
+import com.epam.drill.kni.*
 import com.epam.drill.logger.*
 import com.epam.drill.transport.common.ws.*
+import io.ktor.utils.io.core.*
+import io.ktor.utils.io.streams.*
 import kotlinx.cinterop.*
 import platform.posix.*
 import kotlin.native.concurrent.*
-import com.epam.drill.kni.*
 import kotlin.test.*
 
 @SharedImmutable
@@ -19,8 +21,8 @@ private val logger = Logging.logger("MainLogger")
 object Agent : JvmtiAgent {
     override fun agentOnLoad(options: String): Int {
         try {
-        val agentParameters = options.asAgentParams().validate()
-            performAgentInitialization(agentParameters)
+            val initialParams = agentParams(options)
+            performAgentInitialization(initialParams)
             setUnhandledExceptionHook({ error: Throwable ->
                 logger.error(error) { "unhandled event $error" }
             }.freeze())
@@ -43,21 +45,52 @@ object Agent : JvmtiAgent {
         return JNI_OK
     }
 
+    private fun agentParams(options: String): AgentParameters {
+        logger.debug { "agent options:$options" }
+        val agentParameters = options.asAgentParams()
+        val configPath = agentParameters["configPath"] ?: getenv("DRILL_AGENT_CONFIG_PATH")?.toKString()
+        logger.debug { "configFile=$configPath, agent parameters:$agentParameters" }
+        val agentParams = if (!configPath.isNullOrEmpty()) {
+            val properties = readFile(configPath)
+            logger.debug { "properties file:$properties" }
+            properties.asAgentParams("\n", "#")
+        } else {
+            logger.warn { "Deprecated. You should use a config file instead of options. It will be removed in the next release" }
+            agentParameters
+        }
+        logger.debug { "result of agent parameters:$agentParams" }
+        return agentParams.validate()
+    }
+
     override fun agentOnUnload() {
         logger.info { "Agent_OnUnload" }
     }
 }
 
-fun String?.asAgentParams(): AgentParameters {
-    if (this.isNullOrEmpty()) return mutableMapOf()
+private fun String?.asAgentParams(
+    lineDelimiter: String = ",",
+    filterPrefix: String = "",
+    mapDelimiter: String = "="
+): AgentParameters {
+    if (this.isNullOrEmpty()) return emptyMap()
     return try {
-        this.split(",").associate {
-            val (key, value) = it.split("=")
-            key to value
-        }
+        this.split(lineDelimiter)
+            .filter { it.isNotEmpty() && (filterPrefix.isEmpty() || !it.startsWith(filterPrefix)) }
+            .associate {
+                val (key, value) = it.split(mapDelimiter)
+                val pair = key to value
+                pair
+            }
     } catch (parseException: Exception) {
         throw IllegalArgumentException("wrong agent parameters: $this")
     }
+}
+
+private fun readFile(filePath: String): String {
+    val fileDescriptor = open(filePath, EROFS)
+    if (fileDescriptor == -1) throw IllegalArgumentException("Cannot open the config file with filePath='$filePath'")
+    val bytes = Input(fileDescriptor).readBytes()
+    return bytes.decodeToString()
 }
 
 private fun callbackRegister() = memScoped {

@@ -25,6 +25,7 @@ val drillTransportLibVersion: String by extra
 val drillLogger: String by extra
 val knasmVersion: String by extra
 val kniVersion: String by extra
+val ktorUtilVersion: String by extra
 
 allprojects {
     apply(from = rootProject.uri("$scriptUrl/git-version.gradle.kts"))
@@ -67,7 +68,8 @@ kotlin {
             "kotlin.time.ExperimentalTime",
             "kotlinx.serialization.ExperimentalSerializationApi",
             "kotlinx.coroutines.ExperimentalCoroutinesApi",
-            "kotlinx.serialization.InternalSerializationApi"
+            "kotlinx.serialization.InternalSerializationApi",
+            "io.ktor.utils.io.core.ExperimentalIoApi"
         ).let { annotations ->
             all { annotations.forEach(languageSettings::useExperimentalAnnotation) }
         }
@@ -99,6 +101,7 @@ kotlin {
                     implementation("com.epam.drill.agent:agent:$drillAgentCoreVersion")
                     implementation("com.epam.drill.knasm:knasm:$knasmVersion")
                     implementation("com.epam.drill.kni:runtime:$kniVersion")
+                    implementation("io.ktor:ktor-utils-native:$ktorUtilVersion")
                 }
             }
         }
