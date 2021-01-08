@@ -1,13 +1,20 @@
 package com.epam.drill.agent.serialization
 
 import kotlinx.serialization.*
-import kotlinx.serialization.builtins.*
+import kotlinx.serialization.descriptors.*
+import kotlinx.serialization.encoding.*
+import kotlinx.serialization.modules.*
 
-inline fun <reified T : Any> Map<String, String>.parseAs(): T = T::class.serializer().deserialize(
-    SimpleMapDecoder(this)
-)
+inline fun <reified T : Any> Map<String, String>.parseAs(): T = run {
+    val serializer = T::class.serializer()
+    val module = serializersModuleOf(serializer)
+    serializer.deserialize(SimpleMapDecoder(module, this))
+}
 
-class SimpleMapDecoder(map: Map<String, String>) : AbstractDecoder() {
+class SimpleMapDecoder(
+    override val serializersModule: SerializersModule = EmptySerializersModule,
+    map: Map<String, String>
+) : AbstractDecoder() {
 
     private val iterator = map.iterator()
 
@@ -25,7 +32,7 @@ class SimpleMapDecoder(map: Map<String, String>) : AbstractDecoder() {
                 else -> decodeElementIndex(descriptor)
             }
 
-        } ?: CompositeDecoder.READ_DONE
+        } ?: CompositeDecoder.DECODE_DONE
     }
 
     override fun decodeValue(): Any = current?.let { (desc, value) ->
