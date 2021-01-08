@@ -1,4 +1,3 @@
-import com.github.jengelman.gradle.plugins.shadow.tasks.*
 import org.jetbrains.kotlin.gradle.plugin.mpp.*
 import org.jetbrains.kotlin.gradle.tasks.*
 import org.jetbrains.kotlin.konan.target.*
@@ -15,17 +14,16 @@ plugins {
 
 val scriptUrl: String by extra
 
-val serializationRuntimeVersion = "0.20.0"
-val coroutinesVersion = "1.3.5"
-val uuidVersion = "0.1.0"
+val kxSerializationVersion: String by extra
+val kxCoroutinesVersion: String by extra
+val uuidVersion: String by extra
 
 val drillJvmApiLibVersion: String by extra
 val drillApiVersion: String by extra
 val drillAgentCoreVersion: String by extra
 val drillTransportLibVersion: String by extra
 val drillLogger: String by extra
-val klockVersion: String by extra
-val kasmVersion: String by extra
+val knasmVersion: String by extra
 val kniVersion: String by extra
 
 allprojects {
@@ -33,30 +31,9 @@ allprojects {
 
     repositories {
         mavenLocal()
-        maven(url = "https://oss.jfrog.org/artifactory/list/oss-release-local")
-        maven(url = "https://dl.bintray.com/kotlin/kotlinx/")
-        maven(url = "https://dl.bintray.com/kotlin/ktor/")
-        mavenCentral()
+        apply(from = "$scriptUrl/maven-repo.gradle.kts")
         jcenter()
     }
-
-    tasks.withType<KotlinCompile> {
-        kotlinOptions.allWarningsAsErrors = true
-    }
-    tasks.withType<KotlinNativeCompile> {
-        kotlinOptions.allWarningsAsErrors = true
-    }
-    configurations.all {
-        resolutionStrategy.dependencySubstitution {
-            substitute(
-                module("org.jetbrains.kotlinx:kotlinx-coroutines-core-native:$coroutinesVersion")
-            ).with(
-                module("org.jetbrains.kotlinx:kotlinx-coroutines-core-native:$coroutinesVersion-native-mt")
-            )
-        }
-
-    }
-
 }
 
 kotlin.sourceSets.commonMain {
@@ -83,21 +60,44 @@ kotlin {
         target.compilations["test"].cinterops.create("testStubs")
     }
 
-    crossCompilation {
+    sourceSets {
+        listOf(
+            "kotlin.ExperimentalStdlibApi",
+            "kotlin.ExperimentalUnsignedTypes",
+            "kotlin.time.ExperimentalTime",
+            "kotlinx.serialization.ExperimentalSerializationApi",
+            "kotlinx.coroutines.ExperimentalCoroutinesApi",
+            "kotlinx.serialization.InternalSerializationApi"
+        ).let { annotations ->
+            all { annotations.forEach(languageSettings::useExperimentalAnnotation) }
+        }
 
+        commonMain {
+            dependencies {
+                implementation("org.jetbrains.kotlinx:kotlinx-serialization-core:$kxSerializationVersion")
+            }
+        }
+        commonTest {
+            dependencies {
+                implementation("org.jetbrains.kotlin:kotlin-test-common")
+                implementation("org.jetbrains.kotlin:kotlin-test-annotations-common")
+            }
+        }
+    }
+
+    crossCompilation {
         common {
             defaultSourceSet {
                 dependsOn(sourceSets.named("commonMain").get())
                 dependencies {
-                    implementation("org.jetbrains.kotlinx:kotlinx-serialization-runtime-native:$serializationRuntimeVersion")
-                    implementation("org.jetbrains.kotlinx:kotlinx-serialization-protobuf-native:$serializationRuntimeVersion")
+                    implementation("org.jetbrains.kotlinx:kotlinx-serialization-protobuf:$kxSerializationVersion")
                     implementation("com.epam.drill:jvmapi:$drillJvmApiLibVersion")
                     implementation("com.benasher44:uuid:$uuidVersion")
                     implementation("com.epam.drill:drill-agent-part:$drillApiVersion")
                     implementation("com.epam.drill:common:$drillApiVersion")
                     implementation("com.epam.drill.logger:logger:$drillLogger")
                     implementation("com.epam.drill.agent:agent:$drillAgentCoreVersion")
-                    implementation("com.epam.drill.knasm:knasm:$kasmVersion")
+                    implementation("com.epam.drill.knasm:knasm:$knasmVersion")
                     implementation("com.epam.drill.kni:runtime:$kniVersion")
                 }
             }
@@ -112,18 +112,16 @@ kotlin {
     jvm {
         compilations["main"].defaultSourceSet {
             dependencies {
-                implementation(kotlin("stdlib"))
-                implementation(kotlin("reflect")) //TODO jarhell quick fix for kotlin jvm apps
-                implementation("org.jetbrains.kotlinx:kotlinx-serialization-runtime:$serializationRuntimeVersion")
-                implementation("org.jetbrains.kotlinx:kotlinx-serialization-protobuf:$serializationRuntimeVersion")
-                implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:$coroutinesVersion")
+                implementation(kotlin("reflect"))
+                implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:$kxSerializationVersion")
+                implementation("org.jetbrains.kotlinx:kotlinx-serialization-protobuf:$kxSerializationVersion")
+                implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:$kxCoroutinesVersion")
                 implementation("com.epam.drill:common-jvm:$drillApiVersion")
                 implementation("com.epam.drill.logger:logger:$drillLogger")
                 implementation("com.epam.drill:drill-agent-part-jvm:$drillApiVersion")
                 implementation("com.epam.drill.agent:agent-jvm:$drillAgentCoreVersion")
                 implementation("com.epam.drill.kni:runtime:$kniVersion")
                 implementation("com.alibaba:transmittable-thread-local:2.11.0")
-                implementation("com.soywiz.korlibs.klock:klock-jvm:$klockVersion")
             }
         }
         compilations["test"].defaultSourceSet {
@@ -133,50 +131,17 @@ kotlin {
             }
         }
     }
-
-    sourceSets {
-        all {
-            languageSettings.apply {
-                useExperimentalAnnotation("kotlin.ExperimentalStdlibApi")
-                useExperimentalAnnotation("kotlinx.serialization.ImplicitReflectionSerializer")
-                useExperimentalAnnotation("kotlin.ExperimentalUnsignedTypes")
-                useExperimentalAnnotation("kotlin.time.ExperimentalTime")
-                useExperimentalAnnotation("kotlinx.coroutines.ExperimentalCoroutinesApi")
-                useExperimentalAnnotation("kotlinx.serialization.InternalSerializationApi")
-            }
-        }
-
-        commonMain {
-            dependencies {
-                implementation("org.jetbrains.kotlin:kotlin-stdlib-common")
-                implementation("org.jetbrains.kotlinx:kotlinx-serialization-runtime-common:$serializationRuntimeVersion")
-                implementation("com.epam.drill:drill-agent-part:$drillApiVersion")
-                implementation("com.epam.drill:common:$drillApiVersion")
-                implementation("com.epam.drill.kni:runtime:$kniVersion")
-            }
-        }
-        commonTest {
-            dependencies {
-                implementation("org.jetbrains.kotlin:kotlin-test-common")
-                implementation("org.jetbrains.kotlin:kotlin-test-annotations-common")
-            }
-        }
-
-    }
-
 }
 
-val jvmJar by tasks.getting(Jar::class) {
-    from(provider {
-        kotlin.jvm().compilations["main"].compileDependencyFiles.map { if (it.isDirectory) it else zipTree(it) }
-    })
-}
-
-val agentShadow by tasks.registering(ShadowJar::class) {
+val runtimeJar by tasks.registering(com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar::class) {
     mergeServiceFiles()
     isZip64 = true
     archiveFileName.set("drillRuntime.jar")
-    from(jvmJar)
+    val main by kotlin.jvm().compilations
+    from(
+        provider { main.output },
+        provider { main.runtimeDependencyFiles }
+    )
     relocate("kotlin", "kruntime")
 }
 
@@ -200,17 +165,17 @@ tasks {
 }
 
 afterEvaluate {
-    val availableTarget =
+    val availableTargets =
         kotlin.targets.filterIsInstance<KotlinNativeTarget>().filter { HostManager().isEnabled(it.konanTarget) }
 
     distributions {
-        availableTarget.forEach {
+        availableTargets.forEach {
             val name = it.name
             create(name) {
                 distributionBaseName.set(name)
                 contents {
-                    from(agentShadow)
-                    from(tasks.getByPath("link${libName.capitalize()}DebugShared${name.capitalize()}")) {
+                    from(runtimeJar)
+                    from(tasks.named("link${libName.capitalize()}DebugShared${name.capitalize()}")) {
                         duplicatesStrategy = DuplicatesStrategy.EXCLUDE
                     }
                 }
@@ -236,7 +201,7 @@ afterEvaluate {
         }
 
         publications {
-            availableTarget.forEach {
+            availableTargets.forEach {
                 create<MavenPublication>("${it.name}Zip") {
                     artifactId = "$libName-${it.name}"
                     artifact(tasks["${it.name}DistZip"])

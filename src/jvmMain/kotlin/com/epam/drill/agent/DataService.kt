@@ -13,6 +13,7 @@ import com.epam.drill.plugin.api.processing.*
 import com.epam.drill.request.*
 import kotlinx.coroutines.*
 import kotlinx.serialization.*
+import kotlinx.serialization.json.*
 import kotlinx.serialization.protobuf.*
 import java.util.jar.*
 import kotlin.reflect.jvm.*
@@ -38,7 +39,7 @@ actual object DataService {
     }
 
     actual fun retrieveClassesData(config: String): ByteArray {
-        val packagesPrefixes = (PackagesPrefixes.serializer() parse config).packagesPrefixes
+        val packagesPrefixes = Json.decodeFromString(PackagesPrefixes.serializer(), config).packagesPrefixes
 
         logger.info { "Scanning classes, package prefixes: $packagesPrefixes..." }
         val scanResult = measureTimedValue { scanResourceMap(packagesPrefixes) }
