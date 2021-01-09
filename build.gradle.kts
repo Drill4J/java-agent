@@ -116,10 +116,10 @@ kotlin {
                 implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:$kxSerializationVersion")
                 implementation("org.jetbrains.kotlinx:kotlinx-serialization-protobuf:$kxSerializationVersion")
                 implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:$kxCoroutinesVersion")
-                implementation("com.epam.drill:common-jvm:$drillApiVersion")
+                implementation("com.epam.drill:common:$drillApiVersion")
                 implementation("com.epam.drill.logger:logger:$drillLogger")
-                implementation("com.epam.drill:drill-agent-part-jvm:$drillApiVersion")
-                implementation("com.epam.drill.agent:agent-jvm:$drillAgentCoreVersion")
+                implementation("com.epam.drill:drill-agent-part:$drillApiVersion")
+                implementation("com.epam.drill.agent:agent:$drillAgentCoreVersion")
                 implementation("com.epam.drill.kni:runtime:$kniVersion")
                 implementation("com.alibaba:transmittable-thread-local:2.11.0")
             }
