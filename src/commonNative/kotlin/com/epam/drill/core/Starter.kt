@@ -19,6 +19,10 @@ import kotlin.test.*
 private val logger = Logging.logger("MainLogger")
 
 object Agent : JvmtiAgent {
+    val isHttpHookEnabled: Boolean by lazy {
+        getenv("drill.http.hook.enabled")?.toKString()?.toBoolean() ?: true
+    }
+
     override fun agentOnLoad(options: String): Int {
         try {
             val initialParams = agentParams(options)
@@ -48,7 +52,7 @@ object Agent : JvmtiAgent {
     private fun agentParams(options: String): AgentParameters {
         logger.debug { "agent options:$options" }
         val agentParameters = options.asAgentParams()
-        val configPath = agentParameters["configPath"] ?: getenv("DRILL_AGENT_CONFIG_PATH")?.toKString()
+        val configPath = agentParameters["configPath"] ?: getenv(DRILL_SYSTEM_CONFIG_PATH)?.toKString()
         logger.debug { "configFile=$configPath, agent parameters:$agentParameters" }
         val agentParams = if (!configPath.isNullOrEmpty()) {
             val properties = readFile(configPath)
