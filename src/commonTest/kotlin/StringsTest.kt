@@ -2,7 +2,6 @@ package com.epam.drill.agent
 
 import kotlin.test.*
 
-
 class StringsTest {
     @Test
     fun `prefix matching`() {
@@ -14,4 +13,5 @@ class StringsTest {
         assertFalse { "foo/bar/Bar.class".matches(prefixes) }
         assertFalse { "Lfoo/bar/Bar.class".matches(prefixes, 1) }
     }
+
 }

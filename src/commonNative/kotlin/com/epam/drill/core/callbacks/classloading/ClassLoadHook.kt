@@ -6,6 +6,7 @@ import com.epam.drill.*
 import com.epam.drill.agent.*
 import com.epam.drill.agent.instrument.*
 import com.epam.drill.agent.instrument.SSLTransformer.SSL_ENGINE_CLASS_NAME
+import com.epam.drill.core.Agent.isHttpHookEnabled
 import com.epam.drill.core.plugin.loader.*
 import com.epam.drill.jvmapi.gen.*
 import com.epam.drill.logger.*
@@ -67,6 +68,13 @@ fun classLoadEvent(
         if ('$' !in kClassName && kClassName.matches(state.packagePrefixes)) {
             pstorage.values.filterIsInstance<InstrumentationNativePlugin>().forEach { plugin ->
                 transformers += { bytes -> plugin.instrument(kClassName, bytes) }
+            }
+        }
+
+        if (!isHttpHookEnabled && kClassName.startsWith("org/apache/catalina/core/ApplicationFilterChain")) {
+            logger.warn { "Http hook is off, starting transform tomcat class kClassName $kClassName..." }
+            transformers += { bytes ->
+                TomcatTransformer.transform(kClassName, bytes, loader)
             }
         }
         if (transformers.any()) {

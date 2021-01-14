@@ -5,6 +5,7 @@ package com.epam.drill.core.callbacks.vminit
 import com.epam.drill.*
 import com.epam.drill.agent.*
 import com.epam.drill.core.*
+import com.epam.drill.core.Agent.isHttpHookEnabled
 import com.epam.drill.core.transport.*
 import com.epam.drill.core.ws.*
 import com.epam.drill.jvmapi.gen.*
@@ -19,7 +20,7 @@ private val logger = Logging.logger("VmInitEvent")
 fun jvmtiEventVMInitEvent(env: CPointer<jvmtiEnvVar>?, jniEnv: CPointer<JNIEnvVar>?, thread: jthread?) {
     initRuntimeIfNeeded()
     SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_CLASS_FILE_LOAD_HOOK, null)
-    if (isHttpHookEnabled()) {
+    if (isHttpHookEnabled) {
         logger.info { "run with http hook" }
         configureHttp()
     } else {
@@ -47,11 +48,5 @@ fun jvmtiEventVMInitEvent(env: CPointer<jvmtiEnvVar>?, jniEnv: CPointer<JNIEnvVa
             logger.info { "No plugins loaded from $adminAddress." }
         }
     }
-}
-
-private fun isHttpHookEnabled() = memScoped {
-    alloc<CPointerVar<ByteVar>>().apply {
-        GetSystemProperty("drill.http.hook.enabled", this.ptr)
-    }.value?.toKString()?.toBoolean() ?: true
 }
 
