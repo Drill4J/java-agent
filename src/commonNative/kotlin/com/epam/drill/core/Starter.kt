@@ -18,6 +18,16 @@ import kotlin.test.*
 @SharedImmutable
 private val logger = Logging.logger("MainLogger")
 
+private val LOGO = """
+  ____    ____                 _       _          _  _                _      
+ |  _"\U |  _"\ u     ___     |"|     |"|        | ||"|            U |"| u   
+/| | | |\| |_) |/    |_"_|  U | | u U | | u      | || |_          _ \| |/    
+U| |_| |\|  _ <       | |    \| |/__ \| |/__     |__   _|        | |_| |_,-. 
+ |____/ u|_| \_\    U/| |\u   |_____| |_____|      /|_|\          \___/-(_/  
+  |||_   //   \\_.-,_|___|_,-.//  \\  //  \\      u_|||_u          _//       
+ (__)_) (__)  (__)\_)-' '-(_/(_")("_)(_")("_)     (__)__)         (__)  v. ${agentVersion}⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+        """.trimIndent()
+
 object Agent : JvmtiAgent {
     val isHttpHookEnabled: Boolean by lazy {
         getenv(SYSTEM_HTTP_HOOK_ENABLED)?.toKString()?.toBoolean() ?: memScoped {
@@ -28,6 +38,7 @@ object Agent : JvmtiAgent {
     }
 
     override fun agentOnLoad(options: String): Int {
+        println(LOGO)
         try {
             val initialParams = agentParams(options)
             performAgentInitialization(initialParams)
