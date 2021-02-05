@@ -1,6 +1,7 @@
 import org.jetbrains.kotlin.gradle.plugin.mpp.*
 import org.jetbrains.kotlin.gradle.tasks.*
 import org.jetbrains.kotlin.konan.target.*
+import java.net.*
 
 plugins {
     kotlin("multiplatform")
@@ -8,6 +9,7 @@ plugins {
     id("com.epam.drill.cross-compilation")
     id("com.github.johnrengelman.shadow")
     id("com.epam.drill.gradle.plugin.kni")
+    id("com.github.hierynomus.license")
     distribution
     `maven-publish`
 }
@@ -213,3 +215,13 @@ afterEvaluate {
         }
     }
 }
+
+val licenseFormatSettings by tasks.registering(com.hierynomus.gradle.license.tasks.LicenseFormat::class) {
+    source = fileTree(project.projectDir).also {
+        include("**/*.kt", "**/*.java", "**/*.groovy")
+        exclude("**/.idea")
+    }.asFileTree
+    headerURI = URI("https://raw.githubusercontent.com/Drill4J/drill4j/develop/COPYRIGHT")
+}
+
+tasks["licenseFormat"].dependsOn(licenseFormatSettings)

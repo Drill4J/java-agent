@@ -1,5 +1,7 @@
 build/
-.idea/
+**/.idea/*
+!/.idea/codeStyles
+!/.idea/fileTemplates
 /build-cache/
 .gradle/
 src/generated/
