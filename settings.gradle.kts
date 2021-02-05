@@ -6,6 +6,7 @@ pluginManagement {
     val agentRunnerPluginVersion: String by extra
     val shadowPluginVersion: String by extra
     val kniVersion: String by extra
+    val licenseVersion: String by extra
     plugins {
         kotlin("multiplatform") version kotlinVersion
         kotlin("plugin.serialization") version kotlinVersion
@@ -13,6 +14,7 @@ pluginManagement {
         id("com.epam.drill.agent.runner.app") version agentRunnerPluginVersion
         id("com.epam.drill.gradle.plugin.kni") version kniVersion
         id("com.github.johnrengelman.shadow") version shadowPluginVersion
+        id("com.github.hierynomus.license") version licenseVersion
     }
     repositories {
         mavenLocal()
