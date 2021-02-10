@@ -4,6 +4,7 @@ import com.epam.drill.*
 import com.epam.drill.agent.serialization.*
 import com.epam.drill.common.*
 import com.epam.drill.common.ws.*
+import com.epam.drill.interceptor.*
 import com.epam.drill.logger.*
 import com.epam.drill.logger.api.*
 import kotlinx.cinterop.*
@@ -18,7 +19,7 @@ fun performAgentInitialization(initialParams: Map<String, String>) {
             id = aa.agentId,
             instanceId = aa.instanceId,
             agentVersion = agentVersion,
-            buildVersion = aa.buildVersion,
+            buildVersion = aa.buildVersion ?: calculateBuildVersion() ?: "unspecified",
             serviceGroupId = aa.groupId,
             agentType = AGENT_TYPE
         )
@@ -40,6 +41,18 @@ fun performAgentInitialization(initialParams: Map<String, String>) {
         }
     }
 }
+
+private fun calculateBuildVersion(): String? = runCatching {
+    getenv(SYSTEM_JAVA_APP_JAR)?.toKString()?.let {
+        "(.*)/(.*).jar".toRegex().matchEntire(it)?.let { matchResult ->
+            if (matchResult.groupValues.size == 3) {
+                val buildVersion = matchResult.groupValues[2]
+                logger.debug { "calculated build version = '$buildVersion'" }
+                buildVersion
+            } else null
+        }
+    }
+}.getOrNull()
 
 private fun configureLogger(arguments: AgentArguments) {
     Logging.logLevel = LogLevel.valueOf(arguments.logLevel)

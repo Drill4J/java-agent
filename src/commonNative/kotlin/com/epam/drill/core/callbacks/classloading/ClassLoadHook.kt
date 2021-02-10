@@ -72,7 +72,7 @@ fun classLoadEvent(
         }
 
         if (!isHttpHookEnabled && kClassName.startsWith("org/apache/catalina/core/ApplicationFilterChain")) {
-            logger.warn { "Http hook is off, starting transform tomcat class kClassName $kClassName..." }
+            logger.info { "Http hook is off, starting transform tomcat class kClassName $kClassName..." }
             transformers += { bytes ->
                 TomcatTransformer.transform(kClassName, bytes, loader)
             }
