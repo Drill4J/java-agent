@@ -24,7 +24,7 @@ data class AgentArguments(
     val agentId: String,
     val adminAddress: String,
     val drillInstallationDir: String = javaProcess().firstAgentPath,
-    val buildVersion: String = "unspecified",
+    val buildVersion: String? = null,
     val instanceId: String = uuid4().toString(),
     val groupId: String = "",
     val logLevel: String = LogLevel.ERROR.name,
