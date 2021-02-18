@@ -2,6 +2,8 @@ import org.jetbrains.kotlin.gradle.plugin.mpp.*
 import org.jetbrains.kotlin.gradle.tasks.*
 import org.jetbrains.kotlin.konan.target.*
 import java.net.*
+import java.nio.file.*
+import java.util.jar.*
 
 plugins {
     kotlin("multiplatform")
@@ -148,6 +150,15 @@ val runtimeJar by tasks.registering(com.github.jengelman.gradle.plugins.shadow.t
         provider { main.runtimeDependencyFiles }
     )
     relocate("kotlin", "kruntime")
+    doLast {
+        val jarFilePath = Paths.get("$buildDir/libs", archiveFileName.get())
+        val zipDisk = URI.create("jar:${jarFilePath.toUri()}")
+        val zipProperties = mutableMapOf("create" to "false")
+        FileSystems.newFileSystem(zipDisk, zipProperties).use { fileSystem ->
+            val manifestPath = fileSystem.getPath(JarFile.MANIFEST_NAME)
+            Files.delete(manifestPath)
+        }
+    }
 }
 
 tasks.withType<org.jetbrains.kotlin.gradle.targets.native.tasks.KotlinNativeTest> {
