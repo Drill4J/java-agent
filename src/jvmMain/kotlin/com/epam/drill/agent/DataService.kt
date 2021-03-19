@@ -54,6 +54,26 @@ actual object DataService {
     }
 
     actual fun retrieveClassesData(config: String): ByteArray {
+        val encodedClasses = encodedClasses(config)
+        val encodingResult = measureTimedValue {
+            ProtoBuf.dump(ByteArrayListWrapper.serializer(), ByteArrayListWrapper(encodedClasses))
+        }
+        logger.info { "Wrapped classes in ${encodingResult.duration}" }
+        return encodingResult.value
+    }
+
+    private fun encodedClasses(config: String): List<ByteArray> {
+        val (loadedClassData, classCount) = loadClassData(config)
+        val encodedClasses = measureTimedValue {
+            loadedClassData.map { (className, bytes) ->
+                ProtoBuf.dump(ByteClass.serializer(), ByteClass(className, bytes))
+            }
+        }
+        logger.info { "Encoded $classCount classes in ${encodedClasses.duration}" }
+        return encodedClasses.value
+    }
+
+    private fun loadClassData(config: String): Pair<Map<String, ByteArray>, Int> {
         val packagesPrefixes = Json.decodeFromString(PackagesPrefixes.serializer(), config).packagesPrefixes
 
         logger.info { "Scanning classes, package prefixes: $packagesPrefixes..." }
@@ -70,20 +90,12 @@ actual object DataService {
         logger.info { "Loaded $classCount classes in ${loadingResult.duration}" }
 
         logger.info { "Encoding $classCount classes..." }
-
-        val encodingResult = measureTimedValue {
-            val encodedClasses = loadedClassData.map { (className, bytes) ->
-                ProtoBuf.dump(ByteClass.serializer(), ByteClass(className, bytes))
-            }
-            ProtoBuf.dump(ByteArrayListWrapper.serializer(), ByteArrayListWrapper(encodedClasses))
-        }
-        logger.info { "Encoded $classCount classes in ${encodingResult.duration}" }
-        return encodingResult.value
+        return Pair(loadedClassData, classCount)
     }
 
     actual fun doRawActionBlocking(
         agentPart: Any,
-        data: String
+        data: String,
     ): Any = with(agentPart as AgentPart<*>) {
         runBlocking { doRawAction(data) }
     }
