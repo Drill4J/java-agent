@@ -29,13 +29,10 @@ internal fun JarInputStream.scan(
     handler: (ClassSource) -> Unit
 ): Unit = forEachFile { entry ->
     val name = entry.name
-    when(name.substringAfterLast('.')) {
-        "class" -> name.toClassName().let {
-            val prefix = "BOOT-INF/classes/" //TODO check manifest
-            if (it.startsWith(prefix)) {
-                it.removePrefix(prefix)
-            } else it
-        }.takeIf {  it.isAllowed() && predicate(it) }?.let {
+    when (name.substringAfterLast('.')) {
+        "class" -> name.toClassName().removePrefix(SPRING_BOOT_PREFIX).takeIf {
+            it.isAllowed() && predicate(it)
+        }?.let {
             handler(ByteArrayClassSource(it, readBytes()))
         }
         "jar" -> JarInputStream(ByteArrayInputStream(readBytes())).scan(predicate, handler)
@@ -46,7 +43,7 @@ internal fun File.scan(
     predicate: (String) -> Boolean,
     handler: (ClassSource) -> Unit
 ) = walkTopDown().filter { it.isFile && it.extension == "class" }.forEach { f ->
-    val name = f.toRelativeString(this).replace(File.separatorChar, '/').toClassName()
+    val name = f.toRelativeString(this).removePrefix(SPRING_BOOT_PREFIX).replace(File.separatorChar, '/').toClassName()
     if (name.isAllowed() && predicate(name)) {
         handler(FileSource(name, f))
     }
