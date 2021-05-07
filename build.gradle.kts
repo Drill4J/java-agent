@@ -199,23 +199,6 @@ afterEvaluate {
         }
     }
     publishing {
-        repositories {
-            maven {
-
-                url = uri("http://oss.jfrog.org/oss-release-local")
-                credentials {
-                    username =
-                        if (project.hasProperty("bintrayUser"))
-                            project.property("bintrayUser").toString()
-                        else System.getenv("BINTRAY_USER")
-                    password =
-                        if (project.hasProperty("bintrayApiKey"))
-                            project.property("bintrayApiKey").toString()
-                        else System.getenv("BINTRAY_API_KEY")
-                }
-            }
-        }
-
         publications {
             availableTargets.forEach {
                 create<MavenPublication>("${it.name}Zip") {
