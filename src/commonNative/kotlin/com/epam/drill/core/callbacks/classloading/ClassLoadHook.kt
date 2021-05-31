@@ -28,9 +28,12 @@ import com.epam.drill.logger.*
 import io.ktor.utils.io.bits.*
 import kotlinx.cinterop.*
 import org.objectweb.asm.*
+import kotlin.native.concurrent.*
 
 @SharedImmutable
 private val logger = Logging.logger("jvmtiEventClassFileLoadHookEvent")
+
+internal val totalTransformClass = AtomicInt(0)
 
 @Suppress("unused", "UNUSED_PARAMETER")
 fun classLoadEvent(
@@ -43,7 +46,7 @@ fun classLoadEvent(
     classDataLen: jint,
     classData: CPointer<UByteVar>?,
     newClassDataLen: CPointer<jintVar>?,
-    newData: CPointer<CPointerVar<UByteVar>>?
+    newData: CPointer<CPointerVar<UByteVar>>?,
 ) {
     initRuntimeIfNeeded()
     if (isBootstrapClassLoading(loader, protection_domain) && !config.isTlsApp) return
@@ -97,6 +100,9 @@ fun classLoadEvent(
                 transformer(bytes) ?: bytes
             }.takeIf { it !== classBytes }?.let { newBytes ->
                 logger.trace { "$kClassName transformed" }
+                totalTransformClass.addAndGet(1).takeIf { it % 100 == 0 }?.let {
+                    logger.debug { "$it classes are transformed" }
+                }
                 convertToNativePointers(newBytes, newData, newClassDataLen)
             }
         }
@@ -110,7 +116,7 @@ fun classLoadEvent(
 private fun convertToNativePointers(
     instrumentedBytes: ByteArray,
     newData: CPointer<CPointerVar<UByteVar>>?,
-    newClassDataLen: CPointer<jintVar>?
+    newClassDataLen: CPointer<jintVar>?,
 ) {
     val instrumentedSize = instrumentedBytes.size
     Allocate(instrumentedSize.toLong(), newData)
