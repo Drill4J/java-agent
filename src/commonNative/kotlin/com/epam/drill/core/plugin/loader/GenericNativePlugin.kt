@@ -112,10 +112,15 @@ open class GenericNativePlugin(
             userPlugin,
             GetMethodID(pluginApiClass, AgentPart<*>::updateRawConfig.name, "(Ljava/lang/String;)V"),
             nativeHeap.allocArray(1.toLong()) {
-                val newStringUTF =
-                    NewStringUTF(data)
-                l = newStringUTF
+                l = NewStringUTF(data)
             })
+    }
+
+    fun processServerRequest() {
+        val methodID = GetMethodID(pluginApiClass, GenericNativePlugin::processServerRequest.name, "()V")
+        methodID?.let {
+            CallVoidMethodA(userPlugin, it, null)
+        }
     }
 
     override fun initPlugin() = TODO()

@@ -40,13 +40,13 @@ drill {
 
 repositories {
     mavenLocal()
-    maven("https://dl.bintray.com/drill/drill4j")
+    maven("https://drill4j.jfrog.io/artifactory/drill")
 }
 
 
 dependencies {
     compileOnly("org.springframework:spring-context:5.1.8.RELEASE")
-    implementation("org.springframework.samples:spring-petclinic:2.1.0") { isTransitive = false }
+    implementation("org.springframework.samples:spring-petclinic:2.1.0.BUILD-SNAPSHOT") { isTransitive = false }
     if (emulateBigApp)
         implementation("com.epam.drill:petclinic-big-app:1.0.0")
 }
