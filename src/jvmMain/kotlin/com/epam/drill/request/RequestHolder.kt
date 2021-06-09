@@ -44,6 +44,7 @@ actual object RequestHolder {
     fun store(drillRequest: DrillRequest) {
         threadStorage.set(drillRequest)
         logger.trace { "session ${drillRequest.drillSessionId} saved" }
+        PluginExtension.processServerRequest()
     }
 
     actual fun dump(): ByteArray? {
