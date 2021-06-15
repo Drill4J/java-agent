@@ -42,7 +42,7 @@ actual object TomcatTransformer {
                     "(Ljavax/servlet/ServletRequest;Ljavax/servlet/ServletResponse;)V"
                 )?.insertBefore(
                     """
-                        if ($1 instanceof org.apache.catalina.connector.RequestFacade) {
+                        if ($1 instanceof org.apache.catalina.connector.RequestFacade && $2 instanceof org.apache.catalina.connector.ResponseFacade) {
                             org.apache.catalina.connector.ResponseFacade tomcatResponse = (org.apache.catalina.connector.ResponseFacade)$2;
                             if (tomcatResponse.getHeader("$drillAdminHeader") != "$adminUrl") {
                                 tomcatResponse.addHeader("$drillAdminHeader", "$adminUrl");
