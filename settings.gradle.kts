@@ -23,4 +23,5 @@ pluginManagement {
     }
 }
 
+include("bootstrap")
 include("pt-runner")
