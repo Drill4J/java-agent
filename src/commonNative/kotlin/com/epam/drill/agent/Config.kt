@@ -24,7 +24,8 @@ data class Config(
     val isWebApp: Boolean = false,
     val isTlsApp: Boolean = false,
     val webAppLoadingTimeout: Duration = 1500.seconds,
-    val webApps: List<String> = emptyList()
+    val webApps: List<String> = emptyList(),
+    val coreLibPath: String? = null
 )
 
 private val _config = AtomicReference(Config().freeze()).freeze()

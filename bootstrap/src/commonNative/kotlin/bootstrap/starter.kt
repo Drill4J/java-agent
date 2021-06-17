@@ -18,12 +18,16 @@ fun agentOnLoad(
             val rawFileContent = readFile(it)
             println(rawFileContent)
             val customAgentParams = rawFileContent.asAgentParams(lineDelimiter = "\n")
-            val injectDynamicLibrary = agentLoad(customAgentParams.getValue("agentPath")) as CPointer<*>
+            val agentPath = customAgentParams.getValue("agentPath")
+            val injectDynamicLibrary = agentLoad(agentPath) as CPointer<*>
             val directOnLoad =
                 injectDynamicLibrary.reinterpret<CFunction<(CPointer<JavaVMVar>, CPointer<ByteVar>, Long) -> Int>>()
             val finalOptions = initialParams
                 .toMutableMap()
-                .apply { putAll(customAgentParams) }
+                .apply {
+                    put("coreLibPath", agentPath)
+                    putAll(customAgentParams)
+                }
                 .map { (k, v) -> "$k=$v" }.joinToString(separator = ",")
             println(finalOptions)
             directOnLoad(vmPointer, finalOptions.cstr.getPointer(this), reservedPtr)

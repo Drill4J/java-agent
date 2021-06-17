@@ -38,6 +38,13 @@ kotlin {
         target.compilations["test"].cinterops.create("testStubs")
     }
 
+    sourceSets {
+        commonMain {
+            dependencies {
+                implementation("org.jetbrains.kotlinx:kotlinx-serialization-core:$kxSerializationVersion")
+            }
+        }
+    }
     crossCompilation {
         common {
             defaultSourceSet {
@@ -76,8 +83,10 @@ tasks {
 
 afterEvaluate {
     val availableTargets =
-        kotlin.targets.filterIsInstance<org.jetbrains.kotlin.gradle.plugin.mpp.KotlinNativeTarget>().filter { org.jetbrains.kotlin.konan.target.HostManager()
-            .isEnabled(it.konanTarget) }
+        kotlin.targets.filterIsInstance<org.jetbrains.kotlin.gradle.plugin.mpp.KotlinNativeTarget>().filter {
+            org.jetbrains.kotlin.konan.target.HostManager()
+                .isEnabled(it.konanTarget)
+        }
 
     distributions {
         availableTargets.forEach {

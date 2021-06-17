@@ -41,6 +41,11 @@ fun jvmtiEventVMInitEvent(env: CPointer<jvmtiEnvVar>?, jniEnv: CPointer<JNIEnvVa
     } else {
         logger.warn { "run without http hook" }
     }
+
+    config.coreLibPath?.let {
+        NativeRegistry.loadLibrary(it)
+    }
+
     globalCallbacks()
     WsSocket().connect(adminAddress.toString())
     RequestHolder.init(isAsync = config.isAsyncApp)

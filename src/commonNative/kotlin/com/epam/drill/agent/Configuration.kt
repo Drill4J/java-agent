@@ -45,7 +45,8 @@ fun performAgentInitialization(initialParams: Map<String, String>) {
                 isAsyncApp = aa.isAsyncApp,
                 isWebApp = aa.isWebApp || webApps.any(),
                 isTlsApp = aa.isTlsApp,
-                webApps = webApps
+                webApps = webApps,
+                coreLibPath = initialParams["coreLibPath"]
             )
         }
         adminAddress = URL("ws://${aa.adminAddress}")

@@ -6,7 +6,7 @@ import kotlinx.cinterop.*
 import platform.windows.*
 
 
-fun agentLoad(path: String): Any? = memScoped {
+actual fun agentLoad(path: String): Any? = memScoped {
     LoadLibrary!!(path.replace("/", "\\").toLPCWSTR(this).pointed.ptr)
         ?.let { hModule -> GetProcAddress(hModule, "Agent_OnLoad") }
 }
