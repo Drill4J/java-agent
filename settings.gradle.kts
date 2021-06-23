@@ -19,7 +19,7 @@ pluginManagement {
     repositories {
         mavenLocal()
         gradlePluginPortal()
-        maven(url = "http://oss.jfrog.org/oss-release-local")
+        maven(url = "https://oss.jfrog.org/oss-release-local")
     }
 }
 
