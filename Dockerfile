@@ -8,7 +8,7 @@ RUN mkdir -p /data-download/agent
 RUN mkdir /data
 COPY check-file-exist.sh /
 RUN chmod +x /check-file-exist.sh
-COPY ./build/install/linuxX64/* /data-download/agent
+COPY ./build/install/linuxX64/* /data-download/agent/
 
 # Copy copy-files-cron file to the cron.d directory
 COPY copy-files-cron /etc/cron.d/copy-files-cron
