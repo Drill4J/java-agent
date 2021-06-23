@@ -35,7 +35,6 @@ kotlin {
         macosX64()
     ).forEach { target ->
         target.binaries { sharedLib(libName, setOf(DEBUG)) }
-        target.compilations["test"].cinterops.create("testStubs")
     }
 
     sourceSets {
