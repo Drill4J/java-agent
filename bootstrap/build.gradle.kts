@@ -6,7 +6,6 @@ plugins {
     id("com.epam.drill.gradle.plugin.kni")
     id("com.github.hierynomus.license")
     distribution
-    `maven-publish`
 }
 
 val scriptUrl: String by extra
@@ -96,16 +95,6 @@ afterEvaluate {
                     from(tasks.named("link${libName.capitalize()}DebugShared${name.capitalize()}")) {
                         duplicatesStrategy = DuplicatesStrategy.EXCLUDE
                     }
-                }
-            }
-        }
-    }
-    publishing {
-        publications {
-            availableTargets.forEach {
-                create<MavenPublication>("${it.name}Zip") {
-                    artifactId = "$libName-${it.name}"
-                    artifact(tasks["${it.name}DistZip"])
                 }
             }
         }
