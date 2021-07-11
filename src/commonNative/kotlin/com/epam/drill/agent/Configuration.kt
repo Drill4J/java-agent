@@ -19,6 +19,7 @@ import com.epam.drill.*
 import com.epam.drill.agent.serialization.*
 import com.epam.drill.common.*
 import com.epam.drill.common.ws.*
+import com.epam.drill.core.*
 import com.epam.drill.interceptor.*
 import com.epam.drill.logger.*
 import com.epam.drill.logger.api.*
@@ -26,36 +27,56 @@ import kotlinx.cinterop.*
 import platform.posix.*
 import kotlin.time.*
 
-fun performAgentInitialization(initialParams: Map<String, String>) {
+fun performAgentInitialization(initialParams: AgentParameters) {
     val agentArguments = initialParams.parseAs<AgentArguments>()
     agentArguments.let { aa ->
         drillInstallationDir = aa.drillInstallationDir
+        adminAddress = URL("ws://${aa.adminAddress}")
         agentConfig = AgentConfig(
             id = aa.agentId,
             instanceId = aa.instanceId,
             agentVersion = agentVersion,
             buildVersion = aa.buildVersion ?: calculateBuildVersion() ?: "unspecified",
             serviceGroupId = aa.groupId,
-            agentType = AGENT_TYPE
+            agentType = AGENT_TYPE,
+            parameters = aa.defaultParameters(),
         )
-        updateConfig {
-            copy(
-                classScanDelay = aa.classScanDelay.toDuration(DurationUnit.MILLISECONDS),
-                isAsyncApp = aa.isAsyncApp,
-                isWebApp = aa.isWebApp || aa.webApps.any(),
-                isKafka = aa.isKafka,
-                isTlsApp = aa.isTlsApp,
-                webApps = aa.webApps,
-                coreLibPath = initialParams["coreLibPath"]
-            )
-        }
-        adminAddress = URL("ws://${aa.adminAddress}")
-        configureLogger(aa)
-
-        if (aa.webAppNames.isNotEmpty()) {
-            updateState { copy(webApps = aa.webApps.associateWith { false }) }
+        updateConfigs(agentConfig.parameters, initialParams)
+        agentConfigUpdater = object : AgentConfigUpdater {
+            override fun updateParameters(config: AgentConfig) {
+                updateConfigs(config.parameters)
+            }
         }
     }
+}
+
+fun updateConfigs(parameters: Map<String, AgentParameter>, initialParams: AgentParameters = emptyMap()) {
+    parameters[AgentArguments::logLevel.name]?.let {
+        Logging.logLevel = LogLevel.valueOf(it.value)
+    }
+    parameters[AgentArguments::logFile.name]?.let {
+        if (Logging.filename != it.value) Logging.filename = it.value
+    }
+
+    val newWebApps = parameters[AgentArguments::webAppNames.name]?.value
+        ?.takeIf { it.isNotBlank() }?.split(":", ",") ?: emptyList()
+    updateConfig {
+        copy(
+            classScanDelay = parameters[AgentArguments::classScanDelay.name]?.value
+                ?.toLong()?.toDuration(DurationUnit.MILLISECONDS) ?: classScanDelay,
+            isAsyncApp = parameters[AgentArguments::isAsyncApp.name]?.value.toBoolean(),
+            isWebApp = parameters[AgentArguments::isWebApp.name]?.value.toBoolean() || newWebApps.any(),
+            isKafka = parameters[AgentArguments::isKafka.name]?.value.toBoolean(),
+            isTlsApp = parameters[AgentArguments::isTlsApp.name]?.value.toBoolean(),
+            webApps = newWebApps,
+            coreLibPath = initialParams["coreLibPath"] ?: coreLibPath
+        )
+    }
+
+    if (newWebApps.isNotEmpty()) {
+        updateState { copy(webApps = newWebApps.associateWith { false }) }
+    }
+    logger.debug { "after update configs by params: config '$config'; state '$state'" }
 }
 
 private fun calculateBuildVersion(): String? = runCatching {
@@ -69,11 +90,6 @@ private fun calculateBuildVersion(): String? = runCatching {
         }
     }
 }.getOrNull()
-
-private fun configureLogger(arguments: AgentArguments) {
-    Logging.logLevel = LogLevel.valueOf(arguments.logLevel)
-    arguments.logFile?.let { Logging.filename = it }
-}
 
 //TODO remove this code
 

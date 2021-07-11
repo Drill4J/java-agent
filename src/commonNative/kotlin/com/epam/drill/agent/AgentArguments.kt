@@ -16,6 +16,7 @@
 package com.epam.drill.agent
 
 import com.benasher44.uuid.*
+import com.epam.drill.common.*
 import com.epam.drill.logger.api.*
 import kotlinx.serialization.*
 
@@ -36,6 +37,61 @@ data class AgentArguments(
     val webAppNames: String = "",
     val classScanDelay: Long = 0L,
 ) {
-    val webApps: List<String>
-        get() = webAppNames.takeIf { it.isNotBlank() }?.split(":", ",") ?: emptyList()
+    fun defaultParameters(): Map<String, AgentParameter> = mapOf(
+        AgentArguments::logLevel.name to AgentParameter(
+            type = logLevel.toType(),
+            value = logLevel,
+            description = "Logging agent work. can be TRACE|DEBUG|INFO|ERROR",
+        ),
+        AgentArguments::logFile.name to AgentParameter(
+            type = logFile.toType(),
+            value = logFile ?: "",
+            description = "the location where the logs will be stored",
+        ),
+        AgentArguments::isWebApp.name to AgentParameter(
+            type = isWebApp.toType(),
+            value = isWebApp.toString(),
+            description = "",
+        ),
+        AgentArguments::isKafka.name to AgentParameter(
+            type = isKafka.toType(),
+            value = isKafka.toString(),
+            description = "",
+        ),
+        AgentArguments::isTlsApp.name to AgentParameter(
+            type = isTlsApp.toType(),
+            value = isTlsApp.toString(),
+            description = "Add the ability of an agent to gain incoming headers from an Https request." +
+                    "Process TLS only for tomcat architecture",
+        ),
+        AgentArguments::isAsyncApp.name to AgentParameter(
+            type = isAsyncApp.toType(),
+            value = isAsyncApp.toString(),
+            description = "",
+        ),
+        AgentArguments::webAppNames.name to AgentParameter(
+            type = webAppNames.toType(),
+            value = webAppNames,
+            description = "",
+        ),
+        AgentArguments::classScanDelay.name to AgentParameter(
+            type = classScanDelay.toType(),
+            value = classScanDelay.toString(),
+            description = "start scanning after waiting of duration in milliseconds",
+        ),
+    )
+
+}
+
+fun Any?.toType() = when (this) {
+    is String, is String? -> Type.STRING.apiName
+    is Boolean -> Type.BOOLEAN.apiName
+    is Long -> Type.INTEGER.apiName
+    else -> "Unsupported type"
+}
+
+enum class Type(val apiName: String) {
+    STRING("string"),
+    BOOLEAN("boolean"),
+    INTEGER("integer"),
 }
