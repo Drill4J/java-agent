@@ -112,8 +112,7 @@ private fun String?.asAgentParams(
             .filter { it.isNotEmpty() && (filterPrefix.isEmpty() || !it.startsWith(filterPrefix)) }
             .associate {
                 val (key, value) = it.split(mapDelimiter)
-                val pair = key to value
-                pair
+                key to value
             }
     } catch (parseException: Exception) {
         throw IllegalArgumentException("wrong agent parameters: $this")
@@ -141,7 +140,7 @@ fun vmDeathEvent(jvmtiEnv: CPointer<jvmtiEnvVar>?, jniEnv: CPointer<JNIEnvVar>?)
     logger.info { "vmDeathEvent" }
 }
 
-private typealias AgentParameters = Map<String, String>
+typealias AgentParameters = Map<String, String>
 
 private fun AgentParameters.validate(): AgentParameters = apply {
     check("agentId" in this) { "Please set 'agentId' as agent parameters e.g. -agentpath:/path/to/agent=agentId={your ID}" }
