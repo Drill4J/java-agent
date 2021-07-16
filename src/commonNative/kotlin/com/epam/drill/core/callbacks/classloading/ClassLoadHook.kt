@@ -20,6 +20,8 @@ package com.epam.drill.core.callbacks.classloading
 import com.epam.drill.*
 import com.epam.drill.agent.*
 import com.epam.drill.agent.instrument.*
+import com.epam.drill.agent.instrument.KafkaTransformer.KAFKA_CONSUMER_INTERFACE
+import com.epam.drill.agent.instrument.KafkaTransformer.KAFKA_PRODUCER_INTERFACE
 import com.epam.drill.agent.instrument.SSLTransformer.SSL_ENGINE_CLASS_NAME
 import com.epam.drill.core.Agent.isHttpHookEnabled
 import com.epam.drill.core.plugin.loader.*
@@ -82,6 +84,12 @@ fun classLoadEvent(
                     transformers += { bytes -> SSLTransformer.transform(kClassName, bytes, loader) }
                 }
             }
+            if (KAFKA_PRODUCER_INTERFACE in classReader.interfaces) {
+                transformers += { bytes -> KafkaTransformer.transform(KAFKA_PRODUCER_INTERFACE, bytes, loader) }
+            }
+            if (KAFKA_CONSUMER_INTERFACE in classReader.interfaces) {
+                transformers += { bytes -> KafkaTransformer.transform(KAFKA_CONSUMER_INTERFACE, bytes, loader) }
+            }
         }
         if ('$' !in kClassName && kClassName.matches(state.packagePrefixes)) {
             pstorage.values.filterIsInstance<InstrumentationNativePlugin>().forEach { plugin ->
@@ -95,6 +103,7 @@ fun classLoadEvent(
                 TomcatTransformer.transform(kClassName, bytes, loader)
             }
         }
+
         if (transformers.any()) {
             transformers.fold(classBytes) { bytes, transformer ->
                 transformer(bytes) ?: bytes

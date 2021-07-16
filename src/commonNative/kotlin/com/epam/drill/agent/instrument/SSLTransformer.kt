@@ -21,7 +21,7 @@ actual object SSLTransformer {
     actual fun transform(
         className: String,
         classfileBuffer: ByteArray,
-        loader: Any?
+        loader: Any?,
     ): ByteArray? {
         return SSLTransformerStub.transform(className, classfileBuffer, loader)
     }
