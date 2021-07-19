@@ -15,9 +15,7 @@
  */
 package com.epam.drill.request
 
-import com.epam.drill.agent.instrument.*
 import com.epam.drill.logger.*
-import com.epam.drill.logging.*
 import com.epam.drill.plugin.*
 import java.nio.*
 import kotlin.reflect.jvm.*
@@ -42,7 +40,7 @@ object HttpRequest {
                     }
                 //todo add processing of header mapping
                 headers[DRILL_SESSION_ID_HEADER_NAME]?.let { drillSessionId ->
-                    RequestHolder.store(DrillRequest(drillSessionId, headers))
+                    RequestHolder.storeRequest(DrillRequest(drillSessionId, headers))
                 }
             }
         }
@@ -52,7 +50,7 @@ object HttpRequest {
         headers?.get(DRILL_SESSION_ID_HEADER_NAME)?.let { drillSessionId ->
             val drillHeaders = headers.filter { it.key.startsWith("drill-") }
             logger.trace { "for drillSessionId '$drillSessionId' store drillHeaders '$drillHeaders' to thread storage" }
-            RequestHolder.store(DrillRequest(drillSessionId, drillHeaders))
+            RequestHolder.storeRequest(DrillRequest(drillSessionId, drillHeaders))
         }
     }
 

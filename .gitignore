@@ -6,3 +6,4 @@ build/
 .gradle/
 src/generated/
 src/kni/
+*.db

@@ -37,11 +37,10 @@ actual object RequestHolder {
     }
 
     actual fun store(drillRequest: ByteArray) {
-        store(ProtoBuf.load(DrillRequest.serializer(), drillRequest))
-
+        storeRequest(ProtoBuf.load(DrillRequest.serializer(), drillRequest))
     }
 
-    fun store(drillRequest: DrillRequest) {
+    fun storeRequest(drillRequest: DrillRequest) {
         threadStorage.set(drillRequest)
         logger.trace { "session ${drillRequest.drillSessionId} saved" }
         PluginExtension.processServerRequest()
