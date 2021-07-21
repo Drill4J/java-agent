@@ -18,7 +18,7 @@ echo "version:"
 echo $version
 echo "path/maven-metadata.xml:"
 echo $path/maven-metadata.xml
-build=$(curl -s $path/maven-metadata.xml | grep '<latest>' | head -1 | sed "s/.*<value>\([^<]*\)<\/value>.*/\1/")
+build=$(curl -s $path/maven-metadata.xml | grep '<latest>' | head -1 | sed "s/.*<latest>\([^<]*\)<\/latest>.*/\1/")
 echo "build:"
 echo $build
 jar=$name-$build.jar
