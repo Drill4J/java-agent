@@ -2,6 +2,10 @@ FROM ubuntu:20.04
 
 ENV AGENT_VERSION $AGENT_VERSION
 
+RUN apt-get update && apt-get install -y \
+  wget \
+  && rm -rf /var/lib/apt/lists/*
+
 RUN mkdir -p /data-download/agent
 RUN mkdir -p /data/agent
 
