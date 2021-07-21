@@ -11,8 +11,6 @@ path=$server/$repo/$artifact
 echo "path:"
 echo $path
 path=$server/$repo/$artifact
-# https://drill4j.jfrog.io/artifactory/drill/com/epam/drill
-# https://drill4j.jfrog.io/artifactory/drill/com/epam/drill/maven-metadata.xml
 version=$(curl -s $path/maven-metadata.xml | grep latest | sed "s/.*<latest>\([^<]*\)<\/latest>.*/\1/")
 echo "version:"
 echo $version
@@ -29,5 +27,4 @@ echo "url:"
 echo $url
 
 # Download
-# echo $url
-# wget -q -N $url
+wget -q -N $url
