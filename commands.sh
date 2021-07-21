@@ -20,14 +20,15 @@ if [ -z "$AGENT_VERSION" ]
 then
       echo "Variable $AGENT_VERSION is empty"
       echo "Used agent version from docker image"
+      echo "cp -R /data-download/agent/* /data/agent:"
+      cp -R /data-download/agent/* /data/agent
+      echo ""
 else
       echo "Variable $AGENT_VERSION is NOT empty"
       echo "Download agent version from internet"
+      echo "run download-artifact.sh"
+      ./download-artifact.sh
 fi
-
-echo "cp -R /data-download/agent/* /data/agent:"
-cp -R /data-download/agent/* /data/agent
-echo ""
 
 echo "list in directory /data/agent:"
 ls --color=auto /data/agent
