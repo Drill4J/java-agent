@@ -4,7 +4,7 @@ RUN mkdir -p /data-download/agent
 RUN mkdir -p /data/agent
 
 COPY ./build/install/linuxX64/* /data-download/agent/
-COPY ./build/install/linuxX64/* /data/agent/ # will remove
+COPY ./build/install/linuxX64/* /data/agent/
 COPY commands.sh /commands.sh
 RUN ["chmod", "+x", "/commands.sh"]
 
