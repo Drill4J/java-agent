@@ -21,11 +21,11 @@ echo $path/maven-metadata.xml
 build=$(curl -s $path/maven-metadata.xml | grep '<latest>' | head -1 | sed "s/.*<latest>\([^<]*\)<\/latest>.*/\1/")
 echo "build:"
 echo $build
-jar=$name-$build.jar
-echo "jar:"
-echo $jar
-url=$path/$version/$jar
-echo "$url:"
+zip=$name-$build.zip
+echo "zip:"
+echo $zip
+url=$path/$version/$zip
+echo "url:"
 echo $url
 
 # Download
