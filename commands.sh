@@ -33,3 +33,5 @@ fi
 echo "list in directory /data/agent:"
 ls --color=auto /data/agent
 echo ""
+
+echo "tree"

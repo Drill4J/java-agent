@@ -22,7 +22,9 @@ then
       echo $github_url
 
       # Download
-      wget -q -N $github_url 
+      wget -q -N $github_url
+      unzip -o drill-agent-linuxX64-$version.zip
+      cp -R linuxX64-$version/* /data/agent/
 
 else
       echo "Variable $AGENT_VERSION is NOT latest"
@@ -31,7 +33,9 @@ else
       echo $github_url
 
       # Download
-      wget -q -N $github_url 
+      wget -q -N $github_url
+      unzip -o drill-agent-linuxX64-$version.zip
+      cp -R linuxX64-$version/* /data/agent/
 fi
 
 
