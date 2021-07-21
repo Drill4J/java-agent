@@ -23,7 +23,7 @@ then
 
       # Download
       wget -q -N $github_url
-      unzip -o drill-agent-linuxX64-$version.zip
+      unzip -o agent-linuxX64-$version.zip
       cp -R linuxX64-$version/* /data/agent/
 
 else
@@ -40,7 +40,7 @@ else
       pwd
       echo "ls"
       ls
-      unzip -o drill-agent-linuxX64-$version.zip
+      unzip -o agent-linuxX64-$version.zip
       cp -R linuxX64-$version/* /data/agent/
 fi
 
