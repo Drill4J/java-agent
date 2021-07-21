@@ -13,8 +13,6 @@ echo $path
 path=$server/$repo/$artifact
 # https://drill4j.jfrog.io/artifactory/drill/com/epam/drill
 # https://drill4j.jfrog.io/artifactory/drill/com/epam/drill/maven-metadata.xml
-https://drill4j.jfrog.io/artifactory/drill/com/epam/drill/drill-agent-linuxX64/maven-metadata.xml
-https://drill4j.jfrog.io/artifactory/drill/com/epam/drill/drill-agent-linuxX64/0.8.0-10/maven-metadata.xml
 version=$(curl -s $path/maven-metadata.xml | grep latest | sed "s/.*<latest>\([^<]*\)<\/latest>.*/\1/")
 echo "version:"
 echo $version
