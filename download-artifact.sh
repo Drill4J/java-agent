@@ -38,5 +38,3 @@ else
       unzip -o agent-linuxX64-$AGENT_VERSION.zip
       cp -R linuxX64-$AGENT_VERSION/* /data/agent/
 fi
-
-
