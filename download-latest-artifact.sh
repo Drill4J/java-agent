@@ -17,6 +17,8 @@ path=$server/$repo/$artifact
 version=$(curl -s $path/maven-metadata.xml | grep latest | sed "s/.*<latest>\([^<]*\)<\/latest>.*/\1/")
 echo "version:"
 echo $version
+echo "path/version/maven-metadata.xml:"
+echo $path/$version/maven-metadata.xml
 build=$(curl -s $path/$version/maven-metadata.xml | grep '<value>' | head -1 | sed "s/.*<value>\([^<]*\)<\/value>.*/\1/")
 echo "build:"
 echo $build
@@ -24,7 +26,7 @@ jar=$name-$build.jar
 echo "jar:"
 echo $jar
 url=$path/$version/$jar
-echo "$url"
+echo "$url:"
 echo $url
 
 # Download
