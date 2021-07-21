@@ -1,4 +1,4 @@
-FROM bash:5.0.18
+FROM ubuntu:20.04
 
 RUN mkdir -p /data-download/agent
 RUN mkdir -p /data/agent
