@@ -29,7 +29,7 @@ then
 else
       echo "Variable $AGENT_VERSION is NOT latest"
       echo "Download agent $AGENT_VERSION"
-      export AGENT_VERSION = $(echo $AGENT_VERSION | sed 's/v//')
+      AGENT_VERSION=$(echo $AGENT_VERSION | sed 's/v//')
       github_url="https://github.com/Drill4J/java-agent/releases/download/v$AGENT_VERSION/agent-linuxX64-$AGENT_VERSION.zip"
       echo $github_url
 
