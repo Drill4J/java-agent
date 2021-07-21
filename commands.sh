@@ -16,9 +16,14 @@ echo "list in directory /data-download/agent:"
 ls --color=auto /data-download/agent
 echo ""
 
-echo "echo AGENT_VERSION:"
-echo "$AGENT_VERSION"
-echo ""
+if [ -z "$AGENT_VERSION" ]
+then
+      echo "Variable $AGENT_VERSION is empty"
+      echo "Used agent version from docker image"
+else
+      echo "Variable $AGENT_VERSION is NOT empty"
+      echo "Download agent version from internet"
+fi
 
 echo "cp -R /data-download/agent/* /data/agent:"
 cp -R /data-download/agent/* /data/agent
