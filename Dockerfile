@@ -11,4 +11,4 @@ COPY commands.sh /commands.sh
 RUN ["chmod", "+x", "/commands.sh"]
 
 # Run the command on container startup
-ENTRYPOINT ["/commands.sh"]
+CMD ["/commands.sh"]
