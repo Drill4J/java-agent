@@ -25,6 +25,9 @@ echo $zip
 url=$path/$version/$zip
 echo "url:"
 echo $url
+echo "github_url"
+github_url="https://github.com/Drill4J/java-agent/releases/download/v$version/agent-linuxX64-$version.zip"
+echo $github_url
 
 # Download
-wget -q -N $url
+# wget -q -N $url 
