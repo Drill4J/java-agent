@@ -1,5 +1,7 @@
 FROM ubuntu:20.04
 
+ENV AGENT_VERSION $AGENT_VERSION
+
 RUN mkdir -p /data-download/agent
 RUN mkdir -p /data/agent
 
