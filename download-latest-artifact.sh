@@ -13,13 +13,14 @@ echo $path
 path=$server/$repo/$artifact
 # https://drill4j.jfrog.io/artifactory/drill/com/epam/drill
 # https://drill4j.jfrog.io/artifactory/drill/com/epam/drill/maven-metadata.xml
-# https://drill4j.jfrog.io/artifactory/drill/com/epam/drill/drill-agent-linuxX64/maven-metadata.xml
+https://drill4j.jfrog.io/artifactory/drill/com/epam/drill/drill-agent-linuxX64/maven-metadata.xml
+https://drill4j.jfrog.io/artifactory/drill/com/epam/drill/drill-agent-linuxX64/0.8.0-10/maven-metadata.xml
 version=$(curl -s $path/maven-metadata.xml | grep latest | sed "s/.*<latest>\([^<]*\)<\/latest>.*/\1/")
 echo "version:"
 echo $version
-echo "path/version/maven-metadata.xml:"
-echo $path/$version/maven-metadata.xml
-build=$(curl -s $path/$version/maven-metadata.xml | grep '<value>' | head -1 | sed "s/.*<value>\([^<]*\)<\/value>.*/\1/")
+echo "path/maven-metadata.xml:"
+echo $path//maven-metadata.xml
+build=$(curl -s $path//maven-metadata.xml | grep '<value>' | head -1 | sed "s/.*<value>\([^<]*\)<\/value>.*/\1/")
 echo "build:"
 echo $build
 jar=$name-$build.jar
