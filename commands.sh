@@ -16,6 +16,8 @@ echo "list in directory /data-download/agent:"
 ls --color=auto /data-download/agent
 echo ""
 
+echo "$AGENT_VERSION"
+
 echo "cp -R /data-download/agent/* /data/agent:"
 cp -R /data-download/agent/* /data/agent
 echo ""
