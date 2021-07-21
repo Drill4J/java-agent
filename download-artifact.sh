@@ -1,6 +1,6 @@
 #!/bin/bash
 
-if [ -z "$AGENT_VERSION" = "latest" ]
+if [ "$AGENT_VERSION" = "latest" ]
 then
       echo "Variable $AGENT_VERSION is latest"
       echo "Download agent $latest version"
