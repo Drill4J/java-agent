@@ -6,10 +6,14 @@ repo=drill
 
 # Maven artifact location
 name=drill-agent-linuxX64
-artifact=com/epam/drill
+artifact=com/epam/drill/$name
 path=$server/$repo/$artifact
 echo "path:"
 echo $path
+path=$server/$repo/$artifact
+# https://drill4j.jfrog.io/artifactory/drill/com/epam/drill
+# https://drill4j.jfrog.io/artifactory/drill/com/epam/drill/maven-metadata.xml
+# https://drill4j.jfrog.io/artifactory/drill/com/epam/drill/drill-agent-linuxX64/maven-metadata.xml
 version=$(curl -s $path/maven-metadata.xml | grep latest | sed "s/.*<latest>\([^<]*\)<\/latest>.*/\1/")
 echo "version:"
 echo $version
