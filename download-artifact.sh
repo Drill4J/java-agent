@@ -31,9 +31,15 @@ else
       echo "Download agent $AGENT_VERSION"
       github_url="https://github.com/Drill4J/java-agent/releases/download/v$AGENT_VERSION/agent-linuxX64-$AGENT_VERSION.zip"
       echo $github_url
+      echo "ls"
+      ls
 
       # Download
       wget -q -N $github_url
+      echo "pwd"
+      pwd
+      echo "ls"
+      ls
       unzip -o drill-agent-linuxX64-$version.zip
       cp -R linuxX64-$version/* /data/agent/
 fi
