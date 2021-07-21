@@ -1,4 +1,4 @@
-FROM bash:5.0.18
+FROM nginx:1.21.1
 
 RUN mkdir -p /data-download/agent
 RUN mkdir /data
