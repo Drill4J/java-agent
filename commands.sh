@@ -1,5 +1,7 @@
 #!/bin/bash
 
+RUN mkdir -p /data/agent
+
 echo "ls --color=auto /data-download/agent:"
 ls --color=auto /data-download/agent
 
