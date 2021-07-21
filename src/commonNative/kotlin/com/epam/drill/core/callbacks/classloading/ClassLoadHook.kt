@@ -89,6 +89,13 @@ fun classLoadEvent(
             }
         }
 
+        // TODO add param
+        if ("com/uber/cadence/internal/sync/WorkflowStubImpl" == kClassName ||
+            "com/uber/cadence/internal/sync/WorkflowRunnable" == kClassName
+        ) {
+            transformers += { bytes -> CadenceTransformer.transform(kClassName, bytes, loader) }
+        }
+
         if ('$' !in kClassName && kClassName.matches(state.packagePrefixes)) {
             pstorage.values.filterIsInstance<InstrumentationNativePlugin>().forEach { plugin ->
                 transformers += { bytes -> plugin.instrument(kClassName, bytes) }
