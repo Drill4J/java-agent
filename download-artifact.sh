@@ -44,9 +44,9 @@ else
       echo "ls"
       ls
       echo ""
-      unzip -o agent-linuxX64-$version.zip
+      unzip -o agent-linuxX64-$AGENT_VERSION.zip
       echo ""
-      cp -R linuxX64-$version/* /data/agent/
+      cp -R linuxX64-$AGENT_VERSION/* /data/agent/
       echo ""
 fi
 
