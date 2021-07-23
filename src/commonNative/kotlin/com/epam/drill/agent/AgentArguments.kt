@@ -30,6 +30,7 @@ data class AgentArguments(
     val logLevel: String = LogLevel.ERROR.name,
     val logFile: String? = null,
     val isWebApp: Boolean = false,
+    val isMessageBroker: Boolean = false,
     val isTlsApp: Boolean = false,
     val isAsyncApp: Boolean = false,
     val webAppNames: String = "",
