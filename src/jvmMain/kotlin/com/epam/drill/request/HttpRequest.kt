@@ -15,8 +15,10 @@
  */
 package com.epam.drill.request
 
+import com.epam.drill.common.*
 import com.epam.drill.logger.*
 import com.epam.drill.plugin.*
+import kotlinx.serialization.protobuf.*
 import java.nio.*
 import kotlin.reflect.jvm.*
 
@@ -25,7 +27,8 @@ object HttpRequest {
     private val HTTP_VERBS =
         setOf("OPTIONS", "GET", "HEAD", "POST", "PUT", "PATCH", "DELETE", "TRACE", "CONNECT", "PRI")
     private val HEADERS_END_MARK = "\r\n\r\n".encodeToByteArray()
-    private const val DRILL_SESSION_ID_HEADER_NAME = "drill-session-id"
+    private const val DRILL_HEADER_PREFIX = "drill-"
+    private const val DRILL_SESSION_ID_HEADER_NAME = "${DRILL_HEADER_PREFIX}session-id"
     private val logger = Logging.logger(HttpRequest::class.jvmName)
 
     fun parse(buffers: Array<ByteBuffer>) = runCatching {
@@ -48,10 +51,15 @@ object HttpRequest {
 
     fun storeDrillHeaders(headers: Map<String, String>?) {
         headers?.get(DRILL_SESSION_ID_HEADER_NAME)?.let { drillSessionId ->
-            val drillHeaders = headers.filter { it.key.startsWith("drill-") }
+            val drillHeaders = headers.filter { it.key.startsWith(DRILL_HEADER_PREFIX) }
             logger.trace { "for drillSessionId '$drillSessionId' store drillHeaders '$drillHeaders' to thread storage" }
             RequestHolder.storeRequest(DrillRequest(drillSessionId, drillHeaders))
         }
+    }
+
+    fun getDrillHeaders() = RequestHolder.dump()?.let { bytes ->
+        val drillRequest = ProtoBuf.load(DrillRequest.serializer(), bytes)
+        drillRequest.headers.filter { it.key.startsWith(DRILL_HEADER_PREFIX) } + (DRILL_SESSION_ID_HEADER_NAME to drillRequest.drillSessionId)
     }
 
     private fun ByteArray.indexOf(arr: ByteArray) = run {

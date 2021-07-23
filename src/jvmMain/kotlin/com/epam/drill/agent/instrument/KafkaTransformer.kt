@@ -25,8 +25,6 @@ import kotlin.reflect.jvm.*
 @Kni
 actual object KafkaTransformer {
 
-    private const val kafkaHeaders = "drill-kafka-header-key"
-
     private val logger = Logging.logger(KafkaTransformer::class.jvmName)
 
     actual fun transform(
@@ -52,9 +50,13 @@ actual object KafkaTransformer {
     ) = ClassPool.getDefault().makeClass(ByteArrayInputStream(classfileBuffer))?.run {
         getDeclaredMethods("send").forEach {
             it.insertBefore("""
-                byte[] headers = ${RequestHolder::class.java.name}.INSTANCE.${RequestHolder::dump.name}();
-                if (headers != null) {
-                    $1.headers().add("$kafkaHeaders", headers);
+                java.util.Map drillHeaders = ${HttpRequest::class.java.name}.INSTANCE.${HttpRequest::getDrillHeaders.name}();
+                if (drillHeaders != null) {
+                    java.util.Iterator iterator = drillHeaders.entrySet().iterator();
+                    while (iterator.hasNext()){
+                        java.util.Map.Entry entry = (java.util.Map.Entry) iterator.next();
+                        $1.headers().add(((String) entry.getKey()), ((String) entry.getValue()).getBytes());
+                    }
                 }
             """.trimIndent())
         }
@@ -70,11 +72,15 @@ actual object KafkaTransformer {
                 java.util.Iterator records = ${'$'}_.iterator(); 
                 while (records.hasNext()) {
                     org.apache.kafka.clients.consumer.ConsumerRecord record = (org.apache.kafka.clients.consumer.ConsumerRecord) records.next();
-                    java.util.Iterator headers = record.headers().headers("$kafkaHeaders").iterator();
+                    java.util.Iterator headers = record.headers().iterator();
+                    java.util.Map drillHeaders = new java.util.HashMap();
                     while (headers.hasNext()) {
                         org.apache.kafka.common.header.Header header = (org.apache.kafka.common.header.Header) headers.next();
-                        ${RequestHolder::class.java.name}.INSTANCE.${RequestHolder::store.name}(header.value());   
+                        if (header.key().startsWith("drill-")) {
+                            drillHeaders.put(header.key(), new String(header.value()));
+                        }    
                     }
+                    ${HttpRequest::class.java.name}.INSTANCE.${HttpRequest::storeDrillHeaders.name}(drillHeaders);                    
                 }
             """.trimIndent())
         }
