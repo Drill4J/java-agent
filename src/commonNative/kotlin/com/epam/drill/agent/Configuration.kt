@@ -39,13 +39,13 @@ fun performAgentInitialization(initialParams: Map<String, String>) {
             agentType = AGENT_TYPE
         )
         updateConfig {
-            val webApps = aa.webAppNames.split("")
             copy(
                 classScanDelay = aa.classScanDelay.toDuration(DurationUnit.MILLISECONDS),
                 isAsyncApp = aa.isAsyncApp,
-                isWebApp = aa.isWebApp || webApps.any(),
+                isWebApp = aa.isWebApp || aa.webApps.any(),
+                isKafka = aa.isKafka,
                 isTlsApp = aa.isTlsApp,
-                webApps = webApps,
+                webApps = aa.webApps,
                 coreLibPath = initialParams["coreLibPath"]
             )
         }

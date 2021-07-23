@@ -57,7 +57,7 @@ object HttpRequest {
         }
     }
 
-    fun getDrillHeaders() = RequestHolder.dump()?.let { bytes ->
+    fun loadDrillHeaders() = RequestHolder.dump()?.let { bytes ->
         val drillRequest = ProtoBuf.load(DrillRequest.serializer(), bytes)
         drillRequest.headers.filter { it.key.startsWith(DRILL_HEADER_PREFIX) } + (DRILL_SESSION_ID_HEADER_NAME to drillRequest.drillSessionId)
     }

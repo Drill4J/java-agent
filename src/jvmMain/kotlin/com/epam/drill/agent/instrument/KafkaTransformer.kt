@@ -50,10 +50,10 @@ actual object KafkaTransformer {
     ) = ClassPool.getDefault().makeClass(ByteArrayInputStream(classfileBuffer))?.run {
         getDeclaredMethods("send").forEach {
             it.insertBefore("""
-                java.util.Map drillHeaders = ${HttpRequest::class.java.name}.INSTANCE.${HttpRequest::getDrillHeaders.name}();
+                java.util.Map drillHeaders = ${HttpRequest::class.java.name}.INSTANCE.${HttpRequest::loadDrillHeaders.name}();
                 if (drillHeaders != null) {
                     java.util.Iterator iterator = drillHeaders.entrySet().iterator();
-                    while (iterator.hasNext()){
+                    while (iterator.hasNext()) {
                         java.util.Map.Entry entry = (java.util.Map.Entry) iterator.next();
                         $1.headers().add(((String) entry.getKey()), ((String) entry.getValue()).getBytes());
                     }

@@ -30,7 +30,7 @@ open class GenericNativePlugin(
     pluginId: String,
     val pluginApiClass: jclass,
     val userPlugin: jobject,
-    pluginConfig: PluginMetadata
+    pluginConfig: PluginMetadata,
 ) : AgentPart<Any>(
     pluginId,
     NopAgentContext,

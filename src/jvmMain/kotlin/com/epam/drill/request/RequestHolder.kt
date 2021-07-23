@@ -43,7 +43,8 @@ actual object RequestHolder {
     fun storeRequest(drillRequest: DrillRequest) {
         threadStorage.set(drillRequest)
         logger.trace { "session ${drillRequest.drillSessionId} saved" }
-        PluginExtension.processServerRequest()
+//        TODO EPMDJ-7717 Temporarily disabled
+//        PluginExtension.processServerRequest()
     }
 
     actual fun dump(): ByteArray? {

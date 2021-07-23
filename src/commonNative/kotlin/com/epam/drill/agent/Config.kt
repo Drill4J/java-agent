@@ -22,6 +22,7 @@ data class Config(
     val classScanDelay: Duration = Duration.ZERO,
     val isAsyncApp: Boolean = false,
     val isWebApp: Boolean = false,
+    val isKafka: Boolean = false,
     val isTlsApp: Boolean = false,
     val webAppLoadingTimeout: Duration = 1500.seconds,
     val webApps: List<String> = emptyList(),
