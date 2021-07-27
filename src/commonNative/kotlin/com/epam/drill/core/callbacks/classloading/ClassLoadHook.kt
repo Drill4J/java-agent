@@ -59,8 +59,8 @@ fun classLoadEvent(
             Memory.of(classData, classDataLen).loadByteArray(0, this)
         }
         val transformers = mutableListOf<(ByteArray) -> ByteArray?>()
+        val classReader = ClassReader(classBytes)
         if (config.isAsyncApp || config.isWebApp) {
-            val classReader = ClassReader(classBytes)
             if (
                 config.isAsyncApp &&
                 (kClassName in TTLTransformer.directTtlClasses ||
@@ -84,6 +84,9 @@ fun classLoadEvent(
                     transformers += { bytes -> SSLTransformer.transform(kClassName, bytes, loader) }
                 }
             }
+        }
+
+        if (config.isKafka) {
             if (KAFKA_PRODUCER_INTERFACE in classReader.interfaces) {
                 transformers += { bytes -> KafkaTransformer.transform(KAFKA_PRODUCER_INTERFACE, bytes, loader) }
             }
@@ -91,6 +94,7 @@ fun classLoadEvent(
                 transformers += { bytes -> KafkaTransformer.transform(KAFKA_CONSUMER_INTERFACE, bytes, loader) }
             }
         }
+
         if ('$' !in kClassName && kClassName.matches(state.packagePrefixes)) {
             pstorage.values.filterIsInstance<InstrumentationNativePlugin>().forEach { plugin ->
                 transformers += { bytes -> plugin.instrument(kClassName, bytes) }
