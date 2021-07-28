@@ -51,7 +51,7 @@ fun classLoadEvent(
     newData: CPointer<CPointerVar<UByteVar>>?,
 ) {
     initRuntimeIfNeeded()
-    if (isBootstrapClassLoading(loader, protection_domain) && !config.isTlsApp) return
+    if (isBootstrapClassLoading(loader, protection_domain) && !config.isTlsApp && !config.isAsyncApp) return
     val kClassName = clsName?.toKString()
     if (kClassName == null || classData == null || kClassName.startsWith(DRILL_PACKAGE)) return
     try {
@@ -61,13 +61,7 @@ fun classLoadEvent(
         val transformers = mutableListOf<(ByteArray) -> ByteArray?>()
         val classReader = ClassReader(classBytes)
         if (config.isAsyncApp || config.isWebApp) {
-            if (
-                config.isAsyncApp &&
-                (kClassName in TTLTransformer.directTtlClasses ||
-                        kClassName != TTLTransformer.timerTaskClass) &&
-                (TTLTransformer.runnableInterface in classReader.interfaces ||
-                        classReader.superName == TTLTransformer.poolExecutor)
-            ) {
+            if (config.isAsyncApp && isTTLCandidate(classReader)) {
                 transformers += { bytes ->
                     TTLTransformer.transform(
                         loader,
@@ -143,3 +137,7 @@ private fun convertToNativePointers(
 private fun isBootstrapClassLoading(loader: jobject?, protection_domain: jobject?) =
     loader == null || protection_domain == null
 
+private fun isTTLCandidate(classReader: ClassReader) = classReader.className in TTLTransformer.directTtlClasses ||
+        (classReader.className != TTLTransformer.timerTaskClass &&
+                (TTLTransformer.runnableInterface in classReader.interfaces ||
+                        classReader.superName == TTLTransformer.poolExecutor))
