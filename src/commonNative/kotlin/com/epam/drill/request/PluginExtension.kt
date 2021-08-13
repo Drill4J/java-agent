@@ -19,9 +19,13 @@ import com.epam.drill.*
 import com.epam.drill.core.plugin.loader.*
 
 actual object PluginExtension {
-    actual fun processServerRequest(){
-        pstorage.values.filterIsInstance<GenericNativePlugin>().forEach {
-            it.processServerRequest()
-        }
+    actual fun processServerRequest() {
+        plugins().forEach { it.processServerRequest() }
     }
+
+    actual fun processServerResponse() {
+        plugins().forEach { it.processServerResponse() }
+    }
+
+    private fun plugins() = pstorage.values.filterIsInstance<GenericNativePlugin>()
 }
