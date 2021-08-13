@@ -58,7 +58,10 @@ fun globalCallbacks(): Unit = run {
     }
 
     sessionStorage = RequestHolder::storeRequestMetadata
-    closeSession = RequestHolder::closeSession
+    closeSession = {
+        RequestHolder.closeSession()
+        PluginExtension.processServerResponse()
+    }
     drillRequest = RequestHolder::get
 
     loadPlugin = ::loadJvmPlugin

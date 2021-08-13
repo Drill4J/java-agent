@@ -37,10 +37,13 @@ actual object TomcatTransformer {
             ClassPool.getDefault().appendClassPath(LoaderClassPath(loader as? ClassLoader))
             ClassPool.getDefault().makeClass(ByteArrayInputStream(classFileBuffer))?.run {
                 val drillAdminHeader = """drill-admin-url"""
-                getMethod(
+                val method = getMethod(
                     "doFilter",
                     "(Ljavax/servlet/ServletRequest;Ljavax/servlet/ServletResponse;)V"
-                )?.insertBefore(
+                ) ?: run {
+                    return null
+                }
+                method.insertBefore(
                     """
                         if ($1 instanceof org.apache.catalina.connector.RequestFacade && $2 instanceof org.apache.catalina.connector.ResponseFacade) {
                             org.apache.catalina.connector.ResponseFacade tomcatResponse = (org.apache.catalina.connector.ResponseFacade)$2;
@@ -63,9 +66,12 @@ actual object TomcatTransformer {
                             com.epam.drill.request.HttpRequest.INSTANCE.${HttpRequest::storeDrillHeaders.name}(allHeaders);
                         }
                     """.trimIndent()
-                ) ?: run {
-                    return null
-                }
+                )
+                method.insertAfter(
+                    """
+                       com.epam.drill.request.PluginExtension.INSTANCE.${PluginExtension::processServerResponse.name}();
+                    """.trimIndent()
+                )
                 return toBytecode()
             }
         } catch (e: Exception) {

@@ -123,6 +123,13 @@ open class GenericNativePlugin(
         }
     }
 
+    fun processServerResponse() {
+        val methodID = GetMethodID(pluginApiClass, GenericNativePlugin::processServerResponse.name, "()V")
+        methodID?.let {
+            CallVoidMethodA(userPlugin, it, null)
+        }
+    }
+
     override fun initPlugin() = TODO()
     override fun destroyPlugin(unloadReason: UnloadReason) = TODO()
     override suspend fun doAction(action: Any) = TODO()
