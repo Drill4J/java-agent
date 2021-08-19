@@ -19,6 +19,7 @@ package com.epam.drill.core.callbacks.classloading
 
 import com.epam.drill.*
 import com.epam.drill.agent.*
+import com.epam.drill.agent.classloading.source.*
 import com.epam.drill.agent.instrument.*
 import com.epam.drill.agent.instrument.KafkaTransformer.KAFKA_CONSUMER_INTERFACE
 import com.epam.drill.agent.instrument.KafkaTransformer.KAFKA_PRODUCER_INTERFACE
@@ -89,7 +90,8 @@ fun classLoadEvent(
             }
         }
 
-        if ('$' !in kClassName && kClassName.matches(state.packagePrefixes)) {
+        val classSource = ClassSource(kClassName, classReader.superName ?: "", classBytes)
+        if ('$' !in kClassName && classSource.matches(state.packagePrefixes)) {
             pstorage.values.filterIsInstance<InstrumentationNativePlugin>().forEach { plugin ->
                 transformers += { bytes -> plugin.instrument(kClassName, bytes) }
             }

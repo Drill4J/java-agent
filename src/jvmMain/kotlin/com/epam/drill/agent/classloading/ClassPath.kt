@@ -15,7 +15,6 @@
  */
 package com.epam.drill.agent.classloading
 
-import com.epam.drill.agent.*
 import com.epam.drill.agent.classloading.source.*
 import java.io.*
 import java.net.*
@@ -59,7 +58,9 @@ class ClassPath(
         jarUrl.resolve(path)?.takeIf { it.protocol == "file" }
     }
 
-    private fun predicate(name: String): Boolean = name.matches(includedPaths) && name !in scannedNames
+    private fun predicate(
+        source: ClassSource
+    ): Boolean = source.matches(includedPaths) && source.className !in scannedNames
 
     private fun handler(source: ClassSource) {
         scannedNames.add(source.className)

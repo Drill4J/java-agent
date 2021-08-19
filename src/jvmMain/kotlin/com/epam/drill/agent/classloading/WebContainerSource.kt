@@ -34,7 +34,7 @@ actual object WebContainerSource {
             val scannedDirs = mutableSetOf<File>()
             val scannedClasses = mutableSetOf<ClassSource>()
 
-            fun predicate(name: String): Boolean = name !in scannedNames
+            fun predicate(source: ClassSource): Boolean = source.className !in scannedNames
 
             fun handler(source: ClassSource) {
                 scannedNames.add(source.className)
