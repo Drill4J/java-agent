@@ -128,6 +128,7 @@ kotlin {
                 implementation("com.epam.drill:drill-agent-part:$drillApiVersion")
                 implementation("com.epam.drill.agent:agent:$drillAgentCoreVersion")
                 implementation("com.epam.drill.kni:runtime:$kniVersion")
+                implementation("com.epam.drill.knasm:knasm:$knasmVersion")
                 implementation("com.alibaba:transmittable-thread-local:2.11.0")
             }
         }
