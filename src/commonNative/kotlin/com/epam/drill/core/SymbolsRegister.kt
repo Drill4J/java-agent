@@ -19,12 +19,12 @@ package com.epam.drill.core
 
 import com.epam.drill.*
 import com.epam.drill.agent.*
+import com.epam.drill.agent.classloading.source.*
 import com.epam.drill.api.*
 import com.epam.drill.core.callbacks.classloading.*
 import com.epam.drill.jvmapi.*
 import com.epam.drill.jvmapi.gen.*
 import com.epam.drill.logger.*
-import kotlinx.atomicfu.*
 import kotlinx.cinterop.*
 import kotlin.native.concurrent.*
 import kotlin.time.*
@@ -52,7 +52,11 @@ fun RetransformClassesByPackagePrefixes(env: JNIEnv, thiz: jobject, prefixes: jb
             it.status() in 0.toUInt()..7.toUInt()
         }.filter { jclass ->
             val signature = jclass.signature()
-            '$' !in signature && signature.matches(prefixes, 1)
+            val superclass = jni.takeIf { prefixes.any { it.startsWith(SUBCLASS) } }
+                ?.GetSuperclass
+                ?.invoke(com.epam.drill.jvmapi.env, jclass)
+            val classSource = ClassSource(signature, superclass?.signature() ?: "")
+            '$' !in signature && classSource.matches(prefixes, 1)
         }.partition { it.status() == 7.toUInt() }.let { (loaded, undetermined) ->
             logger.info { "${loaded.size + undetermined.size} classes to retransform." }
             measureTimedValue {
