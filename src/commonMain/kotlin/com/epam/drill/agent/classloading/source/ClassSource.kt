@@ -15,15 +15,18 @@
  */
 package com.epam.drill.agent.classloading.source
 
-import java.io.*
+private const val SUBCLASS = "!subclassOf:"
 
 interface ByteSource {
     fun bytes(): ByteArray
 }
 
-abstract class ClassSource : ByteSource {
-
-    abstract val className: String
+data class ClassSource(
+    val className: String,
+    private val bytes: ByteArray = byteArrayOf(),
+    val superName: String = ""
+) : ByteSource {
+    override fun bytes() = bytes
 
     override fun toString() = "$className: ${this::class.simpleName}"
 
@@ -32,16 +35,14 @@ abstract class ClassSource : ByteSource {
     override fun hashCode() = className.hashCode()
 }
 
-class FileSource(override val className: String, private val file: File) : ClassSource() {
-    override fun bytes(): ByteArray {
-        return file.readBytes()
-    }
+fun String.toClassSource() = ClassSource(this)
 
-}
-
-class ByteArrayClassSource(
-    override val className: String,
-    private val bytes: ByteArray
-) : ClassSource() {
-    override fun bytes() = bytes
+fun ClassSource.matches(
+    others: Iterable<String>, thisOffset: Int = 0
+): Boolean = others.any {
+    className.regionMatches(thisOffset, it, 0, it.length)
+} && others.none {
+    it.startsWith(SUBCLASS) && superName.regionMatches(thisOffset, it, SUBCLASS.length, it.length - SUBCLASS.length)
+} && others.none {
+    it.startsWith('!') && className.regionMatches(thisOffset, it, 1, it.length - 1)
 }

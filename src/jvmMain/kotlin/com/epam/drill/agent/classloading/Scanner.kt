@@ -17,6 +17,7 @@ package com.epam.drill.agent.classloading
 
 import com.epam.drill.*
 import com.epam.drill.agent.classloading.source.*
+import com.sun.xml.internal.ws.org.objectweb.asm.*
 import java.io.*
 import java.util.jar.*
 
@@ -25,27 +26,33 @@ internal fun File.useJarInputStream(block: (JarInputStream) -> Unit) {
 }
 
 internal fun JarInputStream.scan(
-    predicate: (String) -> Boolean,
+    predicate: (ClassSource) -> Boolean,
     handler: (ClassSource) -> Unit
 ): Unit = forEachFile { entry ->
     val name = entry.name
     when (name.substringAfterLast('.')) {
-        "class" -> name.toClassName().removePrefix(SPRING_BOOT_PREFIX).takeIf {
+        "class" -> name.toClassName().removePrefix(SPRING_BOOT_PREFIX).toClassSource().takeIf {
             it.isAllowed() && predicate(it)
         }?.let {
-            handler(ByteArrayClassSource(it, readBytes()))
-        }
+            val bytes = readBytes()
+            it.copy(bytes = bytes, superName = ClassReader(bytes).superName)
+        }?.takeIf(predicate)?.let(handler)
         "jar" -> JarInputStream(ByteArrayInputStream(readBytes())).scan(predicate, handler)
     }
 }
 
 internal fun File.scan(
-    predicate: (String) -> Boolean,
+    predicate: (ClassSource) -> Boolean,
     handler: (ClassSource) -> Unit
 ) = walkTopDown().filter { it.isFile && it.extension == "class" }.forEach { f ->
-    val name = f.toRelativeString(this).removePrefix(SPRING_BOOT_PREFIX).replace(File.separatorChar, '/').toClassName()
-    if (name.isAllowed() && predicate(name)) {
-        handler(FileSource(name, f))
+    val source = f.toRelativeString(this)
+        .removePrefix(SPRING_BOOT_PREFIX)
+        .replace(File.separatorChar, '/')
+        .toClassName()
+        .toClassSource()
+    if (source.isAllowed() && predicate(source)) {
+        val bytes = f.readBytes()
+        source.copy(bytes = bytes, superName = ClassReader(bytes).superName).takeIf(predicate)?.let(handler)
     }
 }
 
@@ -59,6 +66,6 @@ private tailrec fun JarInputStream.forEachFile(block: JarInputStream.(JarEntry) 
 
 private fun String.toClassName() = removeSuffix(".class")
 
-private fun String.isAllowed(): Boolean = run {
-    '$' !in this && !startsWith(DRILL_PACKAGE) && !startsWith("com/alibaba/ttl")
+private fun ClassSource.isAllowed(): Boolean = run {
+    '$' !in className && !className.startsWith(DRILL_PACKAGE) && !className.startsWith("com/alibaba/ttl")
 }
