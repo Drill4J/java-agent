@@ -50,6 +50,7 @@ object HttpRequest {
     }.onFailure { }.getOrNull()
 
     fun storeDrillHeaders(headers: Map<String, String>?) {
+        logger.trace { "headers '$headers' try to store to thread storage..." }
         headers?.get(DRILL_SESSION_ID_HEADER_NAME)?.let { drillSessionId ->
             val drillHeaders = headers.filter { it.key.startsWith(DRILL_HEADER_PREFIX) }
             logger.trace { "for drillSessionId '$drillSessionId' store drillHeaders '$drillHeaders' to thread storage" }
