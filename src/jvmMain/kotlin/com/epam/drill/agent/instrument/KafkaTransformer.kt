@@ -16,6 +16,7 @@
 package com.epam.drill.agent.instrument
 
 import com.alibaba.ttl.internal.javassist.*
+import com.epam.drill.*
 import com.epam.drill.kni.*
 import com.epam.drill.logger.*
 import com.epam.drill.request.*
@@ -35,8 +36,9 @@ actual object KafkaTransformer {
         return try {
             ClassPool.getDefault().appendClassPath(LoaderClassPath(loader as? ClassLoader))
             when (className) {
-                "org/apache/kafka/clients/producer/Producer" -> producerInstrument(classfileBuffer)
-                "org/apache/kafka/clients/consumer/Consumer" -> consumerInstrument(classfileBuffer)
+                KAFKA_PRODUCER_INTERFACE -> producerInstrument(classfileBuffer)
+                KAFKA_CONSUMER_SPRING -> consumerInstrument(classfileBuffer)
+                //todo add Consumer for Kafka EPMDJ-8488
                 else -> null
             }
         } catch (e: Exception) {
@@ -67,21 +69,17 @@ actual object KafkaTransformer {
     private fun consumerInstrument(
         classfileBuffer: ByteArray,
     ) = ClassPool.getDefault().makeClass(ByteArrayInputStream(classfileBuffer))?.run {
-        getDeclaredMethods("poll").forEach {
-            it.insertAfter("""
-                java.util.Iterator records = ${'$'}_.iterator(); 
-                while (records.hasNext()) {
-                    org.apache.kafka.clients.consumer.ConsumerRecord record = (org.apache.kafka.clients.consumer.ConsumerRecord) records.next();
-                    java.util.Iterator headers = record.headers().iterator();
-                    java.util.Map drillHeaders = new java.util.HashMap();
-                    while (headers.hasNext()) {
-                        org.apache.kafka.common.header.Header header = (org.apache.kafka.common.header.Header) headers.next();
-                        if (header.key().startsWith("drill-")) {
-                            drillHeaders.put(header.key(), new String(header.value()));
-                        }    
-                    }
-                    ${HttpRequest::class.java.name}.INSTANCE.${HttpRequest::storeDrillHeaders.name}(drillHeaders);                    
+        getDeclaredMethods("doInvokeRecordListener").forEach {
+            it.insertBefore("""
+                java.util.Iterator headers = $1.headers().iterator();
+                java.util.Map drillHeaders = new java.util.HashMap();
+                while (headers.hasNext()) {
+                    org.apache.kafka.common.header.Header header = (org.apache.kafka.common.header.Header) headers.next();
+                    if (header.key().startsWith("drill-")) {
+                        drillHeaders.put(header.key(), new String(header.value()));
+                    }    
                 }
+                ${HttpRequest::class.java.name}.INSTANCE.${HttpRequest::storeDrillHeaders.name}(drillHeaders);
             """.trimIndent())
         }
         toBytecode()
