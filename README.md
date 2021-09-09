@@ -1,3 +1,5 @@
+[![License](https://img.shields.io/github/license/Drill4J/java-agent)](LICENSE)
+
 # Drill agent module
 
 This module contains the native agent used to profile a java application and report 
