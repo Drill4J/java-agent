@@ -15,7 +15,8 @@
  */
 package com.epam.drill.agent.instrument
 
-import com.alibaba.ttl.internal.javassist.*
+import com.alibaba.ttl.threadpool.agent.internal.javassist.*
+import com.epam.drill.agent.*
 import com.epam.drill.kni.*
 import com.epam.drill.logger.*
 import com.epam.drill.request.*
@@ -32,11 +33,11 @@ actual object TomcatTransformer {
         loader: Any?
     ): ByteArray? {
         return try {
-            val adminUrl = retrieveAdminAddress().decodeToString()
+            val adminUrl = BasicResponseHeaders.retrieveAdminAddress()
             logger.info { "starting TomcatTransformer with admin host $adminUrl..." }
             ClassPool.getDefault().appendClassPath(LoaderClassPath(loader as? ClassLoader))
             ClassPool.getDefault().makeClass(ByteArrayInputStream(classFileBuffer))?.run {
-                val drillAdminHeader = """drill-admin-url"""
+                val drillAdminHeader = BasicResponseHeaders.adminAddressHeader()
                 val method = getMethod(
                     "doFilter",
                     "(Ljavax/servlet/ServletRequest;Ljavax/servlet/ServletResponse;)V"
@@ -49,7 +50,7 @@ actual object TomcatTransformer {
                             org.apache.catalina.connector.ResponseFacade tomcatResponse = (org.apache.catalina.connector.ResponseFacade)$2;
                             if (tomcatResponse.getHeader("$drillAdminHeader") != "$adminUrl") {
                                 tomcatResponse.addHeader("$drillAdminHeader", "$adminUrl");
-                                tomcatResponse.addHeader("${idHeaderConfigKey().decodeToString()}", "${idHeaderConfigValue().decodeToString()}");
+                                tomcatResponse.addHeader("${BasicResponseHeaders.idHeaderConfigKey()}", "${BasicResponseHeaders.idHeaderConfigValue()}");
                             }
                             
                             org.apache.catalina.connector.RequestFacade tomcatRequest = (org.apache.catalina.connector.RequestFacade)${'$'}1;
@@ -79,8 +80,4 @@ actual object TomcatTransformer {
             null
         }
     }
-
-    actual external fun retrieveAdminAddress(): ByteArray
-    actual external fun idHeaderConfigKey(): ByteArray
-    actual external fun idHeaderConfigValue(): ByteArray
 }

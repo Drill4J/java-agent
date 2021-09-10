@@ -25,6 +25,7 @@ actual object TTLTransformer {
     const val timerTaskClass = "java/util/TimerTask"
     const val runnableInterface = "java/lang/Runnable"
     const val poolExecutor = "java/util/concurrent/ThreadPoolExecutor"
+    const val jdkInternal = "jdk/internal"
 
     actual fun transform(
         loader: Any?,
