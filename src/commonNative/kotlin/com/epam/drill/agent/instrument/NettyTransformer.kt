@@ -15,10 +15,14 @@
  */
 package com.epam.drill.agent.instrument
 
-expect object TomcatTransformer {
-    fun transform(
+actual object NettyTransformer {
+    const val HANDLER_CONTEXT = "io/netty/channel/AbstractChannelHandlerContext"
+
+    actual fun transform(
         className: String,
         classFileBuffer: ByteArray,
-        loader: Any?,
-    ): ByteArray?
+        loader: Any?
+    ): ByteArray?{
+       return NettyTransformerStub.transform(className, classFileBuffer, loader)
+    }
 }

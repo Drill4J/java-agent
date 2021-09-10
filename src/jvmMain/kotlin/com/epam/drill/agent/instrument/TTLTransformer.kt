@@ -55,8 +55,8 @@ actual object TTLTransformer {
                 transformlet.doTransform(classInfo)
                 if (classInfo.isModified) return classInfo.ctClass.toBytecode()
             }
-        } catch (t: Throwable) {
-            logger.warn(t) { "Fail to transform class $classFile" }
+        } catch (e: Exception) {
+            logger.warn(e) { "Fail to transform class $classFile" }
         }
         return null
     }
