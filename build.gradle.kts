@@ -30,6 +30,7 @@ val drillLogger: String by extra
 val knasmVersion: String by extra
 val kniVersion: String by extra
 val ktorUtilVersion: String by extra
+val ttlVersion: String by extra
 
 allprojects {
     apply(from = rootProject.uri("$scriptUrl/git-version.gradle.kts"))
@@ -129,7 +130,7 @@ kotlin {
                 implementation("com.epam.drill.agent:agent:$drillAgentCoreVersion")
                 implementation("com.epam.drill.kni:runtime:$kniVersion")
                 implementation("com.epam.drill.knasm:knasm:$knasmVersion")
-                implementation("com.alibaba:transmittable-thread-local:2.11.0")
+                implementation("com.alibaba:transmittable-thread-local:$ttlVersion")
             }
         }
         compilations["test"].defaultSourceSet {

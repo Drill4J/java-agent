@@ -15,10 +15,6 @@
  */
 package com.epam.drill.agent.instrument
 
-expect object TomcatTransformer {
-    fun transform(
-        className: String,
-        classFileBuffer: ByteArray,
-        loader: Any?,
-    ): ByteArray?
+expect object NettyTransformer {
+    fun transform(className: String, classFileBuffer: ByteArray, loader: Any?): ByteArray?
 }

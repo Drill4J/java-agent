@@ -15,7 +15,7 @@
  */
 package com.epam.drill.agent.instrument
 
-import com.alibaba.ttl.internal.javassist.*
+import com.alibaba.ttl.threadpool.agent.internal.javassist.*
 import com.epam.drill.*
 import com.epam.drill.kni.*
 import com.epam.drill.logger.*

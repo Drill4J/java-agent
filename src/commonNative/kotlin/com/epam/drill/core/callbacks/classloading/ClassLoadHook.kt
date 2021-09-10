@@ -59,8 +59,11 @@ fun classLoadEvent(
         }
         val transformers = mutableListOf<(ByteArray) -> ByteArray?>()
         val classReader = ClassReader(classBytes)
+        val superName = classReader.superName ?: ""
+        val interfaces = classReader.interfaces.filterNotNull()
+        //TODO needs refactoring EPMDJ-8528
         if (config.isAsyncApp || config.isWebApp) {
-            if (config.isAsyncApp && isTTLCandidate(classReader)) {
+            if (config.isAsyncApp && isTTLCandidate(kClassName, superName, interfaces)) {
                 transformers += { bytes ->
                     TTLTransformer.transform(
                         loader,
@@ -70,20 +73,20 @@ fun classLoadEvent(
                     )
                 }
             }
-            if (config.isWebApp && Transformer.servletListener in classReader.interfaces) {
+            if (config.isWebApp && Transformer.servletListener in interfaces) {
                 transformers += { bytes -> Transformer.transform(kClassName, bytes, loader) }
             } else {
-                if (classReader.superName == SSL_ENGINE_CLASS_NAME) {
+                if (superName == SSL_ENGINE_CLASS_NAME) {
                     transformers += { bytes -> SSLTransformer.transform(kClassName, bytes, loader) }
                 }
             }
         }
 
         if (config.isKafka) {
-            if (KAFKA_PRODUCER_INTERFACE in classReader.interfaces) {
+            if (KAFKA_PRODUCER_INTERFACE in interfaces) {
                 transformers += { bytes -> KafkaTransformer.transform(KAFKA_PRODUCER_INTERFACE, bytes, loader) }
             }
-            if (classReader.className == KAFKA_CONSUMER_SPRING) {
+            if (kClassName == KAFKA_CONSUMER_SPRING) {
                 transformers += { bytes -> KafkaTransformer.transform(KAFKA_CONSUMER_SPRING, bytes, loader) }
             }
         }
@@ -99,6 +102,12 @@ fun classLoadEvent(
             logger.info { "Http hook is off, starting transform tomcat class kClassName $kClassName..." }
             transformers += { bytes ->
                 TomcatTransformer.transform(kClassName, bytes, loader)
+            }
+        }
+
+        if ('$' !in kClassName && kClassName.startsWith(NettyTransformer.HANDLER_CONTEXT)) {
+            transformers += { bytes ->
+                NettyTransformer.transform(kClassName, bytes, loader)
             }
         }
 
@@ -137,7 +146,12 @@ private fun convertToNativePointers(
 private fun isBootstrapClassLoading(loader: jobject?, protection_domain: jobject?) =
     loader == null || protection_domain == null
 
-private fun isTTLCandidate(classReader: ClassReader) = classReader.className in TTLTransformer.directTtlClasses ||
-        (classReader.className != TTLTransformer.timerTaskClass &&
-                (TTLTransformer.runnableInterface in classReader.interfaces ||
-                        classReader.superName == TTLTransformer.poolExecutor))
+private fun isTTLCandidate(
+    kClassName: String,
+    superName: String,
+    interfaces: Collection<String>,
+) = kClassName in TTLTransformer.directTtlClasses
+        || (kClassName != TTLTransformer.timerTaskClass
+        && (TTLTransformer.runnableInterface in interfaces
+        || superName == TTLTransformer.poolExecutor))
+        && !kClassName.startsWith(TTLTransformer.jdkInternal)
