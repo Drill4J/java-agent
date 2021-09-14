@@ -23,6 +23,7 @@ data class Config(
     val isAsyncApp: Boolean = false,
     val isWebApp: Boolean = false,
     val isKafka: Boolean = false,
+    val isCadence: Boolean = false,
     val isTlsApp: Boolean = false,
     val webAppLoadingTimeout: Duration = Duration.seconds(1500),
     val webApps: List<String> = emptyList(),

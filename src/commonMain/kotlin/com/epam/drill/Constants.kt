@@ -24,3 +24,6 @@ const val HTTP_HOOK_ENABLED = "drill.http.hook.enabled"
 
 const val KAFKA_PRODUCER_INTERFACE = "org/apache/kafka/clients/producer/Producer"
 const val KAFKA_CONSUMER_SPRING = "org/springframework/kafka/listener/KafkaMessageListenerContainer\$ListenerConsumer"
+
+const val CADENCE_PRODUCER =  "com/uber/cadence/internal/sync/WorkflowStubImpl"
+const val CADENCE_CONSUMER = "com/uber/cadence/internal/sync/WorkflowRunnable"
