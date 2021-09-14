@@ -32,6 +32,7 @@ data class AgentArguments(
     val logFile: String? = null,
     val isWebApp: Boolean = false,
     val isKafka: Boolean = false,
+    val isCadence: Boolean = false,
     val isTlsApp: Boolean = false,
     val isAsyncApp: Boolean = false,
     val webAppNames: String = "",
@@ -56,6 +57,11 @@ data class AgentArguments(
         AgentArguments::isKafka.name to AgentParameter(
             type = isKafka.toType(),
             value = isKafka.toString(),
+            description = "",
+        ),
+        AgentArguments::isCadence.name to AgentParameter(
+            type = isCadence.toType(),
+            value = isCadence.toString(),
             description = "",
         ),
         AgentArguments::isTlsApp.name to AgentParameter(
