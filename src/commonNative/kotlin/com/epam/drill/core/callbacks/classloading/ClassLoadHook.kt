@@ -93,6 +93,11 @@ fun classLoadEvent(
                 transformers += { bytes -> KafkaTransformer.transform(KAFKA_CONSUMER_SPRING, bytes, loader) }
             }
         }
+        if (config.isCadence) {
+            if (CADENCE_PRODUCER == kClassName || CADENCE_CONSUMER == kClassName) {
+                transformers += { bytes -> CadenceTransformer.transform(kClassName, bytes, loader) }
+            }
+        }
         val classSource = ClassSource(kClassName, classReader.superName ?: "", classBytes)
         if ('$' !in kClassName && classSource.matches(state.packagePrefixes)) {
             pstorage.values.filterIsInstance<InstrumentationNativePlugin>().forEach { plugin ->
