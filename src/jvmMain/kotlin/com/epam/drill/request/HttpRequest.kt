@@ -47,21 +47,27 @@ object HttpRequest {
                 }
             }
         }
-    }.onFailure { }.getOrNull()
+    }.onFailure { logger.error(it) { "Error while parse buffer. Reason: " } }.getOrNull()
 
     fun storeDrillHeaders(headers: Map<String, String>?) {
-        logger.trace { "headers '$headers' try to store to thread storage..." }
-        headers?.get(DRILL_SESSION_ID_HEADER_NAME)?.let { drillSessionId ->
-            val drillHeaders = headers.filter { it.key.startsWith(DRILL_HEADER_PREFIX) }
-            logger.trace { "for drillSessionId '$drillSessionId' store drillHeaders '$drillHeaders' to thread storage" }
-            RequestHolder.storeRequest(DrillRequest(drillSessionId, drillHeaders))
+        runCatching {
+            logger.trace { "headers '$headers' try to store to thread storage..." }
+            headers?.get(DRILL_SESSION_ID_HEADER_NAME)?.let { drillSessionId ->
+                val drillHeaders = headers.filter { it.key.startsWith(DRILL_HEADER_PREFIX) }
+                logger.trace { "for drillSessionId '$drillSessionId' store drillHeaders '$drillHeaders' to thread storage" }
+                RequestHolder.storeRequest(DrillRequest(drillSessionId, drillHeaders))
+            }
+        }.onFailure {
+            logger.error(it) { "Error while storing headers. Reason: " }
         }
     }
 
-    fun loadDrillHeaders() = RequestHolder.dump()?.let { bytes ->
-        val drillRequest = ProtoBuf.load(DrillRequest.serializer(), bytes)
-        drillRequest.headers.filter { it.key.startsWith(DRILL_HEADER_PREFIX) } + (DRILL_SESSION_ID_HEADER_NAME to drillRequest.drillSessionId)
-    }
+    fun loadDrillHeaders() = runCatching {
+        RequestHolder.dump()?.let { bytes ->
+            val drillRequest = ProtoBuf.load(DrillRequest.serializer(), bytes)
+            drillRequest.headers.filter { it.key.startsWith(DRILL_HEADER_PREFIX) } + (DRILL_SESSION_ID_HEADER_NAME to drillRequest.drillSessionId)
+        }
+    }.onFailure { logger.error(it) { "Error while loading drill headers. Reason: " } }.getOrNull()
 
     private fun ByteArray.indexOf(arr: ByteArray) = run {
         for (index in indices) {
