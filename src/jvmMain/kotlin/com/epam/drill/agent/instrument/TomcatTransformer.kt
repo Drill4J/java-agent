@@ -44,7 +44,8 @@ actual object TomcatTransformer {
                 ) ?: run {
                     return null
                 }
-                method.insertBefore(
+                method.wrapCatching(
+                    CtMethod::insertBefore,
                     """
                         if ($1 instanceof org.apache.catalina.connector.RequestFacade && $2 instanceof org.apache.catalina.connector.ResponseFacade) {
                             org.apache.catalina.connector.ResponseFacade tomcatResponse = (org.apache.catalina.connector.ResponseFacade)$2;
@@ -68,7 +69,8 @@ actual object TomcatTransformer {
                         }
                     """.trimIndent()
                 )
-                method.insertAfter(
+                method.wrapCatching(
+                    CtMethod::insertAfter,
                     """
                        com.epam.drill.request.PluginExtension.INSTANCE.${PluginExtension::processServerResponse.name}();
                     """.trimIndent()

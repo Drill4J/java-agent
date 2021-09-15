@@ -38,7 +38,8 @@ actual object NettyTransformer {
         return try {
             ClassPool.getDefault().appendClassPath(LoaderClassPath(loader as? ClassLoader))
             ClassPool.getDefault().makeClass(ByteArrayInputStream(classFileBuffer))?.run {
-                getMethod("invokeChannelRead", "(Ljava/lang/Object;)V").insertBefore(
+                getMethod("invokeChannelRead", "(Ljava/lang/Object;)V").wrapCatching(
+                    CtMethod::insertBefore,
                     """
                         if ($1 instanceof $DefaultHttpRequest) {
                             $DefaultHttpRequest nettyRequest = ($DefaultHttpRequest) $1;
@@ -57,7 +58,8 @@ actual object NettyTransformer {
                 val drillAdminHeader = BasicResponseHeaders.adminAddressHeader()
                 val adminUrl = BasicResponseHeaders.retrieveAdminAddress()
                 val writeMethod = getMethod("write", "(Ljava/lang/Object;ZLio/netty/channel/ChannelPromise;)V")
-                writeMethod.insertBefore(
+                writeMethod.wrapCatching(
+                    CtMethod::insertBefore,
                     """
                         if ($1 instanceof $DefaultHttpResponse) {
                             $DefaultHttpResponse nettyResponse = ($DefaultHttpResponse) $1;
@@ -83,7 +85,8 @@ actual object NettyTransformer {
                         }
                     """.trimIndent()
                 )
-                writeMethod.insertAfter(
+                writeMethod.wrapCatching(
+                    CtMethod::insertAfter,
                     """
                         if ($1 instanceof $DefaultHttpResponse) {
                             ${PluginExtension::class.java.name}.INSTANCE.${PluginExtension::processServerResponse.name}();
