@@ -37,8 +37,9 @@ actual object Transformer {
                         .contains("javax.servlet.ServletContextListener")) {
                     val qualifiedName = WebContainerSource::class.qualifiedName
                     val fillWeSourceMethodName = WebContainerSource::fillWebAppSource.name
-                    declaredMethods.firstOrNull { it.name == "contextInitialized" }?.insertBefore(
-                        "try{$qualifiedName.INSTANCE.$fillWeSourceMethodName(\$1.getServletContext().getRealPath(\"/\"),\$1.getServletContext().getResource(\"/\"));}catch(java.lang.Throwable e){}"
+                    declaredMethods.firstOrNull { it.name == "contextInitialized" }?.wrapCatching(
+                        CtMethod::insertBefore,
+                        "$qualifiedName.INSTANCE.$fillWeSourceMethodName(\$1.getServletContext().getRealPath(\"/\"),\$1.getServletContext().getResource(\"/\"));"
                     ) ?: run {
                         logger.info { "Can't find 'contextInitialized' for class ${this.name}. Allowed methods ${declaredMethods.map { it.name }} " }
                         return null

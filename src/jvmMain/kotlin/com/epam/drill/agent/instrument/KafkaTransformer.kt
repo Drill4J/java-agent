@@ -51,7 +51,9 @@ actual object KafkaTransformer {
         classfileBuffer: ByteArray,
     ) = ClassPool.getDefault().makeClass(ByteArrayInputStream(classfileBuffer))?.run {
         getDeclaredMethods("send").forEach {
-            it.insertBefore("""
+            it.wrapCatching(
+                CtMethod::insertBefore,
+                """
                 java.util.Map drillHeaders = ${HttpRequest::class.java.name}.INSTANCE.${HttpRequest::loadDrillHeaders.name}();
                 if (drillHeaders != null) {
                     java.util.Iterator iterator = drillHeaders.entrySet().iterator();
@@ -60,7 +62,8 @@ actual object KafkaTransformer {
                         $1.headers().add(((String) entry.getKey()), ((String) entry.getValue()).getBytes());
                     }
                 }
-            """.trimIndent())
+            """.trimIndent()
+            )
         }
         toBytecode()
     }
@@ -70,7 +73,9 @@ actual object KafkaTransformer {
         classfileBuffer: ByteArray,
     ) = ClassPool.getDefault().makeClass(ByteArrayInputStream(classfileBuffer))?.run {
         getDeclaredMethods("doInvokeRecordListener").forEach {
-            it.insertBefore("""
+            it.wrapCatching(
+                CtMethod::insertBefore,
+                """
                 java.util.Iterator headers = $1.headers().iterator();
                 java.util.Map drillHeaders = new java.util.HashMap();
                 while (headers.hasNext()) {
@@ -80,7 +85,8 @@ actual object KafkaTransformer {
                     }    
                 }
                 ${HttpRequest::class.java.name}.INSTANCE.${HttpRequest::storeDrillHeaders.name}(drillHeaders);
-            """.trimIndent())
+            """.trimIndent()
+            )
         }
         toBytecode()
     }

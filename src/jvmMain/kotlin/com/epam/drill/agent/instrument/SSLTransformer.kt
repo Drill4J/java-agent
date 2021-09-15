@@ -33,7 +33,8 @@ actual object SSLTransformer {
                 getMethod(
                     "unwrap",
                     "(Ljava/nio/ByteBuffer;[Ljava/nio/ByteBuffer;II)Ljavax/net/ssl/SSLEngineResult;"
-                )?.insertAfter(
+                )?.wrapCatching(
+                    CtMethod::insertAfter,
                     """
                        com.epam.drill.request.HttpRequest.INSTANCE.${HttpRequest::parse.name}($2);
                     """.trimIndent()
