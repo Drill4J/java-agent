@@ -6,6 +6,7 @@ RUN apt-get update && apt-get install -y \
   wget \
   unzip \
   curl \
+  jq \
   && rm -rf /var/lib/apt/lists/*
 
 RUN mkdir -p /data-download/agent
