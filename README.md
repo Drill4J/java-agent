@@ -31,9 +31,13 @@ For example, for Linux it would be in 'build/install/linuxX64'
 To create these files need to invoke Gradle task 'install{target platform identifier}Dist'. Example for linux:
 
     ./gradlew installLinuxX64Dist
-For Linux ensure that 
+For Ubuntu ensure that 
 
     apt-get install libncurses5
+
+For CentOS 8 ensure that
+
+    yum install ncurses-compat-libs
 
 #### Publish in Maven local
 
