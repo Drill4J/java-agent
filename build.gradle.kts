@@ -37,8 +37,8 @@ allprojects {
 
     repositories {
         mavenLocal()
+        mavenCentral()
         apply(from = "$scriptUrl/maven-repo.gradle.kts")
-        jcenter()
     }
 }
 
@@ -106,7 +106,7 @@ kotlin {
                     implementation("com.epam.drill.agent:agent:$drillAgentCoreVersion")
                     implementation("com.epam.drill.knasm:knasm:$knasmVersion")
                     implementation("com.epam.drill.kni:runtime:$kniVersion")
-                    implementation("io.ktor:ktor-utils-native:$ktorUtilVersion")
+                    implementation("io.ktor:ktor-utils:$ktorUtilVersion")
                 }
             }
         }
