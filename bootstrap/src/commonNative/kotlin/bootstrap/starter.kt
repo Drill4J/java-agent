@@ -15,7 +15,9 @@
  */
 package com.epam.drill.bootstrap
 
+import com.epam.drill.jvmapi.*
 import com.epam.drill.jvmapi.gen.*
+import com.epam.drill.logger.*
 import io.ktor.utils.io.core.*
 import io.ktor.utils.io.streams.*
 import kotlinx.cinterop.*
@@ -29,6 +31,7 @@ fun agentOnLoad(
 ): Int = memScoped {
     try {
         val initialParams = options.asAgentParams()
+        loggerCallback = { Logging.logger(it) }
         initialParams["bootstrapConfigPath"]?.let {
             val rawFileContent = readFile(it)
             println(rawFileContent)
