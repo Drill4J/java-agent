@@ -5,7 +5,7 @@
 [![Visit the website at drill4j.github.io](https://img.shields.io/badge/visit-website-green.svg?logo=firefox)](https://drill4j.github.io/)
 [![Telegram Chat](https://img.shields.io/badge/Chat%20on-Telegram-brightgreen.svg)](https://t.me/drill4j)  
 ![GitHub release (latest by date)](https://img.shields.io/github/v/release/Drill4J/java-agent)
-![Docker Pulls](https://img.shields.io/docker/pulls/Drill4J/java-agent)
+![Docker Pulls](https://img.shields.io/docker/pulls/drill4j/java-agent)
 ![GitHub contributors](https://img.shields.io/github/contributors/Drill4J/java-agent)
 ![Lines of code](https://img.shields.io/tokei/lines/github/Drill4J/java-agent)
 ![YouTube Channel Views](https://img.shields.io/youtube/channel/views/UCJtegUnUHr0bO6icF1CYjKw?style=social)
