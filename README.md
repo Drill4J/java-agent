@@ -1,4 +1,15 @@
+[![Bump version](https://github.com/Drill4J/java-agent/actions/workflows/bump-version.yml/badge.svg)](https://github.com/Drill4J/java-agent/actions/workflows/bump-version.yml)
+[![CI check](https://github.com/Drill4J/java-agent/actions/workflows/check.yml/badge.svg)](https://github.com/Drill4J/java-agent/actions/workflows/check.yml)
+[![Publish docker image](https://github.com/Drill4J/java-agent/actions/workflows/publish.yml/badge.svg)](https://github.com/Drill4J/java-agent/actions/workflows/publish.yml)
 [![License](https://img.shields.io/github/license/Drill4J/java-agent)](LICENSE)
+[![Visit the website at drill4j.github.io](https://img.shields.io/badge/visit-website-green.svg?logo=firefox)](https://drill4j.github.io/)
+[![Telegram Chat](https://img.shields.io/badge/Chat%20on-Telegram-brightgreen.svg)](https://t.me/drill4j)  
+![GitHub release (latest by date)](https://img.shields.io/github/v/release/Drill4J/java-agent)
+![Docker Pulls](https://img.shields.io/docker/pulls/Drill4J/java-agent)
+![GitHub contributors](https://img.shields.io/github/contributors/Drill4J/java-agent)
+![Lines of code](https://img.shields.io/tokei/lines/github/Drill4J/java-agent)
+![YouTube Channel Views](https://img.shields.io/youtube/channel/views/UCJtegUnUHr0bO6icF1CYjKw?style=social)
+
 
 # Drill agent module
 
