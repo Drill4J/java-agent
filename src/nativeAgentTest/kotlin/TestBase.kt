@@ -19,7 +19,7 @@ import kotlin.time.*
 
 open class TestBase {
 
-    fun runTest(timeout: Duration = 20.seconds, block: suspend () -> Unit) {
+    fun runTest(timeout: Duration = Duration.seconds(20), block: suspend () -> Unit) {
         val context = CoroutineExceptionHandler { _, throwable ->
             throwable.printStackTrace()
         }

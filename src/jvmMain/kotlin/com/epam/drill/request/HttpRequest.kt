@@ -19,6 +19,7 @@ import com.epam.drill.agent.instrument.*
 import com.epam.drill.common.*
 import com.epam.drill.logger.*
 import com.epam.drill.plugin.*
+import kotlinx.serialization.*
 import kotlinx.serialization.protobuf.*
 import java.nio.*
 import kotlin.reflect.jvm.*

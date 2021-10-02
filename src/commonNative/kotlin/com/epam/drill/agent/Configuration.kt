@@ -178,7 +178,7 @@ private fun checkGaps(
     gaps.interrupted = false
     if (chunk.length == bufferSize) {
         val chr = getc(pipe)
-        if (chr != ' '.toInt() && chr != EOF) {
+        if (chr != ' '.code && chr != EOF) {
             gaps.interrupted = true
         }
         ungetc(chr, pipe)

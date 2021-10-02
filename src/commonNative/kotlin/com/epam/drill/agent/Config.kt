@@ -24,7 +24,7 @@ data class Config(
     val isWebApp: Boolean = false,
     val isKafka: Boolean = false,
     val isTlsApp: Boolean = false,
-    val webAppLoadingTimeout: Duration = 1500.seconds,
+    val webAppLoadingTimeout: Duration = Duration.seconds(1500),
     val webApps: List<String> = emptyList(),
     val coreLibPath: String? = null
 )

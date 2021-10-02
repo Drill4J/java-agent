@@ -15,8 +15,6 @@
  */
 package com.epam.drill.bootstrap
 
-import platform.posix.*
-
 import kotlinx.cinterop.*
 import platform.windows.*
 
@@ -30,7 +28,7 @@ private fun String.toLPCWSTR(ms: MemScope): CArrayPointer<UShortVar> {
     val length = this.length
     val allocArray = ms.allocArray<UShortVar>(length.toLong())
     for (i in 0 until length) {
-        allocArray[i] = this[i].toShort().toUShort()
+        allocArray[i] = this[i].code.toShort().toUShort()
     }
     return allocArray
 }

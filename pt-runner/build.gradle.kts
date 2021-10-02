@@ -11,7 +11,7 @@ val target = HostManager.host.presetName
 val agentJavaProject = rootProject
 
 application {
-    mainClassName = "org.springframework.boot.loader.JarLauncher"
+    mainClass.set("org.springframework.boot.loader.JarLauncher")
 }
 
 val emulateBigApp: Boolean
@@ -39,6 +39,7 @@ drill {
 }
 
 repositories {
+    mavenCentral()
     mavenLocal()
     maven("https://drill4j.jfrog.io/artifactory/drill")
 }

@@ -27,7 +27,7 @@ import com.epam.drill.request.*
 import kotlinx.coroutines.*
 import kotlinx.serialization.protobuf.*
 
-@kotlin.native.concurrent.SharedImmutable
+@SharedImmutable
 private val logger = Logging.logger("CallbackLogger")
 
 fun globalCallbacks(): Unit = run {
