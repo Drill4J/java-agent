@@ -19,6 +19,7 @@ import com.epam.drill.*
 import com.epam.drill.kni.*
 import com.epam.drill.logger.*
 import com.epam.drill.request.*
+import com.epam.drill.request.HttpRequest.DRILL_HEADER_PREFIX
 import javassist.*
 import java.io.*
 import kotlin.reflect.jvm.*
@@ -59,7 +60,10 @@ actual object KafkaTransformer {
                     java.util.Iterator iterator = drillHeaders.entrySet().iterator();
                     while (iterator.hasNext()) {
                         java.util.Map.Entry entry = (java.util.Map.Entry) iterator.next();
-                        $1.headers().add(((String) entry.getKey()), ((String) entry.getValue()).getBytes());
+                        String key = ((String) entry.getKey());
+                        if (!$1.headers().headers(key).iterator().hasNext()) {
+                            $1.headers().add(key, ((String) entry.getValue()).getBytes());
+                        }
                     }
                 }
             """.trimIndent()
@@ -80,7 +84,7 @@ actual object KafkaTransformer {
                 java.util.Map drillHeaders = new java.util.HashMap();
                 while (headers.hasNext()) {
                     org.apache.kafka.common.header.Header header = (org.apache.kafka.common.header.Header) headers.next();
-                    if (header.key().startsWith("drill-")) {
+                    if (header.key().startsWith("$DRILL_HEADER_PREFIX")) {
                         drillHeaders.put(header.key(), new String(header.value()));
                     }    
                 }
