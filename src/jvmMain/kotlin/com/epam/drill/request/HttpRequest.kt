@@ -23,12 +23,14 @@ import java.nio.*
 import kotlin.reflect.jvm.*
 
 object HttpRequest {
+    const val DRILL_HEADER_PREFIX = "drill-"
+
+    private const val DRILL_SESSION_ID_HEADER_NAME = "${DRILL_HEADER_PREFIX}session-id"
     private const val HTTP_DETECTOR_BYTES_COUNT = 8
+
     private val HTTP_VERBS =
         setOf("OPTIONS", "GET", "HEAD", "POST", "PUT", "PATCH", "DELETE", "TRACE", "CONNECT", "PRI")
     private val HEADERS_END_MARK = "\r\n\r\n".encodeToByteArray()
-    private const val DRILL_HEADER_PREFIX = "drill-"
-    private const val DRILL_SESSION_ID_HEADER_NAME = "${DRILL_HEADER_PREFIX}session-id"
     private val logger = Logging.logger(HttpRequest::class.jvmName)
 
     fun parse(buffers: Array<ByteBuffer>) = runCatching {

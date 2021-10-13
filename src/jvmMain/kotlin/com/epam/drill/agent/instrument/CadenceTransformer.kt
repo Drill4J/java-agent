@@ -20,6 +20,7 @@ import com.epam.drill.*
 import com.epam.drill.kni.*
 import com.epam.drill.logger.*
 import com.epam.drill.request.*
+import com.epam.drill.request.HttpRequest.DRILL_HEADER_PREFIX
 import java.io.*
 import kotlin.reflect.jvm.*
 
@@ -73,7 +74,7 @@ actual object CadenceTransformer {
             runCatching {
                 getDeclaredMethod(methodName)
             }.onFailure {
-                logger.error { "Method `$methodName` not found, check candence api version" }
+                logger.error { "Method `$methodName` not found, check cadence api version" }
             }.getOrNull()
         }.forEach {
             it.insertBefore("""
@@ -85,7 +86,10 @@ actual object CadenceTransformer {
                         if (options.getMemo() != null) {
                             while (iterator.hasNext()) {
                                 java.util.Map.Entry entry = (java.util.Map.Entry) iterator.next();
-                                options.getMemo().put(((String) entry.getKey()), entry.getValue());
+                                String key = ((String) entry.getKey());
+                                if (options.getMemo().get(key) == null) {
+                                    options.getMemo().put(key, entry.getValue());
+                                }
                             }
                         }
                      }
@@ -109,7 +113,7 @@ actual object CadenceTransformer {
                         while (iterator.hasNext()) {
                             java.util.Map.Entry entry = (java.util.Map.Entry) iterator.next();
                             String key = ((String) entry.getKey());
-                            if (key.startsWith("drill-")) {
+                            if (key.startsWith("$DRILL_HEADER_PREFIX")) {
                                 java.nio.ByteBuffer byteBuffer = (java.nio.ByteBuffer) entry.getValue(); 
                                 if (byteBuffer != null) {
                                     final byte[] valueBytes = new byte[byteBuffer.remaining()];

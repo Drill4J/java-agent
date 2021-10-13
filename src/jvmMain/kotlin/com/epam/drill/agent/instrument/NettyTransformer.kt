@@ -63,7 +63,7 @@ actual object NettyTransformer {
                     """
                         if ($1 instanceof $DefaultHttpResponse) {
                             $DefaultHttpResponse nettyResponse = ($DefaultHttpResponse) $1;
-                            if (nettyResponse.headers().get("$drillAdminHeader") != "$adminUrl") {
+                            if (!"$adminUrl".equals(nettyResponse.headers().get("$drillAdminHeader"))) {
                                 nettyResponse.headers().add("$drillAdminHeader", "$adminUrl");
                                 nettyResponse.headers().add("${BasicResponseHeaders.idHeaderConfigKey()}", "${BasicResponseHeaders.idHeaderConfigValue()}");
                             }

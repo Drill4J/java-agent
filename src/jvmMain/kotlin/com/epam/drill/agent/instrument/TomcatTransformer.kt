@@ -20,6 +20,7 @@ import com.epam.drill.agent.*
 import com.epam.drill.kni.*
 import com.epam.drill.logger.*
 import com.epam.drill.request.*
+import com.epam.drill.request.HttpRequest.DRILL_HEADER_PREFIX
 import java.io.*
 import kotlin.reflect.jvm.*
 
@@ -49,7 +50,7 @@ actual object TomcatTransformer {
                     """
                         if ($1 instanceof org.apache.catalina.connector.RequestFacade && $2 instanceof org.apache.catalina.connector.ResponseFacade) {
                             org.apache.catalina.connector.ResponseFacade tomcatResponse = (org.apache.catalina.connector.ResponseFacade)$2;
-                            if (tomcatResponse.getHeader("$drillAdminHeader") != "$adminUrl") {
+                            if (!"$adminUrl".equals(tomcatResponse.getHeader("$drillAdminHeader"))) {
                                 tomcatResponse.addHeader("$drillAdminHeader", "$adminUrl");
                                 tomcatResponse.addHeader("${BasicResponseHeaders.idHeaderConfigKey()}", "${BasicResponseHeaders.idHeaderConfigValue()}");
                             }
@@ -61,7 +62,7 @@ actual object TomcatTransformer {
                                 java.lang.String headerName = (java.lang.String) headerNames.nextElement();
                                 java.lang.String header = tomcatRequest.getHeader(headerName);
                                 allHeaders.put(headerName, header);
-                                if (headerName.startsWith("drill-")) {
+                                if (headerName.startsWith("$DRILL_HEADER_PREFIX") && tomcatResponse.getHeader(headerName) == null) {
                                     tomcatResponse.addHeader(headerName, header);
                                 }
                             }
