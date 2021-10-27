@@ -1,7 +1,7 @@
 package com.epam.drill.agent.instrument
 
-import com.alibaba.ttl.threadpool.agent.internal.javassist.*
 import com.epam.drill.logger.*
+import javassist.*
 
 inline fun CtMethod.wrapCatching(
     insert: CtMethod.(String) -> Unit,

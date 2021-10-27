@@ -26,6 +26,7 @@ import com.epam.drill.core.Agent.isHttpHookEnabled
 import com.epam.drill.core.plugin.loader.*
 import com.epam.drill.jvmapi.gen.*
 import com.epam.drill.logger.*
+import com.epam.drill.request.*
 import io.ktor.utils.io.bits.*
 import kotlinx.cinterop.*
 import org.objectweb.asm.*
@@ -50,9 +51,11 @@ fun classLoadEvent(
     newData: CPointer<CPointerVar<UByteVar>>?,
 ) {
     initRuntimeIfNeeded()
-    if (isBootstrapClassLoading(loader, protection_domain) && !config.isTlsApp && !config.isAsyncApp) return
-    val kClassName = clsName?.toKString()
-    if (kClassName == null || classData == null || kClassName.startsWith(DRILL_PACKAGE)) return
+    val kClassName = clsName?.toKString() ?: return
+    if (isBootstrapClassLoading(loader, protection_domain) && !config.isTlsApp && !config.isAsyncApp
+        && !kClassName.contains("Http") // raw hack for http(s) classes
+    ) return
+    if (classData == null || kClassName.startsWith(DRILL_PACKAGE)) return
     try {
         val classBytes = ByteArray(classDataLen).apply {
             Memory.of(classData, classDataLen).loadByteArray(0, this)
@@ -90,7 +93,9 @@ fun classLoadEvent(
                 transformers += { bytes -> KafkaTransformer.transform(KAFKA_CONSUMER_SPRING, bytes, loader) }
             }
         }
-
+        transformers += { bytes ->
+            HttpClientInstrumentation.permitAndTransform(kClassName, bytes, loader, protection_domain)
+        }
         val classSource = ClassSource(kClassName, classReader.superName ?: "", classBytes)
         if ('$' !in kClassName && classSource.matches(state.packagePrefixes)) {
             pstorage.values.filterIsInstance<InstrumentationNativePlugin>().forEach { plugin ->
