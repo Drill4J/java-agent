@@ -30,6 +30,8 @@ val knasmVersion: String by extra
 val kniVersion: String by extra
 val ktorUtilVersion: String by extra
 val ttlVersion: String by extra
+val httpClientInstrumentVersion: String by extra
+val javassistVersion: String by extra
 
 allprojects {
     apply(from = rootProject.uri("$scriptUrl/git-version.gradle.kts"))
@@ -81,6 +83,7 @@ kotlin {
         commonMain {
             dependencies {
                 implementation("org.jetbrains.kotlinx:kotlinx-serialization-core:$kxSerializationVersion")
+                implementation("com.epam.drill.knasm:knasm:$knasmVersion")
             }
         }
         commonTest {
@@ -129,6 +132,8 @@ kotlin {
                 implementation("com.epam.drill.kni:runtime:$kniVersion")
                 implementation("com.epam.drill.knasm:knasm:$knasmVersion")
                 implementation("com.alibaba:transmittable-thread-local:$ttlVersion")
+                implementation("org.javassist:javassist:$javassistVersion")
+                implementation("com.epam.drill:http-clients-instrumentation:$httpClientInstrumentVersion")
             }
         }
         compilations["test"].defaultSourceSet {

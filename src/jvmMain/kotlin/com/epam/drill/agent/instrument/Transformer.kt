@@ -17,10 +17,10 @@
 
 package com.epam.drill.agent.instrument
 
-import com.alibaba.ttl.threadpool.agent.internal.javassist.*
 import com.epam.drill.agent.classloading.*
 import com.epam.drill.kni.*
 import com.epam.drill.logger.*
+import javassist.*
 import java.io.*
 import kotlin.reflect.jvm.*
 
