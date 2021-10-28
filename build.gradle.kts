@@ -20,7 +20,6 @@ val scriptUrl: String by extra
 
 val kxSerializationVersion: String by extra
 val kxCoroutinesVersion: String by extra
-val uuidVersion: String by extra
 
 val drillJvmApiLibVersion: String by extra
 val drillApiVersion: String by extra
@@ -99,7 +98,6 @@ kotlin {
                 dependencies {
                     implementation("org.jetbrains.kotlinx:kotlinx-serialization-protobuf:$kxSerializationVersion")
                     implementation("com.epam.drill:jvmapi:$drillJvmApiLibVersion")
-                    implementation("com.benasher44:uuid:$uuidVersion")
                     implementation("com.epam.drill:drill-agent-part:$drillApiVersion")
                     implementation("com.epam.drill:common:$drillApiVersion")
                     implementation("com.epam.drill.logger:logger:$drillLogger")
