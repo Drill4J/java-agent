@@ -15,7 +15,6 @@
  */
 package com.epam.drill.agent
 
-import com.benasher44.uuid.*
 import com.epam.drill.common.*
 import com.epam.drill.logger.api.*
 import kotlinx.serialization.*
@@ -26,7 +25,7 @@ data class AgentArguments(
     val adminAddress: String,
     val drillInstallationDir: String = javaProcess().firstAgentPath,
     val buildVersion: String? = null,
-    val instanceId: String = uuid4().toString(),
+    val instanceId: String = "",
     val groupId: String = "",
     val logLevel: String = LogLevel.ERROR.name,
     val logFile: String? = null,
