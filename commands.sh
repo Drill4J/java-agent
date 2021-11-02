@@ -9,7 +9,6 @@ echo ""
 
 echo "mkdir -p /data/agent"
 mkdir -p /data/agent
-sleep 1
 echo ""
 
 echo "list in directory /data-download/agent:"
