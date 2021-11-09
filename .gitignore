@@ -11,3 +11,4 @@ src/*/kotlin/gen/
 bootstrap/src/*/kotlin/kni/
 bootstrap/src/*/kotlin/gen/
 *.db
+kni-meta-info

@@ -22,6 +22,9 @@ import com.epam.drill.agent.*
 import com.epam.drill.agent.classloading.source.*
 import com.epam.drill.agent.instrument.*
 import com.epam.drill.agent.instrument.SSLTransformer.SSL_ENGINE_CLASS_NAME
+import com.epam.drill.agent.instrument.http.apache.*
+import com.epam.drill.agent.instrument.http.java.*
+import com.epam.drill.agent.instrument.http.ok.*
 import com.epam.drill.core.Agent.isHttpHookEnabled
 import com.epam.drill.core.plugin.loader.*
 import com.epam.drill.jvmapi.gen.*
@@ -34,6 +37,9 @@ import kotlin.native.concurrent.*
 
 @SharedImmutable
 private val logger = Logging.logger("jvmtiEventClassFileLoadHookEvent")
+
+@SharedImmutable
+private val strategys = listOf(JavaHttpUrlConnection, ApacheClient, OkHttpClient)
 
 internal val totalTransformClass = AtomicInt(0)
 
@@ -101,14 +107,15 @@ fun classLoadEvent(
         }
         if (!isHttpHookEnabled) {
             if (kClassName.startsWith("org/apache/catalina/core/ApplicationFilterChain")) {
-                logger.info { "Http hook is off, starting transform Tomcat class kClassName $kClassName..." }
+                logger.info { "Http hook is off, starting transform tomcat class kClassName $kClassName..." }
                 transformers += { bytes ->
                     TomcatTransformer.transform(kClassName, bytes, loader)
                 }
             }
-            if (HttpClientInstrumentation.permit(classReader)) {
-                transformers += { bytes ->
-                    HttpClientInstrumentation.transform(kClassName, bytes, loader, protection_domain)
+
+            strategys.forEach { strategy ->
+                if (strategy.permit(classReader)) {
+                    transformers += { strategy.transform(kClassName, classBytes, loader, protection_domain) }
                 }
             }
         }
@@ -119,7 +126,6 @@ fun classLoadEvent(
                 NettyTransformer.transform(kClassName, bytes, loader)
             }
         }
-
         if (transformers.any()) {
             transformers.fold(classBytes) { bytes, transformer ->
                 transformer(bytes) ?: bytes

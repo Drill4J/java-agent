@@ -35,12 +35,13 @@ object HttpRequest {
 
     init {
         ClientsCallback.initRequestCallback {
-            HttpRequest.loadDrillHeaders() ?: emptyMap()
+            loadDrillHeaders() ?: emptyMap()
         }
         ClientsCallback.initResponseCallback { headers ->
-            HttpRequest.storeDrillHeaders(headers)
+            storeDrillHeaders(headers)
         }
     }
+
 
     fun parse(buffers: Array<ByteBuffer>) = runCatching {
         val rawBytes = buffers[0].array()

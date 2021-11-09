@@ -29,6 +29,8 @@ val knasmVersion: String by extra
 val kniVersion: String by extra
 val ktorUtilVersion: String by extra
 val ttlVersion: String by extra
+val javassistVersion: String by extra
+val httpClientInstrumentVersion: String by extra
 
 allprojects {
     apply(from = rootProject.uri("$scriptUrl/git-version.gradle.kts"))
@@ -93,6 +95,8 @@ kotlin {
                     implementation("com.epam.drill.kni:runtime:$kniVersion")
                     implementation("com.epam.drill.knasm:knasm:$knasmVersion")
                     implementation("com.alibaba:transmittable-thread-local:$ttlVersion")
+                    implementation("org.javassist:javassist:$javassistVersion")
+                    implementation("com.epam.drill:http-clients-instrumentation:$httpClientInstrumentVersion")
                 }
             }
             compilations["test"].defaultSourceSet {
@@ -120,6 +124,7 @@ kotlin {
         val commonMain by getting {
             dependencies {
                 implementation("org.jetbrains.kotlinx:kotlinx-serialization-core:$kxSerializationVersion")
+                implementation("com.epam.drill:http-clients-instrumentation:$httpClientInstrumentVersion")
             }
         }
         val commonTest by getting {
@@ -190,11 +195,15 @@ tasks.withType<org.jetbrains.kotlin.gradle.targets.native.tasks.KotlinNativeTest
     testLogging.showStandardStreams = true
 }
 
+tasks.named<ProcessResources>("jvmProcessResources") {
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+}
+
+
 tasks {
     val generateNativeClasses by getting {}
-    //TODO EPMDJ-8696 remove copy
-    val otherTargets = nativeTargets.filter { it.name != currentPlatformName }
-    val copy = otherTargets.map {
+    // TODO EPMDJ-8696 remove copy
+    val copy = nativeTargets.filter { it.name != currentPlatformName }.map {
         register<Copy>("copy for ${it.name}") {
             from(file("src/commonNative/kotlin"))
             into(file("src/${it.name}Main/kotlin/gen"))
@@ -211,7 +220,7 @@ tasks {
     }
     val cleanExtraData by registering(Delete::class) {
         group = "build"
-        otherTargets.forEach {
+        nativeTargets.forEach {
             val path = "src/${it.name}Main/kotlin/"
             delete(file("${path}kni"), file("${path}gen"))
         }

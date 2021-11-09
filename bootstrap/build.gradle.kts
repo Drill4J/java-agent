@@ -101,8 +101,7 @@ tasks {
     val generateNativeClasses by getting {}
 
     //TODO EPMDJ-8696 remove copy
-    val otherTargets = nativeTargets.filter { it.name != currentPlatformName }
-    val copy = otherTargets.map {
+    val copy =  nativeTargets.filter { it.name != currentPlatformName }.map {
         register<Copy>("bootstrap copy for ${it.name}") {
             from(file("src/commonNative/kotlin"))
             into(file("src/${it.name}Main/kotlin/gen"))
@@ -119,7 +118,7 @@ tasks {
     }
     val cleanExtraData by registering(Delete::class) {
         group = "build"
-        otherTargets.forEach {
+        nativeTargets.forEach {
             val path = "src/${it.name}Main/kotlin/"
             delete(file("${path}kni"), file("${path}gen"))
         }
@@ -132,9 +131,8 @@ tasks {
 
 afterEvaluate {
     val availableTargets =
-        kotlin.targets.filterIsInstance<org.jetbrains.kotlin.gradle.plugin.mpp.KotlinNativeTarget>().filter {
-            org.jetbrains.kotlin.konan.target.HostManager()
-                .isEnabled(it.konanTarget)
+        kotlin.targets.filterIsInstance<KotlinNativeTarget>().filter {
+            HostManager().isEnabled(it.konanTarget)
         }
 
     distributions {

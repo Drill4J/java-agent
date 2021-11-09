@@ -19,6 +19,7 @@ pluginManagement {
         mavenCentral()
         gradlePluginPortal()
         maven(url = "https://oss.jfrog.org/oss-release-local")
+        maven("https://drill4j.jfrog.io/artifactory/drill")
     }
 }
 
