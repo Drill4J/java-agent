@@ -15,6 +15,7 @@
  */
 package com.epam.drill.request
 
+import com.epam.drill.agent.instrument.*
 import com.epam.drill.common.*
 import com.epam.drill.logger.*
 import com.epam.drill.plugin.*
@@ -30,6 +31,15 @@ object HttpRequest {
     private const val DRILL_HEADER_PREFIX = "drill-"
     private const val DRILL_SESSION_ID_HEADER_NAME = "${DRILL_HEADER_PREFIX}session-id"
     private val logger = Logging.logger(HttpRequest::class.jvmName)
+
+    init {
+        ClientsCallback.initRequestCallback {
+            HttpRequest.loadDrillHeaders() ?: emptyMap()
+        }
+        ClientsCallback.initResponseCallback { headers ->
+            HttpRequest.storeDrillHeaders(headers)
+        }
+    }
 
     fun parse(buffers: Array<ByteBuffer>) = runCatching {
         val rawBytes = buffers[0].array()
