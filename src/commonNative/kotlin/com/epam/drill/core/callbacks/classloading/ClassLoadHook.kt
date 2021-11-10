@@ -93,24 +93,28 @@ fun classLoadEvent(
                 transformers += { bytes -> KafkaTransformer.transform(KAFKA_CONSUMER_SPRING, bytes, loader) }
             }
         }
-        transformers += { bytes ->
-            HttpClientInstrumentation.permitAndTransform(kClassName, bytes, loader, protection_domain)
-        }
         val classSource = ClassSource(kClassName, classReader.superName ?: "", classBytes)
         if ('$' !in kClassName && classSource.matches(state.packagePrefixes)) {
             pstorage.values.filterIsInstance<InstrumentationNativePlugin>().forEach { plugin ->
                 transformers += { bytes -> plugin.instrument(kClassName, bytes) }
             }
         }
-
-        if (!isHttpHookEnabled && kClassName.startsWith("org/apache/catalina/core/ApplicationFilterChain")) {
-            logger.info { "Http hook is off, starting transform tomcat class kClassName $kClassName..." }
-            transformers += { bytes ->
-                TomcatTransformer.transform(kClassName, bytes, loader)
+        if (!isHttpHookEnabled) {
+            if (kClassName.startsWith("org/apache/catalina/core/ApplicationFilterChain")) {
+                logger.info { "Http hook is off, starting transform Tomcat class kClassName $kClassName..." }
+                transformers += { bytes ->
+                    TomcatTransformer.transform(kClassName, bytes, loader)
+                }
+            }
+            if (HttpClientInstrumentation.permit(classReader)) {
+                transformers += { bytes ->
+                    HttpClientInstrumentation.transform(kClassName, bytes, loader, protection_domain)
+                }
             }
         }
-
+        // TODO Http hook does not work for Netty on linux system
         if ('$' !in kClassName && kClassName.startsWith(NettyTransformer.HANDLER_CONTEXT)) {
+            logger.info { "Starting transform Netty class kClassName $kClassName..." }
             transformers += { bytes ->
                 NettyTransformer.transform(kClassName, bytes, loader)
             }
