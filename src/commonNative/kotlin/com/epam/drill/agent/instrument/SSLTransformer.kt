@@ -20,9 +20,10 @@ actual object SSLTransformer {
 
     actual fun transform(
         className: String,
-        classfileBuffer: ByteArray,
+        classFileBuffer: ByteArray,
         loader: Any?,
+        protectionDomain: Any?,
     ): ByteArray? {
-        return SSLTransformerStub.transform(className, classfileBuffer, loader)
+        return SSLTransformerStub.transform(className, classFileBuffer, loader, protectionDomain)
     }
 }

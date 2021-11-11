@@ -16,5 +16,10 @@
 package com.epam.drill.agent.instrument
 
 expect object CadenceTransformer {
-    fun transform(className: String, classfileBuffer: ByteArray, loader: Any?): ByteArray?
+    fun transform(
+        className: String,
+        classFileBuffer: ByteArray,
+        loader: Any?,
+        protectionDomain: Any?,
+    ): ByteArray?
 }

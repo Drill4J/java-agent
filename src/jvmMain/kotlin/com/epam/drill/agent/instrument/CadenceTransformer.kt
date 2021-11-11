@@ -15,13 +15,13 @@
  */
 package com.epam.drill.agent.instrument
 
-import com.alibaba.ttl.threadpool.agent.internal.javassist.*
 import com.epam.drill.*
+import com.epam.drill.agent.instrument.util.*
 import com.epam.drill.kni.*
 import com.epam.drill.logger.*
 import com.epam.drill.request.*
 import com.epam.drill.request.HttpRequest.DRILL_HEADER_PREFIX
-import java.io.*
+import javassist.*
 import kotlin.reflect.jvm.*
 
 @Kni
@@ -31,25 +31,23 @@ actual object CadenceTransformer {
 
     actual fun transform(
         className: String,
-        classfileBuffer: ByteArray,
+        classFileBuffer: ByteArray,
         loader: Any?,
-    ): ByteArray? {
-        return try {
-            ClassPool.getDefault().appendClassPath(LoaderClassPath(loader as? ClassLoader))
+        protectionDomain: Any?,
+    ): ByteArray? = createAndTransform(classFileBuffer, loader, protectionDomain) { ctClass, _, _, _ ->
+        runCatching {
             when (className) {
-                CADENCE_PRODUCER -> producerInstrument(classfileBuffer)
-                CADENCE_CONSUMER -> consumerInstrument(classfileBuffer)
+                CADENCE_PRODUCER -> ctClass.producerInstrument()
+                CADENCE_CONSUMER -> ctClass.consumerInstrument()
                 else -> null
             }
-        } catch (e: Exception) {
-            logger.warn(e) { "Instrumentation error" }
-            null
-        }
+        }.onFailure {
+            logger.warn(it) { "Instrumentation error" }
+        }.getOrNull()
     }
 
-    private fun producerInstrument(
-        classfileBuffer: ByteArray,
-    ) = ClassPool.getDefault().makeClass(ByteArrayInputStream(classfileBuffer))?.run {
+
+    private fun CtClass.producerInstrument() = run {
         val constructors: List<Pair<CtConstructor, Int>> = constructors.mapNotNull { constructor ->
             constructor.parameterTypes.indexOfFirst { clazz ->
                 clazz.name.replace(".", "/") == "com/uber/cadence/client/WorkflowOptions"
@@ -99,9 +97,7 @@ actual object CadenceTransformer {
         toBytecode()
     }
 
-    private fun consumerInstrument(
-        classfileBuffer: ByteArray,
-    ) = ClassPool.getDefault().makeClass(ByteArrayInputStream(classfileBuffer))?.run {
+    private fun CtClass.consumerInstrument() = run {
         getDeclaredMethod("run").also {
             it.insertBefore("""
                 java.util.Map drillHeaders = new java.util.HashMap();

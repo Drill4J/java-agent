@@ -19,9 +19,10 @@ actual object KafkaTransformer {
 
     actual fun transform(
         className: String,
-        classfileBuffer: ByteArray,
+        classFileBuffer: ByteArray,
         loader: Any?,
+        protectionDomain: Any?,
     ): ByteArray? {
-        return KafkaTransformerStub.transform(className, classfileBuffer, loader)
+        return KafkaTransformerStub.transform(className, classFileBuffer, loader, protectionDomain)
     }
 }

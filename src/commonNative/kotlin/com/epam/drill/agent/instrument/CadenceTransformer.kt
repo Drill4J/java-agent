@@ -19,9 +19,10 @@ actual object CadenceTransformer {
     
     actual fun transform(
         className: String,
-        classfileBuffer: ByteArray,
+        classFileBuffer: ByteArray,
         loader: Any?,
+        protectionDomain: Any?,
     ): ByteArray? {
-        return CadenceTransformerStub.transform(className, classfileBuffer, loader)
+        return CadenceTransformerStub.transform(className, classFileBuffer, loader, protectionDomain)
     }
 }
