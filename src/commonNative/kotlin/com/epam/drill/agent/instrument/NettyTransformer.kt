@@ -21,8 +21,9 @@ actual object NettyTransformer {
     actual fun transform(
         className: String,
         classFileBuffer: ByteArray,
-        loader: Any?
+        loader: Any?,
+        protectionDomain: Any?,
     ): ByteArray?{
-       return NettyTransformerStub.transform(className, classFileBuffer, loader)
+       return NettyTransformerStub.transform(className, classFileBuffer, loader, protectionDomain)
     }
 }

@@ -16,6 +16,7 @@
 package com.epam.drill.agent.instrument
 
 import com.epam.drill.agent.*
+import com.epam.drill.agent.instrument.util.*
 import com.epam.drill.kni.*
 import com.epam.drill.logger.*
 import com.epam.drill.request.*
@@ -33,11 +34,11 @@ actual object NettyTransformer {
     actual fun transform(
         className: String,
         classFileBuffer: ByteArray,
-        loader: Any?
-    ): ByteArray? {
+        loader: Any?,
+        protectionDomain: Any?,
+    ): ByteArray? =  createAndTransform(classFileBuffer, loader, protectionDomain) { ctClass, _, _, _ ->
         return try {
-            ClassPool.getDefault().appendClassPath(LoaderClassPath(loader as? ClassLoader))
-            ClassPool.getDefault().makeClass(ByteArrayInputStream(classFileBuffer))?.run {
+            ctClass.run {
                 getMethod("invokeChannelRead", "(Ljava/lang/Object;)V").wrapCatching(
                     CtMethod::insertBefore,
                     """

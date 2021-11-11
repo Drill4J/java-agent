@@ -16,6 +16,7 @@
 package com.epam.drill.agent.instrument
 
 import com.epam.drill.*
+import com.epam.drill.agent.instrument.util.*
 import com.epam.drill.kni.*
 import com.epam.drill.logger.*
 import com.epam.drill.request.*
@@ -30,26 +31,23 @@ actual object KafkaTransformer {
 
     actual fun transform(
         className: String,
-        classfileBuffer: ByteArray,
+        classFileBuffer: ByteArray,
         loader: Any?,
-    ): ByteArray? {
-        return try {
-            ClassPool.getDefault().appendClassPath(LoaderClassPath(loader as? ClassLoader))
+        protectionDomain: Any?,
+    ): ByteArray? = createAndTransform(classFileBuffer, loader, protectionDomain) { ctClass, _, _, _ ->
+        runCatching {
             when (className) {
-                KAFKA_PRODUCER_INTERFACE -> producerInstrument(classfileBuffer)
-                KAFKA_CONSUMER_SPRING -> consumerInstrument(classfileBuffer)
+                KAFKA_PRODUCER_INTERFACE -> ctClass.producerInstrument()
+                KAFKA_CONSUMER_SPRING -> ctClass.consumerInstrument()
                 //todo add Consumer for Kafka EPMDJ-8488
                 else -> null
             }
-        } catch (e: Exception) {
-            logger.warn(e) { "Instrumentation error" }
-            null
-        }
+        }.onFailure {
+            logger.warn(it) { "Instrumentation error" }
+        }.getOrNull()
     }
 
-    private fun producerInstrument(
-        classfileBuffer: ByteArray,
-    ) = ClassPool.getDefault().makeClass(ByteArrayInputStream(classfileBuffer))?.run {
+    private fun CtClass.producerInstrument() = run {
         getDeclaredMethods("send").forEach {
             it.wrapCatching(
                 CtMethod::insertBefore,
@@ -69,9 +67,7 @@ actual object KafkaTransformer {
     }
 
 
-    private fun consumerInstrument(
-        classfileBuffer: ByteArray,
-    ) = ClassPool.getDefault().makeClass(ByteArrayInputStream(classfileBuffer))?.run {
+    private fun CtClass.consumerInstrument() = run {
         getDeclaredMethods("doInvokeRecordListener").forEach {
             it.wrapCatching(
                 CtMethod::insertBefore,

@@ -18,6 +18,7 @@
 package com.epam.drill.agent.instrument
 
 import com.epam.drill.agent.classloading.*
+import com.epam.drill.agent.instrument.util.*
 import com.epam.drill.kni.*
 import com.epam.drill.logger.*
 import javassist.*
@@ -29,10 +30,14 @@ actual object Transformer {
     private val logger = Logging.logger(Transformer::class.jvmName)
     private val classPool = ClassPool()
 
-    actual fun transform(className: String, classfileBuffer: ByteArray, loader: Any?): ByteArray? {
+    actual fun transform(
+        className: String,
+        classFileBuffer: ByteArray,
+        loader: Any?,
+        protectionDomain: Any?,
+    ): ByteArray? = createAndTransform(classFileBuffer, loader, protectionDomain) { ctClass, _, _, _ ->
         return try {
-            classPool.appendClassPath(LoaderClassPath(loader as? ClassLoader))
-            classPool.makeClass(ByteArrayInputStream(classfileBuffer))?.run {
+            ctClass.run {
                 if (interfaces.isNotEmpty() && interfaces.map { it.name }
                         .contains("javax.servlet.ServletContextListener")) {
                     val qualifiedName = WebContainerSource::class.qualifiedName

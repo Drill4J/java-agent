@@ -77,20 +77,24 @@ fun classLoadEvent(
                 }
             }
             if (config.isWebApp && Transformer.servletListener in interfaces) {
-                transformers += { bytes -> Transformer.transform(kClassName, bytes, loader) }
+                transformers += { bytes -> Transformer.transform(kClassName, bytes, loader, protection_domain) }
             } else {
                 if (superName == SSL_ENGINE_CLASS_NAME) {
-                    transformers += { bytes -> SSLTransformer.transform(kClassName, bytes, loader) }
+                    transformers += { bytes -> SSLTransformer.transform(kClassName, bytes, loader, protection_domain) }
                 }
             }
         }
 
         if (config.isKafka) {
             if (KAFKA_PRODUCER_INTERFACE in interfaces) {
-                transformers += { bytes -> KafkaTransformer.transform(KAFKA_PRODUCER_INTERFACE, bytes, loader) }
+                transformers += { bytes ->
+                    KafkaTransformer.transform(KAFKA_PRODUCER_INTERFACE, bytes, loader, protection_domain)
+                }
             }
             if (kClassName == KAFKA_CONSUMER_SPRING) {
-                transformers += { bytes -> KafkaTransformer.transform(KAFKA_CONSUMER_SPRING, bytes, loader) }
+                transformers += { bytes ->
+                    KafkaTransformer.transform(KAFKA_CONSUMER_SPRING, bytes, loader, protection_domain)
+                }
             }
         }
         val classSource = ClassSource(kClassName, classReader.superName ?: "", classBytes)
@@ -103,7 +107,7 @@ fun classLoadEvent(
             if (kClassName.startsWith("org/apache/catalina/core/ApplicationFilterChain")) {
                 logger.info { "Http hook is off, starting transform Tomcat class kClassName $kClassName..." }
                 transformers += { bytes ->
-                    TomcatTransformer.transform(kClassName, bytes, loader)
+                    TomcatTransformer.transform(kClassName, bytes, loader, protection_domain)
                 }
             }
             if (HttpClientInstrumentation.permit(classReader)) {
@@ -116,7 +120,7 @@ fun classLoadEvent(
         if ('$' !in kClassName && kClassName.startsWith(NettyTransformer.HANDLER_CONTEXT)) {
             logger.info { "Starting transform Netty class kClassName $kClassName..." }
             transformers += { bytes ->
-                NettyTransformer.transform(kClassName, bytes, loader)
+                NettyTransformer.transform(kClassName, bytes, loader, protection_domain)
             }
         }
 
