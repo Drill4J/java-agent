@@ -15,6 +15,7 @@
  */
 package com.epam.drill.agent.instrument
 
+import com.epam.drill.agent.instrument.util.*
 import com.epam.drill.kni.*
 import com.epam.drill.logger.*
 import com.epam.drill.request.*
@@ -26,10 +27,14 @@ import kotlin.reflect.jvm.*
 actual object SSLTransformer {
     private val logger = Logging.logger(Transformer::class.jvmName)
 
-    actual fun transform(className: String, classfileBuffer: ByteArray, loader: Any?): ByteArray? {
+    actual fun transform(
+        className: String,
+        classFileBuffer: ByteArray,
+        loader: Any?,
+        protectionDomain: Any?,
+    ): ByteArray? = createAndTransform(classFileBuffer, loader, protectionDomain) { ctClass, _, _, _ ->
         return try {
-            ClassPool.getDefault().appendClassPath(LoaderClassPath(loader as? ClassLoader))
-            ClassPool.getDefault().makeClass(ByteArrayInputStream(classfileBuffer))?.run {
+            ctClass.run {
                 getMethod(
                     "unwrap",
                     "(Ljava/nio/ByteBuffer;[Ljava/nio/ByteBuffer;II)Ljavax/net/ssl/SSLEngineResult;"
@@ -42,8 +47,6 @@ actual object SSLTransformer {
                     return null
                 }
                 return toBytecode()
-
-
             }
         } catch (e: Exception) {
             logger.warn(e) { "Instrumentation error" }

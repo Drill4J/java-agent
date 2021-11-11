@@ -20,5 +20,6 @@ expect object TomcatTransformer {
         className: String,
         classFileBuffer: ByteArray,
         loader: Any?,
+        protectionDomain: Any?,
     ): ByteArray?
 }
