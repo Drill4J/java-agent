@@ -101,6 +101,9 @@ fun classLoadEvent(
             pstorage.values.filterIsInstance<InstrumentationNativePlugin>().forEach { plugin ->
                 transformers += { bytes -> plugin.instrument(kClassName, bytes) }
             }
+            transformers += { bytes ->
+                TraceLogging.transform(kClassName, bytes, loader, protection_domain)
+            }
         }
 
         if (!isHttpHookEnabled && kClassName.startsWith("org/apache/catalina/core/ApplicationFilterChain")) {

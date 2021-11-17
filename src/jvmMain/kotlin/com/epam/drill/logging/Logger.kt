@@ -15,10 +15,20 @@
  */
 package com.epam.drill.logging
 
+import com.epam.drill.logger.*
+
 enum class Level {
     INFO
 }
 
 fun log(level: Level, msg: () -> String) {
     println("[DRILL][${level.name}]: ${msg()}")
+}
+
+private val trace = Logging.logger("TRACER")
+
+object TraceLog {
+    fun log(className: String, methodName: String, action: String) {
+        trace.info { "Id, $className:$methodName, $action, ${System.currentTimeMillis()}" }
+    }
 }
