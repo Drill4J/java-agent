@@ -107,6 +107,14 @@ open class GenericNativePlugin(
         notifyJavaPart(data)
     }
 
+    override fun onConnect() {
+        CallVoidMethodA(
+            userPlugin,
+            GetMethodID(pluginApiClass, GenericNativePlugin::onConnect.name, "()V"),
+            null
+        )
+    }
+
     private fun notifyJavaPart(data: String) {
         CallVoidMethodA(
             userPlugin,
