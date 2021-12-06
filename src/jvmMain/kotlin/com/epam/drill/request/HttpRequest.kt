@@ -19,6 +19,7 @@ import com.epam.drill.agent.instrument.*
 import com.epam.drill.common.*
 import com.epam.drill.logger.*
 import com.epam.drill.plugin.*
+import kotlinx.serialization.*
 import kotlinx.serialization.protobuf.*
 import java.nio.*
 import kotlin.reflect.jvm.*
@@ -34,12 +35,13 @@ object HttpRequest {
 
     init {
         ClientsCallback.initRequestCallback {
-            HttpRequest.loadDrillHeaders() ?: emptyMap()
+            loadDrillHeaders() ?: emptyMap()
         }
         ClientsCallback.initResponseCallback { headers ->
-            HttpRequest.storeDrillHeaders(headers)
+            storeDrillHeaders(headers)
         }
     }
+
 
     fun parse(buffers: Array<ByteBuffer>) = runCatching {
         val rawBytes = buffers[0].array()

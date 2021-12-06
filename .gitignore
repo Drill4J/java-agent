@@ -6,4 +6,9 @@ build/
 .gradle/
 src/generated/
 src/kni/
+src/*/kotlin/kni/
+src/*/kotlin/gen/
+bootstrap/src/*/kotlin/kni/
+bootstrap/src/*/kotlin/gen/
 *.db
+kni-meta-info

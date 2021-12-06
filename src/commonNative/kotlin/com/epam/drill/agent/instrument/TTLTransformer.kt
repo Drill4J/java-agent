@@ -31,7 +31,7 @@ actual object TTLTransformer {
         loader: Any?,
         classFile: String?,
         classBeingRedefined: Any?,
-        classFileBuffer: ByteArray
+        classFileBuffer: ByteArray,
     ): ByteArray? {
         return TTLTransformerStub.transform(loader, classFile, classBeingRedefined, classFileBuffer)
     }
