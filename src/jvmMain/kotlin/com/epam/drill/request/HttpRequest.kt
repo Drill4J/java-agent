@@ -63,10 +63,14 @@ object HttpRequest {
 
     fun storeDrillHeaders(headers: Map<String, String>?) {
         runCatching {
-            headers?.get(DRILL_SESSION_ID_HEADER_NAME)?.let { drillSessionId ->
-                val drillHeaders = headers.filter { it.key.startsWith(DRILL_HEADER_PREFIX) }
-                logger.trace { "for drillSessionId '$drillSessionId' store drillHeaders '$drillHeaders' to thread storage" }
-                RequestHolder.storeRequest(DrillRequest(drillSessionId, drillHeaders))
+            headers?.entries?.associate {
+                String(it.key.toByteArray(Charsets.ISO_8859_1)) to String(it.value.toByteArray(Charsets.ISO_8859_1))
+            }?.let { decodedHeaders->
+                decodedHeaders[DRILL_SESSION_ID_HEADER_NAME]?.let { drillSessionId ->
+                    val drillHeaders = decodedHeaders.filter { it.key.startsWith(DRILL_HEADER_PREFIX) }
+                    logger.trace { "for drillSessionId '$drillSessionId' store drillHeaders '$drillHeaders' to thread storage" }
+                    RequestHolder.storeRequest(DrillRequest(drillSessionId, drillHeaders))
+                }
             }
         }.onFailure {
             logger.error(it) { "Error while storing headers. Reason: " }
