@@ -22,7 +22,6 @@ import com.epam.drill.logger.*
 import com.epam.drill.request.*
 import com.epam.drill.request.HttpRequest.DRILL_HEADER_PREFIX
 import javassist.*
-import java.io.*
 import kotlin.reflect.jvm.*
 
 @Kni
@@ -36,10 +35,10 @@ actual object TomcatTransformer {
         protectionDomain: Any?,
     ): ByteArray? = createAndTransform(classFileBuffer, loader, protectionDomain) { ctClass, _, _, _ ->
         return try {
-            val adminUrl = BasicResponseHeaders.retrieveAdminAddress()
+            val adminUrl = HeadersRetriever.retrieveAdminAddress()
             logger.info { "starting TomcatTransformer with admin host $adminUrl..." }
             ctClass.run {
-                val drillAdminHeader = BasicResponseHeaders.adminAddressHeader()
+                val drillAdminHeader = HeadersRetriever.adminAddressHeader()
                 val method = getMethod(
                     "doFilter",
                     "(Ljavax/servlet/ServletRequest;Ljavax/servlet/ServletResponse;)V"
@@ -53,7 +52,7 @@ actual object TomcatTransformer {
                             org.apache.catalina.connector.ResponseFacade tomcatResponse = (org.apache.catalina.connector.ResponseFacade)$2;
                             if (!"$adminUrl".equals(tomcatResponse.getHeader("$drillAdminHeader"))) {
                                 tomcatResponse.addHeader("$drillAdminHeader", "$adminUrl");
-                                tomcatResponse.addHeader("${BasicResponseHeaders.idHeaderConfigKey()}", "${BasicResponseHeaders.idHeaderConfigValue()}");
+                                tomcatResponse.addHeader("${HeadersRetriever.idHeaderConfigKey()}", "${HeadersRetriever.idHeaderConfigValue()}");
                             }
                             
                             org.apache.catalina.connector.RequestFacade tomcatRequest = (org.apache.catalina.connector.RequestFacade)${'$'}1;

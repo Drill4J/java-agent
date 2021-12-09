@@ -15,6 +15,8 @@
  */
 package com.epam.drill.request
 
+import com.epam.drill.agent.*
+import com.epam.drill.agent.HeadersRetriever.sessionHeaderPattern
 import com.epam.drill.agent.instrument.*
 import com.epam.drill.common.*
 import com.epam.drill.logger.*
@@ -65,7 +67,7 @@ object HttpRequest {
 
     fun storeDrillHeaders(headers: Map<String, String>?) {
         runCatching {
-            headers?.get(DRILL_SESSION_ID_HEADER_NAME)?.let { drillSessionId ->
+            headers?.get(sessionHeaderPattern() ?: DRILL_SESSION_ID_HEADER_NAME)?.let { drillSessionId ->
                 val drillHeaders = headers.filter { it.key.startsWith(DRILL_HEADER_PREFIX) }
                 logger.trace { "for drillSessionId '$drillSessionId' store drillHeaders '$drillHeaders' to thread storage" }
                 RequestHolder.storeRequest(DrillRequest(drillSessionId, drillHeaders))

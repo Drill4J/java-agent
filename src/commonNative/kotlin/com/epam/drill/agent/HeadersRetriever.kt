@@ -15,14 +15,17 @@
  */
 package com.epam.drill.agent
 
+import com.epam.drill.*
 import com.epam.drill.core.transport.*
 
-actual object BasicResponseHeaders {
+actual object HeadersRetriever {
     private val idHeaderPair = idHeaderPairFromConfig()
 
     actual fun adminAddressHeader(): String? = "drill-admin-url"
 
     actual fun retrieveAdminAddress(): String? = retrieveAdminUrl()
+
+    actual fun sessionHeaderPattern(): String? = requestPattern
 
     actual fun idHeaderConfigKey(): String? = idHeaderPair.first
 

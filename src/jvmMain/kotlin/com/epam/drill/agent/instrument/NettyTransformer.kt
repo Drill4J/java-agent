@@ -21,7 +21,6 @@ import com.epam.drill.kni.*
 import com.epam.drill.logger.*
 import com.epam.drill.request.*
 import javassist.*
-import java.io.*
 import kotlin.reflect.jvm.*
 
 @Kni
@@ -56,8 +55,8 @@ actual object NettyTransformer {
                         }
                     """.trimIndent()
                 )
-                val drillAdminHeader = BasicResponseHeaders.adminAddressHeader()
-                val adminUrl = BasicResponseHeaders.retrieveAdminAddress()
+                val drillAdminHeader = HeadersRetriever.adminAddressHeader()
+                val adminUrl = HeadersRetriever.retrieveAdminAddress()
                 val writeMethod = getMethod("write", "(Ljava/lang/Object;ZLio/netty/channel/ChannelPromise;)V")
                 writeMethod.wrapCatching(
                     CtMethod::insertBefore,
@@ -66,7 +65,7 @@ actual object NettyTransformer {
                             $DefaultHttpResponse nettyResponse = ($DefaultHttpResponse) $1;
                             if (!"$adminUrl".equals(nettyResponse.headers().get("$drillAdminHeader"))) {
                                 nettyResponse.headers().add("$drillAdminHeader", "$adminUrl");
-                                nettyResponse.headers().add("${BasicResponseHeaders.idHeaderConfigKey()}", "${BasicResponseHeaders.idHeaderConfigValue()}");
+                                nettyResponse.headers().add("${HeadersRetriever.idHeaderConfigKey()}", "${HeadersRetriever.idHeaderConfigValue()}");
                             }
                         }
                         if ($1 instanceof $DefaultHttpRequest) {
