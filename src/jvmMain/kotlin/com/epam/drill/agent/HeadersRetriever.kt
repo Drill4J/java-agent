@@ -15,9 +15,13 @@
  */
 package com.epam.drill.agent
 
-expect object BasicResponseHeaders {
-    fun adminAddressHeader(): String?
-    fun retrieveAdminAddress(): String?
-    fun idHeaderConfigKey(): String?
-    fun idHeaderConfigValue(): String?
+import com.epam.drill.kni.*
+
+@Kni
+actual object HeadersRetriever {
+    actual external fun adminAddressHeader(): String?
+    actual external fun retrieveAdminAddress(): String?
+    actual external fun sessionHeaderPattern(): String?
+    actual external fun idHeaderConfigKey(): String?
+    actual external fun idHeaderConfigValue(): String?
 }
