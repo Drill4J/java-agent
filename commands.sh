@@ -3,6 +3,10 @@
 echo "run commands.sh"
 echo ""
 
+echo "list in directory /data:"
+ls --color=auto /data || true
+echo ""
+
 echo "list in directory /data/agent:"
 ls --color=auto /data/agent || true
 echo ""
@@ -21,6 +25,8 @@ then
       echo "Used agent version from docker image"
       echo "cp -R /data-download/agent/* /data/agent:"
       cp -R /data-download/agent/* /data/agent
+      echo "cp -R /data-download/agent/* /data:"
+      cp -R /data-download/agent/* /data
       echo ""
 else
       echo "Variable $AGENT_VERSION is NOT empty"
@@ -31,4 +37,8 @@ fi
 
 echo "list in directory /data/agent:"
 ls --color=auto /data/agent
+echo ""
+
+echo "list in directory /data:"
+ls --color=auto /data
 echo ""
