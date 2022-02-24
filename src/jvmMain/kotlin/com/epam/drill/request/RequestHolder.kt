@@ -16,6 +16,7 @@
 package com.epam.drill.request
 
 import com.alibaba.ttl.*
+import com.epam.drill.agent.instrument.netty.*
 import com.epam.drill.common.*
 import com.epam.drill.kni.*
 import com.epam.drill.logger.*
@@ -30,7 +31,7 @@ actual object RequestHolder {
 
     private lateinit var threadStorage: InheritableThreadLocal<DrillRequest>
 
-    val agentContext: AgentContext = RequestAgentContext { threadStorage.get() }
+    val agentContext: AgentContext = RequestAgentContext { threadStorage.get() ?: NettyStorage.getHeaders() }
 
     actual fun init(isAsync: Boolean) {
         threadStorage = if (isAsync) TransmittableThreadLocal() else InheritableThreadLocal()

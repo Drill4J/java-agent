@@ -35,7 +35,7 @@ drill {
         .resolve("drill-${project.version}.log")
     jvmArgs = jvmArgs + "-Ddrill.http.hook.enabled=true"
     if (emulateBigApp)
-        jvmArgs = jvmArgs + "-Xmx8g"
+        jvmArgs = jvmArgs + listOf("-Xmx8g", "-javaagent:$projectDir/opentelemetry/opentelemetry-javaagent.jar","-Dotel.traces.exporter=none")
 }
 
 repositories {

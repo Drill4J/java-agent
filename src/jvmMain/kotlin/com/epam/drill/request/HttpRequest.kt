@@ -26,10 +26,10 @@ import kotlinx.serialization.protobuf.*
 import java.nio.*
 import kotlin.reflect.jvm.*
 
-object HttpRequest {
-    const val DRILL_HEADER_PREFIX = "drill-"
+const val DRILL_HEADER_PREFIX = "drill-"
+const val DRILL_SESSION_ID_HEADER_NAME = "${DRILL_HEADER_PREFIX}session-id"
 
-    private const val DRILL_SESSION_ID_HEADER_NAME = "${DRILL_HEADER_PREFIX}session-id"
+object HttpRequest {
     private const val HTTP_DETECTOR_BYTES_COUNT = 8
 
     private val HTTP_VERBS =
@@ -80,7 +80,7 @@ object HttpRequest {
     fun loadDrillHeaders() = runCatching {
         RequestHolder.dump()?.let { bytes ->
             val drillRequest = ProtoBuf.load(DrillRequest.serializer(), bytes)
-            drillRequest.headers.filter { it.key.startsWith(DRILL_HEADER_PREFIX) } + (DRILL_SESSION_ID_HEADER_NAME to drillRequest.drillSessionId)
+            drillRequest.headers
         }
     }.onFailure { logger.error(it) { "Error while loading drill headers. Reason: " } }.getOrNull()
 

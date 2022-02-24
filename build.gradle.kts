@@ -32,6 +32,7 @@ val ktorUtilVersion: String by extra
 val ttlVersion: String by extra
 val javassistVersion: String by extra
 val httpClientInstrumentVersion: String by extra
+val opentelemetryVersion: String by extra
 
 allprojects {
     apply(from = rootProject.uri("$scriptUrl/git-version.gradle.kts"))
@@ -98,6 +99,8 @@ kotlin {
                     implementation("com.alibaba:transmittable-thread-local:$ttlVersion")
                     implementation("org.javassist:javassist:$javassistVersion")
                     implementation("com.epam.drill:http-clients-instrumentation:$httpClientInstrumentVersion")
+
+                    implementation("io.opentelemetry:opentelemetry-api:$opentelemetryVersion")
                 }
             }
             compilations["test"].defaultSourceSet {
@@ -181,6 +184,7 @@ val runtimeJar by tasks.registering(com.github.jengelman.gradle.plugins.shadow.t
         provider { main.runtimeDependencyFiles }
     )
     relocate("kotlin", "kruntime")
+    relocate("org.objectweb.asm", "drill.org.objectweb.asm")
     doLast {
         val jarFilePath = Paths.get("$buildDir/libs", archiveFileName.get())
         val zipDisk = URI.create("jar:${jarFilePath.toUri()}")
@@ -236,6 +240,13 @@ afterEvaluate {
     val availableTargets =
         kotlin.targets.filterIsInstance<KotlinNativeTarget>().filter { HostManager().isEnabled(it.konanTarget) }
 
+    val copyOpentelemetry by tasks.registering(Copy::class) {
+        availableTargets.forEach {
+            from("$projectDir/opentelemetry")
+            into("${project.buildDir}/install/${it.name}")
+        }
+    }
+
     distributions {
         availableTargets.forEach {
             val name = it.name
@@ -243,6 +254,7 @@ afterEvaluate {
                 distributionBaseName.set(name)
                 contents {
                     from(runtimeJar)
+                    from(copyOpentelemetry)
                     from(tasks.named("link${libName.capitalize()}DebugShared${name.capitalize()}")) {
                         duplicatesStrategy = DuplicatesStrategy.EXCLUDE
                     }
