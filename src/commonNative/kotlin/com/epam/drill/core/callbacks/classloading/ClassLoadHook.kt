@@ -124,7 +124,9 @@ fun classLoadEvent(
 
             strategys.forEach { strategy ->
                 if (strategy.permit(classReader)) {
-                    transformers += { strategy.transform(kClassName, classBytes, loader, protection_domain) }
+                    transformers += { bytes ->
+                        strategy.transform(kClassName, bytes, loader, protection_domain)
+                    }
                 }
             }
         }
