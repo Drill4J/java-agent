@@ -9,8 +9,8 @@ jobs:
       matrix:
         config:
           - { os: ubuntu-latest, preset: linuxX64, task: publishAllPublicationsToSonatypeRepository }
-          - { os: macos-latest, preset: macosX64, task: 'api:publishMacosX64PublicationToSonatypeRepository' }
-          - { os: windows-latest, preset: mingwX64, task: 'api:publishMingwX64PublicationToSonatypeRepository' }
+          - { os: macos-latest, preset: macosX64, task: publishMacosX64PublicationToSonatypeRepository }
+          - { os: windows-latest, preset: mingwX64, task: publishMingwX64PublicationToSonatypeRepository }
     name: Publish for ${{ matrix.config.os }}
     runs-on: ${{ matrix.config.os }}
     steps:
