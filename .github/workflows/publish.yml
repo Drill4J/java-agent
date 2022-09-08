@@ -8,9 +8,9 @@ jobs:
     strategy:
       matrix:
         config:
-          - {os: ubuntu-latest, preset: linuxX64, task: publish}
-          - {os: macos-latest, preset: macosX64, task: publishMacosX64ZipPublicationToMavenRepository}
-          - {os: windows-latest, preset: mingwX64, task: publishMingwX64ZipPublicationToMavenRepository}
+          - { os: ubuntu-latest, preset: linuxX64, task: publishAllPublicationsToSonatypeRepository }
+          - { os: macos-latest, preset: macosX64, task: 'api:publishMacosX64PublicationToSonatypeRepository' }
+          - { os: windows-latest, preset: mingwX64, task: 'api:publishMingwX64PublicationToSonatypeRepository' }
     name: Publish for ${{ matrix.config.os }}
     runs-on: ${{ matrix.config.os }}
     steps:
@@ -26,10 +26,12 @@ jobs:
           java-version: 11
       - uses: eskatos/gradle-command-action@v1
         with:
-          arguments: -s generateNativeClasses ${{ matrix.config.task }}
+          arguments: -s generateNativeClasses ${{ matrix.config.task }} closeAndReleaseSonatypeStagingRepository
         env:
-          BINTRAY_USER: ${{ secrets.BINTRAY_USER }}
-          BINTRAY_API_KEY: ${{ secrets.BINTRAY_API_KEY }}
+          OSSRH_USERNAME: ${{ secrets.OSSRH_USERNAME }}
+          OSSRH_TOKEN: ${{ secrets.OSSRH_TOKEN }}
+          GPG_SIGNING_KEY: ${{ secrets.GPG_SIGNING_KEY }}
+          GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
           GRADLE_OPTS: -Dorg.gradle.jvmargs=-Xmx2g
       - name: Upload Release Asset
         uses: actions/upload-release-asset@v1
