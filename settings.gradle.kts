@@ -1,5 +1,8 @@
 rootProject.name = "java-agent"
 
+val scriptUrl: String by extra
+apply(from = "$scriptUrl/maven-repo.settings.gradle.kts")
+
 pluginManagement {
     val kotlinVersion: String by extra
     val agentRunnerPluginVersion: String by extra
