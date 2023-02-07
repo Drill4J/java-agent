@@ -35,13 +35,13 @@ application {
 }
 
 tasks {
-    val installAgentTask = project(":native-agent").tasks["install${HostManager.host.presetName.capitalize()}Dist"]
+    val installAgentTask = project(":java-agent").tasks["install${HostManager.host.presetName.capitalize()}Dist"]
     run.get().dependsOn(installAgentTask)
 }
 
 drill {
     val (prefix, suffix) = HostManager.host.family.run { dynamicPrefix to dynamicSuffix }
-    val drillInstallPath = project(":native-agent").buildDir.resolve("install").resolve(HostManager.host.presetName)
+    val drillInstallPath = project(":java-agent").buildDir.resolve("install").resolve(HostManager.host.presetName)
     val drillAgentFileName = "$prefix${nativeAgentLibName.replace("-", "_")}.$suffix"
     val drillAgentPath = file(drillInstallPath).resolve(drillAgentFileName)
     agentId = properties["agentId"]?.toString() ?: "Petclinic"

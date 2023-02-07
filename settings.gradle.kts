@@ -1,4 +1,4 @@
-rootProject.name = "native-agent"
+rootProject.name = "java-agent"
 
 pluginManagement {
     val kotlinVersion: String by extra
@@ -22,7 +22,7 @@ pluginManagement {
 
 val includeSharedLib: Settings.(String) -> Unit = {
     include(it)
-    project(":$it").projectDir = file("shared-libs/$it")
+    project(":$it").projectDir = file("lib-jvm-shared/$it")
 }
 
 includeSharedLib("kni-runtime")
