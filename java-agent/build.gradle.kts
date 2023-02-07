@@ -1,131 +1,92 @@
-import org.jetbrains.kotlin.gradle.plugin.mpp.*
-import org.jetbrains.kotlin.gradle.tasks.*
-import org.jetbrains.kotlin.konan.target.*
-import java.net.*
-import java.nio.file.*
-import java.util.jar.*
+import com.epam.drill.kni.gradle.jvmTargets
+import java.net.URI
+import java.nio.file.Files
+import java.nio.file.FileSystems
+import java.nio.file.Paths
+import java.util.jar.JarFile
+import org.jetbrains.kotlin.gradle.dsl.KotlinMultiplatformExtension
+import org.jetbrains.kotlin.gradle.plugin.KotlinSourceSet
+import org.jetbrains.kotlin.gradle.plugin.mpp.KotlinNativeTarget
+import org.jetbrains.kotlin.gradle.targets.native.tasks.KotlinNativeTest
+import org.jetbrains.kotlin.konan.target.HostManager
+import org.jetbrains.kotlin.konan.target.presetName
+import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
+import com.hierynomus.gradle.license.tasks.LicenseCheck
+import com.hierynomus.gradle.license.tasks.LicenseFormat
 
+@Suppress("RemoveRedundantBackticks")
 plugins {
+    `maven-publish`
+    `distribution`
     kotlin("multiplatform")
     kotlin("plugin.serialization")
     id("com.github.johnrengelman.shadow")
-    id("com.epam.drill.gradle.plugin.kni")
     id("com.github.hierynomus.license")
-    id("io.github.gradle-nexus.publish-plugin") version "1.1.0"
-    distribution
-    `maven-publish`
+    id("com.epam.drill.gradle.plugin.kni")
 }
 
-val scriptUrl: String by extra
+group = "com.epam.drill"
 
-val kxSerializationVersion: String by extra
-val kxCoroutinesVersion: String by extra
-val uuidVersion: String by extra
+val kotlinxSerializationVersion: String by parent!!.extra
+val kotlinxCoroutinesVersion: String by parent!!.extra
+val ktorVersion: String by parent!!.extra
+val javassistVersion: String by parent!!.extra
+val transmittableThreadLocalVersion: String by parent!!.extra
+val uuidVersion: String by parent!!.extra
+val nativeAgentLibName: String by parent!!.extra
 
-val drillJvmApiLibVersion: String by extra
-val drillApiVersion: String by extra
-val drillAgentCoreVersion: String by extra
-val drillLogger: String by extra
-val knasmVersion: String by extra
-val kniVersion: String by extra
-val ktorUtilVersion: String by extra
-val ttlVersion: String by extra
-val javassistVersion: String by extra
-val httpClientInstrumentVersion: String by extra
-
-allprojects {
-    apply(from = rootProject.uri("$scriptUrl/git-version.gradle.kts"))
-
-    repositories {
-        mavenLocal()
-        mavenCentral()
-        apply(from = "$scriptUrl/maven-repo.gradle.kts")
-    }
+repositories {
+    mavenLocal()
+    mavenCentral()
 }
-
-kotlin.sourceSets.commonMain {
-    kotlin.srcDir(
-        file("src/generated/kotlin").apply {
-            mkdirs()
-            resolve("Version.kt").writeText(
-                "package com.epam.drill.agent internal val agentVersion = \"${project.version}\""
-            )
-        }
-    )
-}
-
-val libName = "drill-agent"
-val nativeTargets = mutableSetOf<KotlinNativeTarget>()
-val currentPlatformName = HostManager.host.presetName
 
 kotlin {
+    val configureNativeTarget: KotlinNativeTarget.() -> Unit = {
+        compilations["test"].cinterops.create("testStubs")
+        binaries.sharedLib(nativeAgentLibName, setOf(DEBUG))
+    }
+    val currentPlatformTarget: KotlinMultiplatformExtension.() -> KotlinNativeTarget = {
+        targets.withType<KotlinNativeTarget>()[HostManager.host.presetName]
+    }
     targets {
-        nativeTargets.addAll(
-            sequenceOf(
-                mingwX64 {
-                    binaries.all { linkerOpts("-lpsapi", "-lwsock32", "-lws2_32", "-lmswsock") }
-                },
-                linuxX64(),
-                macosX64()
-            )
-        )
-        nativeTargets.forEach { target ->
-            //TODO EPMDJ-8696 remove
-            if (currentPlatformName == target.name) {
-                target.compilations["main"].setCommonSources("src/commonNative")
-                // TODO Resolve agent dependency in tests (PS it doesn't work before)
-                // target.compilations["test"].setCommonSources("src/nativeAgentTest")
+        val jvm = jvm()
+        val linuxX64 = linuxX64(configure = configureNativeTarget)
+        val mingwX64 = mingwX64(configure = configureNativeTarget).apply {
+            binaries.all {
+                linkerOpts("-lpsapi", "-lwsock32", "-lws2_32", "-lmswsock")
             }
-            target.binaries { sharedLib(libName, setOf(DEBUG)) }
-            target.compilations["test"].cinterops.create("testStubs")
         }
-        jvm {
-            compilations["main"].defaultSourceSet {
-                dependencies {
-                    implementation(kotlin("reflect"))
-                    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:$kxSerializationVersion")
-                    implementation("org.jetbrains.kotlinx:kotlinx-serialization-protobuf:$kxSerializationVersion")
-                    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:$kxCoroutinesVersion")
-                    implementation("com.epam.drill:common:$drillApiVersion")
-                    implementation("com.epam.drill.logger:logger:$drillLogger") {
-                        //TODO EPMDJ-8703 exclude in logger
-                        exclude("org.slf4j")
-                    }
-                    implementation("com.epam.drill:drill-agent-part:$drillApiVersion")
-                    implementation("com.epam.drill.agent:agent:$drillAgentCoreVersion")
-                    implementation("com.epam.drill.kni:runtime:$kniVersion")
-                    implementation("com.epam.drill.knasm:knasm:$knasmVersion")
-                    implementation("com.alibaba:transmittable-thread-local:$ttlVersion")
-                    implementation("org.javassist:javassist:$javassistVersion")
-                    implementation("com.epam.drill:http-clients-instrumentation:$httpClientInstrumentVersion")
-                }
-            }
-            compilations["test"].defaultSourceSet {
-                dependencies {
-                    implementation(kotlin("test-junit"))
-                    implementation("org.junit.jupiter:junit-jupiter:5.5.2")
-                }
-            }
+        val macosX64 = macosX64(configure = configureNativeTarget)
+        currentPlatformTarget().compilations["main"].defaultSourceSet {
+            kotlin.srcDir("src/nativeMain/kotlin")
+            resources.srcDir("src/nativeMain/resources")
+        }
+        kni {
+            jvmTargets = sequenceOf(jvm)
+            jvmtiAgentObjectPath = "com.epam.drill.core.Agent"
+            nativeCrossCompileTarget = sequenceOf(linuxX64, mingwX64, macosX64)
         }
     }
-
+    @Suppress("UNUSED_VARIABLE")
     sourceSets {
-        listOf(
-            "kotlin.ExperimentalStdlibApi",
-            "kotlin.ExperimentalUnsignedTypes",
-            "kotlin.time.ExperimentalTime",
-            "kotlinx.serialization.ExperimentalSerializationApi",
-            "kotlinx.coroutines.ExperimentalCoroutinesApi",
-            "kotlinx.serialization.InternalSerializationApi",
-            "io.ktor.utils.io.core.ExperimentalIoApi"
-        ).let { annotations ->
-            all { annotations.forEach(languageSettings::optIn) }
+        all {
+            languageSettings.optIn("kotlin.ExperimentalStdlibApi")
+            languageSettings.optIn("kotlin.ExperimentalUnsignedTypes")
+            languageSettings.optIn("kotlin.time.ExperimentalTime")
+            languageSettings.optIn("kotlinx.coroutines.ExperimentalCoroutinesApi")
+            languageSettings.optIn("kotlinx.serialization.ExperimentalSerializationApi")
+            languageSettings.optIn("kotlinx.serialization.InternalSerializationApi")
+            languageSettings.optIn("io.ktor.utils.io.core.ExperimentalIoApi")
         }
-
         val commonMain by getting {
+            kotlin.srcDir("src/commonGenerated/kotlin")
+            file("src/commonGenerated/kotlin/com/epam/drill/agent").apply {
+                mkdirs()
+                resolve("Version.kt").writeText("package com.epam.drill.agent\n\ninternal val agentVersion = \"${project.version}\"")
+            }
             dependencies {
-                implementation("org.jetbrains.kotlinx:kotlinx-serialization-core:$kxSerializationVersion")
-                implementation("com.epam.drill:http-clients-instrumentation:$httpClientInstrumentVersion")
+                implementation("org.jetbrains.kotlinx:kotlinx-serialization-core:$kotlinxSerializationVersion")
+                implementation(project(":http-clients-instrumentation"))
             }
         }
         val commonTest by getting {
@@ -134,116 +95,118 @@ kotlin {
                 implementation("org.jetbrains.kotlin:kotlin-test-annotations-common")
             }
         }
-        //TODO EPMDJ-8696 Rename to commonNative
-        val commonNativeDependenciesOnly by creating {
-            dependsOn(commonMain)
+        val jvmMain by getting {
             dependencies {
-                implementation("org.jetbrains.kotlinx:kotlinx-serialization-protobuf:$kxSerializationVersion")
-                implementation("com.epam.drill:jvmapi:$drillJvmApiLibVersion")
-                implementation("com.benasher44:uuid:$uuidVersion")
-                implementation("com.epam.drill:drill-agent-part:$drillApiVersion")
-                implementation("com.epam.drill:common:$drillApiVersion")
-                implementation("com.epam.drill.logger:logger:$drillLogger")
-                implementation("com.epam.drill.agent:agent:$drillAgentCoreVersion")
-                implementation("com.epam.drill.knasm:knasm:$knasmVersion")
-                implementation("com.epam.drill.kni:runtime:$kniVersion")
-                implementation("io.ktor:ktor-utils:$ktorUtilVersion")
+                implementation(kotlin("reflect"))
+                implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:$kotlinxSerializationVersion")
+                implementation("org.jetbrains.kotlinx:kotlinx-serialization-protobuf:$kotlinxSerializationVersion")
+                implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:$kotlinxCoroutinesVersion")
+                implementation("org.javassist:javassist:$javassistVersion")
+                implementation("com.alibaba:transmittable-thread-local:$transmittableThreadLocalVersion")
+                implementation(project(":kni-runtime"))
+                implementation(project(":logger"))
+                implementation(project(":common"))
+                implementation(project(":knasm"))
+                implementation(project(":plugin-api-agent"))
+                implementation(project(":http-clients-instrumentation"))
+                implementation(project(":agent"))
             }
-
         }
-
-        val linuxX64Main by getting {
-            dependsOn(commonNativeDependenciesOnly)
+        val jvmTest by getting {
+            dependencies {
+                implementation(kotlin("test-junit"))
+                implementation("org.junit.jupiter:junit-jupiter:5.5.2")
+            }
         }
-        val mingwX64Main by getting {
-            dependsOn(commonNativeDependenciesOnly)
+        val configureNativeDependencies: KotlinSourceSet.() -> Unit = {
+            dependencies {
+                implementation("org.jetbrains.kotlinx:kotlinx-serialization-protobuf:$kotlinxSerializationVersion")
+                implementation("io.ktor:ktor-utils:$ktorVersion")
+                implementation("com.benasher44:uuid:$uuidVersion")
+                implementation(project(":kni-runtime"))
+                implementation(project(":logger"))
+                implementation(project(":common"))
+                implementation(project(":jvmapi"))
+                implementation(project(":knasm"))
+                implementation(project(":plugin-api-agent"))
+                implementation(project(":agent"))
+            }
         }
-        val macosX64Main by getting {
-            dependsOn(commonNativeDependenciesOnly)
-        }
-
-        kni {
-            jvmTargets = sequenceOf(jvm())
-            additionalJavaClasses = sequenceOf()
-            jvmtiAgentObjectPath = "com.epam.drill.core.Agent"
-            nativeCrossCompileTarget = nativeTargets.asSequence()
-        }
+        val linuxX64Main by getting(configuration = configureNativeDependencies)
+        val mingwX64Main by getting(configuration = configureNativeDependencies)
+        val macosX64Main by getting(configuration = configureNativeDependencies)
     }
-}
-
-val runtimeJar by tasks.registering(com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar::class) {
-    mergeServiceFiles()
-    isZip64 = true
-    archiveFileName.set("drillRuntime.jar")
-    val main by kotlin.jvm().compilations
-    from(
-        provider { main.output },
-        provider { main.runtimeDependencyFiles }
-    )
-    relocate("kotlin", "kruntime")
-    doLast {
-        val jarFilePath = Paths.get("$buildDir/libs", archiveFileName.get())
-        val zipDisk = URI.create("jar:${jarFilePath.toUri()}")
-        val zipProperties = mutableMapOf("create" to "false")
-        FileSystems.newFileSystem(zipDisk, zipProperties).use { fileSystem ->
-            val manifestPath = fileSystem.getPath(JarFile.MANIFEST_NAME)
-            Files.delete(manifestPath)
+    val copyNativeClassesForTarget: TaskContainer.(KotlinNativeTarget) -> Task = {
+        val copyNativeClasses:TaskProvider<Copy> = register("copyNativeClasses${it.targetName.capitalize()}", Copy::class) {
+            group = "build"
+            from("src/nativeMain/kotlin")
+            into("src/${it.targetName}Main/kotlin/gen")
         }
+        copyNativeClasses.get()
     }
-}
-
-tasks.withType<org.jetbrains.kotlin.gradle.targets.native.tasks.KotlinNativeTest> {
-    testLogging.showStandardStreams = true
-}
-
-tasks.named<ProcessResources>("jvmProcessResources") {
-    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
-}
-
-
-tasks {
-    val generateNativeClasses by getting {}
-    // TODO EPMDJ-8696 remove copy
-    val copy = nativeTargets.filter { it.name != currentPlatformName }.map {
-        register<Copy>("copy for ${it.name}") {
-            from(file("src/commonNative/kotlin"))
-            into(file("src/${it.name}Main/kotlin/gen"))
+    val filterOutCurrentPlatform: (KotlinNativeTarget) -> Boolean = {
+        it.targetName != HostManager.host.presetName
+    }
+    tasks {
+        val generateNativeClasses by getting
+        val jvmProcessResources by getting
+        jvmProcessResources.dependsOn(generateNativeClasses)
+        currentPlatformTarget().compilations["main"].compileKotlinTask.dependsOn(generateNativeClasses)
+        targets.withType<KotlinNativeTarget>().filter(filterOutCurrentPlatform).forEach {
+            val copyNativeClasses = copyNativeClassesForTarget(it)
+            copyNativeClasses.dependsOn(generateNativeClasses)
+            it.compilations["main"].compileKotlinTask.dependsOn(copyNativeClasses)
         }
-    }
-    val copyCommon by registering(DefaultTask::class) {
-        group = "build"
-        copy.forEach { dependsOn(it) }
-    }
-
-    withType<KotlinNativeCompile> {
-        dependsOn(copyCommon)
-        dependsOn(generateNativeClasses)
-    }
-    val cleanExtraData by registering(Delete::class) {
-        group = "build"
-        nativeTargets.forEach {
-            val path = "src/${it.name}Main/kotlin/"
-            delete(file("${path}kni"), file("${path}gen"))
+        val clean by getting
+        val cleanGeneratedClasses by registering(Delete::class) {
+            group = "build"
+            delete("src/jvmMain/resources/kni-meta-info")
+            delete("src/nativeMain/kotlin/kni")
+            targets.withType<KotlinNativeTarget> {
+                delete("src/${name}Main/kotlin/kni")
+                delete("src/${name}Main/kotlin/gen")
+            }
         }
-    }
-
-    clean {
-        dependsOn(cleanExtraData)
+        clean.dependsOn(cleanGeneratedClasses)
+        withType<KotlinNativeTest> {
+            testLogging.showStandardStreams = true
+        }
+        withType<Copy>().getByName("jvmProcessResources") {
+            duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+        }
     }
 }
 
 afterEvaluate {
-    val availableTargets =
-        kotlin.targets.filterIsInstance<KotlinNativeTarget>().filter { HostManager().isEnabled(it.konanTarget) }
-
+    val jvmMainCompilation = kotlin.targets.jvmTargets()["jvm"].compilations["main"]
+    val runtimeJar by tasks.registering(ShadowJar::class) {
+        mergeServiceFiles()
+        isZip64 = true
+        archiveFileName.set("drillRuntime.jar")
+        from(jvmMainCompilation.output, jvmMainCompilation.runtimeDependencyFiles)
+        relocate("kotlin", "kruntime")
+        doLast {
+            val jarFileUri = Paths.get("$buildDir/libs", archiveFileName.get()).toUri()
+            val zipDisk = URI.create("jar:$jarFileUri")
+            val zipProperties = mutableMapOf("create" to "false")
+            FileSystems.newFileSystem(zipDisk, zipProperties).use {
+                Files.delete(it.getPath(JarFile.MANIFEST_NAME))
+            }
+        }
+    }
+    runtimeJar.get().dependsOn(jvmMainCompilation.compileKotlinTask)
+    val filterEnabledNativeTargets: (KotlinNativeTarget) -> Boolean = {
+        HostManager().isEnabled(it.konanTarget)
+    }
+    val enabledNativeTargets = kotlin.targets.withType<KotlinNativeTarget>().filter(filterEnabledNativeTargets)
     distributions {
-        availableTargets.forEach {
-            val name = it.name
-            create(name) {
-                distributionBaseName.set(name)
+        enabledNativeTargets.forEach {
+            val nativeAgentLinkTask = tasks["link${nativeAgentLibName.capitalize()}DebugShared${it.targetName.capitalize()}"]
+            create(it.targetName) {
+                distributionBaseName.set(it.targetName)
                 contents {
                     from(runtimeJar)
-                    from(tasks.named("link${libName.capitalize()}DebugShared${name.capitalize()}")) {
+                    from(nativeAgentLinkTask) {
                         duplicatesStrategy = DuplicatesStrategy.EXCLUDE
                     }
                 }
@@ -252,9 +215,9 @@ afterEvaluate {
     }
     publishing {
         publications {
-            availableTargets.forEach {
+            enabledNativeTargets.forEach {
                 create<MavenPublication>("${it.name}Zip") {
-                    artifactId = "$libName-${it.name}"
+                    artifactId = "$nativeAgentLibName-${it.name}"
                     artifact(tasks["${it.name}DistZip"])
                 }
             }
@@ -262,20 +225,19 @@ afterEvaluate {
     }
 }
 
-val licenseFormatSettings by tasks.registering(com.hierynomus.gradle.license.tasks.LicenseFormat::class) {
-    source = fileTree(project.projectDir).also {
-        include("**/*.kt", "**/*.java", "**/*.groovy")
-        exclude("**/.idea")
-    }.asFileTree
+@Suppress("UNUSED_VARIABLE")
+license {
     headerURI = URI("https://raw.githubusercontent.com/Drill4J/drill4j/develop/COPYRIGHT")
-}
-
-tasks["licenseFormat"].dependsOn(licenseFormatSettings)
-
-//TODO EPMDJ-8696 remove
-fun KotlinNativeCompilation.setCommonSources(modulePath: String) {
-    defaultSourceSet {
-        kotlin.srcDir(file("${modulePath}/kotlin"))
-        resources.setSrcDirs(listOf("${modulePath}/resources"))
+    val licenseFormatSources by tasks.registering(LicenseFormat::class) {
+        source = fileTree("$projectDir/src").also {
+            include("**/*.kt", "**/*.java", "**/*.groovy")
+            exclude("**/kni", "**/commonGenerated")
+        }
+    }
+    val licenseCheckSources by tasks.registering(LicenseCheck::class) {
+        source = fileTree("$projectDir/src").also {
+            include("**/*.kt", "**/*.java", "**/*.groovy")
+            exclude("**/kni", "**/commonGenerated")
+        }
     }
 }

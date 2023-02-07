@@ -1,30 +1,46 @@
-rootProject.name = "java-agent"
-
-val scriptUrl: String by extra
-apply(from = "$scriptUrl/maven-repo.settings.gradle.kts")
+rootProject.name = "native-agent"
 
 pluginManagement {
     val kotlinVersion: String by extra
-    val agentRunnerPluginVersion: String by extra
-    val shadowPluginVersion: String by extra
-    val kniVersion: String by extra
     val licenseVersion: String by extra
+    val shadowPluginVersion: String by extra
+    val publishVersion: String by extra
     plugins {
+        kotlin("jvm") version kotlinVersion
         kotlin("multiplatform") version kotlinVersion
         kotlin("plugin.serialization") version kotlinVersion
-        id("com.epam.drill.agent.runner.app") version agentRunnerPluginVersion
-        id("com.epam.drill.gradle.plugin.kni") version kniVersion
-        id("com.github.johnrengelman.shadow") version shadowPluginVersion
         id("com.github.hierynomus.license") version licenseVersion
+        id("com.github.johnrengelman.shadow") version shadowPluginVersion
+        id("io.github.gradle-nexus.publish-plugin") version publishVersion
     }
     repositories {
         mavenLocal()
         mavenCentral()
         gradlePluginPortal()
-        maven(url = "https://oss.jfrog.org/oss-release-local")
-        maven("https://drill4j.jfrog.io/artifactory/drill")
     }
 }
 
+val includeSharedLib: Settings.(String) -> Unit = {
+    include(it)
+    project(":$it").projectDir = file("shared-libs/$it")
+}
+
+includeSharedLib("kni-runtime")
+includeSharedLib("kni-plugin")
+includeSharedLib("jvmapi")
+includeSharedLib("logger-api")
+includeSharedLib("logger-test-agent")
+includeSharedLib("logger")
+includeSharedLib("common")
+includeSharedLib("knasm")
+includeSharedLib("drill-hook")
+includeSharedLib("http-clients-instrumentation")
+includeSharedLib("transport")
+includeSharedLib("interceptor-http")
+includeSharedLib("plugin-api-agent")
+includeSharedLib("agent")
+includeSharedLib("agent-runner-common")
+includeSharedLib("agent-runner-gradle")
+include("java-agent")
 include("bootstrap")
-//include("pt-runner")
+include("pt-runner")

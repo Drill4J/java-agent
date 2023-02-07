@@ -1,60 +1,74 @@
-import org.jetbrains.kotlin.konan.target.*
+import java.net.URI
+import org.jetbrains.kotlin.konan.target.HostManager
+import org.jetbrains.kotlin.konan.target.presetName
+import com.hierynomus.gradle.license.tasks.LicenseCheck
+import com.hierynomus.gradle.license.tasks.LicenseFormat
+import com.epam.drill.agent.runner.LogLevels
 
+@Suppress("RemoveRedundantBackticks")
 plugins {
-    java
-    application
+    `java`
+    `application`
+    id("com.github.hierynomus.license")
     id("com.epam.drill.agent.runner.app")
 }
 
-val target = HostManager.host.presetName
+group = "com.epam.drill"
 
-val agentJavaProject = rootProject
+val ptEmulateBigApp: String by parent!!.extra
+val nativeAgentLibName: String by parent!!.extra
+
+repositories {
+    mavenLocal()
+    mavenCentral()
+    maven("https://spring-rich-c.sourceforge.net/maven2repository")
+}
+
+dependencies {
+    compileOnly("org.springframework:spring-context:5.1.8.RELEASE")
+    implementation("org.springframework.samples:spring-petclinic:2.5.1") { isTransitive = false }
+    if(ptEmulateBigApp.toBoolean()) implementation("com.epam.drill:petclinic-big-app:1.0.0")
+}
 
 application {
     mainClass.set("org.springframework.boot.loader.JarLauncher")
 }
 
-val emulateBigApp: Boolean
-    get() = extra["emulateBigApp"]?.toString()?.toBoolean() ?: false
+tasks {
+    val installAgentTask = project(":native-agent").tasks["install${HostManager.host.presetName.capitalize()}Dist"]
+    run.get().dependsOn(installAgentTask)
+}
 
 drill {
-    val (prefix, suffix) = HostManager.host.family.run {
-        dynamicPrefix to dynamicSuffix
-    }
-    val drillDistrDir = agentJavaProject.buildDir.resolve("install").resolve(target)
-    val localAgentPath = file(drillDistrDir).resolve("${prefix}drill_agent.$suffix")
-    agentId = project.properties["agentId"]?.toString() ?: "Petclinic"
-    agentPath = localAgentPath
-    runtimePath = drillDistrDir
-    buildVersion = "0.1.7"
+    val (prefix, suffix) = HostManager.host.family.run { dynamicPrefix to dynamicSuffix }
+    val drillInstallPath = project(":native-agent").buildDir.resolve("install").resolve(HostManager.host.presetName)
+    val drillAgentFileName = "$prefix${nativeAgentLibName.replace("-", "_")}.$suffix"
+    val drillAgentPath = file(drillInstallPath).resolve(drillAgentFileName)
+    agentId = properties["agentId"]?.toString() ?: "Petclinic"
+    agentPath = drillAgentPath
+    runtimePath = drillInstallPath
+    buildVersion = version
     adminHost = "localhost"
     adminPort = 8090
-    logLevel = com.epam.drill.agent.runner.LogLevels.INFO
-    logFile = rootProject
-        .buildDir
-        .resolve("drill-${project.version}.log")
-    jvmArgs = jvmArgs + "-Ddrill.http.hook.enabled=true"
-    if (emulateBigApp)
-        jvmArgs = jvmArgs + "-Xmx8g"
+    logLevel = LogLevels.INFO
+    logFile = buildDir.resolve("drill-${version}.log")
+    jvmArgs += "-Ddrill.http.hook.enabled=true"
+    if(ptEmulateBigApp.toBoolean()) jvmArgs += "-Xmx8g"
 }
 
-repositories {
-    mavenCentral()
-    mavenLocal()
-    maven("https://drill4j.jfrog.io/artifactory/drill")
-}
-
-
-dependencies {
-    compileOnly("org.springframework:spring-context:5.1.8.RELEASE")
-    implementation("org.springframework.samples:spring-petclinic:2.1.0.BUILD-SNAPSHOT") { isTransitive = false }
-    if (emulateBigApp)
-        implementation("com.epam.drill:petclinic-big-app:1.0.0")
-}
-
-tasks {
-    (run) {
-        val installTaskName = "install${target.capitalize()}Dist"
-        dependsOn(agentJavaProject.tasks.named(installTaskName))
+@Suppress("UNUSED_VARIABLE")
+license {
+    headerURI = URI("https://raw.githubusercontent.com/Drill4J/drill4j/develop/COPYRIGHT")
+    val licenseFormatSources by tasks.registering(LicenseFormat::class) {
+        source = fileTree("$projectDir/src").also {
+            include("**/*.kt", "**/*.java", "**/*.groovy")
+            exclude("**/kni", "**/commonGenerated")
+        }
+    }
+    val licenseCheckSources by tasks.registering(LicenseCheck::class) {
+        source = fileTree("$projectDir/src").also {
+            include("**/*.kt", "**/*.java", "**/*.groovy")
+            exclude("**/kni", "**/commonGenerated")
+        }
     }
 }

@@ -1,147 +1,132 @@
-import org.jetbrains.kotlin.konan.target.*
-import org.jetbrains.kotlin.gradle.plugin.mpp.*
+import java.net.URI
+import org.jetbrains.kotlin.gradle.dsl.KotlinMultiplatformExtension
+import org.jetbrains.kotlin.gradle.plugin.KotlinSourceSet
+import org.jetbrains.kotlin.gradle.plugin.mpp.KotlinNativeTarget
+import org.jetbrains.kotlin.konan.target.HostManager
+import org.jetbrains.kotlin.konan.target.presetName
+import com.hierynomus.gradle.license.tasks.LicenseCheck
+import com.hierynomus.gradle.license.tasks.LicenseFormat
 
+@Suppress("RemoveRedundantBackticks")
 plugins {
+    `distribution`
     kotlin("multiplatform")
     kotlin("plugin.serialization")
-    id("com.github.johnrengelman.shadow")
-    id("com.epam.drill.gradle.plugin.kni")
     id("com.github.hierynomus.license")
-    distribution
+    id("com.epam.drill.gradle.plugin.kni")
 }
 
-val scriptUrl: String by extra
+group = "com.epam.drill"
 
-val kxSerializationVersion: String by extra
-val kxCoroutinesVersion: String by extra
-val uuidVersion: String by extra
+val kotlinxSerializationVersion: String by parent!!.extra
+val ktorVersion: String by parent!!.extra
+val uuidVersion: String by parent!!.extra
+val nativeAgentLibName: String by parent!!.extra
 
-val drillJvmApiLibVersion: String by extra
-val drillApiVersion: String by extra
-val drillAgentCoreVersion: String by extra
-val drillTransportLibVersion: String by extra
-val drillLogger: String by extra
-val knasmVersion: String by extra
-val kniVersion: String by extra
-val ktorUtilVersion: String by extra
-
-
-val libName = "drill-agent-bootstrap"
-
-val nativeTargets = mutableSetOf<KotlinNativeTarget>()
-val currentPlatformName = HostManager.host.presetName
+repositories {
+    mavenLocal()
+    mavenCentral()
+}
 
 kotlin {
+    val configureNativeTarget: KotlinNativeTarget.() -> Unit = {
+        binaries.sharedLib(nativeAgentLibName, setOf(DEBUG))
+    }
+    val currentPlatformTarget: KotlinMultiplatformExtension.() -> KotlinNativeTarget = {
+        targets.withType<KotlinNativeTarget>()[HostManager.host.presetName]
+    }
     targets {
-        nativeTargets.addAll(
-            sequenceOf(
-                mingwX64 { binaries.all { linkerOpts("-lpsapi", "-lwsock32", "-lws2_32", "-lmswsock") } },
-                linuxX64(),
-                macosX64()
-            )
-        )
-        nativeTargets.forEach { target ->
-            if (currentPlatformName == target.name) {
-                target.compilations["main"].setCommonSources("src/commonNative")
+        linuxX64(configure = configureNativeTarget)
+        mingwX64(configure = configureNativeTarget).apply {
+            binaries.all {
+                linkerOpts("-lpsapi", "-lwsock32", "-lws2_32", "-lmswsock")
             }
-            target.binaries { sharedLib(libName, setOf(DEBUG)) }
+        }
+        macosX64(configure = configureNativeTarget)
+        currentPlatformTarget().compilations["main"].defaultSourceSet {
+            kotlin.srcDir("src/nativeMain/kotlin")
+            resources.srcDir("src/nativeMain/resources")
         }
     }
+    @Suppress("UNUSED_VARIABLE")
     sourceSets {
-
-        listOf(
-            "kotlin.ExperimentalStdlibApi",
-            "kotlin.ExperimentalUnsignedTypes",
-            "kotlin.time.ExperimentalTime",
-            "kotlinx.serialization.ExperimentalSerializationApi",
-            "kotlinx.coroutines.ExperimentalCoroutinesApi",
-            "kotlinx.serialization.InternalSerializationApi",
-            "io.ktor.utils.io.core.ExperimentalIoApi"
-        ).let { annotations ->
-            all { annotations.forEach(languageSettings::optIn) }
+        all {
+            languageSettings.optIn("kotlin.ExperimentalStdlibApi")
+            languageSettings.optIn("kotlin.ExperimentalUnsignedTypes")
+            languageSettings.optIn("kotlin.time.ExperimentalTime")
+            languageSettings.optIn("kotlinx.coroutines.ExperimentalCoroutinesApi")
+            languageSettings.optIn("kotlinx.serialization.ExperimentalSerializationApi")
+            languageSettings.optIn("kotlinx.serialization.InternalSerializationApi")
+            languageSettings.optIn("io.ktor.utils.io.core.ExperimentalIoApi")
         }
-
         val commonMain by getting {
             dependencies {
-                implementation("org.jetbrains.kotlinx:kotlinx-serialization-core:$kxSerializationVersion")
+                implementation("org.jetbrains.kotlinx:kotlinx-serialization-core:$kotlinxSerializationVersion")
             }
         }
-        val commonNativeDependenciesOnly by creating {
-            dependsOn(commonMain)
+        val configureNativeDependencies: KotlinSourceSet.() -> Unit = {
             dependencies {
-                implementation("org.jetbrains.kotlinx:kotlinx-serialization-protobuf:$kxSerializationVersion")
-                implementation("com.epam.drill:jvmapi:$drillJvmApiLibVersion")
+                implementation("org.jetbrains.kotlinx:kotlinx-serialization-protobuf:$kotlinxSerializationVersion")
+                implementation("io.ktor:ktor-utils:$ktorVersion")
                 implementation("com.benasher44:uuid:$uuidVersion")
-                implementation("com.epam.drill:drill-agent-part:$drillApiVersion")
-                implementation("com.epam.drill:common:$drillApiVersion")
-                implementation("com.epam.drill.logger:logger:$drillLogger")
-                implementation("com.epam.drill.agent:agent:$drillAgentCoreVersion")
-                implementation("com.epam.drill.knasm:knasm:$knasmVersion")
-                implementation("com.epam.drill.kni:runtime:$kniVersion")
-                implementation("io.ktor:ktor-utils:$ktorUtilVersion")
+                implementation(project(":kni-runtime"))
+                implementation(project(":logger"))
+                implementation(project(":common"))
+                implementation(project(":jvmapi"))
+                implementation(project(":knasm"))
+                implementation(project(":plugin-api-agent"))
+                implementation(project(":agent"))
             }
         }
-
-        val posixNative by creating {
-            dependsOn(commonNativeDependenciesOnly)
-        }
-        val linuxX64Main by getting {
-            dependsOn(posixNative)
-        }
-        val mingwX64Main by getting {
-            dependsOn(commonNativeDependenciesOnly)
-        }
-        val macosX64Main by getting {
-            dependsOn(posixNative)
-        }
+        val linuxX64Main by getting(configuration = configureNativeDependencies)
+        val mingwX64Main by getting(configuration = configureNativeDependencies)
+        val macosX64Main by getting(configuration = configureNativeDependencies)
     }
-}
-
-tasks {
-    val generateNativeClasses by getting {}
-
-    //TODO EPMDJ-8696 remove copy
-    val copy =  nativeTargets.filter { it.name != currentPlatformName }.map {
-        register<Copy>("bootstrap copy for ${it.name}") {
-            from(file("src/commonNative/kotlin"))
-            into(file("src/${it.name}Main/kotlin/gen"))
+    val copyNativeClassesForTarget: TaskContainer.(KotlinNativeTarget) -> Task = {
+        val copyNativeClasses:TaskProvider<Copy> = register("copyNativeClasses${it.targetName.capitalize()}", Copy::class) {
+            group = "build"
+            from("src/nativeMain/kotlin")
+            into("src/${it.targetName}Main/kotlin/gen")
         }
+        copyNativeClasses.get()
     }
-    val bootstrapCopyCommon by registering(DefaultTask::class) {
-        group = "build"
-        copy.forEach { dependsOn(it) }
+    val filterOutCurrentPlatform: (KotlinNativeTarget) -> Boolean = {
+        it.targetName != HostManager.host.presetName
     }
-
-    withType<org.jetbrains.kotlin.gradle.tasks.KotlinNativeCompile> {
-        dependsOn(bootstrapCopyCommon)
-        dependsOn(generateNativeClasses)
-    }
-    val cleanExtraData by registering(Delete::class) {
-        group = "build"
-        nativeTargets.forEach {
-            val path = "src/${it.name}Main/kotlin/"
-            delete(file("${path}kni"), file("${path}gen"))
+    tasks {
+        val generateNativeClasses by getting
+        currentPlatformTarget().compilations["main"].compileKotlinTask.dependsOn(generateNativeClasses)
+        targets.withType<KotlinNativeTarget>().filter(filterOutCurrentPlatform).forEach {
+            val copyNativeClasses = copyNativeClassesForTarget(it)
+            copyNativeClasses.dependsOn(generateNativeClasses)
+            it.compilations["main"].compileKotlinTask.dependsOn(copyNativeClasses)
         }
-    }
-
-    clean {
-        dependsOn(cleanExtraData)
+        val clean by getting
+        val cleanGeneratedClasses by registering(Delete::class) {
+            group = "build"
+            delete("src/jvmMain/resources/kni-meta-info")
+            delete("src/nativeMain/kotlin/kni")
+            targets.withType<KotlinNativeTarget> {
+                delete("src/${name}Main/kotlin/kni")
+                delete("src/${name}Main/kotlin/gen")
+            }
+        }
+        clean.dependsOn(cleanGeneratedClasses)
     }
 }
 
 afterEvaluate {
-    val availableTargets =
-        kotlin.targets.filterIsInstance<KotlinNativeTarget>().filter {
-            HostManager().isEnabled(it.konanTarget)
-        }
-
+    val filterEnabledNativeTargets: (KotlinNativeTarget) -> Boolean = {
+        HostManager().isEnabled(it.konanTarget)
+    }
+    val enabledNativeTargets = kotlin.targets.withType<KotlinNativeTarget>().filter(filterEnabledNativeTargets)
     distributions {
-        availableTargets.forEach {
-            val name = it.name
-            create(name) {
-                distributionBaseName.set(name)
+        enabledNativeTargets.forEach {
+            val nativeAgentLinkTask = tasks["link${nativeAgentLibName.capitalize()}DebugShared${it.targetName.capitalize()}"]
+            create(it.targetName) {
+                distributionBaseName.set(it.targetName)
                 contents {
-                    from(tasks.named("link${libName.capitalize()}DebugShared${name.capitalize()}")) {
+                    from(nativeAgentLinkTask) {
                         duplicatesStrategy = DuplicatesStrategy.EXCLUDE
                     }
                 }
@@ -150,10 +135,17 @@ afterEvaluate {
     }
 }
 
-//TODO EPMDJ-8696 remove
-fun KotlinNativeCompilation.setCommonSources(modulePath: String) {
-    defaultSourceSet {
-        kotlin.srcDir(file("${modulePath}/kotlin"))
-        resources.setSrcDirs(listOf("${modulePath}/resources"))
+@Suppress("UNUSED_VARIABLE")
+license {
+    headerURI = URI("https://raw.githubusercontent.com/Drill4J/drill4j/develop/COPYRIGHT")
+    val licenseFormatSources by tasks.registering(LicenseFormat::class) {
+        source = fileTree("$projectDir/src").also {
+            include("**/*.kt", "**/*.java", "**/*.groovy")
+        }
+    }
+    val licenseCheckSources by tasks.registering(LicenseCheck::class) {
+        source = fileTree("$projectDir/src").also {
+            include("**/*.kt", "**/*.java", "**/*.groovy")
+        }
     }
 }
