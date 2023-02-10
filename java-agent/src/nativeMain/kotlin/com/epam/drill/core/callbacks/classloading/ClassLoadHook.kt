@@ -25,7 +25,6 @@ import com.epam.drill.agent.instrument.SSLTransformer.SSL_ENGINE_CLASS_NAME
 import com.epam.drill.agent.instrument.http.apache.*
 import com.epam.drill.agent.instrument.http.java.*
 import com.epam.drill.agent.instrument.http.ok.*
-import com.epam.drill.core.Agent.isHttpHookEnabled
 import com.epam.drill.core.plugin.loader.*
 import com.epam.drill.jvmapi.gen.*
 import com.epam.drill.logger.*
@@ -114,21 +113,18 @@ fun classLoadEvent(
                 transformers += { bytes -> plugin.instrument(kClassName, bytes) }
             }
         }
-        if (!isHttpHookEnabled) {
-            if (kClassName.startsWith("org/apache/catalina/core/ApplicationFilterChain")) {
-                logger.info { "Http hook is off, starting transform tomcat class kClassName $kClassName..." }
-                transformers += { bytes ->
-                    TomcatTransformer.transform(kClassName, bytes, loader, protection_domain)
-                }
-            }
-
-            strategys.forEach { strategy ->
-                if (strategy.permit(classReader)) {
-                    transformers += { strategy.transform(kClassName, classBytes, loader, protection_domain) }
-                }
+        if (kClassName.startsWith("org/apache/catalina/core/ApplicationFilterChain")) {
+            logger.info { "Http hook is off, starting transform tomcat class kClassName $kClassName..." }
+            transformers += { bytes ->
+                TomcatTransformer.transform(kClassName, bytes, loader, protection_domain)
             }
         }
-        // TODO Http hook does not work for Netty on linux system
+
+        strategys.forEach { strategy ->
+            if (strategy.permit(classReader)) {
+                transformers += { strategy.transform(kClassName, classBytes, loader, protection_domain) }
+            }
+        }
         if ('$' !in kClassName && kClassName.startsWith(NettyTransformer.HANDLER_CONTEXT)) {
             logger.info { "Starting transform Netty class kClassName $kClassName..." }
             transformers += { bytes ->

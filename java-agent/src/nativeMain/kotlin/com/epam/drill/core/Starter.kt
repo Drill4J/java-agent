@@ -44,13 +44,6 @@ U| |_| |\|  _ <       | |    \| |/__ \| |/__     |__   _|        | |_| |_,-.
         """.trimIndent()
 
 object Agent : JvmtiAgent {
-    val isHttpHookEnabled: Boolean by lazy {
-        getenv(SYSTEM_HTTP_HOOK_ENABLED)?.toKString()?.toBoolean() ?: memScoped {
-            alloc<CPointerVar<ByteVar>>().apply {
-                GetSystemProperty(HTTP_HOOK_ENABLED, this.ptr)
-            }.value?.toKString()?.toBoolean() ?: true
-        }
-    }
 
     override fun agentOnLoad(options: String): Int {
         println(LOGO)

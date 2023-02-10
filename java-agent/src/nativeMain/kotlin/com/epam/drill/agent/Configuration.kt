@@ -20,12 +20,13 @@ import com.epam.drill.agent.serialization.*
 import com.epam.drill.common.*
 import com.epam.drill.common.ws.*
 import com.epam.drill.core.*
-import com.epam.drill.interceptor.*
 import com.epam.drill.logger.*
 import com.epam.drill.logger.api.*
 import kotlinx.cinterop.*
 import platform.posix.*
 import kotlin.time.*
+
+private val logger = Logging.logger("agent")
 
 fun performAgentInitialization(initialParams: AgentParameters) {
     val agentArguments = initialParams.parseAs<AgentArguments>()
