@@ -16,10 +16,10 @@
 package com.epam.drill.agent.classloading
 
 import com.epam.drill.agent.*
+import com.epam.drill.core.time.*
 import com.epam.drill.logger.*
 import kotlinx.coroutines.*
 import kotlin.native.concurrent.*
-import kotlin.time.*
 
 actual object WebContainerSource {
 

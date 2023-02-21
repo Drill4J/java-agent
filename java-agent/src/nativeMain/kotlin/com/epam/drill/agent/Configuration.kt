@@ -24,7 +24,6 @@ import com.epam.drill.logger.*
 import com.epam.drill.logger.api.*
 import kotlinx.cinterop.*
 import platform.posix.*
-import kotlin.time.*
 
 private val logger = Logging.logger("agent")
 
@@ -63,8 +62,7 @@ fun updateConfigs(parameters: Map<String, AgentParameter>, initialParams: AgentP
         ?.takeIf { it.isNotBlank() }?.split(":", ",") ?: emptyList()
     updateConfig {
         copy(
-            classScanDelay = parameters[AgentArguments::classScanDelay.name]?.value
-                ?.toLong()?.toDuration(DurationUnit.MILLISECONDS) ?: classScanDelay,
+            classScanDelay = parameters[AgentArguments::classScanDelay.name]?.value?.toLong() ?: classScanDelay,
             isAsyncApp = parameters[AgentArguments::isAsyncApp.name]?.value.toBoolean(),
             isWebApp = parameters[AgentArguments::isWebApp.name]?.value.toBoolean() || newWebApps.any(),
             isKafka = parameters[AgentArguments::isKafka.name]?.value.toBoolean(),

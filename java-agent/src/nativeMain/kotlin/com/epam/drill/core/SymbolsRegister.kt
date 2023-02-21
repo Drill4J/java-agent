@@ -22,12 +22,12 @@ import com.epam.drill.agent.*
 import com.epam.drill.agent.classloading.source.*
 import com.epam.drill.api.*
 import com.epam.drill.core.callbacks.classloading.*
+import com.epam.drill.core.time.*
 import com.epam.drill.jvmapi.*
 import com.epam.drill.jvmapi.gen.*
 import com.epam.drill.logger.*
 import kotlinx.cinterop.*
 import kotlin.native.concurrent.*
-import kotlin.time.*
 
 @SharedImmutable
 private val logger = Logging.logger("SymbolsRegister")

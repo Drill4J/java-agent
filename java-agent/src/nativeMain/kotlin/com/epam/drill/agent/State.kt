@@ -16,10 +16,10 @@
 package com.epam.drill.agent
 
 import kotlin.native.concurrent.*
-import kotlin.time.*
+import com.epam.drill.core.time.*
 
 data class State(
-    val startMark: TimeMark = TimeSource.Monotonic.markNow(),
+    val startMark: TimeMark = TimeMark.markNow(),
     val alive: Boolean = false, //true if the agent successfully received package prefixes
     val webApps: Map<String, Boolean> = mapOf(),
     val packagePrefixes: List<String> = emptyList()

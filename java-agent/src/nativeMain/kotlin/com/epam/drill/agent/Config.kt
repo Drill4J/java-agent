@@ -16,16 +16,16 @@
 package com.epam.drill.agent
 
 import kotlin.native.concurrent.*
-import kotlin.time.*
+import com.epam.drill.core.time.Duration
 
 data class Config(
-    val classScanDelay: Duration = Duration.ZERO,
+    val classScanDelay: Duration = 0,
     val isAsyncApp: Boolean = false,
     val isWebApp: Boolean = false,
     val isKafka: Boolean = false,
     val isCadence: Boolean = false,
     val isTlsApp: Boolean = false,
-    val webAppLoadingTimeout: Duration = Duration.seconds(1500),
+    val webAppLoadingTimeout: Duration = 1500000,
     val webApps: List<String> = emptyList(),
     val coreLibPath: String? = null
 )
