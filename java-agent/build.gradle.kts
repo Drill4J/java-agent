@@ -26,6 +26,7 @@ plugins {
 }
 
 group = "com.epam.drill"
+version = rootProject.version
 
 val kotlinxSerializationVersion: String by parent!!.extra
 val kotlinxCoroutinesVersion: String by parent!!.extra

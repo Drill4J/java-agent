@@ -14,6 +14,7 @@ plugins {
 }
 
 group = "com.epam.drill"
+version = rootProject.version
 
 val ptEmulateBigApp: String by parent!!.extra
 val nativeAgentLibName: String by parent!!.extra

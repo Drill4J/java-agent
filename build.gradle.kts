@@ -25,6 +25,25 @@ repositories {
     mavenCentral()
 }
 
+if(version == Project.DEFAULT_VERSION) {
+    val fromEnv: () -> String? = {
+        System.getenv("GITHUB_REF")?.let { Regex("refs/tags/v(.*)").matchEntire(it)?.groupValues?.get(1) }
+    }
+    val fromGit: () -> String? = {
+        val gitdir: (Any) -> Boolean = { projectDir.resolve(".git").isDirectory }
+        takeIf(gitdir)?.let {
+            val gitrepo = Grgit.open { dir = projectDir }
+            val gittag = gitrepo.describe {
+                tags = true
+                longDescr = true
+                match = listOf("v[0-9]*.[0-9]*.[0-9]*")
+            }
+            gittag?.trim()?.removePrefix("v")?.replace(Regex("-[0-9]+-g[0-9a-f]+$"), "")?.takeIf(String::any)
+        }
+    }
+    version = fromEnv() ?: fromGit() ?: version
+}
+
 subprojects {
     val constraints = setOf(
         dependencies.constraints.create("org.jetbrains.kotlin:kotlin-reflect:$kotlinVersion"),
