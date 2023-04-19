@@ -1,3 +1,4 @@
+import org.jetbrains.kotlin.util.prefixIfNot
 import org.ajoberstar.grgit.Grgit
 import org.ajoberstar.grgit.Branch
 import org.ajoberstar.grgit.operation.BranchListOp
@@ -78,10 +79,12 @@ tasks {
             val gitrepo = Grgit.open { dir = sharedLibsDir }
             val branches = gitrepo.branch.list { mode = BranchListOp.Mode.LOCAL }
             val branchToName: (Branch) -> String = { it.name }
+            val branchIsCreate: (String) -> Boolean = { !branches.map(branchToName).contains(it) }
             gitrepo.fetch()
             gitrepo.checkout {
                 branch = sharedLibsRef
-                createBranch = !branches.map(branchToName).contains(sharedLibsRef)
+                startPoint = sharedLibsRef.takeIf(branchIsCreate)?.prefixIfNot("origin/")
+                createBranch = branchIsCreate(sharedLibsRef)
             }
             gitrepo.pull()
         }
