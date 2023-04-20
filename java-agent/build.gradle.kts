@@ -159,6 +159,23 @@ kotlin {
             copyNativeClasses.dependsOn(generateNativeClasses)
             it.compilations["main"].compileKotlinTask.dependsOn(copyNativeClasses)
         }
+        val jvmMainCompilation = kotlin.targets.jvmTargets()["jvm"].compilations["main"]
+        val runtimeJar by registering(ShadowJar::class) {
+            mergeServiceFiles()
+            isZip64 = true
+            archiveFileName.set("drillRuntime.jar")
+            from(jvmMainCompilation.output, jvmMainCompilation.runtimeDependencyFiles)
+            relocate("kotlin", "kruntime")
+            doLast {
+                val jarFileUri = Paths.get("$buildDir/libs", archiveFileName.get()).toUri()
+                val zipDisk = URI.create("jar:$jarFileUri")
+                val zipProperties = mutableMapOf("create" to "false")
+                FileSystems.newFileSystem(zipDisk, zipProperties).use {
+                    Files.delete(it.getPath(JarFile.MANIFEST_NAME))
+                }
+            }
+        }
+        runtimeJar.get().dependsOn(jvmMainCompilation.compileKotlinTask)
         val clean by getting
         val cleanGeneratedClasses by registering(Delete::class) {
             group = "build"
@@ -179,48 +196,20 @@ kotlin {
     }
 }
 
-afterEvaluate {
-    val jvmMainCompilation = kotlin.targets.jvmTargets()["jvm"].compilations["main"]
-    val runtimeJar by tasks.registering(ShadowJar::class) {
-        mergeServiceFiles()
-        isZip64 = true
-        archiveFileName.set("drillRuntime.jar")
-        from(jvmMainCompilation.output, jvmMainCompilation.runtimeDependencyFiles)
-        relocate("kotlin", "kruntime")
-        doLast {
-            val jarFileUri = Paths.get("$buildDir/libs", archiveFileName.get()).toUri()
-            val zipDisk = URI.create("jar:$jarFileUri")
-            val zipProperties = mutableMapOf("create" to "false")
-            FileSystems.newFileSystem(zipDisk, zipProperties).use {
-                Files.delete(it.getPath(JarFile.MANIFEST_NAME))
-            }
-        }
-    }
-    runtimeJar.get().dependsOn(jvmMainCompilation.compileKotlinTask)
+distributions {
     val filterEnabledNativeTargets: (KotlinNativeTarget) -> Boolean = {
         HostManager().isEnabled(it.konanTarget)
     }
     val enabledNativeTargets = kotlin.targets.withType<KotlinNativeTarget>().filter(filterEnabledNativeTargets)
-    distributions {
-        enabledNativeTargets.forEach {
-            val nativeAgentLinkTask = tasks["link${nativeAgentLibName.capitalize()}DebugShared${it.targetName.capitalize()}"]
-            create(it.targetName) {
-                distributionBaseName.set(it.targetName)
-                contents {
-                    from(runtimeJar)
-                    from(nativeAgentLinkTask) {
-                        duplicatesStrategy = DuplicatesStrategy.EXCLUDE
-                    }
-                }
-            }
-        }
-    }
-    publishing {
-        publications {
-            enabledNativeTargets.forEach {
-                create<MavenPublication>("${it.name}Zip") {
-                    artifactId = "$nativeAgentLibName-${it.name}"
-                    artifact(tasks["${it.name}DistZip"])
+    enabledNativeTargets.forEach {
+        val runtimeJatTask = tasks["runtimeJar"]
+        val nativeAgentLinkTask = tasks["link${nativeAgentLibName.capitalize()}DebugShared${it.targetName.capitalize()}"]
+        create(it.targetName) {
+            distributionBaseName.set(it.targetName)
+            contents {
+                from(runtimeJatTask)
+                from(nativeAgentLinkTask) {
+                    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
                 }
             }
         }

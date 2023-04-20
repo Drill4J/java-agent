@@ -1,9 +1,12 @@
+import org.gradle.api.Task
 import org.jetbrains.kotlin.util.prefixIfNot
 import org.ajoberstar.grgit.Grgit
 import org.ajoberstar.grgit.Branch
 import org.ajoberstar.grgit.operation.BranchListOp
 
+@Suppress("RemoveRedundantBackticks")
 plugins {
+    `distribution`
     kotlin("jvm").apply(false)
     kotlin("multiplatform").apply(false)
     kotlin("plugin.serialization").apply(false)
@@ -71,6 +74,12 @@ subprojects {
 
 @Suppress("UNUSED_VARIABLE")
 tasks {
+    val filterDistTasks: (Task) -> Boolean = { it.name.endsWith("DistTar") || it.name.endsWith("DistZip") }
+    val copyJavaAgentDist by registering(Copy::class) {
+        from(project(":java-agent").tasks.filter(filterDistTasks))
+        into(buildDir.resolve("distributions").resolve("java-agent"))
+    }
+    assemble.get().dependsOn(copyJavaAgentDist)
     val sharedLibsDir = file("$projectDir/lib-jvm-shared")
     val sharedLibsRef: String by extra
     val updateSharedLibs by registering {

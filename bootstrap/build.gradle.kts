@@ -115,20 +115,18 @@ kotlin {
     }
 }
 
-afterEvaluate {
+distributions {
     val filterEnabledNativeTargets: (KotlinNativeTarget) -> Boolean = {
         HostManager().isEnabled(it.konanTarget)
     }
     val enabledNativeTargets = kotlin.targets.withType<KotlinNativeTarget>().filter(filterEnabledNativeTargets)
-    distributions {
-        enabledNativeTargets.forEach {
-            val nativeAgentLinkTask = tasks["link${nativeAgentLibName.capitalize()}DebugShared${it.targetName.capitalize()}"]
-            create(it.targetName) {
-                distributionBaseName.set(it.targetName)
-                contents {
-                    from(nativeAgentLinkTask) {
-                        duplicatesStrategy = DuplicatesStrategy.EXCLUDE
-                    }
+    enabledNativeTargets.forEach {
+        val nativeAgentLinkTask = tasks["link${nativeAgentLibName.capitalize()}DebugShared${it.targetName.capitalize()}"]
+        create(it.targetName) {
+            distributionBaseName.set(it.targetName)
+            contents {
+                from(nativeAgentLinkTask) {
+                    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
                 }
             }
         }
