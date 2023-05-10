@@ -1,4 +1,3 @@
-import com.epam.drill.kni.gradle.jvmTargets
 import java.net.URI
 import java.nio.file.Files
 import java.nio.file.FileSystems
@@ -7,6 +6,7 @@ import java.util.jar.JarFile
 import org.jetbrains.kotlin.gradle.dsl.KotlinMultiplatformExtension
 import org.jetbrains.kotlin.gradle.plugin.KotlinSourceSet
 import org.jetbrains.kotlin.gradle.plugin.mpp.KotlinNativeTarget
+import org.jetbrains.kotlin.gradle.targets.jvm.KotlinJvmTarget
 import org.jetbrains.kotlin.gradle.targets.native.tasks.KotlinNativeTest
 import org.jetbrains.kotlin.konan.target.HostManager
 import org.jetbrains.kotlin.konan.target.presetName
@@ -159,13 +159,14 @@ kotlin {
             copyNativeClasses.dependsOn(generateNativeClasses)
             it.compilations["main"].compileKotlinTask.dependsOn(copyNativeClasses)
         }
-        val jvmMainCompilation = kotlin.targets.jvmTargets()["jvm"].compilations["main"]
+        val jvmMainCompilation = kotlin.targets.withType<KotlinJvmTarget>()["jvm"].compilations["main"]
         val runtimeJar by registering(ShadowJar::class) {
             mergeServiceFiles()
             isZip64 = true
             archiveFileName.set("drillRuntime.jar")
             from(jvmMainCompilation.output, jvmMainCompilation.runtimeDependencyFiles)
             relocate("kotlin", "kruntime")
+            relocate("org.objectweb.asm", "com.epam.drill.knasm")
             doLast {
                 val jarFileUri = Paths.get("$buildDir/libs", archiveFileName.get()).toUri()
                 val zipDisk = URI.create("jar:$jarFileUri")
@@ -202,12 +203,12 @@ distributions {
     }
     val enabledNativeTargets = kotlin.targets.withType<KotlinNativeTarget>().filter(filterEnabledNativeTargets)
     enabledNativeTargets.forEach {
-        val runtimeJatTask = tasks["runtimeJar"]
+        val runtimeJarTask = tasks["runtimeJar"]
         val nativeAgentLinkTask = tasks["link${nativeAgentLibName.capitalize()}DebugShared${it.targetName.capitalize()}"]
         create(it.targetName) {
             distributionBaseName.set(it.targetName)
             contents {
-                from(runtimeJatTask)
+                from(runtimeJarTask)
                 from(nativeAgentLinkTask) {
                     duplicatesStrategy = DuplicatesStrategy.EXCLUDE
                 }
