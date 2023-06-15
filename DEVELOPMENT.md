@@ -114,7 +114,12 @@ Following files are included in release (per component):
 To set up environment for local development please perform following steps:
 1. Install tools (git, gradle, java)
 2. Clone component repository, checkout corresponding branch
-3. Run script to set up lib-jvm-shared repository from Git: setup-shared-libs.bat/setup-shared-libs.sh 
+3. Run script to set up lib-jvm-shared repository from Git: setup-shared-libs.bat/setup-shared-libs.sh
+
+### Moving lib-jvm-shared to custom directory
+
+There is a possibility to use **lib-jvm-shared** libraries from custom directory.
+To change **lib-jvm-shared** location please use `sharedLibsLocalPath` variable in **gradle.properties** file (both absolute and relative paths are supported).
 
 ## Making changes
 
