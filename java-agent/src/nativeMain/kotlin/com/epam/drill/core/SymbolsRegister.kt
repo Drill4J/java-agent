@@ -109,6 +109,12 @@ fun GetAllLoadedClasses(env: JNIEnv, thiz: jobject) = memScoped {
     javaArray
 }
 
+@CName("Java_com_epam_drill_plugin_api_Native_GetPackagePrefixes")
+fun GetPackagePrefixes(): jstring? {
+    val packagesPrefixes = agentConfig.packagesPrefixes.packagesPrefixes
+    return NewStringUTF(packagesPrefixes.joinToString(", "))
+}
+
 private fun MemScope.getLoadedClasses(): Sequence<jclass> = run {
     val count = alloc<jintVar>()
     val classes = alloc<CPointerVar<jclassVar>>()
