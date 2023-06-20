@@ -19,6 +19,26 @@ This module contains the native agent used to profile a java application and rep
 - **java-agent**: Java-agent itself
 - **pt-runner**: Module with scripts to run demo application
 
+## Classes structure
+
+- **commonMain**: consist of empty `expected` classes (transformers, plugin related and request-processing related classes) and few utility classes (serialization functions and `ClassSource` models)
+- **jvmMain**: classes for initial class scanning and transformation
+  - `com.epam.drill.agent.classloading`: initial class scanning without transformation
+  - `com.epam.drill.agent.instrument`: java-classes instrumentation for http-headers processing
+    - `com.epam.drill.agent.instrument.Transformer`: `ServletContextListeneer` instrumentation for web-app classes initial scanning
+  - `com.epam.drill.request`: http-request headers processing (mainly related with `drill-session-id`)
+- **nativeMain**: 
+  - `com.epam.drill.agent`: agent configuration and state classes
+  - `com.epam.drill.agent.classloading`: stubs to call jvm-part of the same package (using KNI)
+  - `com.epam.drill.agent.instrument`: stubs to call jvm-part of the same package (using KNI)
+  - `com.epam.drill.core`:
+    - `Starter.kt`: JVMTI entrypoint, call agent configuration classes and registers hooks on JVM initialization and class-loading
+    - `CallbackRegister.kt`: Internal callback initialization
+    - `SymbolsRegister.kt`: Native functions to call from plugins using `com.epam.drill.plugin.api.Native` class
+  - `com.epam.drill.core.callbacks.vminit`: Agent initialization callbacks (connects to admin, reads package settings)
+  - `com.epam.drill.core.callbacks.classloading`: Classloading callback (applies default transformers from agent-jvm-part and transformers from loaded plugins)
+  - `com.epam.drill.core.plugin.loader`: Plugin load and initialization related classes
+
 ## Run demo
 To run the demo application (Petclinic) with a built agent following command may be used:
 ```
