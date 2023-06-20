@@ -69,8 +69,7 @@ fun updateConfigs(parameters: Map<String, AgentParameter>, initialParams: AgentP
             isKafka = parameters[AgentArguments::isKafka.name]?.value.toBoolean(),
             isCadence = parameters[AgentArguments::isCadence.name]?.value.toBoolean(),
             isTlsApp = parameters[AgentArguments::isTlsApp.name]?.value.toBoolean(),
-            webApps = newWebApps,
-            coreLibPath = initialParams["coreLibPath"] ?: coreLibPath
+            webApps = newWebApps
         )
     }
 
