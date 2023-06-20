@@ -26,6 +26,8 @@ import com.epam.drill.jvmapi.*
 import com.epam.drill.jvmapi.gen.*
 import com.epam.drill.logger.*
 import kotlinx.cinterop.*
+import platform.posix.nanosleep
+import platform.posix.timespec
 import kotlin.native.concurrent.*
 import kotlin.time.*
 
@@ -113,6 +115,18 @@ fun GetAllLoadedClasses(env: JNIEnv, thiz: jobject) = memScoped {
 fun GetPackagePrefixes(): jstring? {
     val packagesPrefixes = agentConfig.packagesPrefixes.packagesPrefixes
     return NewStringUTF(packagesPrefixes.joinToString(", "))
+}
+
+@CName("Java_com_epam_drill_plugin_api_Native_WaitClassScanning")
+fun WaitClassScanning() = memScoped {
+    val classScanDelay = config.classScanDelay - state.startMark.elapsedNow()
+    if (classScanDelay.isPositive()) {
+        logger.debug { "Waiting class scan delay ($classScanDelay left)..." }
+        val time = cValue<timespec> {
+            tv_sec = classScanDelay.inWholeSeconds
+        }
+        nanosleep(time, null)
+    }
 }
 
 private fun MemScope.getLoadedClasses(): Sequence<jclass> = run {
