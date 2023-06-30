@@ -66,7 +66,6 @@ fun globalCallbacks(): Unit = run {
     drillRequest = RequestHolder::get
 
     loadPlugin = ::loadJvmPlugin
-    nativePlugin = { _, _, _ -> null }
 
 }
 
