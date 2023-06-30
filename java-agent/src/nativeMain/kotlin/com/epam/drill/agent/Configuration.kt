@@ -41,7 +41,7 @@ fun performAgentInitialization(initialParams: AgentParameters) {
             agentType = AGENT_TYPE,
             parameters = aa.defaultParameters(),
         )
-        updateConfigs(agentConfig.parameters, initialParams)
+        updateConfigs(agentConfig.parameters)
         agentConfigUpdater = object : AgentConfigUpdater {
             override fun updateParameters(config: AgentConfig) {
                 updateConfigs(config.parameters)
@@ -50,7 +50,7 @@ fun performAgentInitialization(initialParams: AgentParameters) {
     }
 }
 
-fun updateConfigs(parameters: Map<String, AgentParameter>, initialParams: AgentParameters = emptyMap()) {
+fun updateConfigs(parameters: Map<String, AgentParameter>) {
     parameters[AgentArguments::logLevel.name]?.let {
         Logging.logLevel = LogLevel.valueOf(it.value)
     }
@@ -58,24 +58,18 @@ fun updateConfigs(parameters: Map<String, AgentParameter>, initialParams: AgentP
         if (Logging.filename != it.value) Logging.filename = it.value
     }
 
-    val newWebApps = parameters[AgentArguments::webAppNames.name]?.value
-        ?.takeIf { it.isNotBlank() }?.split(":", ",") ?: emptyList()
     updateConfig {
         copy(
             classScanDelay = parameters[AgentArguments::classScanDelay.name]?.value
                 ?.toLong()?.toDuration(DurationUnit.MILLISECONDS) ?: classScanDelay,
             isAsyncApp = parameters[AgentArguments::isAsyncApp.name]?.value.toBoolean(),
-            isWebApp = parameters[AgentArguments::isWebApp.name]?.value.toBoolean() || newWebApps.any(),
+            isWebApp = parameters[AgentArguments::isWebApp.name]?.value.toBoolean(),
             isKafka = parameters[AgentArguments::isKafka.name]?.value.toBoolean(),
             isCadence = parameters[AgentArguments::isCadence.name]?.value.toBoolean(),
-            isTlsApp = parameters[AgentArguments::isTlsApp.name]?.value.toBoolean(),
-            webApps = newWebApps
+            isTlsApp = parameters[AgentArguments::isTlsApp.name]?.value.toBoolean()
         )
     }
 
-    if (newWebApps.isNotEmpty()) {
-        updateState { copy(webApps = newWebApps.associateWith { false }) }
-    }
     logger.debug { "after update configs by params: config '$config'; state '$state'" }
 }
 

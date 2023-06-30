@@ -19,12 +19,12 @@ package com.epam.drill.core.callbacks.classloading
 
 import com.epam.drill.*
 import com.epam.drill.agent.*
-import com.epam.drill.agent.classloading.source.*
 import com.epam.drill.agent.instrument.*
 import com.epam.drill.agent.instrument.SSLTransformer.SSL_ENGINE_CLASS_NAME
 import com.epam.drill.agent.instrument.http.apache.*
 import com.epam.drill.agent.instrument.http.java.*
 import com.epam.drill.agent.instrument.http.ok.*
+import com.epam.drill.common.classloading.ClassSource
 import com.epam.drill.core.Agent.isHttpHookEnabled
 import com.epam.drill.core.plugin.loader.*
 import com.epam.drill.jvmapi.gen.*
@@ -82,12 +82,8 @@ fun classLoadEvent(
                     )
                 }
             }
-            if (config.isWebApp && Transformer.servletListener in interfaces) {
-                transformers += { bytes -> Transformer.transform(kClassName, bytes, loader, protection_domain) }
-            } else {
-                if (superName == SSL_ENGINE_CLASS_NAME) {
-                    transformers += { bytes -> SSLTransformer.transform(kClassName, bytes, loader, protection_domain) }
-                }
+            if (superName == SSL_ENGINE_CLASS_NAME) {
+                transformers += { bytes -> SSLTransformer.transform(kClassName, bytes, loader, protection_domain) }
             }
         }
 
@@ -109,7 +105,7 @@ fun classLoadEvent(
             }
         }
         val classSource = ClassSource(kClassName, classReader.superName ?: "", classBytes)
-        if ('$' !in kClassName && classSource.matches(state.packagePrefixes)) {
+        if ('$' !in kClassName && classSource.prefixMatches(state.packagePrefixes)) {
             pstorage.values.filterIsInstance<InstrumentationNativePlugin>().forEach { plugin ->
                 transformers += { bytes -> plugin.instrument(kClassName, bytes) }
             }

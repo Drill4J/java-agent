@@ -24,9 +24,7 @@ data class Config(
     val isWebApp: Boolean = false,
     val isKafka: Boolean = false,
     val isCadence: Boolean = false,
-    val isTlsApp: Boolean = false,
-    val webAppLoadingTimeout: Duration = Duration.seconds(1500),
-    val webApps: List<String> = emptyList()
+    val isTlsApp: Boolean = false
 )
 
 private val _config = AtomicReference(Config().freeze()).freeze()

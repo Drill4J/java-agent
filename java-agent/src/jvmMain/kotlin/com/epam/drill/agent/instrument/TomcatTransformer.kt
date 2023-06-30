@@ -26,7 +26,7 @@ import kotlin.reflect.jvm.*
 
 @Kni
 actual object TomcatTransformer {
-    private val logger = Logging.logger(Transformer::class.jvmName)
+    private val logger = Logging.logger(TomcatTransformer::class.jvmName)
 
     actual fun transform(
         className: String,

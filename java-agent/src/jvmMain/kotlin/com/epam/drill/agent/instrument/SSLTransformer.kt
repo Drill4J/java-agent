@@ -20,12 +20,11 @@ import com.epam.drill.kni.*
 import com.epam.drill.logger.*
 import com.epam.drill.request.*
 import javassist.*
-import java.io.*
 import kotlin.reflect.jvm.*
 
 @Kni
 actual object SSLTransformer {
-    private val logger = Logging.logger(Transformer::class.jvmName)
+    private val logger = Logging.logger(SSLTransformer::class.jvmName)
 
     actual fun transform(
         className: String,

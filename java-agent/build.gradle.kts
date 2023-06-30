@@ -94,6 +94,7 @@ kotlin {
             dependencies {
                 implementation("org.jetbrains.kotlin:kotlin-test-common")
                 implementation("org.jetbrains.kotlin:kotlin-test-annotations-common")
+                implementation(project(":common"))
             }
         }
         val jvmMain by getting {

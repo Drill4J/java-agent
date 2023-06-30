@@ -34,7 +34,6 @@ data class AgentArguments(
     val isCadence: Boolean = false,
     val isTlsApp: Boolean = false,
     val isAsyncApp: Boolean = false,
-    val webAppNames: String = "",
     val classScanDelay: Long = 0L,
 ) {
     fun defaultParameters(): Map<String, AgentParameter> = mapOf(
@@ -72,11 +71,6 @@ data class AgentArguments(
         AgentArguments::isAsyncApp.name to AgentParameter(
             type = isAsyncApp.toType(),
             value = isAsyncApp.toString(),
-            description = "",
-        ),
-        AgentArguments::webAppNames.name to AgentParameter(
-            type = webAppNames.toType(),
-            value = webAppNames,
             description = "",
         ),
         AgentArguments::classScanDelay.name to AgentParameter(
