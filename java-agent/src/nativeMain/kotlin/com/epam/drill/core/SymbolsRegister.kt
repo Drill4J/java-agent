@@ -118,6 +118,11 @@ fun GetPackagePrefixes(): jstring? {
     return NewStringUTF(packagesPrefixes.joinToString(", "))
 }
 
+@CName("Java_com_epam_drill_plugin_api_Native_GetScanClassPath")
+fun GetScanClassPath(): jstring? {
+    return NewStringUTF(config.scanClassPath)
+}
+
 @CName("Java_com_epam_drill_plugin_api_Native_WaitClassScanning")
 fun WaitClassScanning() = runBlocking {
     val classScanDelay = config.classScanDelay - state.startMark.elapsedNow()

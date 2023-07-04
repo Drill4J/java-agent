@@ -35,6 +35,7 @@ data class AgentArguments(
     val isTlsApp: Boolean = false,
     val isAsyncApp: Boolean = false,
     val classScanDelay: Long = 0L,
+    val scanClassPath: String = "",
 ) {
     fun defaultParameters(): Map<String, AgentParameter> = mapOf(
         AgentArguments::logLevel.name to AgentParameter(
@@ -77,6 +78,11 @@ data class AgentArguments(
             type = classScanDelay.toType(),
             value = classScanDelay.toString(),
             description = "start scanning after waiting of duration in milliseconds",
+        ),
+        AgentArguments::scanClassPath.name to AgentParameter(
+            type = scanClassPath.toType(),
+            value = scanClassPath,
+            description = "Add additional class path to scan",
         ),
     )
 

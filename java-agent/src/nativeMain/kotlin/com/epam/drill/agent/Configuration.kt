@@ -62,6 +62,7 @@ fun updateConfigs(parameters: Map<String, AgentParameter>) {
         copy(
             classScanDelay = parameters[AgentArguments::classScanDelay.name]?.value
                 ?.toLong()?.toDuration(DurationUnit.MILLISECONDS) ?: classScanDelay,
+            scanClassPath = parameters[AgentArguments::scanClassPath.name]?.value ?: scanClassPath,
             isAsyncApp = parameters[AgentArguments::isAsyncApp.name]?.value.toBoolean(),
             isWebApp = parameters[AgentArguments::isWebApp.name]?.value.toBoolean(),
             isKafka = parameters[AgentArguments::isKafka.name]?.value.toBoolean(),

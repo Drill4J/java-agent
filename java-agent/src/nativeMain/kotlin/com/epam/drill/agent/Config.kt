@@ -20,6 +20,7 @@ import kotlin.time.*
 
 data class Config(
     val classScanDelay: Duration = Duration.ZERO,
+    val scanClassPath: String = "",
     val isAsyncApp: Boolean = false,
     val isWebApp: Boolean = false,
     val isKafka: Boolean = false,
