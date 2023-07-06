@@ -31,6 +31,8 @@ val includeSharedLib: Settings.(String) -> Unit = {
 includeSharedLib("kni-runtime")
 includeSharedLib("kni-plugin")
 includeSharedLib("jvmapi")
+includeSharedLib("logging-native")
+includeSharedLib("logging")
 includeSharedLib("logger-api")
 includeSharedLib("logger-test-agent")
 includeSharedLib("logger")
