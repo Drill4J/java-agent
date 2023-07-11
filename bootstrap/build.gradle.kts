@@ -13,7 +13,6 @@ plugins {
     kotlin("multiplatform")
     kotlin("plugin.serialization")
     id("com.github.hierynomus.license")
-    id("com.epam.drill.gradle.plugin.kni")
 }
 
 group = "com.epam.drill"
@@ -60,18 +59,14 @@ kotlin {
             languageSettings.optIn("kotlinx.serialization.InternalSerializationApi")
             languageSettings.optIn("io.ktor.utils.io.core.ExperimentalIoApi")
         }
-        val commonMain by getting {
-            dependencies {
-                implementation("org.jetbrains.kotlinx:kotlinx-serialization-core:$kotlinxSerializationVersion")
-            }
-        }
         val configureNativeDependencies: KotlinSourceSet.() -> Unit = {
             dependencies {
+                implementation("org.jetbrains.kotlinx:kotlinx-serialization-core:$kotlinxSerializationVersion")
                 implementation("org.jetbrains.kotlinx:kotlinx-serialization-protobuf:$kotlinxSerializationVersion")
                 implementation("io.ktor:ktor-utils:$ktorVersion")
                 implementation("com.benasher44:uuid:$uuidVersion")
                 implementation(project(":kni-runtime"))
-                implementation(project(":logger"))
+                implementation(project(":logging"))
                 implementation(project(":common"))
                 implementation(project(":jvmapi"))
                 implementation(project(":knasm"))
@@ -95,20 +90,14 @@ kotlin {
         it.targetName != HostManager.host.presetName
     }
     tasks {
-        val generateNativeClasses by getting
-        currentPlatformTarget().compilations["main"].compileKotlinTask.dependsOn(generateNativeClasses)
         targets.withType<KotlinNativeTarget>().filter(filterOutCurrentPlatform).forEach {
             val copyNativeClasses = copyNativeClassesForTarget(it)
-            copyNativeClasses.dependsOn(generateNativeClasses)
             it.compilations["main"].compileKotlinTask.dependsOn(copyNativeClasses)
         }
         val clean by getting
         val cleanGeneratedClasses by registering(Delete::class) {
             group = "build"
-            delete("src/jvmMain/resources/kni-meta-info")
-            delete("src/nativeMain/kotlin/kni")
             targets.withType<KotlinNativeTarget> {
-                delete("src/${name}Main/kotlin/kni")
                 delete("src/${name}Main/kotlin/gen")
             }
         }

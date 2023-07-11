@@ -21,7 +21,7 @@ import com.epam.drill.core.callbacks.classloading.*
 import com.epam.drill.core.callbacks.vminit.*
 import com.epam.drill.jvmapi.gen.*
 import com.epam.drill.kni.*
-import com.epam.drill.logger.*
+import com.epam.drill.logging.LoggingConfiguration
 import com.epam.drill.transport.common.ws.*
 import io.ktor.utils.io.core.*
 import io.ktor.utils.io.streams.*
@@ -29,9 +29,10 @@ import kotlinx.cinterop.*
 import platform.posix.*
 import kotlin.native.concurrent.*
 import kotlin.test.*
+import mu.KotlinLogging
 
 @SharedImmutable
-private val logger = Logging.logger("MainLogger")
+private val logger = KotlinLogging.logger("com.epam.drill.core.Starter")
 
 private val LOGO = """
   ____    ____                 _       _          _  _                _      
@@ -55,6 +56,7 @@ object Agent : JvmtiAgent {
     override fun agentOnLoad(options: String): Int {
         println(LOGO)
         try {
+            LoggingConfiguration.readDefaultConfiguration()
             val initialParams = agentParams(options)
             performAgentInitialization(initialParams)
             setUnhandledExceptionHook({ error: Throwable ->
@@ -111,8 +113,7 @@ private fun String?.asAgentParams(
         this.split(lineDelimiter)
             .filter { it.isNotEmpty() && (filterPrefix.isEmpty() || !it.startsWith(filterPrefix)) }
             .associate {
-                val (key, value) = it.split(mapDelimiter)
-                key to value
+                it.substringBefore(mapDelimiter) to it.substringAfter(mapDelimiter, "")
             }
     } catch (parseException: Exception) {
         throw IllegalArgumentException("wrong agent parameters: $this")

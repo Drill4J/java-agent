@@ -20,12 +20,15 @@ import com.epam.drill.agent.serialization.*
 import com.epam.drill.common.*
 import com.epam.drill.common.ws.*
 import com.epam.drill.core.*
-import com.epam.drill.interceptor.*
-import com.epam.drill.logger.*
-import com.epam.drill.logger.api.*
+import com.epam.drill.jvmapi.callObjectStringMethod
+import com.epam.drill.jvmapi.callObjectVoidMethodWithString
+import com.epam.drill.logging.LoggingConfiguration
 import kotlinx.cinterop.*
 import platform.posix.*
 import kotlin.time.*
+import mu.KotlinLogging
+
+private val logger = KotlinLogging.logger("com.epam.drill.agent.Configuration")
 
 fun performAgentInitialization(initialParams: AgentParameters) {
     val agentArguments = initialParams.parseAs<AgentArguments>()
@@ -41,7 +44,7 @@ fun performAgentInitialization(initialParams: AgentParameters) {
             agentType = AGENT_TYPE,
             parameters = aa.defaultParameters(),
         )
-        updateConfigs(agentConfig.parameters)
+        updateConfigs(agentConfig.parameters, true)
         agentConfigUpdater = object : AgentConfigUpdater {
             override fun updateParameters(config: AgentConfig) {
                 updateConfigs(config.parameters)
@@ -50,19 +53,15 @@ fun performAgentInitialization(initialParams: AgentParameters) {
     }
 }
 
-fun updateConfigs(parameters: Map<String, AgentParameter>) {
-    parameters[AgentArguments::logLevel.name]?.let {
-        Logging.logLevel = LogLevel.valueOf(it.value)
-    }
-    parameters[AgentArguments::logFile.name]?.let {
-        if (Logging.filename != it.value) Logging.filename = it.value
-    }
+fun updateConfigs(parameters: Map<String, AgentParameter>, initialization: Boolean = false) {
 
     updateConfig {
         copy(
             classScanDelay = parameters[AgentArguments::classScanDelay.name]?.value
                 ?.toLong()?.toDuration(DurationUnit.MILLISECONDS) ?: classScanDelay,
             scanClassPath = parameters[AgentArguments::scanClassPath.name]?.value ?: scanClassPath,
+            logLevel = parameters[AgentArguments::logLevel.name]?.value ?: logLevel,
+            logFile = parameters[AgentArguments::logFile.name]?.value?.takeIf(String::isNotEmpty),
             isAsyncApp = parameters[AgentArguments::isAsyncApp.name]?.value.toBoolean(),
             isWebApp = parameters[AgentArguments::isWebApp.name]?.value.toBoolean(),
             isKafka = parameters[AgentArguments::isKafka.name]?.value.toBoolean(),
@@ -71,7 +70,24 @@ fun updateConfigs(parameters: Map<String, AgentParameter>) {
         )
     }
 
+    updateNativeLoggingConfiguration()
+    if (!initialization) updateJvmLoggingConfiguration()
+
     logger.debug { "after update configs by params: config '$config'; state '$state'" }
+}
+
+fun updateNativeLoggingConfiguration() {
+    LoggingConfiguration.setLoggingLevels(config.logLevel)
+    if (LoggingConfiguration.getLoggingFilename() != config.logFile) {
+        LoggingConfiguration.setLoggingFilename(config.logFile)
+    }
+}
+
+fun updateJvmLoggingConfiguration() {
+    callObjectVoidMethodWithString(LoggingConfiguration::class, "setLoggingLevels", config.logLevel)
+    if (callObjectStringMethod(LoggingConfiguration::class, LoggingConfiguration::getLoggingFilename) != config.logFile) {
+        callObjectVoidMethodWithString(LoggingConfiguration::class, LoggingConfiguration::setLoggingFilename, config.logFile)
+    }
 }
 
 private fun calculateBuildVersion(): String? = runCatching {

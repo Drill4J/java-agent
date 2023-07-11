@@ -21,6 +21,8 @@ import kotlin.time.*
 data class Config(
     val classScanDelay: Duration = Duration.ZERO,
     val scanClassPath: String = "",
+    val logLevel: String = "ERROR",
+    val logFile: String? = null,
     val isAsyncApp: Boolean = false,
     val isWebApp: Boolean = false,
     val isKafka: Boolean = false,

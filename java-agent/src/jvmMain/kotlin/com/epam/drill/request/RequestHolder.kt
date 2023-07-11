@@ -18,15 +18,15 @@ package com.epam.drill.request
 import com.alibaba.ttl.*
 import com.epam.drill.common.*
 import com.epam.drill.kni.*
-import com.epam.drill.logger.*
 import com.epam.drill.plugin.*
 import com.epam.drill.plugin.api.processing.*
 import kotlinx.serialization.protobuf.*
-import kotlin.reflect.jvm.*
+import mu.KotlinLogging
 
 @Kni
 actual object RequestHolder {
-    private val logger = Logging.logger(RequestHolder::class.jvmName)
+
+    private val logger = KotlinLogging.logger {}
 
     private lateinit var threadStorage: InheritableThreadLocal<DrillRequest>
 

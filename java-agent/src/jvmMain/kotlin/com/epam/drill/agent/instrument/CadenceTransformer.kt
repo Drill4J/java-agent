@@ -18,16 +18,15 @@ package com.epam.drill.agent.instrument
 import com.epam.drill.*
 import com.epam.drill.agent.instrument.util.*
 import com.epam.drill.kni.*
-import com.epam.drill.logger.*
 import com.epam.drill.request.*
 import com.epam.drill.request.HttpRequest.DRILL_HEADER_PREFIX
 import javassist.*
-import kotlin.reflect.jvm.*
+import mu.KotlinLogging
 
 @Kni
 actual object CadenceTransformer {
 
-    private val logger = Logging.logger(CadenceTransformer::class.jvmName)
+    private val logger = KotlinLogging.logger {}
 
     actual fun transform(
         className: String,

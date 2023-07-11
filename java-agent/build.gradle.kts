@@ -88,6 +88,7 @@ kotlin {
             dependencies {
                 implementation("org.jetbrains.kotlinx:kotlinx-serialization-core:$kotlinxSerializationVersion")
                 implementation(project(":http-clients-instrumentation"))
+                implementation(project(":logging"))
             }
         }
         val commonTest by getting {
@@ -106,7 +107,6 @@ kotlin {
                 implementation("org.javassist:javassist:$javassistVersion")
                 implementation("com.alibaba:transmittable-thread-local:$transmittableThreadLocalVersion")
                 implementation(project(":kni-runtime"))
-                implementation(project(":logger"))
                 implementation(project(":common"))
                 implementation(project(":knasm"))
                 implementation(project(":plugin-api-agent"))
@@ -126,7 +126,6 @@ kotlin {
                 implementation("io.ktor:ktor-utils:$ktorVersion")
                 implementation("com.benasher44:uuid:$uuidVersion")
                 implementation(project(":kni-runtime"))
-                implementation(project(":logger"))
                 implementation(project(":common"))
                 implementation(project(":jvmapi"))
                 implementation(project(":knasm"))
@@ -137,6 +136,12 @@ kotlin {
         val linuxX64Main by getting(configuration = configureNativeDependencies)
         val mingwX64Main by getting(configuration = configureNativeDependencies)
         val macosX64Main by getting(configuration = configureNativeDependencies)
+        mingwX64Main.dependencies {
+            implementation(project(":logging-native"))
+        }
+        macosX64Main.dependencies {
+            implementation(project(":logging-native"))
+        }
     }
     val copyNativeClassesForTarget: TaskContainer.(KotlinNativeTarget) -> Task = {
         val copyNativeClasses:TaskProvider<Copy> = register("copyNativeClasses${it.targetName.capitalize()}", Copy::class) {
@@ -167,6 +172,7 @@ kotlin {
             from(jvmMainCompilation.output, jvmMainCompilation.runtimeDependencyFiles)
             relocate("kotlin", "kruntime")
             relocate("org.objectweb.asm", "com.epam.drill.knasm")
+            relocate("org.slf4j", "com.epam.drill.slf4j")
             doLast {
                 val jarFileUri = Paths.get("$buildDir/libs", archiveFileName.get()).toUri()
                 val zipDisk = URI.create("jar:$jarFileUri")

@@ -17,7 +17,7 @@ package com.epam.drill.bootstrap
 
 import com.epam.drill.jvmapi.*
 import com.epam.drill.jvmapi.gen.*
-import com.epam.drill.logger.*
+import com.epam.drill.logging.LoggingConfiguration
 import io.ktor.utils.io.core.*
 import io.ktor.utils.io.streams.*
 import kotlinx.cinterop.*
@@ -30,8 +30,8 @@ fun agentOnLoad(
     reservedPtr: Long
 ): Int = memScoped {
     try {
+        LoggingConfiguration.readDefaultConfiguration()
         val initialParams = options.asAgentParams()
-        loggerCallback = { Logging.logger(it) }
         initialParams["bootstrapConfigPath"]?.let {
             val rawFileContent = readFile(it)
             println(rawFileContent)

@@ -15,16 +15,16 @@
  */
 package com.epam.drill.core.plugin.loader
 
+import mu.KotlinLogging
 import com.epam.drill.*
 import com.epam.drill.agent.*
 import com.epam.drill.common.*
 import com.epam.drill.core.exceptions.*
 import com.epam.drill.jvmapi.*
 import com.epam.drill.jvmapi.gen.*
-import com.epam.drill.logger.*
 
 fun loadJvmPlugin(pluginFilePath: String, pluginConfig: PluginMetadata) {
-    val logger = Logging.logger("Plugin ${pluginConfig.id}")
+    val logger = KotlinLogging.logger("com.epam.drill.core.plugin.loader.PluginLoader.loadJvmPlugin")
     AttachNativeThreadToJvm()
     AddToSystemClassLoaderSearch(pluginFilePath)
     logger.info { "System classLoader extends by '$pluginFilePath' path" }

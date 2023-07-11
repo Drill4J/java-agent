@@ -15,16 +15,14 @@
  */
 package com.epam.drill.request
 
-import com.epam.drill.agent.*
 import com.epam.drill.agent.HeadersRetriever.sessionHeaderPattern
 import com.epam.drill.agent.instrument.*
 import com.epam.drill.common.*
-import com.epam.drill.logger.*
 import com.epam.drill.plugin.*
-import kotlinx.serialization.*
 import kotlinx.serialization.protobuf.*
 import java.nio.*
 import kotlin.reflect.jvm.*
+import mu.KotlinLogging
 
 object HttpRequest {
     const val DRILL_HEADER_PREFIX = "drill-"
@@ -35,7 +33,7 @@ object HttpRequest {
     private val HTTP_VERBS =
         setOf("OPTIONS", "GET", "HEAD", "POST", "PUT", "PATCH", "DELETE", "TRACE", "CONNECT", "PRI")
     private val HEADERS_END_MARK = "\r\n\r\n".encodeToByteArray()
-    private val logger = Logging.logger(HttpRequest::class.jvmName)
+    private val logger = KotlinLogging.logger {}
 
     init {
         ClientsCallback.initRequestCallback {
