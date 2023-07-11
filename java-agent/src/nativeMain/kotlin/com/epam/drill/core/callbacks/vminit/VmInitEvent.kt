@@ -23,9 +23,7 @@ import com.epam.drill.core.*
 import com.epam.drill.core.Agent.isHttpHookEnabled
 import com.epam.drill.core.transport.*
 import com.epam.drill.core.ws.*
-import com.epam.drill.jvmapi.callObjectStringMethod
 import com.epam.drill.jvmapi.callObjectVoidMethod
-import com.epam.drill.jvmapi.callObjectVoidMethodWithString
 import com.epam.drill.jvmapi.gen.*
 import com.epam.drill.logging.LoggingConfiguration
 import com.epam.drill.request.*
