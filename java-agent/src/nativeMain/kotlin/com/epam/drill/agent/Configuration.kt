@@ -20,7 +20,9 @@ import com.epam.drill.agent.serialization.*
 import com.epam.drill.common.*
 import com.epam.drill.common.ws.*
 import com.epam.drill.core.*
+import com.epam.drill.jvmapi.callObjectIntMethod
 import com.epam.drill.jvmapi.callObjectStringMethod
+import com.epam.drill.jvmapi.callObjectVoidMethodWithInt
 import com.epam.drill.jvmapi.callObjectVoidMethodWithString
 import com.epam.drill.logging.LoggingConfiguration
 import kotlinx.cinterop.*
@@ -62,6 +64,7 @@ fun updateConfigs(parameters: Map<String, AgentParameter>, initialization: Boole
             scanClassPath = parameters[AgentArguments::scanClassPath.name]?.value ?: scanClassPath,
             logLevel = parameters[AgentArguments::logLevel.name]?.value ?: logLevel,
             logFile = parameters[AgentArguments::logFile.name]?.value?.takeIf(String::isNotEmpty),
+            logLimit = parameters[AgentArguments::logLimit.name]?.value?.toIntOrNull() ?: logLimit,
             isAsyncApp = parameters[AgentArguments::isAsyncApp.name]?.value.toBoolean(),
             isWebApp = parameters[AgentArguments::isWebApp.name]?.value.toBoolean(),
             isKafka = parameters[AgentArguments::isKafka.name]?.value.toBoolean(),
@@ -81,12 +84,18 @@ fun updateNativeLoggingConfiguration() {
     if (LoggingConfiguration.getLoggingFilename() != config.logFile) {
         LoggingConfiguration.setLoggingFilename(config.logFile)
     }
+    if (LoggingConfiguration.getLogMessageLimit() != config.logLimit) {
+        LoggingConfiguration.setLogMessageLimit(config.logLimit)
+    }
 }
 
 fun updateJvmLoggingConfiguration() {
     callObjectVoidMethodWithString(LoggingConfiguration::class, "setLoggingLevels", config.logLevel)
     if (callObjectStringMethod(LoggingConfiguration::class, LoggingConfiguration::getLoggingFilename) != config.logFile) {
         callObjectVoidMethodWithString(LoggingConfiguration::class, LoggingConfiguration::setLoggingFilename, config.logFile)
+    }
+    if (callObjectIntMethod(LoggingConfiguration::class, LoggingConfiguration::getLogMessageLimit) != config.logLimit) {
+        callObjectVoidMethodWithInt(LoggingConfiguration::class, LoggingConfiguration::setLogMessageLimit, config.logLimit)
     }
 }
 

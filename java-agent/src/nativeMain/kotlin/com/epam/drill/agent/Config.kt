@@ -23,6 +23,7 @@ data class Config(
     val scanClassPath: String = "",
     val logLevel: String = "ERROR",
     val logFile: String? = null,
+    val logLimit: Int = 512,
     val isAsyncApp: Boolean = false,
     val isWebApp: Boolean = false,
     val isKafka: Boolean = false,

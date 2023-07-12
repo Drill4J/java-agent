@@ -29,6 +29,7 @@ data class AgentArguments(
     val groupId: String = "",
     val logLevel: String = KotlinLoggingLevel.ERROR.name,
     val logFile: String? = null,
+    val logLimit: Int = 512,
     val isWebApp: Boolean = false,
     val isKafka: Boolean = false,
     val isCadence: Boolean = false,
@@ -47,6 +48,11 @@ data class AgentArguments(
             type = logFile.toType(),
             value = logFile ?: "",
             description = "the location where the logs will be stored",
+        ),
+        AgentArguments::logLimit.name to AgentParameter(
+            type = logLimit.toType(),
+            value = logLimit.toString(),
+            description = "the log messages max size",
         ),
         AgentArguments::isWebApp.name to AgentParameter(
             type = isWebApp.toType(),
