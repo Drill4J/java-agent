@@ -28,7 +28,6 @@ import com.epam.drill.logger.*
 import kotlinx.cinterop.*
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
-import platform.posix.nanosleep
 import platform.posix.timespec
 import kotlin.native.concurrent.*
 import kotlin.time.*
