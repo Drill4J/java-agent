@@ -2,6 +2,7 @@ rootProject.name = "java-agent"
 
 pluginManagement {
     val kotlinVersion: String by extra
+    val atomicfuVersion: String by extra
     val licenseVersion: String by extra
     val grgitVersion: String by extra
     val shadowPluginVersion: String by extra
@@ -9,7 +10,9 @@ pluginManagement {
     plugins {
         kotlin("jvm") version kotlinVersion
         kotlin("multiplatform") version kotlinVersion
+        kotlin("plugin.noarg") version kotlinVersion
         kotlin("plugin.serialization") version kotlinVersion
+        id("kotlinx-atomicfu") version atomicfuVersion
         id("org.ajoberstar.grgit") version grgitVersion
         id("com.github.hierynomus.license") version licenseVersion
         id("com.github.johnrengelman.shadow") version shadowPluginVersion
@@ -19,6 +22,9 @@ pluginManagement {
         mavenLocal()
         mavenCentral()
         gradlePluginPortal()
+    }
+    resolutionStrategy.eachPlugin {
+        if(requested.id.id == "kotlinx-atomicfu") useModule("org.jetbrains.kotlinx:atomicfu-gradle-plugin:${target.version}")
     }
 }
 
@@ -30,19 +36,23 @@ val includeSharedLib: Settings.(String) -> Unit = {
 
 includeSharedLib("kni-runtime")
 includeSharedLib("kni-plugin")
-includeSharedLib("jvmapi")
 includeSharedLib("logging-native")
 includeSharedLib("logging")
 includeSharedLib("common")
+includeSharedLib("agent")
+includeSharedLib("jvmapi")
 includeSharedLib("knasm")
 includeSharedLib("drill-hook")
 includeSharedLib("http-clients-instrumentation")
 includeSharedLib("transport")
 includeSharedLib("interceptor-http")
 includeSharedLib("plugin-api-agent")
-includeSharedLib("agent")
+includeSharedLib("dsm-annotations")
+includeSharedLib("test2code-common")
 includeSharedLib("agent-runner-common")
 includeSharedLib("agent-runner-gradle")
+include("jacoco")
+include("test2code")
 include("java-agent")
 include("bootstrap")
 include("pt-runner")

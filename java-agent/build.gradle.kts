@@ -101,17 +101,16 @@ kotlin {
         val jvmMain by getting {
             dependencies {
                 implementation(kotlin("reflect"))
+                implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:$kotlinxCoroutinesVersion")
                 implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:$kotlinxSerializationVersion")
                 implementation("org.jetbrains.kotlinx:kotlinx-serialization-protobuf:$kotlinxSerializationVersion")
-                implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:$kotlinxCoroutinesVersion")
                 implementation("org.javassist:javassist:$javassistVersion")
                 implementation("com.alibaba:transmittable-thread-local:$transmittableThreadLocalVersion")
                 implementation(project(":kni-runtime"))
                 implementation(project(":common"))
-                implementation(project(":knasm"))
-                implementation(project(":plugin-api-agent"))
-                implementation(project(":http-clients-instrumentation"))
                 implementation(project(":agent"))
+                implementation(project(":http-clients-instrumentation"))
+                implementation(project(":plugin-api-agent"))
             }
         }
         val jvmTest by getting {
@@ -124,13 +123,12 @@ kotlin {
             dependencies {
                 implementation("org.jetbrains.kotlinx:kotlinx-serialization-protobuf:$kotlinxSerializationVersion")
                 implementation("io.ktor:ktor-utils:$ktorVersion")
-                implementation("com.benasher44:uuid:$uuidVersion")
                 implementation(project(":kni-runtime"))
                 implementation(project(":common"))
+                implementation(project(":agent"))
                 implementation(project(":jvmapi"))
                 implementation(project(":knasm"))
                 implementation(project(":plugin-api-agent"))
-                implementation(project(":agent"))
             }
         }
         val linuxX64Main by getting(configuration = configureNativeDependencies)
@@ -171,8 +169,10 @@ kotlin {
             archiveFileName.set("drillRuntime.jar")
             from(jvmMainCompilation.output, jvmMainCompilation.runtimeDependencyFiles)
             relocate("kotlin", "kruntime")
+            relocate("kotlinx", "kruntimex")
             relocate("ch.qos.logback", "${project.group}.shadow.ch.qos.logback")
             relocate("org.slf4j", "${project.group}.shadow.org.slf4j")
+            relocate("org.jacoco.core", "${project.group}.shadow.org.jacoco.core")
             relocate("org.objectweb.asm", "${project.group}.shadow.org.objectweb.asm")
             doLast {
                 val jarFileUri = Paths.get("$buildDir/libs", archiveFileName.get()).toUri()
