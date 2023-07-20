@@ -16,38 +16,31 @@
 package com.epam.drill.core.plugin.loader
 
 import mu.KotlinLogging
-import com.epam.drill.*
-import com.epam.drill.agent.*
-import com.epam.drill.common.*
-import com.epam.drill.core.exceptions.*
-import com.epam.drill.jvmapi.*
-import com.epam.drill.jvmapi.gen.*
+import com.epam.drill.addPluginToStorage
+import com.epam.drill.agent.DataService
+import com.epam.drill.common.Family
+import com.epam.drill.common.PluginMetadata
+import com.epam.drill.jvmapi.AttachNativeThreadToJvm
+import com.epam.drill.jvmapi.gen.GetObjectClass
+import com.epam.drill.jvmapi.gen.NewGlobalRef
+import com.epam.drill.jvmapi.gen.jobject
 
-fun loadJvmPlugin(pluginFilePath: String, pluginConfig: PluginMetadata) {
+@Suppress("UNCHECKED_CAST")
+fun loadJvmPlugin(pluginConfig: PluginMetadata) {
     val logger = KotlinLogging.logger("com.epam.drill.core.plugin.loader.PluginLoader.loadJvmPlugin")
     AttachNativeThreadToJvm()
-    AddToSystemClassLoaderSearch(pluginFilePath)
-    logger.info { "System classLoader extends by '$pluginFilePath' path" }
     try {
         val pluginId = pluginConfig.id
-
-        @Suppress("UNCHECKED_CAST")
-        val agentPart = DataService.createAgentPart(pluginId, pluginFilePath) as? jobject
+        val agentPart = DataService.createAgentPart(pluginId) as? jobject
         val pluginApiClass = GetObjectClass(agentPart)!!
-        val agentPartRef: jobject = NewGlobalRef(agentPart)!!
-
-        when (pluginConfig.family) {
+        val agentPartRef = NewGlobalRef(agentPart)!!
+        val plugin = when (pluginConfig.family) {
             Family.INSTRUMENTATION -> InstrumentationNativePlugin(pluginId, pluginApiClass, agentPartRef, pluginConfig)
             Family.GENERIC -> GenericNativePlugin(pluginId, pluginApiClass, agentPartRef, pluginConfig)
-        }.run {
-            addPluginToStorage(this)
-            load(false)
-
         }
+        addPluginToStorage(plugin)
+        plugin.load(false)
     } catch (ex: Exception) {
-        when (ex) {
-            is PluginLoadException -> logger.error(ex) { "Can't load plugin file $pluginFilePath." }
-            else -> logger.error(ex) { "Fatal error processing $pluginFilePath." }
-        }
+        logger.error(ex) { "Fatal error processing plugin: id=${pluginConfig.id}, name=${pluginConfig.name}" }
     }
 }

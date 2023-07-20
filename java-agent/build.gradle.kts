@@ -111,6 +111,7 @@ kotlin {
                 implementation(project(":agent"))
                 implementation(project(":http-clients-instrumentation"))
                 implementation(project(":plugin-api-agent"))
+                implementation(project(":test2code"))
             }
         }
         val jvmTest by getting {

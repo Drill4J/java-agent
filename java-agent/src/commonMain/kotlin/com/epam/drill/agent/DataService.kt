@@ -16,6 +16,9 @@
 package com.epam.drill.agent
 
 expect object DataService {
-    fun createAgentPart(id: String, jarPath: String): Any?
+
+    fun createAgentPart(id: String): Any?
+
     fun doRawActionBlocking(agentPart: Any, data: String): Any
+
 }

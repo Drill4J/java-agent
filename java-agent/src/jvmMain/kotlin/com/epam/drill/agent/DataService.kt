@@ -13,36 +13,22 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-@file:Suppress("unused")
-
 package com.epam.drill.agent
 
-import com.epam.drill.*
-import com.epam.drill.common.*
-import com.epam.drill.kni.*
-import com.epam.drill.plugin.*
-import com.epam.drill.plugin.api.processing.*
-import com.epam.drill.request.*
-import kotlinx.coroutines.*
-import kotlinx.serialization.*
-import kotlinx.serialization.json.*
-import kotlinx.serialization.protobuf.*
-import java.util.jar.*
-import kotlin.reflect.jvm.*
-import kotlin.time.*
-import mu.KotlinLogging
+import kotlinx.coroutines.runBlocking
+import com.epam.drill.kni.Kni
+import com.epam.drill.plugin.PluginSender
+import com.epam.drill.plugin.api.processing.AgentContext
+import com.epam.drill.plugin.api.processing.AgentPart
+import com.epam.drill.plugin.api.processing.Sender
+import com.epam.drill.plugins.test2code.Plugin
+import com.epam.drill.request.RequestHolder
 
-@Serializable
-class ByteArrayListWrapper(val bytesList: List<ByteArray>)
-
-@ExperimentalStdlibApi
 @Kni
 actual object DataService {
 
-    private val logger = KotlinLogging.logger {}
-
-    actual fun createAgentPart(id: String, jarPath: String): Any? = run {
-        val agentPartClass = retrieveApiClass(jarPath)!!
+    actual fun createAgentPart(id: String): Any? = run {
+        val agentPartClass = retrieveApiClass(id)!!
         val constructor = agentPartClass.getConstructor(
             String::class.java,
             AgentContext::class.java,
@@ -51,19 +37,14 @@ actual object DataService {
         constructor.newInstance(id, RequestHolder.agentContext, PluginSender)
     }
 
-    actual fun doRawActionBlocking(
-        agentPart: Any,
-        data: String,
-    ): Any = with(agentPart as AgentPart<*>) {
+    actual fun doRawActionBlocking(agentPart: Any, data: String): Any = with(agentPart as AgentPart<*>) {
         runBlocking { doRawAction(data) }
     }
 
-    private fun retrieveApiClass(jarPath: String): Class<AgentPart<*>>? = JarFile(jarPath).use { jf ->
-        val result = retrieveApiClass(
-            AgentPart::class.java, jf.entries().iterator().asSequence().toSet(),
-            ClassLoader.getSystemClassLoader()
-        )
-        @Suppress("UNCHECKED_CAST")
-        result as Class<AgentPart<*>>?
+    @Suppress("UNCHECKED_CAST")
+    private fun retrieveApiClass(id: String): Class<AgentPart<*>>? = when(id) {
+        "test2code" -> Plugin::class.java as Class<AgentPart<*>>
+        else -> null
     }
+
 }
