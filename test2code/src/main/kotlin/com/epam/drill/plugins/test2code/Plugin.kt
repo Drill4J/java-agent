@@ -41,10 +41,6 @@ class Plugin(
 
     internal val json = Json { encodeDefaults = true }
 
-    private val _enabled = atomic(false)
-
-    private val enabled: Boolean get() = _enabled.value
-
     private val instrContext: SessionProbeArrayProvider = DrillProbeArrayProvider.apply {
         defaultContext = agentContext
     }
@@ -58,14 +54,6 @@ class Plugin(
         logger.info { "Send active sessions after reconnect: ${ids.count()}" }
         sendMessage(SyncMessage(ids))
     }
-
-    //TODO remove
-    override fun setEnabled(enabled: Boolean) {
-        _enabled.value = enabled
-    }
-
-    //TODO remove
-    override fun isEnabled(): Boolean = _enabled.value
 
     /**
      * Switch on the plugin
@@ -89,7 +77,6 @@ class Plugin(
      * Switch off the plugin
      */
     override fun off() {
-        logger.info { "Enabled $enabled" }
         val cancelledCount = instrContext.cancelAll()
         logger.info { "Plugin $id is off" }
         if (_retransformed.compareAndSet(expect = true, update = false)) {
@@ -114,9 +101,7 @@ class Plugin(
     override fun instrument(
         className: String,
         initialBytes: ByteArray,
-    ): ByteArray? = takeIf { enabled }?.run {
-        instrumenter.instrument(className, initialBytes)
-    }
+    ): ByteArray? = instrumenter.instrument(className, initialBytes)
 
     override fun destroyPlugin(unloadReason: UnloadReason) {}
 
@@ -228,7 +213,7 @@ class Plugin(
      * Scan, parse and send metadata classes to the admin side
      */
     private fun scanAndSendMetadataClasses() {
-        var classCount = 0;
+        var classCount = 0
         scanClasses { classes ->
             classes
                 .map { parseAstClass(it.entityName(), it.bytes()) }

@@ -175,18 +175,10 @@ kotlin {
             relocate("org.slf4j", "${project.group}.shadow.org.slf4j")
             relocate("org.jacoco.core", "${project.group}.shadow.org.jacoco.core")
             relocate("org.objectweb.asm", "${project.group}.shadow.org.objectweb.asm")
-            doLast {
-                val jarFileUri = Paths.get("$buildDir/libs", archiveFileName.get()).toUri()
-                val zipDisk = URI.create("jar:$jarFileUri")
-                val zipProperties = mutableMapOf("create" to "false")
-                val shadowedLibsPath = project.group.toString().replace(".", "/") + "/shadow"
-                FileSystems.newFileSystem(zipDisk, zipProperties).use {
-                    Files.delete(it.getPath(JarFile.MANIFEST_NAME))
-                    Files.delete(it.getPath("META-INF/services/javax.servlet.ServletContainerInitializer"))
-                    Files.delete(it.getPath("$shadowedLibsPath/ch/qos/logback/classic/servlet/LogbackServletContainerInitializer.class"))
-                    Files.delete(it.getPath("$shadowedLibsPath/ch/qos/logback/classic/servlet/LogbackServletContextListener.class"))
-                    Files.delete(it.getPath("$shadowedLibsPath/ch/qos/logback/classic/servlet/"))
-                }
+            dependencies {
+                exclude("/META-INF/services/javax.servlet.ServletContainerInitializer")
+                exclude("/module-info.class", "/about.html")
+                exclude("/ch/qos/logback/classic/servlet/*")
             }
         }
         runtimeJar.get().dependsOn(jvmMainCompilation.compileKotlinTask)

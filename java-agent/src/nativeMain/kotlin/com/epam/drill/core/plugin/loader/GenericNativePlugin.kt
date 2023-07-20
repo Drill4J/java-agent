@@ -41,28 +41,10 @@ open class GenericNativePlugin(
 
     init {
         updateRawConfig(pluginConfig.config)
-        javaEnabled(pluginConfig.enabled)
     }
 
     override suspend fun doRawAction(rawAction: String) {
         DataService.doRawActionBlocking(userPlugin, rawAction)
-    }
-
-    override fun isEnabled() = pluginConfigById(id).enabled
-
-    override fun setEnabled(enabled: Boolean) {
-        javaEnabled(enabled)
-        val pluginConfigById = pluginConfigById(id)
-        addPluginConfig(pluginConfigById.copy(enabled = enabled))
-    }
-
-    private fun javaEnabled(value: Boolean) {
-        CallVoidMethodA(
-            userPlugin,
-            GetMethodID(pluginApiClass, "setEnabled", "(Z)V"),
-            nativeHeap.allocArray(1.toLong()) {
-                z = if (value) 1.toUByte() else 0.toUByte()
-            })
     }
 
     override fun on() {
