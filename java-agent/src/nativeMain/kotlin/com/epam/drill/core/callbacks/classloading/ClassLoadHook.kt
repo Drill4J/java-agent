@@ -119,7 +119,7 @@ fun classLoadEvent(
             }
 
             strategys.forEach { strategy ->
-                if (strategy.permit(classReader)) {
+                if (strategy.permit(classReader.className, classReader.superName, classReader.interfaces)) {
                     transformers += { strategy.transform(kClassName, classBytes, loader, protection_domain) }
                 }
             }
