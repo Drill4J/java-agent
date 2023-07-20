@@ -43,8 +43,15 @@ open class GenericNativePlugin(
         updateRawConfig(pluginConfig.config)
     }
 
-    override suspend fun doRawAction(rawAction: String) {
-        DataService.doRawActionBlocking(userPlugin, rawAction)
+    override suspend fun doRawAction(rawAction: String): Any {
+        logger.debug { "doRawAction: $rawAction" }
+        return CallObjectMethodA(
+            userPlugin,
+            GetMethodID(pluginApiClass, AgentPart<*>::doRawAction.name, "(Ljava/lang/String;)Ljava/lang/Object;"),
+            nativeHeap.allocArray(1L) {
+                l = NewStringUTF(rawAction)
+            }
+        )!!
     }
 
     override fun on() {

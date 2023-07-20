@@ -37,10 +37,6 @@ actual object DataService {
         constructor.newInstance(id, RequestHolder.agentContext, PluginSender)
     }
 
-    actual fun doRawActionBlocking(agentPart: Any, data: String): Any = with(agentPart as AgentPart<*>) {
-        runBlocking { doRawAction(data) }
-    }
-
     @Suppress("UNCHECKED_CAST")
     private fun retrieveApiClass(id: String): Class<AgentPart<*>>? = when(id) {
         "test2code" -> Plugin::class.java as Class<AgentPart<*>>

@@ -21,8 +21,4 @@ actual object DataService {
         return DataServiceStub.createAgentPart(id)
     }
 
-    actual fun doRawActionBlocking(agentPart: Any, data: String): Any {
-        return DataServiceStub.doRawActionBlocking(agentPart, data)
-    }
-
 }

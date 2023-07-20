@@ -19,6 +19,4 @@ expect object DataService {
 
     fun createAgentPart(id: String): Any?
 
-    fun doRawActionBlocking(agentPart: Any, data: String): Any
-
 }
