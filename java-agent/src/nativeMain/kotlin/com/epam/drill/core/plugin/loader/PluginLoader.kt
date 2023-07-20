@@ -39,7 +39,7 @@ fun loadJvmPlugin(pluginConfig: PluginMetadata) {
             Family.GENERIC -> GenericNativePlugin(pluginId, pluginApiClass, agentPartRef, pluginConfig)
         }
         addPluginToStorage(plugin)
-        plugin.load(false)
+        plugin.load()
     } catch (ex: Exception) {
         logger.error(ex) { "Fatal error processing plugin: id=${pluginConfig.id}, name=${pluginConfig.name}" }
     }

@@ -103,9 +103,7 @@ class Plugin(
         initialBytes: ByteArray,
     ): ByteArray? = instrumenter.instrument(className, initialBytes)
 
-    override fun destroyPlugin(unloadReason: UnloadReason) {}
-
-    override fun initPlugin() {
+    override fun load() {
         logger.info { "Plugin $id: initializing..." }
         retransform()
         _retransformed.value = true

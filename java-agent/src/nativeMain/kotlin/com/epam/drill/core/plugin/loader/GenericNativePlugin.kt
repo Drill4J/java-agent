@@ -61,28 +61,11 @@ open class GenericNativePlugin(
         )
     }
 
-    override fun load(on: Boolean) {
+    override fun load() {
         CallVoidMethodA(
-            userPlugin,
-            GetMethodID(pluginApiClass, AgentPart<*>::load.name, "(Z)V"),
-            nativeHeap.allocArray(1.toLong()) {
-                z = if (on) 1.toUByte() else 0.toUByte()
-            })
-
-    }
-
-    override fun unload(unloadReason: UnloadReason) = memScoped {
-        val findClass = FindClass(UnloadReason::class.jniName())
-        val getStaticFieldID =
-            GetStaticFieldID(findClass, unloadReason.name, UnloadReason::class.jniParamName())
-        val getStaticObjectField = GetStaticObjectField(findClass, getStaticFieldID)
-        CallVoidMethodA(
-            userPlugin,
-            GetMethodID(pluginApiClass, AgentPart<*>::unload.name, "(${UnloadReason::class.jniParamName()})V"),
-            allocArray(1.toLong()) {
-                l = getStaticObjectField
-            }
+            userPlugin, GetMethodID(pluginApiClass, AgentPart<*>::load.name, "()V"), null
         )
+
     }
 
     override fun updateRawConfig(data: String) {
@@ -120,8 +103,6 @@ open class GenericNativePlugin(
         }
     }
 
-    override fun initPlugin() = TODO()
-    override fun destroyPlugin(unloadReason: UnloadReason) = TODO()
     override suspend fun doAction(action: Any) = TODO()
     override fun parseAction(rawAction: String) = TODO()
 }
