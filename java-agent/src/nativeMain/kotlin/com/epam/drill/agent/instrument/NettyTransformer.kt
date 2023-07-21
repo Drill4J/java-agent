@@ -23,7 +23,14 @@ actual object NettyTransformer {
         classFileBuffer: ByteArray,
         loader: Any?,
         protectionDomain: Any?,
-    ): ByteArray?{
-       return NettyTransformerStub.transform(className, classFileBuffer, loader, protectionDomain)
-    }
+    ): ByteArray? =
+        callTransformerTransformMethod(
+            NettyTransformer::class,
+            NettyTransformer::transform,
+            className,
+            classFileBuffer,
+            loader,
+            protectionDomain
+        )
+
 }

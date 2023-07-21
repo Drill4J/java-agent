@@ -17,13 +17,11 @@ package com.epam.drill.agent.instrument
 
 import com.epam.drill.agent.*
 import com.epam.drill.agent.instrument.util.*
-import com.epam.drill.kni.*
 import com.epam.drill.request.*
 import com.epam.drill.request.HttpRequest.DRILL_HEADER_PREFIX
 import javassist.*
 import mu.KotlinLogging
 
-@Kni
 actual object TomcatTransformer {
 
     private val logger = KotlinLogging.logger {}

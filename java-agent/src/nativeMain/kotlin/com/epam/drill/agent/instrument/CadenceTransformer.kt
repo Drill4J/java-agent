@@ -16,13 +16,20 @@
 package com.epam.drill.agent.instrument
 
 actual object CadenceTransformer {
-    
+
     actual fun transform(
         className: String,
         classFileBuffer: ByteArray,
         loader: Any?,
         protectionDomain: Any?,
-    ): ByteArray? {
-        return CadenceTransformerStub.transform(className, classFileBuffer, loader, protectionDomain)
-    }
+    ): ByteArray? =
+        callTransformerTransformMethod(
+            CadenceTransformer::class,
+            CadenceTransformer::transform,
+            className,
+            classFileBuffer,
+            loader,
+            protectionDomain
+        )
+
 }

@@ -15,9 +15,6 @@
  */
 package com.epam.drill.agent
 
-import com.epam.drill.kni.*
-
-@Kni
 actual object HeadersRetriever {
     actual external fun adminAddressHeader(): String?
     actual external fun retrieveAdminAddress(): String?

@@ -23,7 +23,14 @@ actual object SSLTransformer {
         classFileBuffer: ByteArray,
         loader: Any?,
         protectionDomain: Any?,
-    ): ByteArray? {
-        return SSLTransformerStub.transform(className, classFileBuffer, loader, protectionDomain)
-    }
+    ): ByteArray? =
+        callTransformerTransformMethod(
+            SSLTransformer::class,
+            SSLTransformer::transform,
+            className,
+            classFileBuffer,
+            loader,
+            protectionDomain
+        )
+
 }

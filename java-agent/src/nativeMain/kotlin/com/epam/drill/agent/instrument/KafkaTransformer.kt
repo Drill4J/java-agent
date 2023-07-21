@@ -22,7 +22,14 @@ actual object KafkaTransformer {
         classFileBuffer: ByteArray,
         loader: Any?,
         protectionDomain: Any?,
-    ): ByteArray? {
-        return KafkaTransformerStub.transform(className, classFileBuffer, loader, protectionDomain)
-    }
+    ): ByteArray? =
+        callTransformerTransformMethod(
+            KafkaTransformer::class,
+            KafkaTransformer::transform,
+            className,
+            classFileBuffer,
+            loader,
+            protectionDomain
+        )
+
 }

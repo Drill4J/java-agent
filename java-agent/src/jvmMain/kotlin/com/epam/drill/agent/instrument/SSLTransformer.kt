@@ -16,12 +16,10 @@
 package com.epam.drill.agent.instrument
 
 import com.epam.drill.agent.instrument.util.*
-import com.epam.drill.kni.*
 import com.epam.drill.request.*
 import javassist.*
 import mu.KotlinLogging
 
-@Kni
 actual object SSLTransformer {
 
     private val logger = KotlinLogging.logger {}

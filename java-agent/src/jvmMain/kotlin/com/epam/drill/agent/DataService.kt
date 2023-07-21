@@ -15,8 +15,6 @@
  */
 package com.epam.drill.agent
 
-import kotlinx.coroutines.runBlocking
-import com.epam.drill.kni.Kni
 import com.epam.drill.plugin.PluginSender
 import com.epam.drill.plugin.api.processing.AgentContext
 import com.epam.drill.plugin.api.processing.AgentPart
@@ -24,7 +22,6 @@ import com.epam.drill.plugin.api.processing.Sender
 import com.epam.drill.plugins.test2code.Plugin
 import com.epam.drill.request.RequestHolder
 
-@Kni
 actual object DataService {
 
     actual fun createAgentPart(id: String): Any? = run {

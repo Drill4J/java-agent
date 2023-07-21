@@ -22,5 +22,14 @@ actual object TomcatTransformer {
         classFileBuffer: ByteArray,
         loader: Any?,
         protectionDomain: Any?,
-    ): ByteArray? = TomcatTransformerStub.transform(className, classFileBuffer, loader, protectionDomain)
+    ): ByteArray? =
+        callTransformerTransformMethod(
+            TomcatTransformer::class,
+            TomcatTransformer::transform,
+            className,
+            classFileBuffer,
+            loader,
+            protectionDomain
+        )
+
 }

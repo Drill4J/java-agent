@@ -15,10 +15,11 @@
  */
 package com.epam.drill.agent
 
+import com.epam.drill.jvmapi.callObjectObjectMethodWithString
+
 actual object DataService {
 
-    actual fun createAgentPart(id: String): Any? {
-        return DataServiceStub.createAgentPart(id)
-    }
+    actual fun createAgentPart(id: String): Any? =
+        callObjectObjectMethodWithString(DataService::class, DataService::createAgentPart, id)
 
 }

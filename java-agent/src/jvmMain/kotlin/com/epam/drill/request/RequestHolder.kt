@@ -17,13 +17,11 @@ package com.epam.drill.request
 
 import com.alibaba.ttl.*
 import com.epam.drill.common.*
-import com.epam.drill.kni.*
 import com.epam.drill.plugin.*
 import com.epam.drill.plugin.api.processing.*
 import kotlinx.serialization.protobuf.*
 import mu.KotlinLogging
 
-@Kni
 actual object RequestHolder {
 
     private val logger = KotlinLogging.logger {}
@@ -54,4 +52,5 @@ actual object RequestHolder {
         logger.trace { "session ${threadStorage.get()} closed" }
         threadStorage.remove()
     }
+
 }

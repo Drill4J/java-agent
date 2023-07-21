@@ -1,8 +1,4 @@
 import java.net.URI
-import java.nio.file.Files
-import java.nio.file.FileSystems
-import java.nio.file.Paths
-import java.util.jar.JarFile
 import org.jetbrains.kotlin.gradle.dsl.KotlinMultiplatformExtension
 import org.jetbrains.kotlin.gradle.plugin.KotlinSourceSet
 import org.jetbrains.kotlin.gradle.plugin.mpp.KotlinNativeTarget
@@ -22,7 +18,6 @@ plugins {
     kotlin("plugin.serialization")
     id("com.github.johnrengelman.shadow")
     id("com.github.hierynomus.license")
-    id("com.epam.drill.gradle.plugin.kni")
 }
 
 group = "com.epam.drill"
@@ -50,22 +45,17 @@ kotlin {
         targets.withType<KotlinNativeTarget>()[HostManager.host.presetName]
     }
     targets {
-        val jvm = jvm()
-        val linuxX64 = linuxX64(configure = configureNativeTarget)
-        val mingwX64 = mingwX64(configure = configureNativeTarget).apply {
+        jvm()
+        linuxX64(configure = configureNativeTarget)
+        mingwX64(configure = configureNativeTarget).apply {
             binaries.all {
                 linkerOpts("-lpsapi", "-lwsock32", "-lws2_32", "-lmswsock")
             }
         }
-        val macosX64 = macosX64(configure = configureNativeTarget)
+        macosX64(configure = configureNativeTarget)
         currentPlatformTarget().compilations["main"].defaultSourceSet {
             kotlin.srcDir("src/nativeMain/kotlin")
             resources.srcDir("src/nativeMain/resources")
-        }
-        kni {
-            jvmTargets = sequenceOf(jvm)
-            jvmtiAgentObjectPath = "com.epam.drill.core.Agent"
-            nativeCrossCompileTarget = sequenceOf(linuxX64, mingwX64, macosX64)
         }
     }
     @Suppress("UNUSED_VARIABLE")
@@ -106,7 +96,6 @@ kotlin {
                 implementation("org.jetbrains.kotlinx:kotlinx-serialization-protobuf:$kotlinxSerializationVersion")
                 implementation("org.javassist:javassist:$javassistVersion")
                 implementation("com.alibaba:transmittable-thread-local:$transmittableThreadLocalVersion")
-                implementation(project(":kni-runtime"))
                 implementation(project(":common"))
                 implementation(project(":agent"))
                 implementation(project(":http-clients-instrumentation"))
@@ -124,7 +113,6 @@ kotlin {
             dependencies {
                 implementation("org.jetbrains.kotlinx:kotlinx-serialization-protobuf:$kotlinxSerializationVersion")
                 implementation("io.ktor:ktor-utils:$ktorVersion")
-                implementation(project(":kni-runtime"))
                 implementation(project(":common"))
                 implementation(project(":agent"))
                 implementation(project(":jvmapi"))
@@ -154,13 +142,8 @@ kotlin {
         it.targetName != HostManager.host.presetName
     }
     tasks {
-        val generateNativeClasses by getting
-        val jvmProcessResources by getting
-        jvmProcessResources.dependsOn(generateNativeClasses)
-        currentPlatformTarget().compilations["main"].compileKotlinTask.dependsOn(generateNativeClasses)
         targets.withType<KotlinNativeTarget>().filter(filterOutCurrentPlatform).forEach {
             val copyNativeClasses = copyNativeClassesForTarget(it)
-            copyNativeClasses.dependsOn(generateNativeClasses)
             it.compilations["main"].compileKotlinTask.dependsOn(copyNativeClasses)
         }
         val jvmMainCompilation = kotlin.targets.withType<KotlinJvmTarget>()["jvm"].compilations["main"]
@@ -185,10 +168,7 @@ kotlin {
         val clean by getting
         val cleanGeneratedClasses by registering(Delete::class) {
             group = "build"
-            delete("src/jvmMain/resources/kni-meta-info")
-            delete("src/nativeMain/kotlin/kni")
             targets.withType<KotlinNativeTarget> {
-                delete("src/${name}Main/kotlin/kni")
                 delete("src/${name}Main/kotlin/gen")
             }
         }
@@ -228,13 +208,13 @@ license {
     val licenseFormatSources by tasks.registering(LicenseFormat::class) {
         source = fileTree("$projectDir/src").also {
             include("**/*.kt", "**/*.java", "**/*.groovy")
-            exclude("**/kni", "**/commonGenerated")
+            exclude("**/commonGenerated")
         }
     }
     val licenseCheckSources by tasks.registering(LicenseCheck::class) {
         source = fileTree("$projectDir/src").also {
             include("**/*.kt", "**/*.java", "**/*.groovy")
-            exclude("**/kni", "**/commonGenerated")
+            exclude("**/commonGenerated")
         }
     }
 }

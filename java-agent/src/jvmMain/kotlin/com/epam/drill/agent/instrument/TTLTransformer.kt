@@ -21,11 +21,9 @@ import com.alibaba.ttl.threadpool.agent.*
 import com.alibaba.ttl.threadpool.agent.internal.logging.*
 import com.alibaba.ttl.threadpool.agent.internal.transformlet.*
 import com.alibaba.ttl.threadpool.agent.internal.transformlet.impl.*
-import com.epam.drill.kni.*
 import mu.KotlinLogging
 import java.util.*
 
-@Kni
 actual object TTLTransformer {
     private val transformletList: MutableList<JavassistTransformlet> = ArrayList()
 
