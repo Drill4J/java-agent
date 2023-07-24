@@ -17,7 +17,6 @@ plugins {
     id("org.ajoberstar.grgit")
     id("com.github.hierynomus.license").apply(false)
     id("com.github.johnrengelman.shadow").apply(false)
-    id("com.epam.drill.gradle.plugin.kni").apply(false)
     id("com.epam.drill.agent.runner.app").apply(false)
 }
 

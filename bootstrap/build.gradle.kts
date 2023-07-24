@@ -65,7 +65,6 @@ kotlin {
                 implementation("org.jetbrains.kotlinx:kotlinx-serialization-protobuf:$kotlinxSerializationVersion")
                 implementation("io.ktor:ktor-utils:$ktorVersion")
                 implementation("com.benasher44:uuid:$uuidVersion")
-                implementation(project(":kni-runtime"))
                 implementation(project(":logging"))
                 implementation(project(":common"))
                 implementation(project(":jvmapi"))

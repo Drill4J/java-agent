@@ -34,8 +34,6 @@ val includeSharedLib: Settings.(String) -> Unit = {
     project(":$it").projectDir = file(sharedLibsLocalPath).resolve(it)
 }
 
-includeSharedLib("kni-runtime")
-includeSharedLib("kni-plugin")
 includeSharedLib("logging-native")
 includeSharedLib("logging")
 includeSharedLib("common")

@@ -39,6 +39,5 @@ configurations.all {
 }
 
 dependencies {
-    implementation(project(":kni-plugin"))
     implementation(project(":agent-runner-gradle"))
 }

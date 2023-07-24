@@ -20,7 +20,6 @@ import com.epam.drill.agent.*
 import com.epam.drill.core.callbacks.classloading.*
 import com.epam.drill.core.callbacks.vminit.*
 import com.epam.drill.jvmapi.gen.*
-import com.epam.drill.kni.*
 import com.epam.drill.logging.LoggingConfiguration
 import com.epam.drill.transport.common.ws.*
 import io.ktor.utils.io.core.*
@@ -44,7 +43,7 @@ U| |_| |\|  _ <       | |    \| |/__ \| |/__     |__   _|        | |_| |_,-.
  (__)_) (__)  (__)\_)-' '-(_/(_")("_)(_")("_)     (__)__)         (__)  v. ${agentVersion}⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
         """.trimIndent()
 
-object Agent : JvmtiAgent {
+object Agent {
     val isHttpHookEnabled: Boolean by lazy {
         getenv(SYSTEM_HTTP_HOOK_ENABLED)?.toKString()?.toBoolean() ?: memScoped {
             alloc<CPointerVar<ByteVar>>().apply {
@@ -53,7 +52,7 @@ object Agent : JvmtiAgent {
         }
     }
 
-    override fun agentOnLoad(options: String): Int {
+    fun agentOnLoad(options: String): Int {
         println(LOGO)
         try {
             LoggingConfiguration.readDefaultConfiguration()
@@ -98,7 +97,7 @@ object Agent : JvmtiAgent {
         return agentParams.validate()
     }
 
-    override fun agentOnUnload() {
+    fun agentOnUnload() {
         logger.info { "Agent_OnUnload" }
     }
 }
