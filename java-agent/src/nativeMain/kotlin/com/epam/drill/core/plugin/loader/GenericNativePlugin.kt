@@ -29,8 +29,7 @@ import mu.KotlinLogging
 open class GenericNativePlugin(
     pluginId: String,
     val pluginApiClass: jclass,
-    val userPlugin: jobject,
-    pluginConfig: PluginMetadata,
+    val userPlugin: jobject
 ) : AgentPart<Any>(
     pluginId,
     NopAgentContext,
@@ -38,10 +37,6 @@ open class GenericNativePlugin(
 ) {
 
     private val logger = KotlinLogging.logger(GenericNativePlugin::class.qualifiedName!!)
-
-    init {
-        updateRawConfig(pluginConfig.config)
-    }
 
     override suspend fun doRawAction(rawAction: String): Any {
         logger.debug { "doRawAction: $rawAction" }
@@ -75,25 +70,12 @@ open class GenericNativePlugin(
 
     }
 
-    override fun updateRawConfig(data: String) {
-        notifyJavaPart(data)
-    }
-
     override fun onConnect() {
         CallVoidMethodA(
             userPlugin,
             GetMethodID(pluginApiClass, GenericNativePlugin::onConnect.name, "()V"),
             null
         )
-    }
-
-    private fun notifyJavaPart(data: String) {
-        CallVoidMethodA(
-            userPlugin,
-            GetMethodID(pluginApiClass, AgentPart<*>::updateRawConfig.name, "(Ljava/lang/String;)V"),
-            nativeHeap.allocArray(1.toLong()) {
-                l = NewStringUTF(data)
-            })
     }
 
     fun processServerRequest() {

@@ -13,23 +13,41 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-@file:Suppress("unused")
-
 package com.epam.drill.core.callbacks.vminit
 
-import com.epam.drill.*
-import com.epam.drill.agent.*
-import com.epam.drill.core.*
-import com.epam.drill.core.Agent.isHttpHookEnabled
-import com.epam.drill.core.transport.*
-import com.epam.drill.core.ws.*
-import com.epam.drill.jvmapi.callObjectVoidMethod
-import com.epam.drill.jvmapi.gen.*
-import com.epam.drill.logging.LoggingConfiguration
-import com.epam.drill.request.*
-import kotlinx.cinterop.*
-import kotlinx.coroutines.*
+import kotlinx.cinterop.CPointer
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.runBlocking
 import mu.KotlinLogging
+import com.epam.drill.addPluginToStorage
+import com.epam.drill.adminAddress
+import com.epam.drill.pstorage
+import com.epam.drill.agent.DataService
+import com.epam.drill.agent.defaultJvmLoggingConfiguration
+import com.epam.drill.agent.updateJvmLoggingConfiguration
+import com.epam.drill.agent.config
+import com.epam.drill.agent.state
+import com.epam.drill.agentConfig
+import com.epam.drill.common.Family
+import com.epam.drill.common.PackagesPrefixes
+import com.epam.drill.core.Agent
+import com.epam.drill.core.globalCallbacks
+import com.epam.drill.core.plugin.loader.GenericNativePlugin
+import com.epam.drill.core.plugin.loader.InstrumentationNativePlugin
+import com.epam.drill.core.setPackagesPrefixes
+import com.epam.drill.core.transport.configureHttp
+import com.epam.drill.core.ws.WsSocket
+import com.epam.drill.jvmapi.AttachNativeThreadToJvm
+import com.epam.drill.jvmapi.gen.GetObjectClass
+import com.epam.drill.jvmapi.gen.JNIEnvVar
+import com.epam.drill.jvmapi.gen.JVMTI_ENABLE
+import com.epam.drill.jvmapi.gen.JVMTI_EVENT_CLASS_FILE_LOAD_HOOK
+import com.epam.drill.jvmapi.gen.NewGlobalRef
+import com.epam.drill.jvmapi.gen.SetEventNotificationMode
+import com.epam.drill.jvmapi.gen.jobject
+import com.epam.drill.jvmapi.gen.jthread
+import com.epam.drill.jvmapi.gen.jvmtiEnvVar
+import com.epam.drill.request.RequestHolder
 
 private val logger = KotlinLogging.logger("com.epam.drill.core.callbacks.vminit.VmInitEvent")
 
@@ -38,10 +56,10 @@ fun jvmtiEventVMInitEvent(env: CPointer<jvmtiEnvVar>?, jniEnv: CPointer<JNIEnvVa
     initRuntimeIfNeeded()
     SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_CLASS_FILE_LOAD_HOOK, null)
 
-    callObjectVoidMethod(LoggingConfiguration::class, LoggingConfiguration::readDefaultConfiguration)
+    defaultJvmLoggingConfiguration()
     updateJvmLoggingConfiguration()
 
-    if (isHttpHookEnabled) {
+    if (Agent.isHttpHookEnabled) {
         logger.info { "run with http hook" }
         configureHttp()
     } else {
@@ -49,6 +67,8 @@ fun jvmtiEventVMInitEvent(env: CPointer<jvmtiEnvVar>?, jniEnv: CPointer<JNIEnvVa
     }
 
     globalCallbacks()
+    setPackagesPrefixes(PackagesPrefixes(config.packagePrefixes.split(";")))
+    loadJvmModule("test2code", Family.INSTRUMENTATION)
     WsSocket().connect(adminAddress.toString())
     RequestHolder.init(isAsync = config.isAsyncApp)
     runBlocking {
@@ -72,3 +92,21 @@ fun jvmtiEventVMInitEvent(env: CPointer<jvmtiEnvVar>?, jniEnv: CPointer<JNIEnvVa
     }
 }
 
+@Suppress("UNCHECKED_CAST")
+fun loadJvmModule(id: String, family: Family) {
+    try {
+        AttachNativeThreadToJvm()
+        agentConfig = agentConfig.copy(needSync = false)
+        val agentPart = DataService.createAgentPart(id) as? jobject
+        val pluginApiClass = GetObjectClass(agentPart)!!
+        val agentPartRef = NewGlobalRef(agentPart)!!
+        val plugin = when (family) {
+            Family.INSTRUMENTATION -> InstrumentationNativePlugin(id, pluginApiClass, agentPartRef)
+            Family.GENERIC -> GenericNativePlugin(id, pluginApiClass, agentPartRef)
+        }
+        addPluginToStorage(plugin)
+        plugin.load()
+    } catch (ex: Exception) {
+        logger.error(ex) { "Fatal error processing plugin: id=${id}" }
+    }
+}

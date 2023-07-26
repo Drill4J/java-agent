@@ -20,7 +20,6 @@ import com.epam.drill.agent.*
 import com.epam.drill.core.callbacks.classloading.*
 import com.epam.drill.core.callbacks.vminit.*
 import com.epam.drill.jvmapi.gen.*
-import com.epam.drill.logging.LoggingConfiguration
 import com.epam.drill.transport.common.ws.*
 import io.ktor.utils.io.core.*
 import io.ktor.utils.io.streams.*
@@ -55,7 +54,7 @@ object Agent {
     fun agentOnLoad(options: String): Int {
         println(LOGO)
         try {
-            LoggingConfiguration.readDefaultConfiguration()
+            defaultNativeLoggingConfiguration()
             val initialParams = agentParams(options)
             performAgentInitialization(initialParams)
             setUnhandledExceptionHook({ error: Throwable ->

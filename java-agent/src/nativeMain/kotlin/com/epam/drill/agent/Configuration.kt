@@ -22,6 +22,7 @@ import com.epam.drill.common.ws.*
 import com.epam.drill.core.*
 import com.epam.drill.jvmapi.callObjectIntMethod
 import com.epam.drill.jvmapi.callObjectStringMethod
+import com.epam.drill.jvmapi.callObjectVoidMethod
 import com.epam.drill.jvmapi.callObjectVoidMethodWithInt
 import com.epam.drill.jvmapi.callObjectVoidMethodWithString
 import com.epam.drill.logging.LoggingConfiguration
@@ -61,6 +62,7 @@ fun updateConfigs(parameters: Map<String, AgentParameter>, initialization: Boole
         copy(
             classScanDelay = parameters[AgentArguments::classScanDelay.name]?.value
                 ?.toLong()?.toDuration(DurationUnit.MILLISECONDS) ?: classScanDelay,
+            packagePrefixes = parameters[AgentArguments::packagePrefixes.name]?.value ?: packagePrefixes,
             scanClassPath = parameters[AgentArguments::scanClassPath.name]?.value ?: scanClassPath,
             logLevel = parameters[AgentArguments::logLevel.name]?.value ?: logLevel,
             logFile = parameters[AgentArguments::logFile.name]?.value?.takeIf(String::isNotEmpty),
@@ -79,6 +81,10 @@ fun updateConfigs(parameters: Map<String, AgentParameter>, initialization: Boole
     logger.debug { "after update configs by params: config '$config'; state '$state'" }
 }
 
+fun defaultNativeLoggingConfiguration() {
+    LoggingConfiguration.readDefaultConfiguration()
+}
+
 fun updateNativeLoggingConfiguration() {
     LoggingConfiguration.setLoggingLevels(config.logLevel)
     if (LoggingConfiguration.getLoggingFilename() != config.logFile) {
@@ -87,6 +93,10 @@ fun updateNativeLoggingConfiguration() {
     if (LoggingConfiguration.getLogMessageLimit() != config.logLimit) {
         LoggingConfiguration.setLogMessageLimit(config.logLimit)
     }
+}
+
+fun defaultJvmLoggingConfiguration() {
+    callObjectVoidMethod(LoggingConfiguration::class, LoggingConfiguration::readDefaultConfiguration)
 }
 
 fun updateJvmLoggingConfiguration() {

@@ -37,6 +37,7 @@ data class AgentArguments(
     val isAsyncApp: Boolean = false,
     val classScanDelay: Long = 0L,
     val scanClassPath: String = "",
+    val packagePrefixes: String = ""
 ) {
     fun defaultParameters(): Map<String, AgentParameter> = mapOf(
         AgentArguments::logLevel.name to AgentParameter(
@@ -90,8 +91,12 @@ data class AgentArguments(
             value = scanClassPath,
             description = "Add additional class path to scan",
         ),
+        AgentArguments::packagePrefixes.name to AgentParameter(
+            type = packagePrefixes.toType(),
+            value = packagePrefixes,
+            description = "Configure package prefixes for scanning and instrumentation",
+        )
     )
-
 }
 
 fun Any?.toType() = when (this) {

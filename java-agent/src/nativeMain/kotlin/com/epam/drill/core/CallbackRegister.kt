@@ -18,7 +18,6 @@ package com.epam.drill.core
 import com.epam.drill.*
 import com.epam.drill.agent.*
 import com.epam.drill.common.*
-import com.epam.drill.core.plugin.loader.*
 import com.epam.drill.plugin.*
 import com.epam.drill.request.*
 import kotlinx.serialization.protobuf.*
@@ -40,9 +39,6 @@ fun globalCallbacks(): Unit = run {
         PluginExtension.processServerResponse()
     }
     drillRequest = RequestHolder::get
-
-    loadPlugin = ::loadJvmPlugin
-
 }
 
 fun RequestHolder.storeRequestMetadata(request: DrillRequest) {

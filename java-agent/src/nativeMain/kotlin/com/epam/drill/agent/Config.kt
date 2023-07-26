@@ -20,6 +20,7 @@ import kotlin.time.*
 
 data class Config(
     val classScanDelay: Duration = Duration.ZERO,
+    val packagePrefixes: String = "",
     val scanClassPath: String = "",
     val logLevel: String = "ERROR",
     val logFile: String? = null,
