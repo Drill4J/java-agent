@@ -109,7 +109,7 @@ class Plugin(
         _retransformed.value = true
     }
 
-    override suspend fun doAction(action: AgentAction) {
+    override fun doAction(action: AgentAction) {
         when (action) {
             /**
              * @features Session starting

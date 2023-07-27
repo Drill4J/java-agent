@@ -39,7 +39,7 @@ open class GenericNativePlugin(
     private val pluginApiClassName = pluginApiClass.signature()
         .removePrefix("L").removeSuffix(";").replace("<L", "<").replace(";>", ">").replace("/", ".")
 
-    override suspend fun doRawAction(rawAction: String): Any {
+    override fun doRawAction(rawAction: String): Any {
         logger.debug { "doRawAction: $rawAction" }
         return CallObjectMethodA(
             userPlugin,
@@ -93,7 +93,7 @@ open class GenericNativePlugin(
         }
     }
 
-    override suspend fun doAction(action: Any) = TODO()
+    override fun doAction(action: Any) = TODO()
     override fun parseAction(rawAction: String) = TODO()
 }
 

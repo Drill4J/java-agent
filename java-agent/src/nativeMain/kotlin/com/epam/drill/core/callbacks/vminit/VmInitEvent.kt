@@ -35,7 +35,6 @@ import com.epam.drill.core.plugin.loader.GenericNativePlugin
 import com.epam.drill.core.plugin.loader.InstrumentationNativePlugin
 import com.epam.drill.core.transport.configureHttp
 import com.epam.drill.core.ws.WsSocket
-import com.epam.drill.jvmapi.AttachNativeThreadToJvm
 import com.epam.drill.jvmapi.gen.GetObjectClass
 import com.epam.drill.jvmapi.gen.JNIEnvVar
 import com.epam.drill.jvmapi.gen.JVMTI_ENABLE
@@ -94,7 +93,7 @@ fun jvmtiEventVMInitEvent(env: CPointer<jvmtiEnvVar>?, jniEnv: CPointer<JNIEnvVa
 fun loadJvmModule(id: String, family: Family) {
     try {
         val agentPart = DataService.createAgentPart(id) as? jobject
-        val pluginApiClass = GetObjectClass(agentPart)!!
+        val pluginApiClass = NewGlobalRef(GetObjectClass(agentPart))!!
         val agentPartRef = NewGlobalRef(agentPart)!!
         val plugin = when (family) {
             Family.INSTRUMENTATION -> InstrumentationNativePlugin(id, pluginApiClass, agentPartRef)
