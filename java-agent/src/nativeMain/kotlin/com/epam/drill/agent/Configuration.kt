@@ -95,6 +95,10 @@ fun updateNativeLoggingConfiguration() {
     }
 }
 
+fun updatePackagePrefixesConfiguration() {
+    setPackagesPrefixes(PackagesPrefixes(config.packagePrefixes.split(";")))
+}
+
 fun defaultJvmLoggingConfiguration() {
     callObjectVoidMethod(LoggingConfiguration::class, LoggingConfiguration::readDefaultConfiguration)
 }

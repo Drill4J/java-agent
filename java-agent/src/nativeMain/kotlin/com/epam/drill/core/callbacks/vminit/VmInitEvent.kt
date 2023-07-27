@@ -27,14 +27,12 @@ import com.epam.drill.agent.defaultJvmLoggingConfiguration
 import com.epam.drill.agent.updateJvmLoggingConfiguration
 import com.epam.drill.agent.config
 import com.epam.drill.agent.state
-import com.epam.drill.agentConfig
+import com.epam.drill.agent.updatePackagePrefixesConfiguration
 import com.epam.drill.common.Family
-import com.epam.drill.common.PackagesPrefixes
 import com.epam.drill.core.Agent
 import com.epam.drill.core.globalCallbacks
 import com.epam.drill.core.plugin.loader.GenericNativePlugin
 import com.epam.drill.core.plugin.loader.InstrumentationNativePlugin
-import com.epam.drill.core.setPackagesPrefixes
 import com.epam.drill.core.transport.configureHttp
 import com.epam.drill.core.ws.WsSocket
 import com.epam.drill.jvmapi.AttachNativeThreadToJvm
@@ -67,7 +65,7 @@ fun jvmtiEventVMInitEvent(env: CPointer<jvmtiEnvVar>?, jniEnv: CPointer<JNIEnvVa
     }
 
     globalCallbacks()
-    setPackagesPrefixes(PackagesPrefixes(config.packagePrefixes.split(";")))
+    updatePackagePrefixesConfiguration()
     loadJvmModule("test2code", Family.INSTRUMENTATION)
     WsSocket().connect(adminAddress.toString())
     RequestHolder.init(isAsync = config.isAsyncApp)
@@ -95,8 +93,6 @@ fun jvmtiEventVMInitEvent(env: CPointer<jvmtiEnvVar>?, jniEnv: CPointer<JNIEnvVa
 @Suppress("UNCHECKED_CAST")
 fun loadJvmModule(id: String, family: Family) {
     try {
-        AttachNativeThreadToJvm()
-        agentConfig = agentConfig.copy(needSync = false)
         val agentPart = DataService.createAgentPart(id) as? jobject
         val pluginApiClass = GetObjectClass(agentPart)!!
         val agentPartRef = NewGlobalRef(agentPart)!!

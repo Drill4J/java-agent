@@ -25,7 +25,6 @@ import com.epam.drill.plugin.api.processing.*
 import kotlinx.cinterop.*
 import mu.KotlinLogging
 
-@Suppress("LeakingThis")
 open class GenericNativePlugin(
     pluginId: String,
     val pluginApiClass: jclass,
@@ -37,6 +36,8 @@ open class GenericNativePlugin(
 ) {
 
     private val logger = KotlinLogging.logger(GenericNativePlugin::class.qualifiedName!!)
+    private val pluginApiClassName = pluginApiClass.signature()
+        .removePrefix("L").removeSuffix(";").replace("<L", "<").replace(";>", ">").replace("/", ".")
 
     override suspend fun doRawAction(rawAction: String): Any {
         logger.debug { "doRawAction: $rawAction" }
@@ -50,14 +51,14 @@ open class GenericNativePlugin(
     }
 
     override fun on() {
-        logger.debug { "on" }
+        logger.debug { "on(), pluginApiClass=$pluginApiClassName" }
         CallVoidMethodA(
             userPlugin, GetMethodID(pluginApiClass, AgentPart<*>::on.name, "()V"), null
         )
     }
 
     override fun off() {
-        logger.debug { "off" }
+        logger.debug { "off(), pluginApiClass=$pluginApiClassName" }
         CallVoidMethodA(
             userPlugin, GetMethodID(pluginApiClass, AgentPart<*>::off.name, "()V"), null
         )
