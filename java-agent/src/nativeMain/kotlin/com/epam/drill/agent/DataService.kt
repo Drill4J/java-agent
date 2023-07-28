@@ -20,10 +20,6 @@ actual object DataService {
         return DataServiceStub.createAgentPart(id, jarPath)
     }
 
-    actual fun retrieveClassesData(config: String): ByteArray {
-        return DataServiceStub.retrieveClassesData(config)
-    }
-
     actual fun doRawActionBlocking(agentPart: Any, data: String): Any {
         return DataServiceStub.doRawActionBlocking(agentPart, data)
     }

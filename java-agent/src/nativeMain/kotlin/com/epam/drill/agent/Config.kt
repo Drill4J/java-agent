@@ -20,14 +20,12 @@ import kotlin.time.*
 
 data class Config(
     val classScanDelay: Duration = Duration.ZERO,
+    val scanClassPath: String = "",
     val isAsyncApp: Boolean = false,
     val isWebApp: Boolean = false,
     val isKafka: Boolean = false,
     val isCadence: Boolean = false,
-    val isTlsApp: Boolean = false,
-    val webAppLoadingTimeout: Duration = Duration.seconds(1500),
-    val webApps: List<String> = emptyList(),
-    val coreLibPath: String? = null
+    val isTlsApp: Boolean = false
 )
 
 private val _config = AtomicReference(Config().freeze()).freeze()

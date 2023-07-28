@@ -15,30 +15,30 @@
  */
 package com.epam.drill.agent
 
-import com.epam.drill.agent.classloading.source.*
 import kotlin.test.*
+import com.epam.drill.common.classloading.ClassSource
 
 class StringsTest {
     @Test
     fun `prefix matching`() {
         val prefixes = listOf("foo/bar", "!foo/bar/Bar", "!subclassOf:foo/bar/Foo")
-        assertTrue { "foo/bar/Baz.class".toClassSource().matches(prefixes) }
-        assertTrue { "Lfoo/bar/Baz.class".toClassSource().matches(prefixes, 1) }
-        assertFalse { "foo/baz/Baz.class".toClassSource().matches(prefixes) }
-        assertFalse { "Lfoo/baz/Baz.class".toClassSource().matches(prefixes, 1) }
-        assertFalse { "foo/bar/Bar.class".toClassSource().matches(prefixes) }
-        assertFalse { "Lfoo/bar/Bar.class".toClassSource().matches(prefixes, 1) }
+        assertTrue { "foo/bar/Baz.class".let(::ClassSource).prefixMatches(prefixes) }
+        assertTrue { "Lfoo/bar/Baz.class".let(::ClassSource).prefixMatches(prefixes, 1) }
+        assertFalse { "foo/baz/Baz.class".let(::ClassSource).prefixMatches(prefixes) }
+        assertFalse { "Lfoo/baz/Baz.class".let(::ClassSource).prefixMatches(prefixes, 1) }
+        assertFalse { "foo/bar/Bar.class".let(::ClassSource).prefixMatches(prefixes) }
+        assertFalse { "Lfoo/bar/Bar.class".let(::ClassSource).prefixMatches(prefixes, 1) }
         assertFalse {
             ClassSource(
-                className = "foo/bar/Baz.class",
+                entityName = "foo/bar/Baz.class",
                 superName = "foo/bar/Foo.class"
-            ).matches(prefixes)
+            ).prefixMatches(prefixes)
         }
         assertFalse {
             ClassSource(
-                className = "Lfoo/bar/Baz.class",
+                entityName = "Lfoo/bar/Baz.class",
                 superName = "Lfoo/bar/Foo.class"
-            ).matches(prefixes, 1)
+            ).prefixMatches(prefixes, 1)
         }
     }
 

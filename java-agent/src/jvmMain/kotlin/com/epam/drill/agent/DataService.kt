@@ -18,7 +18,6 @@
 package com.epam.drill.agent
 
 import com.epam.drill.*
-import com.epam.drill.agent.classloading.*
 import com.epam.drill.common.*
 import com.epam.drill.kni.*
 import com.epam.drill.logger.*
@@ -51,46 +50,6 @@ actual object DataService {
             LoggerFactory::class.java
         )
         constructor.newInstance(id, RequestHolder.agentContext, PluginSender, Logging)
-    }
-
-    actual fun retrieveClassesData(config: String): ByteArray {
-        val encodedClasses = encodedClasses(config)
-        val encodingResult = measureTimedValue {
-            ProtoBuf.dump(ByteArrayListWrapper.serializer(), ByteArrayListWrapper(encodedClasses))
-        }
-        logger.info { "Wrapped classes in ${encodingResult.duration}" }
-        return encodingResult.value
-    }
-
-    private fun encodedClasses(config: String): List<ByteArray> {
-        val (loadedClassData, classCount) = loadClassData(config)
-        val encodedClasses = measureTimedValue {
-            loadedClassData.map { (className, bytes) ->
-                ProtoBuf.dump(ByteClass.serializer(), ByteClass(className, bytes))
-            }
-        }
-        logger.info { "Encoded $classCount classes in ${encodedClasses.duration}" }
-        return encodedClasses.value
-    }
-
-    private fun loadClassData(config: String): Pair<Map<String, ByteArray>, Int> {
-        val packagesPrefixes = Json.decodeFromString(PackagesPrefixes.serializer(), config).packagesPrefixes
-
-        logger.info { "Scanning classes, package prefixes: $packagesPrefixes..." }
-        val scanResult = measureTimedValue { scanResourceMap(packagesPrefixes) }
-        val classSources = scanResult.value
-        logger.info { "Scanned ${classSources.count()} classes in  ${scanResult.duration}." }
-
-        logger.info { "Loading ${classSources.count()} classes..." }
-        val loadingResult = measureTimedValue {
-            classSources.associate { it.className to it.bytes() }
-        }
-        val loadedClassData = loadingResult.value
-        val classCount = loadedClassData.count()
-        logger.info { "Loaded $classCount classes in ${loadingResult.duration}" }
-
-        logger.info { "Encoding $classCount classes..." }
-        return Pair(loadedClassData, classCount)
     }
 
     actual fun doRawActionBlocking(

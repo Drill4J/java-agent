@@ -19,8 +19,9 @@ package com.epam.drill.core
 
 import com.epam.drill.*
 import com.epam.drill.agent.*
-import com.epam.drill.agent.classloading.source.*
 import com.epam.drill.api.*
+import com.epam.drill.common.classloading.ClassSource
+import com.epam.drill.common.classloading.SUBCLASS_OF
 import com.epam.drill.core.callbacks.classloading.*
 import com.epam.drill.jvmapi.*
 import com.epam.drill.jvmapi.gen.*
@@ -28,8 +29,6 @@ import com.epam.drill.logger.*
 import kotlinx.cinterop.*
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
-import platform.posix.nanosleep
-import platform.posix.timespec
 import kotlin.native.concurrent.*
 import kotlin.time.*
 
@@ -56,11 +55,11 @@ fun RetransformClassesByPackagePrefixes(env: JNIEnv, thiz: jobject, prefixes: jb
             it.status() in 0.toUInt()..7.toUInt()
         }.filter { jclass ->
             val signature = jclass.signature()
-            val superclass = jni.takeIf { prefixes.any { it.startsWith(SUBCLASS) } }
+            val superclass = jni.takeIf { prefixes.any { it.startsWith(SUBCLASS_OF) } }
                 ?.GetSuperclass
                 ?.invoke(com.epam.drill.jvmapi.env, jclass)
             val classSource = ClassSource(signature, superclass?.signature() ?: "")
-            '$' !in signature && classSource.matches(prefixes, 1)
+            '$' !in signature && classSource.prefixMatches(prefixes, 1)
         }.partition { it.status() == 7.toUInt() }.let { (loaded, undetermined) ->
             logger.info { "${loaded.size + undetermined.size} classes to retransform." }
             measureTimedValue {
@@ -117,6 +116,11 @@ fun GetAllLoadedClasses(env: JNIEnv, thiz: jobject) = memScoped {
 fun GetPackagePrefixes(): jstring? {
     val packagesPrefixes = agentConfig.packagesPrefixes.packagesPrefixes
     return NewStringUTF(packagesPrefixes.joinToString(", "))
+}
+
+@CName("Java_com_epam_drill_plugin_api_Native_GetScanClassPath")
+fun GetScanClassPath(): jstring? {
+    return NewStringUTF(config.scanClassPath)
 }
 
 @CName("Java_com_epam_drill_plugin_api_Native_WaitClassScanning")
