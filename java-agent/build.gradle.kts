@@ -81,13 +81,6 @@ kotlin {
                 implementation(project(":logging"))
             }
         }
-        val commonTest by getting {
-            dependencies {
-                implementation("org.jetbrains.kotlin:kotlin-test-common")
-                implementation("org.jetbrains.kotlin:kotlin-test-annotations-common")
-                implementation(project(":common"))
-            }
-        }
         val jvmMain by getting {
             dependencies {
                 implementation(kotlin("reflect"))
@@ -101,12 +94,6 @@ kotlin {
                 implementation(project(":http-clients-instrumentation"))
                 implementation(project(":plugin-api-agent"))
                 implementation(project(":test2code"))
-            }
-        }
-        val jvmTest by getting {
-            dependencies {
-                implementation(kotlin("test-junit"))
-                implementation("org.junit.jupiter:junit-jupiter:5.5.2")
             }
         }
         val configureNativeDependencies: KotlinSourceSet.() -> Unit = {
