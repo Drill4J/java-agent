@@ -13,10 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.epam.drill.agent
+package com.epam.drill.agent.request
 
-expect object DataService {
-
-    fun createAgentPart(id: String): Any?
-
+expect object RequestProcessor {
+    fun processServerRequest()
+    fun processServerResponse()
 }

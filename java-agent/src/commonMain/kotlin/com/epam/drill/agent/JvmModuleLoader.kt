@@ -15,10 +15,8 @@
  */
 package com.epam.drill.agent
 
-actual object HeadersRetriever {
-    actual external fun adminAddressHeader(): String?
-    actual external fun retrieveAdminAddress(): String?
-    actual external fun sessionHeaderPattern(): String?
-    actual external fun idHeaderConfigKey(): String?
-    actual external fun idHeaderConfigValue(): String?
+expect object JvmModuleLoader {
+
+    fun loadJvmModule(id: String): Any?
+
 }

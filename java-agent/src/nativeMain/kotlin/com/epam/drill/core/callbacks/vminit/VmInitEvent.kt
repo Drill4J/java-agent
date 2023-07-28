@@ -22,12 +22,13 @@ import mu.KotlinLogging
 import com.epam.drill.addPluginToStorage
 import com.epam.drill.adminAddress
 import com.epam.drill.pstorage
-import com.epam.drill.agent.DataService
+import com.epam.drill.agent.JvmModuleLoader
 import com.epam.drill.agent.defaultJvmLoggingConfiguration
 import com.epam.drill.agent.updateJvmLoggingConfiguration
 import com.epam.drill.agent.config
 import com.epam.drill.agent.state
 import com.epam.drill.agent.updatePackagePrefixesConfiguration
+import com.epam.drill.agent.request.RequestHolder
 import com.epam.drill.common.Family
 import com.epam.drill.core.Agent
 import com.epam.drill.core.globalCallbacks
@@ -44,7 +45,6 @@ import com.epam.drill.jvmapi.gen.SetEventNotificationMode
 import com.epam.drill.jvmapi.gen.jobject
 import com.epam.drill.jvmapi.gen.jthread
 import com.epam.drill.jvmapi.gen.jvmtiEnvVar
-import com.epam.drill.request.RequestHolder
 
 private val logger = KotlinLogging.logger("com.epam.drill.core.callbacks.vminit.VmInitEvent")
 
@@ -92,7 +92,7 @@ fun jvmtiEventVMInitEvent(env: CPointer<jvmtiEnvVar>?, jniEnv: CPointer<JNIEnvVa
 @Suppress("UNCHECKED_CAST")
 fun loadJvmModule(id: String, family: Family) {
     try {
-        val agentPart = DataService.createAgentPart(id) as? jobject
+        val agentPart = JvmModuleLoader.loadJvmModule(id) as? jobject
         val pluginApiClass = NewGlobalRef(GetObjectClass(agentPart))!!
         val agentPartRef = NewGlobalRef(agentPart)!!
         val plugin = when (family) {

@@ -13,12 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.epam.drill.agent
+package com.epam.drill.agent.request
 
-expect object HeadersRetriever {
-    fun adminAddressHeader(): String?
-    fun retrieveAdminAddress(): String?
-    fun sessionHeaderPattern(): String?
-    fun idHeaderConfigKey(): String?
-    fun idHeaderConfigValue(): String?
+expect object RequestHolder {
+    fun init(isAsync: Boolean)
+    fun store(drillRequest: ByteArray)
+    fun dump(): ByteArray?
+    fun closeSession()
 }

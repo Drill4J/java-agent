@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.epam.drill
+package com.epam.drill.agent
 
 const val DRILL_PACKAGE = "com/epam/drill"
 const val SYSTEM_CONFIG_PATH = "DRILL_AGENT_CONFIG_PATH"

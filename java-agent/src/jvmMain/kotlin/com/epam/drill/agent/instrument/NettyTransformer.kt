@@ -15,11 +15,12 @@
  */
 package com.epam.drill.agent.instrument
 
-import com.epam.drill.agent.*
-import com.epam.drill.agent.instrument.util.*
-import com.epam.drill.request.*
-import javassist.*
+import javassist.CtMethod
 import mu.KotlinLogging
+import com.epam.drill.agent.instrument.util.createAndTransform
+import com.epam.drill.agent.request.HeadersRetriever
+import com.epam.drill.agent.request.HttpRequest
+import com.epam.drill.agent.request.RequestProcessor
 
 actual object NettyTransformer {
 
@@ -87,7 +88,7 @@ actual object NettyTransformer {
                     CtMethod::insertAfter,
                     """
                         if ($1 instanceof $DefaultHttpResponse) {
-                            ${PluginExtension::class.java.name}.INSTANCE.${PluginExtension::processServerResponse.name}();
+                            ${RequestProcessor::class.java.name}.INSTANCE.${RequestProcessor::processServerResponse.name}();
                         }
                     """.trimIndent()
                 )

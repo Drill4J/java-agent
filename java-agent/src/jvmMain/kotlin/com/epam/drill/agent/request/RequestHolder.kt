@@ -13,10 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.epam.drill.request
+package com.epam.drill.agent.request
 
 import com.alibaba.ttl.*
-import com.epam.drill.common.*
 import com.epam.drill.plugin.*
 import com.epam.drill.plugin.api.processing.*
 import kotlinx.serialization.protobuf.*
@@ -35,17 +34,17 @@ actual object RequestHolder {
     }
 
     actual fun store(drillRequest: ByteArray) {
-        storeRequest(ProtoBuf.load(DrillRequest.serializer(), drillRequest))
+        storeRequest(ProtoBuf.decodeFromByteArray(DrillRequest.serializer(), drillRequest))
     }
 
     fun storeRequest(drillRequest: DrillRequest) {
         threadStorage.set(drillRequest)
         logger.trace { "session ${drillRequest.drillSessionId} saved" }
-        PluginExtension.processServerRequest()
+        RequestProcessor.processServerRequest()
     }
 
     actual fun dump(): ByteArray? {
-        return threadStorage.get()?.let { ProtoBuf.dump(DrillRequest.serializer(), it) }
+        return threadStorage.get()?.let { ProtoBuf.encodeToByteArray(DrillRequest.serializer(), it) }
     }
 
     actual fun closeSession() {

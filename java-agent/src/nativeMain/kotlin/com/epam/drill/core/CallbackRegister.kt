@@ -15,12 +15,12 @@
  */
 package com.epam.drill.core
 
-import com.epam.drill.*
-import com.epam.drill.agent.*
-import com.epam.drill.common.*
-import com.epam.drill.plugin.*
-import com.epam.drill.request.*
-import kotlinx.serialization.protobuf.*
+import kotlinx.serialization.protobuf.ProtoBuf
+import com.epam.drill.agentConfig
+import com.epam.drill.agent.updateState
+import com.epam.drill.agent.request.RequestProcessor
+import com.epam.drill.agent.request.RequestHolder
+import com.epam.drill.plugin.DrillRequest
 
 fun globalCallbacks(): Unit = run {
     setPackagesPrefixes = { prefixes ->
@@ -36,15 +36,15 @@ fun globalCallbacks(): Unit = run {
     sessionStorage = RequestHolder::storeRequestMetadata
     closeSession = {
         RequestHolder.closeSession()
-        PluginExtension.processServerResponse()
+        RequestProcessor.processServerResponse()
     }
     drillRequest = RequestHolder::get
 }
 
 fun RequestHolder.storeRequestMetadata(request: DrillRequest) {
-    store(ProtoBuf.dump(DrillRequest.serializer(), request))
+    store(ProtoBuf.encodeToByteArray(DrillRequest.serializer(), request))
 }
 
 fun RequestHolder.get(): DrillRequest? {
-    return dump()?.let { ProtoBuf.load(DrillRequest.serializer(), it) }
+    return dump()?.let { ProtoBuf.decodeFromByteArray(DrillRequest.serializer(), it) }
 }

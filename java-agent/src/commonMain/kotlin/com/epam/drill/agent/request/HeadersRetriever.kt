@@ -13,9 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.epam.drill.request
+package com.epam.drill.agent.request
 
-expect object PluginExtension {
-    fun processServerRequest()
-    fun processServerResponse()
+expect object HeadersRetriever {
+    fun adminAddressHeader(): String?
+    fun retrieveAdminAddress(): String?
+    fun sessionHeaderPattern(): String?
+    fun idHeaderConfigKey(): String?
+    fun idHeaderConfigValue(): String?
 }

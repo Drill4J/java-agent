@@ -13,15 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.epam.drill.request
+package com.epam.drill.agent.request
 
-import com.epam.drill.plugin.*
-import com.epam.drill.plugin.api.processing.*
-import java.util.*
-
-internal class RequestAgentContext(
-    private val requestProvider: () -> DrillRequest?
-) : AgentContext {
-    override operator fun invoke(): String? = requestProvider()?.drillSessionId?.ifEmpty { null }
-    override operator fun get(key: String): String? = requestProvider()?.headers?.get(key.lowercase(Locale.getDefault()))
+actual object HeadersRetriever {
+    actual external fun adminAddressHeader(): String?
+    actual external fun retrieveAdminAddress(): String?
+    actual external fun sessionHeaderPattern(): String?
+    actual external fun idHeaderConfigKey(): String?
+    actual external fun idHeaderConfigValue(): String?
 }

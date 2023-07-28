@@ -13,15 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.epam.drill.request
+package com.epam.drill.agent.request
 
-import com.epam.drill.agent.HeadersRetriever.sessionHeaderPattern
 import com.epam.drill.agent.instrument.*
-import com.epam.drill.common.*
 import com.epam.drill.plugin.*
 import kotlinx.serialization.protobuf.*
 import java.nio.*
-import kotlin.reflect.jvm.*
 import mu.KotlinLogging
 
 object HttpRequest {
@@ -65,7 +62,7 @@ object HttpRequest {
 
     fun storeDrillHeaders(headers: Map<String, String>?) {
         runCatching {
-            headers?.get(sessionHeaderPattern() ?: DRILL_SESSION_ID_HEADER_NAME)?.let { drillSessionId ->
+            headers?.get(HeadersRetriever.sessionHeaderPattern() ?: DRILL_SESSION_ID_HEADER_NAME)?.let { drillSessionId ->
                 val drillHeaders = headers.filter { it.key.startsWith(DRILL_HEADER_PREFIX) }
                 logger.trace { "for drillSessionId '$drillSessionId' store drillHeaders '$drillHeaders' to thread storage" }
                 RequestHolder.storeRequest(DrillRequest(drillSessionId, drillHeaders))
@@ -77,7 +74,7 @@ object HttpRequest {
 
     fun loadDrillHeaders() = runCatching {
         RequestHolder.dump()?.let { bytes ->
-            val drillRequest = ProtoBuf.load(DrillRequest.serializer(), bytes)
+            val drillRequest = ProtoBuf.decodeFromByteArray(DrillRequest.serializer(), bytes)
             drillRequest.headers.filter { it.key.startsWith(DRILL_HEADER_PREFIX) } + (DRILL_SESSION_ID_HEADER_NAME to drillRequest.drillSessionId)
         }
     }.onFailure { logger.error(it) { "Error while loading drill headers. Reason: " } }.getOrNull()

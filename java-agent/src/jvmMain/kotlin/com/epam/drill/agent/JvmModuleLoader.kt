@@ -15,27 +15,23 @@
  */
 package com.epam.drill.agent
 
+import com.epam.drill.agent.request.RequestHolder
 import com.epam.drill.plugin.PluginSender
 import com.epam.drill.plugin.api.processing.AgentContext
 import com.epam.drill.plugin.api.processing.AgentPart
 import com.epam.drill.plugin.api.processing.Sender
 import com.epam.drill.plugins.test2code.Plugin
-import com.epam.drill.request.RequestHolder
 
-actual object DataService {
+actual object JvmModuleLoader {
 
-    actual fun createAgentPart(id: String): Any? = run {
-        val agentPartClass = retrieveApiClass(id)!!
-        val constructor = agentPartClass.getConstructor(
-            String::class.java,
-            AgentContext::class.java,
-            Sender::class.java
-        )
+    actual fun loadJvmModule(id: String): Any? = run {
+        val jvmModuleClass = getJvmModuleClass(id)!!
+        val constructor = jvmModuleClass.getConstructor(String::class.java, AgentContext::class.java, Sender::class.java)
         constructor.newInstance(id, RequestHolder.agentContext, PluginSender)
     }
 
     @Suppress("UNCHECKED_CAST")
-    private fun retrieveApiClass(id: String): Class<AgentPart<*>>? = when(id) {
+    private fun getJvmModuleClass(id: String): Class<AgentPart<*>>? = when(id) {
         "test2code" -> Plugin::class.java as Class<AgentPart<*>>
         else -> null
     }

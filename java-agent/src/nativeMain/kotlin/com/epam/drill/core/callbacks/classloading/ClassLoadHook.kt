@@ -28,7 +28,6 @@ import com.epam.drill.common.classloading.ClassSource
 import com.epam.drill.core.Agent.isHttpHookEnabled
 import com.epam.drill.core.plugin.loader.*
 import com.epam.drill.jvmapi.gen.*
-import com.epam.drill.request.*
 import io.ktor.utils.io.bits.*
 import kotlinx.cinterop.*
 import org.objectweb.asm.*

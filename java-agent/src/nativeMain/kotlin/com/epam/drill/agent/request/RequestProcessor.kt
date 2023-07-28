@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.epam.drill.request
+package com.epam.drill.agent.request
 
 import com.epam.drill.pstorage
 import com.epam.drill.core.plugin.loader.GenericNativePlugin
@@ -21,7 +21,7 @@ import com.epam.drill.jvmapi.callNativeVoidMethod
 import com.epam.drill.jvmapi.gen.JNIEnv
 import com.epam.drill.jvmapi.gen.jobject
 
-actual object PluginExtension {
+actual object RequestProcessor {
 
     actual fun processServerRequest() {
         plugins().forEach { it.processServerRequest() }
@@ -36,11 +36,11 @@ actual object PluginExtension {
 }
 
 @Suppress("UNUSED")
-@CName("Java_com_epam_drill_request_PluginExtension_processServerRequest")
+@CName("Java_com_epam_drill_agent_request_RequestProcessor_processServerRequest")
 fun processServerRequest(env: JNIEnv, thiz: jobject): Unit =
-    callNativeVoidMethod(env, thiz, PluginExtension::processServerRequest)
+    callNativeVoidMethod(env, thiz, RequestProcessor::processServerRequest)
 
 @Suppress("UNUSED")
-@CName("Java_com_epam_drill_request_PluginExtension_processServerResponse")
+@CName("Java_com_epam_drill_agent_request_RequestProcessor_processServerResponse")
 fun processServerResponse(env: JNIEnv, thiz: jobject): Unit =
-    callNativeVoidMethod(env, thiz, PluginExtension::processServerResponse)
+    callNativeVoidMethod(env, thiz, RequestProcessor::processServerResponse)

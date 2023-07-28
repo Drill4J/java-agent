@@ -17,9 +17,9 @@ package com.epam.drill.agent
 
 import com.epam.drill.jvmapi.callObjectObjectMethodWithString
 
-actual object DataService {
+actual object JvmModuleLoader {
 
-    actual fun createAgentPart(id: String): Any? =
-        callObjectObjectMethodWithString(DataService::class, DataService::createAgentPart, id)
+    actual fun loadJvmModule(id: String): Any? =
+        callObjectObjectMethodWithString(JvmModuleLoader::class, JvmModuleLoader::loadJvmModule, id)
 
 }

@@ -13,16 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.epam.drill.common
+package com.epam.drill.agent.request
 
-import kotlinx.serialization.*
-
-internal fun <T> BinaryFormat.dump(
-    serializer: SerializationStrategy<T>,
-    value: T
-): ByteArray = encodeToByteArray(serializer, value)
-
-internal fun <T> BinaryFormat.load(
-    deserializer: DeserializationStrategy<T>,
-    bytes: ByteArray
-): T = decodeFromByteArray(deserializer, bytes)
+actual object RequestProcessor {
+    actual external fun processServerRequest()
+    actual external fun processServerResponse()
+}
