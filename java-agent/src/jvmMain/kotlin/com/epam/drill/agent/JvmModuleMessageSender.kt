@@ -13,10 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.epam.drill
+package com.epam.drill.agent
 
-import com.epam.drill.common.*
+import com.epam.drill.plugin.api.processing.Sender
 
-@SharedImmutable
-val AGENT_TYPE: AgentType = AgentType.JAVA
-
+object JvmModuleMessageSender : Sender {
+    external override fun send(pluginId: String, message: String)
+}

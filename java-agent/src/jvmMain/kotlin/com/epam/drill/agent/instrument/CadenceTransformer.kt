@@ -20,8 +20,8 @@ import javassist.CtConstructor
 import mu.KotlinLogging
 import com.epam.drill.agent.CADENCE_CONSUMER
 import com.epam.drill.agent.CADENCE_PRODUCER
+import com.epam.drill.agent.instrument.request.HttpRequest
 import com.epam.drill.agent.instrument.util.createAndTransform
-import com.epam.drill.agent.request.HttpRequest
 
 actual object CadenceTransformer {
 

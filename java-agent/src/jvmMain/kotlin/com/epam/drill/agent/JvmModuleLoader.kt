@@ -16,7 +16,6 @@
 package com.epam.drill.agent
 
 import com.epam.drill.agent.request.RequestHolder
-import com.epam.drill.plugin.PluginSender
 import com.epam.drill.plugin.api.processing.AgentContext
 import com.epam.drill.plugin.api.processing.AgentPart
 import com.epam.drill.plugin.api.processing.Sender
@@ -27,7 +26,7 @@ actual object JvmModuleLoader {
     actual fun loadJvmModule(id: String): Any? = run {
         val jvmModuleClass = getJvmModuleClass(id)!!
         val constructor = jvmModuleClass.getConstructor(String::class.java, AgentContext::class.java, Sender::class.java)
-        constructor.newInstance(id, RequestHolder.agentContext, PluginSender)
+        constructor.newInstance(id, RequestHolder.agentContext, JvmModuleMessageSender)
     }
 
     @Suppress("UNCHECKED_CAST")

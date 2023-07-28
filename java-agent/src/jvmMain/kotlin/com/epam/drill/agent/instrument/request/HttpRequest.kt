@@ -13,13 +13,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.epam.drill.agent.request
+package com.epam.drill.agent.instrument.request
 
-import com.epam.drill.agent.instrument.*
-import com.epam.drill.plugin.*
-import kotlinx.serialization.protobuf.*
-import java.nio.*
+import kotlinx.serialization.protobuf.ProtoBuf
+import java.nio.ByteBuffer
 import mu.KotlinLogging
+import com.epam.drill.agent.instrument.ClientsCallback
+import com.epam.drill.agent.request.HeadersRetriever
+import com.epam.drill.agent.request.RequestHolder
+import com.epam.drill.plugin.DrillRequest
 
 object HttpRequest {
     const val DRILL_HEADER_PREFIX = "drill-"

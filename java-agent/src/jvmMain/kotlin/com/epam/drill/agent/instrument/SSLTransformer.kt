@@ -17,8 +17,9 @@ package com.epam.drill.agent.instrument
 
 import javassist.CtMethod
 import mu.KotlinLogging
+import com.epam.drill.agent.instrument.error.wrapCatching
+import com.epam.drill.agent.instrument.request.HttpRequest
 import com.epam.drill.agent.instrument.util.createAndTransform
-import com.epam.drill.agent.request.HttpRequest
 
 actual object SSLTransformer {
 
@@ -38,7 +39,7 @@ actual object SSLTransformer {
                 )?.wrapCatching(
                     CtMethod::insertAfter,
                     """
-                       com.epam.drill.agent.request.HttpRequest.INSTANCE.${HttpRequest::parse.name}($2);
+                       ${HttpRequest::class.java.name}.INSTANCE.${HttpRequest::parse.name}($2);
                     """.trimIndent()
                 ) ?: run {
                     return null

@@ -44,7 +44,7 @@ fun performAgentInitialization(initialParams: AgentParameters) {
             agentVersion = agentVersion,
             buildVersion = aa.buildVersion ?: calculateBuildVersion() ?: "unspecified",
             serviceGroupId = aa.groupId,
-            agentType = AGENT_TYPE,
+            agentType = AgentType.JAVA,
             parameters = aa.defaultParameters(),
         )
         updateConfigs(agentConfig.parameters, true)

@@ -17,9 +17,10 @@ package com.epam.drill.agent.instrument
 
 import javassist.CtMethod
 import mu.KotlinLogging
+import com.epam.drill.agent.instrument.error.wrapCatching
+import com.epam.drill.agent.instrument.request.HttpRequest
 import com.epam.drill.agent.instrument.util.createAndTransform
 import com.epam.drill.agent.request.HeadersRetriever
-import com.epam.drill.agent.request.HttpRequest
 import com.epam.drill.agent.request.RequestProcessor
 
 actual object TomcatTransformer {
@@ -64,14 +65,14 @@ actual object TomcatTransformer {
                                     tomcatResponse.addHeader(headerName, header);
                                 }
                             }
-                            com.epam.drill.agent.request.HttpRequest.INSTANCE.${HttpRequest::storeDrillHeaders.name}(allHeaders);
+                            ${HttpRequest::class.java.name}.INSTANCE.${HttpRequest::storeDrillHeaders.name}(allHeaders);
                         }
                     """.trimIndent()
                 )
                 method.wrapCatching(
                     CtMethod::insertAfter,
                     """
-                       com.epam.drill.agent.request.RequestProcessor.INSTANCE.${RequestProcessor::processServerResponse.name}();
+                       ${RequestProcessor::class.java.name}.INSTANCE.${RequestProcessor::processServerResponse.name}();
                     """.trimIndent()
                 )
                 return toBytecode()

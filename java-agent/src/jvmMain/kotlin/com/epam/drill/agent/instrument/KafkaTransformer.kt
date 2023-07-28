@@ -20,8 +20,9 @@ import javassist.CtMethod
 import mu.KotlinLogging
 import com.epam.drill.agent.KAFKA_CONSUMER_SPRING
 import com.epam.drill.agent.KAFKA_PRODUCER_INTERFACE
+import com.epam.drill.agent.instrument.error.wrapCatching
+import com.epam.drill.agent.instrument.request.HttpRequest
 import com.epam.drill.agent.instrument.util.createAndTransform
-import com.epam.drill.agent.request.HttpRequest
 
 actual object KafkaTransformer {
 

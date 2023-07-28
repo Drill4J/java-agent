@@ -36,7 +36,7 @@ import mu.KotlinLogging
 private val logger = KotlinLogging.logger("com.epam.drill.core.SymbolsRegister")
 
 @Suppress("UNUSED_PARAMETER")
-@CName("Java_com_epam_drill_plugin_PluginSender_send")
+@CName("Java_com_epam_drill_agent_JvmModuleMessageSender_send")
 fun sendFromJava(envs: JNIEnv, thiz: jobject, jpluginId: jstring, jmessage: jstring) = withJString {
     sendToSocket(jpluginId.toKString(), jmessage.toKString())
 }

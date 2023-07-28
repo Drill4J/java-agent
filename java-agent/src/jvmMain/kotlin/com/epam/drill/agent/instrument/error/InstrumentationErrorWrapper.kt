@@ -13,10 +13,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.epam.drill.plugin
+package com.epam.drill.agent.instrument.error
 
-import com.epam.drill.plugin.api.processing.*
+import javassist.CtMethod
 
-object PluginSender : Sender {
-    external override fun send(pluginId: String, message: String)
+inline fun CtMethod.wrapCatching(insert: CtMethod.(String) -> Unit, code: String) {
+    runCatching {
+        insert(
+            """
+            try {
+                $code
+            } catch (Throwable e) {
+                ${InstrumentationErrorLogger::class.java.name}.INSTANCE.${InstrumentationErrorLogger::error.name}(e, "Error in the injected code. Method name: $name.");
+            }
+            """.trimIndent()
+        )
+    }.onFailure { InstrumentationErrorLogger.warn(it, "Can't insert code. Method name: $name") }
 }

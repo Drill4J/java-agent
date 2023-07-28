@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.epam.drill.agent.request
+package com.epam.drill.agent
 
 import com.epam.drill.plugin.*
 import com.epam.drill.plugin.api.processing.*
