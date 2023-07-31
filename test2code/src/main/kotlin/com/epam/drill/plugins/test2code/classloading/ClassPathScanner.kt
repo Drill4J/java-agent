@@ -47,18 +47,45 @@ class ClassPathScanner(
         this.getOrDefault(0)
     }
 
+    /**
+     * Transfer buffer of scanned classes using transfer function provided in constructor param.
+     */
     fun transferBuffer() = scannedBuffer.takeIf(Collection<ClassSource>::isNotEmpty)?.let(transfer)
 
+    /**
+     * Scan classes from URI.
+     *
+     * @param uri URI to scan
+     * @return scanned classes count
+     */
     fun scanURI(uri: URI) = File(uri).takeIf(File::exists)?.let(::scanFile) ?: 0
 
+    /**
+     * Scan classes from file (archive or directory).
+     *
+     * @param file file to scan
+     * @return scanned classes count
+     */
     fun scanFile(file: File) = file.takeIf(File::isDirectory)?.let(::scanDirectory) ?: scanJarFile(file).getOrLogFail()
 
+    /**
+     * Scan classes from directory.
+     *
+     * @param file directory to scan
+     * @return scanned classes count
+     */
     private fun scanDirectory(file: File) = file.run {
         val isClassFile: (File) -> Boolean = { it.isFile && it.extension == "class" }
         logger.debug { "ClassPathScanner: scanning directory: ${this.absolutePath}" }
         this.walkTopDown().filter(isClassFile).sumOf { scanClassFile(it, this).getOrLogFail() }
     }
 
+    /**
+     * Scan classes from archive file (JAR/WAR/RAR/EAR).
+     *
+     * @param file archive to scan
+     * @return scanned classes count
+     */
     private fun scanJarFile(file: File): Result<Int> = file.runCatching {
         val isNotScanned: (File) -> Boolean = { !scannedJarFiles.contains(it.absolutePath) }
         val fileToStream: (File) -> JarInputStream = { JarInputStream(it.inputStream().buffered(JAR_BUFFER_SIZE)) }
@@ -73,6 +100,12 @@ class ClassPathScanner(
         scanned
     }
 
+    /**
+     * Scan classes from archive stream.
+     *
+     * @param stream archive to scan
+     * @return scanned classes count
+     */
     private fun scanJarInputStream(stream: JarInputStream) = stream.run {
         var scanned = 0
         var jarEntry = this.nextJarEntry
@@ -95,6 +128,13 @@ class ClassPathScanner(
                 !scannedClasses.contains(it.entityName())
     }
 
+    /**
+     * Scan class file.
+     *
+     * @param file file to scan
+     * @param directory directory to calculate package (using relative path)
+     * @return 0 if skipped or 1 if class scanned
+     */
     private fun scanClassFile(file: File, directory: File) = file.runCatching {
         val readClassSource: (ClassSource) -> ClassSource? = {
             val bytes = this.readBytes()
@@ -107,6 +147,13 @@ class ClassPathScanner(
             .takeIf(isClassAccepted)?.let(readClassSource)?.takeIf(isPrefixMatches)?.let(::addClassToScanned) ?: 0
     }
 
+    /**
+     * Scan class from JAR-archive entry.
+     *
+     * @param entry entry to scan
+     * @param bytes bytes from archive stream
+     * @return 0 if skipped or 1 if class scanned
+     */
     private fun scanClassEntry(entry: JarEntry, bytes: ByteArray) = entry.name.runCatching {
         val readClassSource: (ClassSource) -> ClassSource? = {
             val superName = ClassReader(bytes).superName ?: ""
@@ -117,11 +164,24 @@ class ClassPathScanner(
             .takeIf(isClassAccepted)?.let(readClassSource)?.takeIf(isPrefixMatches)?.let(::addClassToScanned) ?: 0
     }
 
+    /**
+     * Scan JAR-archive packed in JAR-archive.
+     *
+     * @param entry entry to scan
+     * @param bytes bytes from archive stream
+     * @return scanned classes count
+     */
     private fun scanJarEntry(entry: JarEntry, bytes: ByteArray): Result<Int> = entry.name.runCatching {
         logger.debug { "ClassPathScanner: scanning jar entry: $this" }
         JarInputStream(ByteArrayInputStream(bytes)).use(::scanJarInputStream)
     }
 
+    /**
+     * Add class to scanned buffer and transfer it using transfer function provided in constructor param
+     * when transfer buffer exceed.
+     *
+     * @return always returns '1'
+     */
     private fun addClassToScanned(classSource: ClassSource): Int {
         val isBufferFilled: (Set<ClassSource>) -> Boolean = { it.size >= classesBufferSize }
         logger.trace { "ClassPathScanner: found class: ${classSource.entityName()}" }

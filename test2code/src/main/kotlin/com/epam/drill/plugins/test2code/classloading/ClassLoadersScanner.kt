@@ -37,18 +37,48 @@ class ClassLoadersScanner(
         this.getOrNull()
     }
 
+    /**
+     * Scan classes (by scanning all active JVM threads and retrieving classpathes) and return scanned classes count.
+     * Also scan classes from additional paths provided in constructor param.
+     *
+     * @return scanned classes count
+     */
     fun scanClasses() = scanClassLoadersURIs(scanClassLoaders()).run {
         scanClasses(this + additionalPaths.map(::File).filter(File::exists).map(File::toURI))
     }
 
+    /**
+     * Retrieve all classloaders from active threads.
+     *
+     * @return classloaders from active threads
+     */
     private fun scanClassLoaders() = Thread.getAllStackTraces().keys.mapNotNull(Thread::getContextClassLoader)
         .fold(mutableSetOf(ClassLoader.getSystemClassLoader()), ::addClassLoaderWithParents)
 
+    /**
+     * Scan classloader and return classloaders classpath URIs.
+     *
+     * @param classloaders set of classloaders to scan
+     * @return set of classpath URIs
+     */
     private fun scanClassLoadersURIs(classloaders: Set<ClassLoader>) = classloaders
         .fold(getSystemClassPath().toMutableSet(), ::addClassLoaderURIs).let(::normalizeURIs)
 
+    /**
+     * Scan classes and return scanned count.
+     *
+     * @param uris set of URI to scan
+     * @return scanned classes count
+     */
     private fun scanClasses(uris: Set<URI>) = uris.fold(0, ::addClasses).apply { classPathScanner.transferBuffer() }
 
+    /**
+     * Get classloader with parent classloaders and add them to accumulating set.
+     *
+     * @param loaders accumulating set of classloaders
+     * @param classloader classloader to retrieve parents
+     * @return accumulating set of classloaders
+     */
     private fun addClassLoaderWithParents(loaders: MutableSet<ClassLoader>, classloader: ClassLoader) = loaders.apply {
         var current: ClassLoader? = classloader
         while (current != null) {
@@ -57,6 +87,13 @@ class ClassLoadersScanner(
         }
     }
 
+    /**
+     * Get classpath URIs from given classloader and add them to accumulating set.
+     *
+     * @param uris accumulating set of classloaders URIs
+     * @param classloader classloader to retrieve URL from
+     * @return accumulating set of classloaders URIs
+     */
     private fun addClassLoaderURIs(uris: MutableSet<URI>, classloader: ClassLoader) = uris.apply {
         val toUrlClassloader: (ClassLoader) -> URLClassLoader? = { classloader as? URLClassLoader }
         val toUri: (URL) -> Result<URI> = { it.runCatching { this.toURI() } }
@@ -73,11 +110,29 @@ class ClassLoadersScanner(
         }
     }
 
+    /**
+     * Scan class from given URI and return scanned classes count.
+     *
+     * @param count accumulating count of scanned classes
+     * @param uri URI to scan
+     * @return accumulating count of classes increased on scanned classes count
+     */
     private fun addClasses(count: Int, uri: URI) = count + classPathScanner.scanURI(uri)
 
+    /**
+     * Get classpath from java system property 'java.class.path'.
+     *
+     * @return system classpath
+     */
     private fun getSystemClassPath() = System.getProperty("java.class.path").split(File.pathSeparator).map(::File)
         .filter(File::exists).map(File::toURI)
 
+    /**
+     * Normalize set of URI: calculate archive files paths, check existing files.
+     *
+     * @param uris list of URI to normalize
+     * @return normalized set of URI
+     */
     private fun normalizeURIs(uris: Set<URI>) = mutableSetOf<URI>().apply {
         val isFileExists: (URI) -> Boolean = { File(it).exists() }
         val isNormalized: (URI) -> Boolean = { uri -> this.any { uri.path.startsWith(it.path) } }
@@ -90,11 +145,26 @@ class ClassLoadersScanner(
         }
     }
 
+    /**
+     * Unify URI to file URI, e.g.:
+     * jar://<some-file>/<jar-entry>!/ -> file://<some-file>/<jar-entry>
+     *
+     * @param uri URI to unify
+     * @return unified file URI
+     */
     private fun normalizeURIPath(uri: URI) = uri.runCatching {
         val path = this.takeUnless(URI::isOpaque)?.path ?: this.schemeSpecificPart.removePrefix("file:")
         URI("file", null, path.removeSuffix("!/"), null)
     }
 
+    /**
+     * Retrieve existing file URI from classloader URI, e.g. for war-archives:
+     * /appserver/deployments/somewar.war/WEB-INF/lib/somelib.jar -> /appserver/deployments/somewar.war
+     * /appserver/deployments/somewar.war/WEB-INF/classes/        -> /appserver/deployments/somewar.war
+     *
+     * @param uri classloader classpath URI
+     * @return existing file URI or null
+     */
     private fun retrieveFileURI(uri: URI) = uri.run {
         val isArchiveContains: (String) -> Boolean = { it.contains(Regex("\\.jar/|\\.war/|\\.rar/|\\.ear/")) }
         val isArchiveEnds: (String) -> Boolean = { it.contains(Regex("\\.jar$|\\.war$|\\.rar$|\\.ear$")) }
