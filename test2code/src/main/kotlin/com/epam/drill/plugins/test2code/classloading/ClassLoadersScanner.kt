@@ -24,8 +24,9 @@ import com.epam.drill.common.classloading.ClassSource
 
 class ClassLoadersScanner(
     packagePrefixes: List<String>,
-    classesBufferSize: Int = 50,
-    transfer: (Set<ClassSource>) -> Unit
+    classesBufferSize: Int,
+    transfer: (Set<ClassSource>) -> Unit,
+    private val additionalPaths: List<String> = emptyList()
 ) {
 
     private val logger = KotlinLogging.logger {}
@@ -36,21 +37,17 @@ class ClassLoadersScanner(
         this.getOrNull()
     }
 
-    fun scanClassLoaders() = Thread.getAllStackTraces().keys.mapNotNull(Thread::getContextClassLoader)
+    fun scanClasses() = scanClassLoadersURIs(scanClassLoaders()).run {
+        scanClasses(this + additionalPaths.map(::File).filter(File::exists).map(File::toURI))
+    }
+
+    private fun scanClassLoaders() = Thread.getAllStackTraces().keys.mapNotNull(Thread::getContextClassLoader)
         .fold(mutableSetOf(ClassLoader.getSystemClassLoader()), ::addClassLoaderWithParents)
 
-    fun scanClassLoadersURIs(classloaders: Set<ClassLoader>) = classloaders
+    private fun scanClassLoadersURIs(classloaders: Set<ClassLoader>) = classloaders
         .fold(getSystemClassPath().toMutableSet(), ::addClassLoaderURIs).let(::normalizeURIs)
 
-    fun scanClassLoadersURIs() = scanClassLoadersURIs(scanClassLoaders())
-
-    fun scanClasses(uris: Set<URI>) = uris.fold(0, ::addClasses).apply { classPathScanner.transferBuffer() }
-
-    fun scanClasses() = scanClasses(scanClassLoadersURIs())
-
-    fun scanClasses(additionalPaths: List<String>) = additionalPaths.run {
-        scanClasses(scanClassLoadersURIs() + this.map(::File).filter(File::exists).map(File::toURI))
-    }
+    private fun scanClasses(uris: Set<URI>) = uris.fold(0, ::addClasses).apply { classPathScanner.transferBuffer() }
 
     private fun addClassLoaderWithParents(loaders: MutableSet<ClassLoader>, classloader: ClassLoader) = loaders.apply {
         var current: ClassLoader? = classloader
@@ -60,19 +57,19 @@ class ClassLoadersScanner(
         }
     }
 
-    private fun addClassLoaderURIs(uris: MutableSet<URI>, cl: ClassLoader) = uris.apply {
-        val toUrlClassloader: (ClassLoader) -> URLClassLoader? = { cl as? URLClassLoader }
-        val urlToUri: (URL) -> Result<URI> = { it.runCatching { this.toURI() } }
+    private fun addClassLoaderURIs(uris: MutableSet<URI>, classloader: ClassLoader) = uris.apply {
+        val toUrlClassloader: (ClassLoader) -> URLClassLoader? = { classloader as? URLClassLoader }
+        val toUri: (URL) -> Result<URI> = { it.runCatching { this.toURI() } }
+        val logUri: (URI) -> Unit = { logger.debug { "ClassLoadersScanner: ClassLoader URI found: $it" } }
+        val addAsUris: (List<URL>) -> Unit = {
+            it.map(toUri).mapNotNull(getOrLogFail).filter(this::add).forEach(logUri)
+        }
         val result = this.runCatching {
-            cl.let(toUrlClassloader)?.urLs?.map(urlToUri)?.mapNotNull(getOrLogFail)?.filter(this::add)?.forEach {
-                logger.debug { "ClassLoadersScanner: ClassLoader URI found: $it" }
-            }
-            cl.getResources("/").asSequence().map(urlToUri).mapNotNull(getOrLogFail).filter(this::add).forEach {
-                logger.debug { "ClassLoadersScanner: ClassLoader URI found: $it" }
-            }
+            classloader.let(toUrlClassloader)?.urLs?.toList()?.let(addAsUris)
+            classloader.getResources("/").toList().let(addAsUris)
         }
         result.onFailure {
-            logger.error(it) { "ClassLoadersScanner: error retrieving classpath URIs from classloader $cl" }
+            logger.error(it) { "ClassLoadersScanner: error retrieving classpath URIs from classloader $classloader" }
         }
     }
 
@@ -84,10 +81,9 @@ class ClassLoadersScanner(
     private fun normalizeURIs(uris: Set<URI>) = mutableSetOf<URI>().apply {
         val isFileExists: (URI) -> Boolean = { File(it).exists() }
         val isNormalized: (URI) -> Boolean = { uri -> this.any { uri.path.startsWith(it.path) } }
+        val toExistingURI: (URI) -> URI? = { it.takeIf(isFileExists) ?: retrieveFileURI(it) }
         uris.map(::normalizeURIPath).mapNotNull(getOrLogFail).forEach {
-            it.takeUnless(isNormalized)?.let { uri ->
-                uri.takeIf(isFileExists)?.let(this::add) ?: retrieveFileURI(uri)?.let(this::add)
-            }
+            it.takeUnless(isNormalized)?.let(toExistingURI)?.let(this::add)
         }
         this.onEach {
             logger.debug { "ClassLoadersScanner: ClassLoader URI normalized: $it" }

@@ -17,7 +17,7 @@ package com.epam.drill.plugins.test2code
 
 import com.epam.drill.plugin.api.*
 import com.epam.drill.plugin.api.processing.*
-import com.epam.drill.plugins.test2code.classloading.ClassLoadersScanner
+import com.epam.drill.plugins.test2code.classloading.*
 import com.epam.drill.plugins.test2code.common.api.*
 import com.epam.drill.common.classloading.EntitySource
 import com.github.luben.zstd.*
@@ -30,7 +30,6 @@ import mu.KotlinLogging
 /**
  * Service for managing the plugin on the agent side
  */
-@Suppress("unused")
 class Plugin(
     id: String,
     agentContext: AgentContext,
@@ -169,6 +168,7 @@ class Plugin(
      * For each request we fill the thread local variable with an array of [ExecDatum]
      * @features Running tests
      */
+    @Suppress("UNUSED")
     fun processServerRequest() {
         (instrContext as DrillProbeArrayProvider).run {
             val sessionId = context()
@@ -189,6 +189,7 @@ class Plugin(
      * When the application under test returns a response to the caller
      * @features Running tests
      */
+    @Suppress("UNUSED")
     fun processServerResponse() {
         (instrContext as DrillProbeArrayProvider).run {
             requestThreadLocal.remove()
@@ -204,7 +205,7 @@ class Plugin(
         val packagePrefixes = Native.GetPackagePrefixes().split(", ")
         val additionalPaths = Native.GetScanClassPath().split(";")
         logger.info { "Scanning classes, package prefixes: $packagePrefixes... " }
-        ClassLoadersScanner(packagePrefixes, 50, consumer).scanClasses(additionalPaths)
+        ClassLoadersScanner(packagePrefixes, 50, consumer, additionalPaths).scanClasses()
     }
 
     /**
