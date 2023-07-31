@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.epam.drill.core
+package com.epam.drill.agent.jvmti
 
 import kotlin.native.concurrent.freeze
 import kotlinx.cinterop.CPointer
@@ -26,6 +26,7 @@ import kotlinx.cinterop.pointed
 import kotlinx.cinterop.ptr
 import kotlinx.cinterop.reinterpret
 import kotlinx.cinterop.value
+import com.epam.drill.agent.Agent
 import com.epam.drill.jvmapi.JNIEnvPointer
 import com.epam.drill.jvmapi.checkEx
 import com.epam.drill.jvmapi.currentEnvs

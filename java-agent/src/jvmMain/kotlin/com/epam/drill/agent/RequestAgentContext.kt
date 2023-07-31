@@ -15,11 +15,11 @@
  */
 package com.epam.drill.agent
 
+import java.util.*
 import com.epam.drill.plugin.*
 import com.epam.drill.plugin.api.processing.*
-import java.util.*
 
-internal class RequestAgentContext(
+class RequestAgentContext(
     private val requestProvider: () -> DrillRequest?
 ) : AgentContext {
     override operator fun invoke(): String? = requestProvider()?.drillSessionId?.ifEmpty { null }

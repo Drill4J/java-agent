@@ -14,14 +14,13 @@
  * limitations under the License.
  */
 @file:Suppress("unused")
+package com.epam.drill.agent.jvmti
 
-package com.epam.drill.api
-
+import kotlinx.cinterop.*
 import com.epam.drill.core.messanger.*
 import com.epam.drill.jvmapi.*
 import com.epam.drill.jvmapi.gen.*
 import com.epam.drill.plugin.*
-import kotlinx.cinterop.*
 
 /**
  * we should duplicate all of this methods signature with "external" keyword and "@SymbolName" annotation, without body,

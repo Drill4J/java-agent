@@ -16,10 +16,7 @@
 package com.epam.drill.agent.request
 
 import com.epam.drill.pstorage
-import com.epam.drill.core.plugin.loader.GenericNativePlugin
-import com.epam.drill.jvmapi.callNativeVoidMethod
-import com.epam.drill.jvmapi.gen.JNIEnv
-import com.epam.drill.jvmapi.gen.jobject
+import com.epam.drill.agent.plugin.GenericNativePlugin
 
 actual object RequestProcessor {
 
@@ -34,13 +31,3 @@ actual object RequestProcessor {
     private fun plugins() = pstorage.values.filterIsInstance<GenericNativePlugin>()
 
 }
-
-@Suppress("UNUSED")
-@CName("Java_com_epam_drill_agent_request_RequestProcessor_processServerRequest")
-fun processServerRequest(env: JNIEnv, thiz: jobject): Unit =
-    callNativeVoidMethod(env, thiz, RequestProcessor::processServerRequest)
-
-@Suppress("UNUSED")
-@CName("Java_com_epam_drill_agent_request_RequestProcessor_processServerResponse")
-fun processServerResponse(env: JNIEnv, thiz: jobject): Unit =
-    callNativeVoidMethod(env, thiz, RequestProcessor::processServerResponse)

@@ -15,27 +15,26 @@
  */
 @file:Suppress("UNUSED_VARIABLE")
 
-package com.epam.drill.core.callbacks.classloading
+package com.epam.drill.agent.jvmti.event
 
+import kotlin.native.concurrent.*
+import kotlinx.cinterop.*
+import io.ktor.utils.io.bits.*
+import org.objectweb.asm.*
+import mu.*
 import com.epam.drill.*
 import com.epam.drill.agent.*
+import com.epam.drill.agent.configuration.*
 import com.epam.drill.agent.instrument.*
-import com.epam.drill.agent.instrument.SSLTransformer.SSL_ENGINE_CLASS_NAME
 import com.epam.drill.agent.instrument.http.apache.*
 import com.epam.drill.agent.instrument.http.java.*
 import com.epam.drill.agent.instrument.http.ok.*
-import com.epam.drill.common.classloading.ClassSource
-import com.epam.drill.core.Agent.isHttpHookEnabled
-import com.epam.drill.core.plugin.loader.*
+import com.epam.drill.agent.plugin.*
+import com.epam.drill.common.classloading.*
 import com.epam.drill.jvmapi.gen.*
-import io.ktor.utils.io.bits.*
-import kotlinx.cinterop.*
-import org.objectweb.asm.*
-import kotlin.native.concurrent.*
-import mu.KotlinLogging
 
 @SharedImmutable
-private val logger = KotlinLogging.logger("com.epam.drill.core.callbacks.classloading.ClassLoadHook")
+private val logger = KotlinLogging.logger("com.epam.drill.agent.jvmti.event.ClassFileLoadHook")
 
 @SharedImmutable
 private val strategys = listOf(JavaHttpUrlConnection, ApacheClient, OkHttpClient)
@@ -43,7 +42,7 @@ private val strategys = listOf(JavaHttpUrlConnection, ApacheClient, OkHttpClient
 internal val totalTransformClass = AtomicInt(0)
 
 @Suppress("unused", "UNUSED_PARAMETER")
-fun classLoadEvent(
+fun classFileLoadHook(
     jvmtiEnv: CPointer<jvmtiEnvVar>?,
     jniEnv: CPointer<JNIEnvVar>?,
     classBeingRedefined: jclass?,
@@ -57,7 +56,7 @@ fun classLoadEvent(
 ) {
     initRuntimeIfNeeded()
     val kClassName = clsName?.toKString() ?: return
-    if (isBootstrapClassLoading(loader, protection_domain) && !config.isTlsApp && !config.isAsyncApp
+    if (isBootstrapClassLoading(loader, protection_domain) && !agentParameters.isTlsApp && !agentParameters.isAsyncApp
         && !kClassName.contains("Http") // raw hack for http(s) classes
     ) return
     if (classData == null || kClassName.startsWith(DRILL_PACKAGE)) return
@@ -70,8 +69,8 @@ fun classLoadEvent(
         val superName = classReader.superName ?: ""
         val interfaces = classReader.interfaces.filterNotNull()
         //TODO needs refactoring EPMDJ-8528
-        if (config.isAsyncApp || config.isWebApp) {
-            if (config.isAsyncApp && isTTLCandidate(kClassName, superName, interfaces)) {
+        if (agentParameters.isAsyncApp || agentParameters.isWebApp) {
+            if (agentParameters.isAsyncApp && isTTLCandidate(kClassName, superName, interfaces)) {
                 transformers += { bytes ->
                     TTLTransformer.transform(
                         loader,
@@ -81,12 +80,12 @@ fun classLoadEvent(
                     )
                 }
             }
-            if (superName == SSL_ENGINE_CLASS_NAME) {
+            if (superName == SSLTransformer.SSL_ENGINE_CLASS_NAME) {
                 transformers += { bytes -> SSLTransformer.transform(kClassName, bytes, loader, protection_domain) }
             }
         }
 
-        if (config.isKafka) {
+        if (agentParameters.isKafka) {
             if (KAFKA_PRODUCER_INTERFACE in interfaces) {
                 transformers += { bytes ->
                     KafkaTransformer.transform(KAFKA_PRODUCER_INTERFACE, bytes, loader, protection_domain)
@@ -98,18 +97,18 @@ fun classLoadEvent(
                 }
             }
         }
-        if (config.isCadence) {
+        if (agentParameters.isCadence) {
             if (CADENCE_PRODUCER == kClassName || CADENCE_CONSUMER == kClassName) {
                 transformers += { bytes -> CadenceTransformer.transform(kClassName, bytes, loader, protection_domain) }
             }
         }
         val classSource = ClassSource(kClassName, classReader.superName ?: "", classBytes)
-        if ('$' !in kClassName && classSource.prefixMatches(state.packagePrefixes)) {
+        if ('$' !in kClassName && classSource.prefixMatches(agentConfig.packagesPrefixes.packagesPrefixes)) {
             pstorage.values.filterIsInstance<InstrumentationNativePlugin>().forEach { plugin ->
                 transformers += { bytes -> plugin.instrument(kClassName, bytes) }
             }
         }
-        if (!isHttpHookEnabled) {
+        if (!Agent.isHttpHookEnabled) {
             if (kClassName.startsWith("org/apache/catalina/core/ApplicationFilterChain")) {
                 logger.info { "Http hook is off, starting transform tomcat class kClassName $kClassName..." }
                 transformers += { bytes ->

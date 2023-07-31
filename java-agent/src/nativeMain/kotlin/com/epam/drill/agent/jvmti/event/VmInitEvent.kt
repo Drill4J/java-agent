@@ -13,27 +13,24 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.epam.drill.core.callbacks.vminit
+package com.epam.drill.agent.jvmti.event
 
 import kotlinx.cinterop.CPointer
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.runBlocking
 import mu.KotlinLogging
 import com.epam.drill.addPluginToStorage
 import com.epam.drill.adminAddress
-import com.epam.drill.pstorage
+import com.epam.drill.agent.Agent
 import com.epam.drill.agent.JvmModuleLoader
-import com.epam.drill.agent.defaultJvmLoggingConfiguration
-import com.epam.drill.agent.updateJvmLoggingConfiguration
-import com.epam.drill.agent.config
-import com.epam.drill.agent.state
-import com.epam.drill.agent.updatePackagePrefixesConfiguration
+import com.epam.drill.agent.configuration.agentParameters
+import com.epam.drill.agent.configuration.agentStartTimeMark
+import com.epam.drill.agent.configuration.defaultJvmLoggingConfiguration
+import com.epam.drill.agent.configuration.updateJvmLoggingConfiguration
+import com.epam.drill.agent.configuration.updatePackagePrefixesConfiguration
 import com.epam.drill.agent.request.RequestHolder
 import com.epam.drill.common.Family
-import com.epam.drill.core.Agent
-import com.epam.drill.core.globalCallbacks
-import com.epam.drill.core.plugin.loader.GenericNativePlugin
-import com.epam.drill.core.plugin.loader.InstrumentationNativePlugin
+import com.epam.drill.agent.globalCallbacks
+import com.epam.drill.agent.plugin.GenericNativePlugin
+import com.epam.drill.agent.plugin.InstrumentationNativePlugin
 import com.epam.drill.core.transport.configureHttp
 import com.epam.drill.core.ws.WsSocket
 import com.epam.drill.jvmapi.gen.GetObjectClass
@@ -46,15 +43,16 @@ import com.epam.drill.jvmapi.gen.jobject
 import com.epam.drill.jvmapi.gen.jthread
 import com.epam.drill.jvmapi.gen.jvmtiEnvVar
 
-private val logger = KotlinLogging.logger("com.epam.drill.core.callbacks.vminit.VmInitEvent")
+private val logger = KotlinLogging.logger("com.epam.drill.agent.jvmti.event.VmInitEvent")
 
 @Suppress("UNUSED_PARAMETER")
-fun jvmtiEventVMInitEvent(env: CPointer<jvmtiEnvVar>?, jniEnv: CPointer<JNIEnvVar>?, thread: jthread?) {
+fun vmInitEvent(env: CPointer<jvmtiEnvVar>?, jniEnv: CPointer<JNIEnvVar>?, thread: jthread?) {
     initRuntimeIfNeeded()
     SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_CLASS_FILE_LOAD_HOOK, null)
 
     defaultJvmLoggingConfiguration()
     updateJvmLoggingConfiguration()
+    agentStartTimeMark
 
     if (Agent.isHttpHookEnabled) {
         logger.info { "run with http hook" }
@@ -67,30 +65,11 @@ fun jvmtiEventVMInitEvent(env: CPointer<jvmtiEnvVar>?, jniEnv: CPointer<JNIEnvVa
     updatePackagePrefixesConfiguration()
     loadJvmModule("test2code", Family.INSTRUMENTATION)
     WsSocket().connect(adminAddress.toString())
-    RequestHolder.init(isAsync = config.isAsyncApp)
-    runBlocking {
-        for (i in 1..5) {
-            logger.info { "Agent is not alive. Waiting for package settings from $adminAddress..." }
-            delay(500L)
-            if (state.alive) {
-                logger.info { "Agent is alive! Waiting for loading of at least one plugin..." }
-                while (pstorage.none()) {
-                    delay(500L)
-                }
-                logger.info {
-                    "At least on plugin is loaded (plugins ${pstorage.keys.toList()}), continue vm initializing."
-                }
-                break
-            }
-        }
-        if (pstorage.none()) {
-            logger.info { "No plugins loaded from $adminAddress." }
-        }
-    }
+    RequestHolder.init(isAsync = agentParameters.isAsyncApp)
 }
 
 @Suppress("UNCHECKED_CAST")
-fun loadJvmModule(id: String, family: Family) {
+private fun loadJvmModule(id: String, family: Family) {
     try {
         val agentPart = JvmModuleLoader.loadJvmModule(id) as? jobject
         val pluginApiClass = NewGlobalRef(GetObjectClass(agentPart))!!

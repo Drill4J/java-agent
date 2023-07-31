@@ -13,24 +13,23 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.epam.drill.core
+package com.epam.drill.agent
 
-import com.epam.drill.*
-import com.epam.drill.agent.*
-import com.epam.drill.core.callbacks.classloading.*
-import com.epam.drill.core.callbacks.vminit.*
-import com.epam.drill.jvmapi.gen.*
-import com.epam.drill.transport.common.ws.*
-import io.ktor.utils.io.core.*
-import io.ktor.utils.io.streams.*
-import kotlinx.cinterop.*
-import platform.posix.*
 import kotlin.native.concurrent.*
 import kotlin.test.*
-import mu.KotlinLogging
+import kotlinx.cinterop.*
+import platform.posix.*
+import io.ktor.utils.io.core.*
+import io.ktor.utils.io.streams.*
+import mu.*
+import com.epam.drill.*
+import com.epam.drill.agent.configuration.*
+import com.epam.drill.agent.jvmti.event.*
+import com.epam.drill.jvmapi.gen.*
+import com.epam.drill.transport.common.ws.*
 
 @SharedImmutable
-private val logger = KotlinLogging.logger("com.epam.drill.core.Starter")
+private val logger = KotlinLogging.logger("com.epam.drill.agent.Agent")
 
 private val LOGO = """
   ____    ____                 _       _          _  _                _      
@@ -43,6 +42,7 @@ U| |_| |\|  _ <       | |    \| |/__ \| |/__     |__   _|        | |_| |_,-.
         """.trimIndent()
 
 object Agent {
+
     val isHttpHookEnabled: Boolean by lazy {
         getenv(SYSTEM_HTTP_HOOK_ENABLED)?.toKString()?.toBoolean() ?: memScoped {
             alloc<CPointerVar<ByteVar>>().apply {
@@ -56,7 +56,7 @@ object Agent {
         try {
             defaultNativeLoggingConfiguration()
             val initialParams = agentParams(options)
-            performAgentInitialization(initialParams)
+            performInitialConfiguration(initialParams)
             setUnhandledExceptionHook({ error: Throwable ->
                 logger.error(error) { "unhandled event $error" }
             }.freeze())
@@ -79,7 +79,11 @@ object Agent {
         return JNI_OK
     }
 
-    private fun agentParams(options: String): AgentParameters {
+    fun agentOnUnload() {
+        logger.info { "Agent_OnUnload" }
+    }
+
+    private fun agentParams(options: String): Map<String, String> {
         logger.debug { "agent options:$options" }
         val agentParameters = options.asAgentParams()
         val configPath = agentParameters["configPath"] ?: getenv(SYSTEM_CONFIG_PATH)?.toKString()
@@ -96,58 +100,48 @@ object Agent {
         return agentParams.validate()
     }
 
-    fun agentOnUnload() {
-        logger.info { "Agent_OnUnload" }
+    private fun String?.asAgentParams(
+        lineDelimiter: String = ",",
+        filterPrefix: String = "",
+        mapDelimiter: String = "="
+    ): Map<String, String> {
+        if (this.isNullOrEmpty()) return emptyMap()
+        return try {
+            this.split(lineDelimiter)
+                .filter { it.isNotEmpty() && (filterPrefix.isEmpty() || !it.startsWith(filterPrefix)) }
+                .associate {
+                    it.substringBefore(mapDelimiter) to it.substringAfter(mapDelimiter, "")
+                }
+        } catch (parseException: Exception) {
+            throw IllegalArgumentException("wrong agent parameters: $this")
+        }
     }
-}
 
-private fun String?.asAgentParams(
-    lineDelimiter: String = ",",
-    filterPrefix: String = "",
-    mapDelimiter: String = "="
-): AgentParameters {
-    if (this.isNullOrEmpty()) return emptyMap()
-    return try {
-        this.split(lineDelimiter)
-            .filter { it.isNotEmpty() && (filterPrefix.isEmpty() || !it.startsWith(filterPrefix)) }
-            .associate {
-                it.substringBefore(mapDelimiter) to it.substringAfter(mapDelimiter, "")
-            }
-    } catch (parseException: Exception) {
-        throw IllegalArgumentException("wrong agent parameters: $this")
+    private fun readFile(filePath: String): String {
+        val fileDescriptor = open(filePath, EROFS)
+        if (fileDescriptor == -1) throw IllegalArgumentException("Cannot open the config file with filePath='$filePath'")
+        val bytes = Input(fileDescriptor).readBytes()
+        return bytes.decodeToString()
     }
-}
 
-private fun readFile(filePath: String): String {
-    val fileDescriptor = open(filePath, EROFS)
-    if (fileDescriptor == -1) throw IllegalArgumentException("Cannot open the config file with filePath='$filePath'")
-    val bytes = Input(fileDescriptor).readBytes()
-    return bytes.decodeToString()
-}
-
-private fun callbackRegister() = memScoped {
-    val alloc = alloc<jvmtiEventCallbacks>()
-    alloc.VMInit = staticCFunction(::jvmtiEventVMInitEvent)
-    alloc.VMDeath = staticCFunction(::vmDeathEvent)
-    alloc.ClassFileLoadHook = staticCFunction(::classLoadEvent)
-    SetEventCallbacks(alloc.ptr, sizeOf<jvmtiEventCallbacks>().toInt())
-    SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_VM_INIT, null)
-}
-
-@Suppress("UNUSED_PARAMETER")
-fun vmDeathEvent(jvmtiEnv: CPointer<jvmtiEnvVar>?, jniEnv: CPointer<JNIEnvVar>?) {
-    logger.info { "vmDeathEvent" }
-}
-
-typealias AgentParameters = Map<String, String>
-
-private fun AgentParameters.validate(): AgentParameters = apply {
-    check("agentId" in this) { "Please set 'agentId' as agent parameters e.g. -agentpath:/path/to/agent=agentId={your ID}" }
-    val adminAddress = get("adminAddress")
-    checkNotNull(adminAddress) { "Please set 'adminAddress' as agent parameters e.g. -agentpath:/path/to/agent=adminAddress={hostname:port}" }
-    try {
-        URL("ws://$adminAddress")
-    } catch (parseException: RuntimeException) {
-        fail("Please check 'adminAddress' parameter. It should be a valid address to the admin service without schema and any additional paths, e.g. localhost:8090")
+    private fun callbackRegister() = memScoped {
+        val alloc = alloc<jvmtiEventCallbacks>()
+        alloc.VMInit = staticCFunction(::vmInitEvent)
+        alloc.VMDeath = staticCFunction(::vmDeathEvent)
+        alloc.ClassFileLoadHook = staticCFunction(::classFileLoadHook)
+        SetEventCallbacks(alloc.ptr, sizeOf<jvmtiEventCallbacks>().toInt())
+        SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_VM_INIT, null)
     }
+
+    private fun Map<String, String>.validate(): Map<String, String> = apply {
+        check("agentId" in this) { "Please set 'agentId' as agent parameters e.g. -agentpath:/path/to/agent=agentId={your ID}" }
+        val adminAddress = get("adminAddress")
+        checkNotNull(adminAddress) { "Please set 'adminAddress' as agent parameters e.g. -agentpath:/path/to/agent=adminAddress={hostname:port}" }
+        try {
+            URL("ws://$adminAddress")
+        } catch (parseException: RuntimeException) {
+            fail("Please check 'adminAddress' parameter. It should be a valid address to the admin service without schema and any additional paths, e.g. localhost:8090")
+        }
+    }
+
 }

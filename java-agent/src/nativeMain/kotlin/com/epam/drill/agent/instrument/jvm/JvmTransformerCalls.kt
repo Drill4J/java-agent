@@ -13,16 +13,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.epam.drill.agent.instrument
+package com.epam.drill.agent.instrument.jvm
 
+import kotlin.reflect.KCallable
+import kotlin.reflect.KClass
+import com.epam.drill.agent.instrument.TTLTransformer
 import com.epam.drill.jvmapi.getObjectMethod
 import com.epam.drill.jvmapi.toByteArray
 import com.epam.drill.jvmapi.toJByteArray
 import com.epam.drill.jvmapi.gen.CallObjectMethod
 import com.epam.drill.jvmapi.gen.NewStringUTF
 import com.epam.drill.jvmapi.gen.jobject
-import kotlin.reflect.KCallable
-import kotlin.reflect.KClass
 
 @Suppress("UNCHECKED_CAST")
 internal fun callTransformerTransformMethod(

@@ -13,18 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.epam.drill.agent.serialization
+package com.epam.drill.agent.configuration.serialization
 
-import kotlinx.serialization.*
-import kotlinx.serialization.descriptors.*
-import kotlinx.serialization.encoding.*
-import kotlinx.serialization.modules.*
-
-inline fun <reified T : Any> Map<String, String>.parseAs(): T = run {
-    val serializer = T::class.serializer()
-    val module = serializersModuleOf(serializer)
-    serializer.deserialize(SimpleMapDecoder(module, this))
-}
+import kotlinx.serialization.descriptors.PrimitiveKind
+import kotlinx.serialization.descriptors.SerialDescriptor
+import kotlinx.serialization.encoding.AbstractDecoder
+import kotlinx.serialization.encoding.CompositeDecoder
+import kotlinx.serialization.modules.EmptySerializersModule
+import kotlinx.serialization.modules.SerializersModule
 
 class SimpleMapDecoder(
     override val serializersModule: SerializersModule = EmptySerializersModule,
@@ -63,4 +59,5 @@ class SimpleMapDecoder(
             else -> super.decodeValue()
         }
     } ?: super.decodeValue()
+
 }

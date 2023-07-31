@@ -13,12 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.epam.drill.core.plugin.loader
+package com.epam.drill.agent.plugin
 
 import com.epam.drill.*
 import com.epam.drill.agent.*
 import com.epam.drill.common.*
-import com.epam.drill.core.plugin.*
 import com.epam.drill.jvmapi.*
 import com.epam.drill.jvmapi.gen.*
 import com.epam.drill.plugin.api.processing.*

@@ -15,6 +15,8 @@
  */
 package com.epam.drill.agent.instrument
 
+import com.epam.drill.agent.instrument.jvm.callTTLTransformerTransformMethod
+
 actual object TTLTransformer {
     val directTtlClasses = listOf(
         "java/util/concurrent/ScheduledThreadPoolExecutor",

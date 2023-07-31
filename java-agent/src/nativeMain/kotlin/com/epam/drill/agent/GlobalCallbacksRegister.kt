@@ -13,26 +13,22 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.epam.drill.core
+package com.epam.drill.agent
 
 import kotlinx.serialization.protobuf.ProtoBuf
 import com.epam.drill.agentConfig
-import com.epam.drill.agent.updateState
 import com.epam.drill.agent.request.RequestProcessor
 import com.epam.drill.agent.request.RequestHolder
+import com.epam.drill.core.closeSession
+import com.epam.drill.core.drillRequest
+import com.epam.drill.core.sessionStorage
+import com.epam.drill.core.setPackagesPrefixes
 import com.epam.drill.plugin.DrillRequest
 
 fun globalCallbacks(): Unit = run {
     setPackagesPrefixes = { prefixes ->
         agentConfig = agentConfig.copy(packagesPrefixes = prefixes)
-        updateState {
-            copy(
-                alive = true,
-                packagePrefixes = prefixes.packagesPrefixes
-            )
-        }
     }
-
     sessionStorage = RequestHolder::storeRequestMetadata
     closeSession = {
         RequestHolder.closeSession()
@@ -41,10 +37,10 @@ fun globalCallbacks(): Unit = run {
     drillRequest = RequestHolder::get
 }
 
-fun RequestHolder.storeRequestMetadata(request: DrillRequest) {
+private fun RequestHolder.storeRequestMetadata(request: DrillRequest) {
     store(ProtoBuf.encodeToByteArray(DrillRequest.serializer(), request))
 }
 
-fun RequestHolder.get(): DrillRequest? {
+private fun RequestHolder.get(): DrillRequest? {
     return dump()?.let { ProtoBuf.decodeFromByteArray(DrillRequest.serializer(), it) }
 }

@@ -15,6 +15,8 @@
  */
 package com.epam.drill.agent.instrument
 
+import com.epam.drill.agent.instrument.jvm.callTransformerTransformMethod
+
 actual object KafkaTransformer {
 
     actual fun transform(

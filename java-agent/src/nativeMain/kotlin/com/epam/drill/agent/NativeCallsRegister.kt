@@ -14,26 +14,26 @@
  * limitations under the License.
  */
 @file:Suppress("unused", "FunctionName")
+package com.epam.drill.agent
 
-package com.epam.drill.core
-
-import com.epam.drill.*
-import com.epam.drill.agent.*
-import com.epam.drill.api.*
-import com.epam.drill.common.classloading.ClassSource
-import com.epam.drill.common.classloading.SUBCLASS_OF
-import com.epam.drill.core.callbacks.classloading.*
-import com.epam.drill.jvmapi.*
-import com.epam.drill.jvmapi.gen.*
-import kotlinx.cinterop.*
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.runBlocking
 import kotlin.native.concurrent.*
 import kotlin.time.*
-import mu.KotlinLogging
+import kotlinx.cinterop.*
+import kotlinx.coroutines.*
+import mu.*
+import com.epam.drill.*
+import com.epam.drill.agent.*
+import com.epam.drill.agent.configuration.*
+import com.epam.drill.agent.jvmti.*
+import com.epam.drill.agent.jvmti.event.*
+import com.epam.drill.api.*
+import com.epam.drill.common.classloading.*
+import com.epam.drill.core.messanger.*
+import com.epam.drill.jvmapi.*
+import com.epam.drill.jvmapi.gen.*
 
 @SharedImmutable
-private val logger = KotlinLogging.logger("com.epam.drill.core.SymbolsRegister")
+private val logger = KotlinLogging.logger("com.epam.drill.agent.NativeCallsRegister")
 
 @Suppress("UNUSED_PARAMETER")
 @CName("Java_com_epam_drill_agent_JvmModuleMessageSender_send")
@@ -45,7 +45,7 @@ fun sendFromJava(envs: JNIEnv, thiz: jobject, jpluginId: jstring, jmessage: jstr
 @CName("Java_com_epam_drill_plugin_api_Native_RetransformClassesByPackagePrefixes")
 fun RetransformClassesByPackagePrefixes(env: JNIEnv, thiz: jobject, prefixes: jbyteArray): jint = memScoped {
     val decodedPrefixes = prefixes.readBytes()?.decodePackages() ?: emptyList()
-    val allPrefixes = (state.packagePrefixes + decodedPrefixes).filter {
+    val allPrefixes = (agentConfig.packagesPrefixes.packagesPrefixes + decodedPrefixes).filter {
         !it.startsWith(DRILL_PACKAGE)
     }.distinct()
     logger.info { "Package prefixes: $allPrefixes." }
@@ -120,12 +120,12 @@ fun GetPackagePrefixes(): jstring? {
 
 @CName("Java_com_epam_drill_plugin_api_Native_GetScanClassPath")
 fun GetScanClassPath(): jstring? {
-    return NewStringUTF(config.scanClassPath)
+    return NewStringUTF(agentParameters.scanClassPath)
 }
 
 @CName("Java_com_epam_drill_plugin_api_Native_WaitClassScanning")
 fun WaitClassScanning() = runBlocking {
-    val classScanDelay = config.classScanDelay - state.startMark.elapsedNow()
+    val classScanDelay = agentParameters.classScanDelay - agentStartTimeMark.elapsedNow()
     if (classScanDelay.isPositive()) {
         logger.debug { "Waiting class scan delay ($classScanDelay left)..." }
         delay(classScanDelay)

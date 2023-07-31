@@ -13,11 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.epam.drill.agent
+package com.epam.drill.agent.configuration
 
-import com.epam.drill.common.*
-import kotlinx.serialization.*
+import kotlinx.serialization.Serializable
 import mu.KotlinLoggingLevel
+import com.epam.drill.agent.configuration.process.javaProcess
+import com.epam.drill.common.AgentParameter
 
 @Serializable
 data class AgentArguments(
@@ -39,6 +40,7 @@ data class AgentArguments(
     val scanClassPath: String = "",
     val packagePrefixes: String = ""
 ) {
+
     fun defaultParameters(): Map<String, AgentParameter> = mapOf(
         AgentArguments::logLevel.name to AgentParameter(
             type = logLevel.toType(),
@@ -73,8 +75,7 @@ data class AgentArguments(
         AgentArguments::isTlsApp.name to AgentParameter(
             type = isTlsApp.toType(),
             value = isTlsApp.toString(),
-            description = "Add the ability of an agent to gain incoming headers from an Https request." +
-                    "Process TLS only for tomcat architecture",
+            description = "Add the ability of an agent to gain incoming headers from an Https request. Process TLS only for tomcat architecture",
         ),
         AgentArguments::isAsyncApp.name to AgentParameter(
             type = isAsyncApp.toType(),
@@ -97,17 +98,18 @@ data class AgentArguments(
             description = "Configure package prefixes for scanning and instrumentation",
         )
     )
-}
 
-fun Any?.toType() = when (this) {
-    is String, is String? -> Type.STRING.apiName
-    is Boolean -> Type.BOOLEAN.apiName
-    is Long -> Type.INTEGER.apiName
-    else -> "Unsupported type"
-}
+    private fun Any?.toType() = when (this) {
+        is String, is String? -> Type.STRING.apiName
+        is Boolean -> Type.BOOLEAN.apiName
+        is Long -> Type.INTEGER.apiName
+        else -> "Unsupported type"
+    }
 
-enum class Type(val apiName: String) {
-    STRING("string"),
-    BOOLEAN("boolean"),
-    INTEGER("integer"),
+    private enum class Type(val apiName: String) {
+        STRING("string"),
+        BOOLEAN("boolean"),
+        INTEGER("integer"),
+    }
+
 }

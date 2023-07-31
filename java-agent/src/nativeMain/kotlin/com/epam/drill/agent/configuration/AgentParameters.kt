@@ -13,12 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.epam.drill.agent
+package com.epam.drill.agent.configuration
 
-import kotlin.native.concurrent.*
-import kotlin.time.*
+import kotlin.time.Duration
 
-data class Config(
+data class AgentParameters(
     val classScanDelay: Duration = Duration.ZERO,
     val packagePrefixes: String = "",
     val scanClassPath: String = "",
@@ -31,11 +30,3 @@ data class Config(
     val isCadence: Boolean = false,
     val isTlsApp: Boolean = false
 )
-
-private val _config = AtomicReference(Config().freeze()).freeze()
-
-val config: Config get() = _config.value
-
-fun updateConfig(block: Config.() -> Config): Config = _config.value.block().freeze().also {
-    _config.value = it
-}
