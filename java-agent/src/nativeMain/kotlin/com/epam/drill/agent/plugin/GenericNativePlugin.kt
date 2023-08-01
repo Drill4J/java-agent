@@ -56,13 +56,6 @@ open class GenericNativePlugin(
         )
     }
 
-    override fun off() {
-        logger.debug { "off(), pluginApiClass=$pluginApiClassName" }
-        CallVoidMethodA(
-            userPlugin, GetMethodID(pluginApiClass, AgentPart<*>::off.name, "()V"), null
-        )
-    }
-
     override fun load() {
         CallVoidMethodA(
             userPlugin, GetMethodID(pluginApiClass, AgentPart<*>::load.name, "()V"), null

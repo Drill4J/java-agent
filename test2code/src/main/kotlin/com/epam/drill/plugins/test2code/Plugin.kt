@@ -15,6 +15,7 @@
  */
 package com.epam.drill.plugins.test2code
 
+import com.epam.drill.agent.*
 import com.epam.drill.plugin.api.*
 import com.epam.drill.plugin.api.processing.*
 import com.epam.drill.plugins.test2code.classloading.*
@@ -46,8 +47,6 @@ class Plugin(
 
     private val instrumenter = DrillInstrumenter(instrContext)
 
-    private val _retransformed = atomic(false)
-
     override fun onConnect() {
         val ids = instrContext.getActiveSessions()
         logger.info { "Send active sessions after reconnect: ${ids.count()}" }
@@ -62,39 +61,9 @@ class Plugin(
         val initInfo = InitInfo(message = "Initializing plugin $id...")
         sendMessage(initInfo)
         logger.info { "Initializing plugin $id..." }
-
         scanAndSendMetadataClasses()
-
-        if (_retransformed.compareAndSet(expect = false, update = true)) {
-            retransform()
-        }
         sendMessage(Initialized(msg = "Initialized"))
         logger.info { "Plugin $id initialized!" }
-    }
-
-    /**
-     * Switch off the plugin
-     */
-    override fun off() {
-        val cancelledCount = instrContext.cancelAll()
-        logger.info { "Plugin $id is off" }
-        if (_retransformed.compareAndSet(expect = true, update = false)) {
-            retransform()
-        }
-        sendMessage(SessionsCancelled(cancelledCount, currentTimeMillis()))
-    }
-
-    /**
-     * Retransforming does not require an agent part instance.
-     * This method is used in integration tests.
-     */
-    @Suppress("MemberVisibilityCanBePrivate")
-    fun retransform() {
-        try {
-            Native.RetransformClassesByPackagePrefixes(byteArrayOf())
-        } catch (ex: Throwable) {
-            logger.error(ex) { "Error retransforming classes." }
-        }
     }
 
     override fun instrument(
@@ -104,8 +73,6 @@ class Plugin(
 
     override fun load() {
         logger.info { "Plugin $id: initializing..." }
-        retransform()
-        _retransformed.value = true
     }
 
     override fun doAction(action: AgentAction) {
@@ -201,9 +168,9 @@ class Plugin(
     ): AgentAction = json.decodeFromString(AgentAction.serializer(), rawAction)
 
     override fun scanClasses(consumer: (Set<EntitySource>) -> Unit) {
-        Native.WaitClassScanning()
-        val packagePrefixes = Native.GetPackagePrefixes().split(", ")
-        val additionalPaths = Native.GetScanClassPath().split(";")
+        NativeCalls.waitClassScanning()
+        val packagePrefixes = NativeCalls.getPackagePrefixes().split(", ")
+        val additionalPaths = NativeCalls.getScanClassPath().split(";")
         logger.info { "Scanning classes, package prefixes: $packagePrefixes... " }
         ClassLoadersScanner(packagePrefixes, 50, consumer, additionalPaths).scanClasses()
     }
