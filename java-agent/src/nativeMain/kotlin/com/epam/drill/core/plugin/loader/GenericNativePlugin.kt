@@ -21,9 +21,9 @@ import com.epam.drill.common.*
 import com.epam.drill.core.plugin.*
 import com.epam.drill.jvmapi.*
 import com.epam.drill.jvmapi.gen.*
-import com.epam.drill.logger.*
 import com.epam.drill.plugin.api.processing.*
 import kotlinx.cinterop.*
+import mu.KotlinLogging
 
 @Suppress("LeakingThis")
 open class GenericNativePlugin(
@@ -34,10 +34,10 @@ open class GenericNativePlugin(
 ) : AgentPart<Any>(
     pluginId,
     NopAgentContext,
-    NopPluginSender,
-    Logging
+    NopPluginSender
 ) {
-    private val pluginLogger = Logging.logger("GenericNativePlugin $pluginId")
+
+    private val logger = KotlinLogging.logger(GenericNativePlugin::class.qualifiedName!!)
 
     init {
         updateRawConfig(pluginConfig.config)
@@ -66,14 +66,14 @@ open class GenericNativePlugin(
     }
 
     override fun on() {
-        pluginLogger.debug { "on" }
+        logger.debug { "on" }
         CallVoidMethodA(
             userPlugin, GetMethodID(pluginApiClass, AgentPart<*>::on.name, "()V"), null
         )
     }
 
     override fun off() {
-        pluginLogger.debug { "off" }
+        logger.debug { "off" }
         CallVoidMethodA(
             userPlugin, GetMethodID(pluginApiClass, AgentPart<*>::off.name, "()V"), null
         )

@@ -15,8 +15,8 @@
  */
 package com.epam.drill.agent.instrument
 
-import com.epam.drill.logger.*
 import javassist.*
+import mu.KotlinLogging
 
 inline fun CtMethod.wrapCatching(
     insert: CtMethod.(String) -> Unit,
@@ -36,7 +36,8 @@ inline fun CtMethod.wrapCatching(
 }
 
 object InstrumentationErrorLogger {
-    private val logger = Logging.logger("instrumentation")
+
+    private val logger = KotlinLogging.logger {}
 
     fun error(exception: Throwable, message: String) {
         logger.error(exception) { message }

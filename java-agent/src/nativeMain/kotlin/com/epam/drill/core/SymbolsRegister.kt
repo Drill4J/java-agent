@@ -25,15 +25,15 @@ import com.epam.drill.common.classloading.SUBCLASS_OF
 import com.epam.drill.core.callbacks.classloading.*
 import com.epam.drill.jvmapi.*
 import com.epam.drill.jvmapi.gen.*
-import com.epam.drill.logger.*
 import kotlinx.cinterop.*
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
 import kotlin.native.concurrent.*
 import kotlin.time.*
+import mu.KotlinLogging
 
 @SharedImmutable
-private val logger = Logging.logger("SymbolsRegister")
+private val logger = KotlinLogging.logger("com.epam.drill.core.SymbolsRegister")
 
 @Suppress("UNUSED_PARAMETER")
 @CName("Java_com_epam_drill_plugin_PluginSender_send")

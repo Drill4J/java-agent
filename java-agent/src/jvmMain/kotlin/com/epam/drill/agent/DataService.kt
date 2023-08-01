@@ -20,8 +20,6 @@ package com.epam.drill.agent
 import com.epam.drill.*
 import com.epam.drill.common.*
 import com.epam.drill.kni.*
-import com.epam.drill.logger.*
-import com.epam.drill.logger.api.*
 import com.epam.drill.plugin.*
 import com.epam.drill.plugin.api.processing.*
 import com.epam.drill.request.*
@@ -32,6 +30,7 @@ import kotlinx.serialization.protobuf.*
 import java.util.jar.*
 import kotlin.reflect.jvm.*
 import kotlin.time.*
+import mu.KotlinLogging
 
 @Serializable
 class ByteArrayListWrapper(val bytesList: List<ByteArray>)
@@ -39,17 +38,17 @@ class ByteArrayListWrapper(val bytesList: List<ByteArray>)
 @ExperimentalStdlibApi
 @Kni
 actual object DataService {
-    private val logger = Logging.logger(DataService::class.jvmName)
+
+    private val logger = KotlinLogging.logger {}
 
     actual fun createAgentPart(id: String, jarPath: String): Any? = run {
         val agentPartClass = retrieveApiClass(jarPath)!!
         val constructor = agentPartClass.getConstructor(
             String::class.java,
             AgentContext::class.java,
-            Sender::class.java,
-            LoggerFactory::class.java
+            Sender::class.java
         )
-        constructor.newInstance(id, RequestHolder.agentContext, PluginSender, Logging)
+        constructor.newInstance(id, RequestHolder.agentContext, PluginSender)
     }
 
     actual fun doRawActionBlocking(

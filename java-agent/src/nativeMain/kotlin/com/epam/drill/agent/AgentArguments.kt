@@ -16,8 +16,8 @@
 package com.epam.drill.agent
 
 import com.epam.drill.common.*
-import com.epam.drill.logger.api.*
 import kotlinx.serialization.*
+import mu.KotlinLoggingLevel
 
 @Serializable
 data class AgentArguments(
@@ -27,8 +27,9 @@ data class AgentArguments(
     val buildVersion: String? = null,
     val instanceId: String = "",
     val groupId: String = "",
-    val logLevel: String = LogLevel.ERROR.name,
+    val logLevel: String = KotlinLoggingLevel.ERROR.name,
     val logFile: String? = null,
+    val logLimit: Int = 512,
     val isWebApp: Boolean = false,
     val isKafka: Boolean = false,
     val isCadence: Boolean = false,
@@ -47,6 +48,11 @@ data class AgentArguments(
             type = logFile.toType(),
             value = logFile ?: "",
             description = "the location where the logs will be stored",
+        ),
+        AgentArguments::logLimit.name to AgentParameter(
+            type = logLimit.toType(),
+            value = logLimit.toString(),
+            description = "the log messages max size",
         ),
         AgentArguments::isWebApp.name to AgentParameter(
             type = isWebApp.toType(),

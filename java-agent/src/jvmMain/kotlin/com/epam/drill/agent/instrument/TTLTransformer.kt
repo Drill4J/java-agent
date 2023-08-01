@@ -22,15 +22,14 @@ import com.alibaba.ttl.threadpool.agent.internal.logging.*
 import com.alibaba.ttl.threadpool.agent.internal.transformlet.*
 import com.alibaba.ttl.threadpool.agent.internal.transformlet.impl.*
 import com.epam.drill.kni.*
-import com.epam.drill.logger.*
+import mu.KotlinLogging
 import java.util.*
-import kotlin.reflect.jvm.*
 
 @Kni
 actual object TTLTransformer {
     private val transformletList: MutableList<JavassistTransformlet> = ArrayList()
 
-    private val logger = Logging.logger(TTLTransformer::class.jvmName)
+    private val logger = KotlinLogging.logger {}
 
     init {
         Logger.setLoggerImplType("")

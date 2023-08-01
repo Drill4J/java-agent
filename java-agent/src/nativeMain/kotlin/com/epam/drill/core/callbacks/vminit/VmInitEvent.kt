@@ -23,18 +23,24 @@ import com.epam.drill.core.*
 import com.epam.drill.core.Agent.isHttpHookEnabled
 import com.epam.drill.core.transport.*
 import com.epam.drill.core.ws.*
+import com.epam.drill.jvmapi.callObjectVoidMethod
 import com.epam.drill.jvmapi.gen.*
-import com.epam.drill.logger.*
+import com.epam.drill.logging.LoggingConfiguration
 import com.epam.drill.request.*
 import kotlinx.cinterop.*
 import kotlinx.coroutines.*
+import mu.KotlinLogging
 
-private val logger = Logging.logger("VmInitEvent")
+private val logger = KotlinLogging.logger("com.epam.drill.core.callbacks.vminit.VmInitEvent")
 
 @Suppress("UNUSED_PARAMETER")
 fun jvmtiEventVMInitEvent(env: CPointer<jvmtiEnvVar>?, jniEnv: CPointer<JNIEnvVar>?, thread: jthread?) {
     initRuntimeIfNeeded()
     SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_CLASS_FILE_LOAD_HOOK, null)
+
+    callObjectVoidMethod(LoggingConfiguration::class, LoggingConfiguration::readDefaultConfiguration)
+    updateJvmLoggingConfiguration()
+
     if (isHttpHookEnabled) {
         logger.info { "run with http hook" }
         configureHttp()
