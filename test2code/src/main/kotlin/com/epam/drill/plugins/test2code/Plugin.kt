@@ -20,6 +20,7 @@ import com.epam.drill.plugin.api.*
 import com.epam.drill.plugin.api.processing.*
 import com.epam.drill.plugins.test2code.classloading.*
 import com.epam.drill.plugins.test2code.common.api.*
+import com.epam.drill.common.classloading.ClassScanner
 import com.epam.drill.common.classloading.EntitySource
 import com.github.luben.zstd.*
 import kotlinx.atomicfu.*
