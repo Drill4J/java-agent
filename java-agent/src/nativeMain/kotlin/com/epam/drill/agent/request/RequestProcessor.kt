@@ -16,7 +16,7 @@
 package com.epam.drill.agent.request
 
 import com.epam.drill.pstorage
-import com.epam.drill.agent.plugin.GenericNativePlugin
+import com.epam.drill.agent.module.GenericAgentModule
 
 actual object RequestProcessor {
 
@@ -28,6 +28,6 @@ actual object RequestProcessor {
         plugins().forEach { it.processServerResponse() }
     }
 
-    private fun plugins() = pstorage.values.filterIsInstance<GenericNativePlugin>()
+    private fun plugins() = pstorage.values.filterIsInstance<GenericAgentModule>()
 
 }

@@ -20,13 +20,12 @@ import kotlinx.serialization.protobuf.ProtoBuf
 import java.util.Base64
 import mu.KotlinLogging
 import com.github.luben.zstd.Zstd
-import com.epam.drill.agent.NativeCalls
 import com.epam.drill.common.classloading.ClassScanner
 import com.epam.drill.common.classloading.EntitySource
-import com.epam.drill.plugin.api.processing.AgentContext
-import com.epam.drill.plugin.api.processing.AgentPart
-import com.epam.drill.plugin.api.processing.Instrumenter
-import com.epam.drill.plugin.api.processing.Sender
+import com.epam.drill.common.agent.AbstractAgentModule
+import com.epam.drill.common.agent.AgentContext
+import com.epam.drill.common.agent.Instrumenter
+import com.epam.drill.common.agent.Sender
 import com.epam.drill.plugins.test2code.common.api.*
 import com.epam.drill.test2code.classloading.ClassLoadersScanner
 
@@ -37,7 +36,7 @@ class Test2Code(
     id: String,
     agentContext: AgentContext,
     sender: Sender
-) : AgentPart<AgentAction>(id, agentContext, sender), Instrumenter, ClassScanner {
+) : AbstractAgentModule<AgentAction>(id, agentContext, sender), Instrumenter, ClassScanner {
 
     internal val logger = KotlinLogging.logger {}
 

@@ -29,7 +29,7 @@ import com.epam.drill.agent.instrument.*
 import com.epam.drill.agent.instrument.http.apache.*
 import com.epam.drill.agent.instrument.http.java.*
 import com.epam.drill.agent.instrument.http.ok.*
-import com.epam.drill.agent.plugin.*
+import com.epam.drill.agent.module.*
 import com.epam.drill.common.classloading.*
 import com.epam.drill.jvmapi.gen.*
 
@@ -104,7 +104,7 @@ fun classFileLoadHook(
         }
         val classSource = ClassSource(kClassName, classReader.superName ?: "", classBytes)
         if ('$' !in kClassName && classSource.prefixMatches(agentConfig.packagesPrefixes.packagesPrefixes)) {
-            pstorage.values.filterIsInstance<InstrumentationNativePlugin>().forEach { plugin ->
+            pstorage.values.filterIsInstance<InstrumentationAgentModule>().forEach { plugin ->
                 transformers += { bytes -> plugin.instrument(kClassName, bytes) }
             }
         }

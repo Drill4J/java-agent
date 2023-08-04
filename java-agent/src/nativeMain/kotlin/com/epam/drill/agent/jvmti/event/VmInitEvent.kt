@@ -29,8 +29,8 @@ import com.epam.drill.agent.configuration.updatePackagePrefixesConfiguration
 import com.epam.drill.agent.request.RequestHolder
 import com.epam.drill.common.Family
 import com.epam.drill.agent.globalCallbacks
-import com.epam.drill.agent.plugin.GenericNativePlugin
-import com.epam.drill.agent.plugin.InstrumentationNativePlugin
+import com.epam.drill.agent.module.GenericAgentModule
+import com.epam.drill.agent.module.InstrumentationAgentModule
 import com.epam.drill.core.transport.configureHttp
 import com.epam.drill.core.ws.WsSocket
 import com.epam.drill.jvmapi.gen.GetObjectClass
@@ -75,8 +75,8 @@ private fun loadJvmModule(id: String, family: Family) {
         val pluginApiClass = NewGlobalRef(GetObjectClass(agentPart))!!
         val agentPartRef = NewGlobalRef(agentPart)!!
         val plugin = when (family) {
-            Family.INSTRUMENTATION -> InstrumentationNativePlugin(id, pluginApiClass, agentPartRef)
-            Family.GENERIC -> GenericNativePlugin(id, pluginApiClass, agentPartRef)
+            Family.INSTRUMENTATION -> InstrumentationAgentModule(id, pluginApiClass, agentPartRef)
+            Family.GENERIC -> GenericAgentModule(id, pluginApiClass, agentPartRef)
         }
         addPluginToStorage(plugin)
         plugin.load()

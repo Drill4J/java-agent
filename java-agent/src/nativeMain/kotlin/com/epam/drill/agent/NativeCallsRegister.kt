@@ -15,21 +15,18 @@
  */
 package com.epam.drill.agent
 
-import kotlin.native.concurrent.*
-import kotlin.time.*
-import kotlinx.cinterop.*
-import kotlinx.coroutines.*
-import mu.*
-import com.epam.drill.*
-import com.epam.drill.agent.*
-import com.epam.drill.agent.configuration.*
-import com.epam.drill.agent.jvmti.*
-import com.epam.drill.agent.jvmti.event.*
-import com.epam.drill.api.*
-import com.epam.drill.common.classloading.*
-import com.epam.drill.core.messanger.*
-import com.epam.drill.jvmapi.*
-import com.epam.drill.jvmapi.gen.*
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.runBlocking
+import mu.KotlinLogging
+import com.epam.drill.agentConfig
+import com.epam.drill.agent.configuration.agentParameters
+import com.epam.drill.agent.configuration.agentStartTimeMark
+import com.epam.drill.agent.jvmti.sendToSocket
+import com.epam.drill.jvmapi.withJString
+import com.epam.drill.jvmapi.gen.JNIEnv
+import com.epam.drill.jvmapi.gen.NewStringUTF
+import com.epam.drill.jvmapi.gen.jobject
+import com.epam.drill.jvmapi.gen.jstring
 
 @SharedImmutable
 private val logger = KotlinLogging.logger("com.epam.drill.agent.NativeCallsRegister")
@@ -41,21 +38,21 @@ fun sendFromJava(envs: JNIEnv, thiz: jobject, jpluginId: jstring, jmessage: jstr
 }
 
 @Suppress("UNUSED")
-@CName("Java_com_epam_drill_agent_NativeCalls_getPackagePrefixes")
-fun GetPackagePrefixes(): jstring? {
+@CName("Java_com_epam_drill_test2code_NativeCalls_getPackagePrefixes")
+fun getPackagePrefixes(): jstring? {
     val packagesPrefixes = agentConfig.packagesPrefixes.packagesPrefixes
     return NewStringUTF(packagesPrefixes.joinToString(", "))
 }
 
 @Suppress("UNUSED")
-@CName("Java_com_epam_drill_agent_NativeCalls_getScanClassPath")
-fun GetScanClassPath(): jstring? {
+@CName("Java_com_epam_drill_test2code_NativeCalls_getScanClassPath")
+fun getScanClassPath(): jstring? {
     return NewStringUTF(agentParameters.scanClassPath)
 }
 
 @Suppress("UNUSED")
-@CName("Java_com_epam_drill_agent_NativeCalls_waitClassScanning")
-fun WaitClassScanning() = runBlocking {
+@CName("Java_com_epam_drill_test2code_NativeCalls_waitClassScanning")
+fun waitClassScanning() = runBlocking {
     val classScanDelay = agentParameters.classScanDelay - agentStartTimeMark.elapsedNow()
     if (classScanDelay.isPositive()) {
         logger.debug { "Waiting class scan delay ($classScanDelay left)..." }

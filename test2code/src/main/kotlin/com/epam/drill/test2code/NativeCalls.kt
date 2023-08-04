@@ -13,10 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.epam.drill.agent
+package com.epam.drill.test2code
 
-import com.epam.drill.common.agent.Sender
-
-object JvmModuleMessageSender : Sender {
-    external override fun send(pluginId: String, message: String)
+object NativeCalls {
+    external fun getPackagePrefixes(): String
+    external fun getScanClassPath(): String
+    external fun waitClassScanning()
 }
