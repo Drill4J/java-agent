@@ -31,8 +31,6 @@ import kotlinx.atomicfu.atomic
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.protobuf.ProtoBuf
 import java.util.*
-import java.util.concurrent.ConcurrentHashMap
-import java.util.concurrent.atomic.AtomicInteger
 import mu.KotlinLogging
 
 /**
@@ -49,11 +47,17 @@ class Plugin(
 
     internal val json = Json { encodeDefaults = true }
 
+    private val _enabled = atomic(false)
+
+    private val enabled: Boolean get() = _enabled.value
+
     private val instrContext: SessionProbeArrayProvider = DrillProbeArrayProvider.apply {
         defaultContext = agentContext
     }
 
     private val instrumenter = DrillInstrumenter(instrContext)
+
+    private val _retransformed = atomic(false)
 
     override fun onConnect() {
         val ids = instrContext.getActiveSessions()
@@ -158,10 +162,9 @@ class Plugin(
     fun processServerRequest() {
         (instrContext as DrillProbeArrayProvider).run {
             // TODO session id can be null
-            val sessionId = context() ?: ""
+            val sessionId = context() ?: return
             // TODO make session/test-key context extraction independent
             //  (after coverage storing in "flat" map is implemented)
-            if (Objects.isNull(sessionId)) return
 
             val name = context[DRIlL_TEST_NAME_HEADER] ?: DEFAULT_TEST_NAME
             val id = context[DRILL_TEST_ID_HEADER] ?: name.id()
@@ -178,23 +181,14 @@ class Plugin(
             }
             val runtime = runtimes[sessionId]
             if (runtime == null) {
-                logger?.trace { "processServerRequest. thread '${Thread.currentThread().id}' sessionId '$sessionId' testKey '$testKey' runtime is null" }
+                logger.trace { "processServerRequest. thread '${Thread.currentThread().id}' sessionId '$sessionId' testKey '$testKey' runtime is null" }
                 return
             }
 
-            // Check on null
-            if (sessionTestKeyPairToThreadNumber[Pair(sessionId, testKey)] == null) {
-                // Create if it does not exist
-                sessionTestKeyPairToThreadNumber[Pair(sessionId, testKey)] = AtomicInteger(0)
-            }
-            // Increment value for thread
-            sessionTestKeyPairToThreadNumber[Pair(sessionId, testKey)]?.incrementAndGet()
-
-            // TODO potential concurrency issue (if execData is removed by timer)
             val execData = runtime.getOrPut(Pair(sessionId, testKey)) {
                 ExecData().apply { fillFromMeta(testKey) }
             }
-            logger?.trace { "CATDOG. processServerRequest. thread '${Thread.currentThread().id}' sessionId '$sessionId' testKey '$testKey'" }
+            logger.trace { "CATDOG. processServerRequest. thread '${Thread.currentThread().id}' sessionId '$sessionId' testKey '$testKey'" }
             requestThreadLocal.set(execData)
         }
     }
@@ -210,9 +204,9 @@ class Plugin(
             val name = context[DRIlL_TEST_NAME_HEADER] ?: DEFAULT_TEST_NAME
             val id = context[DRILL_TEST_ID_HEADER] ?: name.id()
             val testKey = TestKey(name, id)
-
-            sessionTestKeyPairToThreadNumber[Pair(sessionId, testKey)]?.decrementAndGet()
-            logger?.trace { "CATDOG. processServerResponse. after decrementAtomicInt thread '${Thread.currentThread().id}' $sessionTestKeyPairToThreadNumber " }
+            val execData = requestThreadLocal.get()
+            if (sessionId != null)
+                runtimes[sessionId]?.release(Pair(sessionId, testKey), execData)
             requestThreadLocal.remove()
         }
     }

@@ -25,8 +25,7 @@ import kotlinx.atomicfu.atomic
 import kotlinx.collections.immutable.*
 import kotlinx.coroutines.*
 import mu.KotlinLogging
-import java.util.concurrent.ConcurrentHashMap
-import java.util.concurrent.Executors
+import java.util.concurrent.*
 import kotlin.coroutines.CoroutineContext
 
 /**
@@ -94,6 +93,10 @@ internal fun ProbeDescriptor.toExecDatum(testName: String, testId: String) = Exe
 // key - classId ; value - ExecDatum
 typealias ExecData = ConcurrentHashMap<Long, ExecDatum>
 
+fun ExecData.hasProbes(): Boolean {
+    return values.any { data -> data.probes.values.any { it } }
+}
+
 internal object ProbeWorker : CoroutineScope {
     override val coroutineContext: CoroutineContext = run {
         // TODO ProbeWorker thread count configure via env.variable?
@@ -130,55 +133,27 @@ class ExecRuntime(
 ) : Runtime(realtimeHandler) {
 
     private val logger = KotlinLogging.logger {}
-    private val _execData = ConcurrentHashMap<TestKey, ExecData>()
-
-    private val _completedTests = atomic(persistentListOf<String>())
-    private val isPerformanceMode = System.getProperty("drill.probes.perf.mode")?.toBoolean() ?: false
-
-    init {
-        logger.debug { "drill.probes.perf.mode=$isPerformanceMode" }
-        logger.trace { "CATDOG .ExecRuntime init. thread '${Thread.currentThread().id}' " }
-    }
-
     // key - pair of sessionId and testKey; value - ExecData
-    private val testCoverageMap = ConcurrentHashMap<Pair<String, TestKey>, ExecData>()
-
+    private val _execData = ConcurrentDataPool<Pair<String, TestKey>, ExecData>()
 
     override fun collect(): Sequence<ExecDatum> {
-        val filteredMap = testCoverageMap.filterValues { testCoverage ->
-            testCoverage.values.any { execDatum -> execDatum.probes.values.any { it } }
-        }
-
-        //clean up process
-        //TODO potential concurrency issue
-        filteredMap.filter { (pair, _) ->
-            logger.trace { "CATDOG . collect(). pair before filter: $pair " }
-            sessionTestKeyPairToThreadNumber[pair]?.get() == 0
-        }.forEach { (pair, _) ->
-            logger.trace { "CATDOG . collect(). pair to delete: $pair " }
-            testCoverageMap.remove(pair)
-            sessionTestKeyPairToThreadNumber.remove(pair)
-        }
-        logger.trace { "CATDOG . collect(). pair before filter: $sessionTestKeyPairToThreadNumber " }
-
-        return filteredMap.flatMap { it.value.values }.asSequence()
+        return _execData.pollReleased().filter { it.hasProbes() }.flatMap { it.values }
     }
 
     fun getOrPut(
         pair: Pair<String, TestKey>,
         updater: () -> ExecData,
-    ): ExecData {
-        if (testCoverageMap[pair] == null) {
-            testCoverageMap[pair] = updater()
-        }
-        return testCoverageMap[pair]!!
+    ): ExecData = _execData.hold(pair, updater)
+
+    fun release(pair: Pair<String, TestKey>, data: ExecData) {
+        _execData.release(pair, data)
     }
 
     override fun put(
         index: Long,
         updater: (TestKey) -> ExecDatum,
-    ) = testCoverageMap.forEach { (testName, execDataset) ->
-        execDataset[index] = updater(testName.second)
+    ) {
+        //no need to update runtime because they don't last long
     }
 }
 
@@ -297,7 +272,7 @@ open class SimpleSessionProbeArrayProvider(
         probeCount: Int,
     ): AgentProbes = getClassProbesInSession(id)
         ?: global?.second?.get(id)
-        ?: stubProbes.also { logger?.trace { "Stub probes call. Class id: $id, class name: $name" } }
+        ?: stubProbes.also { logger.trace { "Stub probes call. Class id: $id, class name: $name" } }
 
     /**
      * requestThreadLocal stores probes of classes for a specific session
@@ -371,11 +346,7 @@ open class SimpleSessionProbeArrayProvider(
     } ?: emptySet()) + runtimes.keys
 
     private fun add(sessionId: String, realtimeHandler: RealtimeHandler) {
-        if (sessionId !in runtimes) {
-            logger.trace { "Create new runtime" }
-            val value = ExecRuntime(realtimeHandler)
-            runtimes[sessionId] = value
-        } else runtimes
+        runtimes.getOrPut(sessionId) { ExecRuntime(realtimeHandler) }
     }
 
     private fun addGlobal(sessionId: String, testName: String?, realtimeHandler: RealtimeHandler) {
