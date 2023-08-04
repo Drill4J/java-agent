@@ -47,17 +47,11 @@ class Plugin(
 
     internal val json = Json { encodeDefaults = true }
 
-    private val _enabled = atomic(false)
-
-    private val enabled: Boolean get() = _enabled.value
-
     private val instrContext: SessionProbeArrayProvider = DrillProbeArrayProvider.apply {
         defaultContext = agentContext
     }
 
     private val instrumenter = DrillInstrumenter(instrContext)
-
-    private val _retransformed = atomic(false)
 
     override fun onConnect() {
         val ids = instrContext.getActiveSessions()
