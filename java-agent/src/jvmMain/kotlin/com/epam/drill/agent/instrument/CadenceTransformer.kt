@@ -15,15 +15,14 @@
  */
 package com.epam.drill.agent.instrument
 
-import com.epam.drill.*
-import com.epam.drill.agent.instrument.util.*
-import com.epam.drill.kni.*
-import com.epam.drill.request.*
-import com.epam.drill.request.HttpRequest.DRILL_HEADER_PREFIX
-import javassist.*
+import javassist.CtClass
+import javassist.CtConstructor
 import mu.KotlinLogging
+import com.epam.drill.agent.CADENCE_CONSUMER
+import com.epam.drill.agent.CADENCE_PRODUCER
+import com.epam.drill.agent.instrument.request.HttpRequest
+import com.epam.drill.agent.instrument.util.createAndTransform
 
-@Kni
 actual object CadenceTransformer {
 
     private val logger = KotlinLogging.logger {}
@@ -108,7 +107,7 @@ actual object CadenceTransformer {
                         while (iterator.hasNext()) {
                             java.util.Map.Entry entry = (java.util.Map.Entry) iterator.next();
                             String key = ((String) entry.getKey());
-                            if (key.startsWith("$DRILL_HEADER_PREFIX")) {
+                            if (key.startsWith("${HttpRequest.DRILL_HEADER_PREFIX}")) {
                                 java.nio.ByteBuffer byteBuffer = (java.nio.ByteBuffer) entry.getValue(); 
                                 if (byteBuffer != null) {
                                     final byte[] valueBytes = new byte[byteBuffer.remaining()];

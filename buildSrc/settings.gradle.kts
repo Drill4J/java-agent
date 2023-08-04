@@ -29,11 +29,7 @@ val sharedLibsLocal = rootDir.parentFile.resolve("gradle.properties").reader().u
     }
 }
 
-include("kni-runtime")
-include("kni-plugin")
 include("agent-runner-common")
 include("agent-runner-gradle")
-project(":kni-runtime").projectDir = sharedLibsLocal.resolve("kni-runtime")
-project(":kni-plugin").projectDir = sharedLibsLocal.resolve("kni-plugin")
 project(":agent-runner-common").projectDir = sharedLibsLocal.resolve("agent-runner-common")
 project(":agent-runner-gradle").projectDir = sharedLibsLocal.resolve("agent-runner-gradle")

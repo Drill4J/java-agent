@@ -15,15 +15,15 @@
  */
 package com.epam.drill.agent.instrument
 
-import com.epam.drill.*
-import com.epam.drill.agent.instrument.util.*
-import com.epam.drill.kni.*
-import com.epam.drill.request.*
-import com.epam.drill.request.HttpRequest.DRILL_HEADER_PREFIX
-import javassist.*
+import javassist.CtClass
+import javassist.CtMethod
 import mu.KotlinLogging
+import com.epam.drill.agent.KAFKA_CONSUMER_SPRING
+import com.epam.drill.agent.KAFKA_PRODUCER_INTERFACE
+import com.epam.drill.agent.instrument.error.wrapCatching
+import com.epam.drill.agent.instrument.request.HttpRequest
+import com.epam.drill.agent.instrument.util.createAndTransform
 
-@Kni
 actual object KafkaTransformer {
 
     private val logger = KotlinLogging.logger {}
@@ -78,7 +78,7 @@ actual object KafkaTransformer {
                 java.util.Map drillHeaders = new java.util.HashMap();
                 while (headers.hasNext()) {
                     org.apache.kafka.common.header.Header header = (org.apache.kafka.common.header.Header) headers.next();
-                    if (header.key().startsWith("$DRILL_HEADER_PREFIX")) {
+                    if (header.key().startsWith("${HttpRequest.DRILL_HEADER_PREFIX}")) {
                         drillHeaders.put(header.key(), new String(header.value()));
                     }    
                 }

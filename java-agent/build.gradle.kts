@@ -1,8 +1,4 @@
 import java.net.URI
-import java.nio.file.Files
-import java.nio.file.FileSystems
-import java.nio.file.Paths
-import java.util.jar.JarFile
 import org.jetbrains.kotlin.gradle.dsl.KotlinMultiplatformExtension
 import org.jetbrains.kotlin.gradle.plugin.KotlinSourceSet
 import org.jetbrains.kotlin.gradle.plugin.mpp.KotlinNativeTarget
@@ -22,7 +18,6 @@ plugins {
     kotlin("plugin.serialization")
     id("com.github.johnrengelman.shadow")
     id("com.github.hierynomus.license")
-    id("com.epam.drill.gradle.plugin.kni")
 }
 
 group = "com.epam.drill"
@@ -50,22 +45,17 @@ kotlin {
         targets.withType<KotlinNativeTarget>()[HostManager.host.presetName]
     }
     targets {
-        val jvm = jvm()
-        val linuxX64 = linuxX64(configure = configureNativeTarget)
-        val mingwX64 = mingwX64(configure = configureNativeTarget).apply {
+        jvm()
+        linuxX64(configure = configureNativeTarget)
+        mingwX64(configure = configureNativeTarget).apply {
             binaries.all {
                 linkerOpts("-lpsapi", "-lwsock32", "-lws2_32", "-lmswsock")
             }
         }
-        val macosX64 = macosX64(configure = configureNativeTarget)
+        macosX64(configure = configureNativeTarget)
         currentPlatformTarget().compilations["main"].defaultSourceSet {
             kotlin.srcDir("src/nativeMain/kotlin")
             resources.srcDir("src/nativeMain/resources")
-        }
-        kni {
-            jvmTargets = sequenceOf(jvm)
-            jvmtiAgentObjectPath = "com.epam.drill.core.Agent"
-            nativeCrossCompileTarget = sequenceOf(linuxX64, mingwX64, macosX64)
         }
     }
     @Suppress("UNUSED_VARIABLE")
@@ -91,46 +81,30 @@ kotlin {
                 implementation(project(":logging"))
             }
         }
-        val commonTest by getting {
-            dependencies {
-                implementation("org.jetbrains.kotlin:kotlin-test-common")
-                implementation("org.jetbrains.kotlin:kotlin-test-annotations-common")
-                implementation(project(":common"))
-            }
-        }
         val jvmMain by getting {
             dependencies {
                 implementation(kotlin("reflect"))
+                implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:$kotlinxCoroutinesVersion")
                 implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:$kotlinxSerializationVersion")
                 implementation("org.jetbrains.kotlinx:kotlinx-serialization-protobuf:$kotlinxSerializationVersion")
-                implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:$kotlinxCoroutinesVersion")
                 implementation("org.javassist:javassist:$javassistVersion")
                 implementation("com.alibaba:transmittable-thread-local:$transmittableThreadLocalVersion")
-                implementation(project(":kni-runtime"))
                 implementation(project(":common"))
-                implementation(project(":knasm"))
-                implementation(project(":plugin-api-agent"))
-                implementation(project(":http-clients-instrumentation"))
                 implementation(project(":agent"))
-            }
-        }
-        val jvmTest by getting {
-            dependencies {
-                implementation(kotlin("test-junit"))
-                implementation("org.junit.jupiter:junit-jupiter:5.5.2")
+                implementation(project(":http-clients-instrumentation"))
+                implementation(project(":plugin-api-agent"))
+                implementation(project(":test2code"))
             }
         }
         val configureNativeDependencies: KotlinSourceSet.() -> Unit = {
             dependencies {
                 implementation("org.jetbrains.kotlinx:kotlinx-serialization-protobuf:$kotlinxSerializationVersion")
                 implementation("io.ktor:ktor-utils:$ktorVersion")
-                implementation("com.benasher44:uuid:$uuidVersion")
-                implementation(project(":kni-runtime"))
                 implementation(project(":common"))
+                implementation(project(":agent"))
                 implementation(project(":jvmapi"))
                 implementation(project(":knasm"))
                 implementation(project(":plugin-api-agent"))
-                implementation(project(":agent"))
             }
         }
         val linuxX64Main by getting(configuration = configureNativeDependencies)
@@ -155,13 +129,8 @@ kotlin {
         it.targetName != HostManager.host.presetName
     }
     tasks {
-        val generateNativeClasses by getting
-        val jvmProcessResources by getting
-        jvmProcessResources.dependsOn(generateNativeClasses)
-        currentPlatformTarget().compilations["main"].compileKotlinTask.dependsOn(generateNativeClasses)
         targets.withType<KotlinNativeTarget>().filter(filterOutCurrentPlatform).forEach {
             val copyNativeClasses = copyNativeClassesForTarget(it)
-            copyNativeClasses.dependsOn(generateNativeClasses)
             it.compilations["main"].compileKotlinTask.dependsOn(copyNativeClasses)
         }
         val jvmMainCompilation = kotlin.targets.withType<KotlinJvmTarget>()["jvm"].compilations["main"]
@@ -171,31 +140,22 @@ kotlin {
             archiveFileName.set("drillRuntime.jar")
             from(jvmMainCompilation.output, jvmMainCompilation.runtimeDependencyFiles)
             relocate("kotlin", "kruntime")
+            relocate("kotlinx", "kruntimex")
             relocate("ch.qos.logback", "${project.group}.shadow.ch.qos.logback")
             relocate("org.slf4j", "${project.group}.shadow.org.slf4j")
+            relocate("org.jacoco.core", "${project.group}.shadow.org.jacoco.core")
             relocate("org.objectweb.asm", "${project.group}.shadow.org.objectweb.asm")
-            doLast {
-                val jarFileUri = Paths.get("$buildDir/libs", archiveFileName.get()).toUri()
-                val zipDisk = URI.create("jar:$jarFileUri")
-                val zipProperties = mutableMapOf("create" to "false")
-                val shadowedLibsPath = project.group.toString().replace(".", "/") + "/shadow"
-                FileSystems.newFileSystem(zipDisk, zipProperties).use {
-                    Files.delete(it.getPath(JarFile.MANIFEST_NAME))
-                    Files.delete(it.getPath("META-INF/services/javax.servlet.ServletContainerInitializer"))
-                    Files.delete(it.getPath("$shadowedLibsPath/ch/qos/logback/classic/servlet/LogbackServletContainerInitializer.class"))
-                    Files.delete(it.getPath("$shadowedLibsPath/ch/qos/logback/classic/servlet/LogbackServletContextListener.class"))
-                    Files.delete(it.getPath("$shadowedLibsPath/ch/qos/logback/classic/servlet/"))
-                }
+            dependencies {
+                exclude("/META-INF/services/javax.servlet.ServletContainerInitializer")
+                exclude("/module-info.class", "/about.html")
+                exclude("/ch/qos/logback/classic/servlet/*")
             }
         }
         runtimeJar.get().dependsOn(jvmMainCompilation.compileKotlinTask)
         val clean by getting
         val cleanGeneratedClasses by registering(Delete::class) {
             group = "build"
-            delete("src/jvmMain/resources/kni-meta-info")
-            delete("src/nativeMain/kotlin/kni")
             targets.withType<KotlinNativeTarget> {
-                delete("src/${name}Main/kotlin/kni")
                 delete("src/${name}Main/kotlin/gen")
             }
         }
@@ -235,13 +195,13 @@ license {
     val licenseFormatSources by tasks.registering(LicenseFormat::class) {
         source = fileTree("$projectDir/src").also {
             include("**/*.kt", "**/*.java", "**/*.groovy")
-            exclude("**/kni", "**/commonGenerated")
+            exclude("**/commonGenerated")
         }
     }
     val licenseCheckSources by tasks.registering(LicenseCheck::class) {
         source = fileTree("$projectDir/src").also {
             include("**/*.kt", "**/*.java", "**/*.groovy")
-            exclude("**/kni", "**/commonGenerated")
+            exclude("**/commonGenerated")
         }
     }
 }

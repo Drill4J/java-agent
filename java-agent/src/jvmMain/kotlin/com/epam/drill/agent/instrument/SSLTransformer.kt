@@ -15,13 +15,12 @@
  */
 package com.epam.drill.agent.instrument
 
-import com.epam.drill.agent.instrument.util.*
-import com.epam.drill.kni.*
-import com.epam.drill.request.*
-import javassist.*
+import javassist.CtMethod
 import mu.KotlinLogging
+import com.epam.drill.agent.instrument.error.wrapCatching
+import com.epam.drill.agent.instrument.request.HttpRequest
+import com.epam.drill.agent.instrument.util.createAndTransform
 
-@Kni
 actual object SSLTransformer {
 
     private val logger = KotlinLogging.logger {}
@@ -40,7 +39,7 @@ actual object SSLTransformer {
                 )?.wrapCatching(
                     CtMethod::insertAfter,
                     """
-                       com.epam.drill.request.HttpRequest.INSTANCE.${HttpRequest::parse.name}($2);
+                       ${HttpRequest::class.java.name}.INSTANCE.${HttpRequest::parse.name}($2);
                     """.trimIndent()
                 ) ?: run {
                     return null

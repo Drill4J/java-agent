@@ -15,6 +15,8 @@
  */
 package com.epam.drill.agent.instrument
 
+import com.epam.drill.agent.instrument.jvm.callTransformerTransformMethod
+
 actual object TomcatTransformer {
 
     actual fun transform(
@@ -22,5 +24,14 @@ actual object TomcatTransformer {
         classFileBuffer: ByteArray,
         loader: Any?,
         protectionDomain: Any?,
-    ): ByteArray? = TomcatTransformerStub.transform(className, classFileBuffer, loader, protectionDomain)
+    ): ByteArray? =
+        callTransformerTransformMethod(
+            TomcatTransformer::class,
+            TomcatTransformer::transform,
+            className,
+            classFileBuffer,
+            loader,
+            protectionDomain
+        )
+
 }

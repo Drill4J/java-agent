@@ -15,6 +15,8 @@
  */
 package com.epam.drill.agent.instrument
 
+import com.epam.drill.agent.instrument.jvm.callTTLTransformerTransformMethod
+
 actual object TTLTransformer {
     val directTtlClasses = listOf(
         "java/util/concurrent/ScheduledThreadPoolExecutor",
@@ -32,7 +34,13 @@ actual object TTLTransformer {
         classFile: String?,
         classBeingRedefined: Any?,
         classFileBuffer: ByteArray,
-    ): ByteArray? {
-        return TTLTransformerStub.transform(loader, classFile, classBeingRedefined, classFileBuffer)
-    }
+    ): ByteArray? =
+        callTTLTransformerTransformMethod(
+            TTLTransformer::class,
+            TTLTransformer::transform,
+            loader,
+            classFile,
+            classBeingRedefined,
+            classFileBuffer
+        )
 }

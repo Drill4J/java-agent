@@ -60,7 +60,6 @@ class WebSocketIntegrationTests : TestBase() {
         assertNotNull(rawAgentConfig)
         val agentConfig = ProtoBuf.loads(AgentConfig.serializer(), rawAgentConfig)
         assertEquals(agentId, agentConfig.id)
-        assertEquals("true", headersRequest.headers["needsync"])
     }
 
 

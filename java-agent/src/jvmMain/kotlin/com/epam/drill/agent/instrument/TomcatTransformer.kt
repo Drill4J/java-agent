@@ -15,15 +15,14 @@
  */
 package com.epam.drill.agent.instrument
 
-import com.epam.drill.agent.*
-import com.epam.drill.agent.instrument.util.*
-import com.epam.drill.kni.*
-import com.epam.drill.request.*
-import com.epam.drill.request.HttpRequest.DRILL_HEADER_PREFIX
-import javassist.*
+import javassist.CtMethod
 import mu.KotlinLogging
+import com.epam.drill.agent.instrument.error.wrapCatching
+import com.epam.drill.agent.instrument.request.HttpRequest
+import com.epam.drill.agent.instrument.util.createAndTransform
+import com.epam.drill.agent.request.HeadersRetriever
+import com.epam.drill.agent.request.RequestProcessor
 
-@Kni
 actual object TomcatTransformer {
 
     private val logger = KotlinLogging.logger {}
@@ -62,18 +61,18 @@ actual object TomcatTransformer {
                                 java.lang.String headerName = (java.lang.String) headerNames.nextElement();
                                 java.lang.String header = tomcatRequest.getHeader(headerName);
                                 allHeaders.put(headerName, header);
-                                if (headerName.startsWith("$DRILL_HEADER_PREFIX") && tomcatResponse.getHeader(headerName) == null) {
+                                if (headerName.startsWith("${HttpRequest.DRILL_HEADER_PREFIX}") && tomcatResponse.getHeader(headerName) == null) {
                                     tomcatResponse.addHeader(headerName, header);
                                 }
                             }
-                            com.epam.drill.request.HttpRequest.INSTANCE.${HttpRequest::storeDrillHeaders.name}(allHeaders);
+                            ${HttpRequest::class.java.name}.INSTANCE.${HttpRequest::storeDrillHeaders.name}(allHeaders);
                         }
                     """.trimIndent()
                 )
                 method.wrapCatching(
                     CtMethod::insertAfter,
                     """
-                       com.epam.drill.request.PluginExtension.INSTANCE.${PluginExtension::processServerResponse.name}();
+                       ${RequestProcessor::class.java.name}.INSTANCE.${RequestProcessor::processServerResponse.name}();
                     """.trimIndent()
                 )
                 return toBytecode()
