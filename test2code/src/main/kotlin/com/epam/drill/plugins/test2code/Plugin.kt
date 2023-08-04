@@ -159,9 +159,6 @@ class Plugin(
         (instrContext as DrillProbeArrayProvider).run {
             // TODO session id can be null
             val sessionId = context() ?: ""
-            // TODO make session/test-key context extraction independent
-            //  (after coverage storing in "flat" map is implemented)
-            if (Objects.isNull(sessionId)) return
 
             val name = context[DRIlL_TEST_NAME_HEADER] ?: DEFAULT_TEST_NAME
             val id = context[DRILL_TEST_ID_HEADER] ?: name.id()
@@ -178,7 +175,7 @@ class Plugin(
             }
             val runtime = runtimes[sessionId]
             if (runtime == null) {
-                logger?.trace { "processServerRequest. thread '${Thread.currentThread().id}' sessionId '$sessionId' testKey '$testKey' runtime is null" }
+                logger.trace { "processServerRequest. thread '${Thread.currentThread().id}' sessionId '$sessionId' testKey '$testKey' runtime is null" }
                 return
             }
 
@@ -188,13 +185,15 @@ class Plugin(
                 sessionTestKeyPairToThreadNumber[Pair(sessionId, testKey)] = AtomicInteger(0)
             }
             // Increment value for thread
+            logger.trace { "CATDOG. processServerRequest. before incrementAndGet thread '${Thread.currentThread().id}' $sessionTestKeyPairToThreadNumber " }
             sessionTestKeyPairToThreadNumber[Pair(sessionId, testKey)]?.incrementAndGet()
+            logger.trace { "CATDOG. processServerRequest. after incrementAndGet thread '${Thread.currentThread().id}' $sessionTestKeyPairToThreadNumber " }
 
             // TODO potential concurrency issue (if execData is removed by timer)
             val execData = runtime.getOrPut(Pair(sessionId, testKey)) {
                 ExecData().apply { fillFromMeta(testKey) }
             }
-            logger?.trace { "CATDOG. processServerRequest. thread '${Thread.currentThread().id}' sessionId '$sessionId' testKey '$testKey'" }
+            logger.trace { "CATDOG. processServerRequest. thread '${Thread.currentThread().id}' sessionId '$sessionId' testKey '$testKey'" }
             requestThreadLocal.set(execData)
         }
     }
