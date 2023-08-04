@@ -28,7 +28,7 @@ open class GenericAgentModule(
     pluginId: String,
     val pluginApiClass: jclass,
     val userPlugin: jobject
-) : AbstractAgentModule<Any>(
+) : AgentModule<Any>(
     pluginId,
     NopAgentContext,
     NopPluginSender
@@ -42,7 +42,7 @@ open class GenericAgentModule(
         logger.debug { "doRawAction: $rawAction" }
         return CallObjectMethodA(
             userPlugin,
-            GetMethodID(pluginApiClass, AbstractAgentModule<*>::doRawAction.name, "(Ljava/lang/String;)Ljava/lang/Object;"),
+            GetMethodID(pluginApiClass, AgentModule<*>::doRawAction.name, "(Ljava/lang/String;)Ljava/lang/Object;"),
             nativeHeap.allocArray(1L) {
                 l = NewStringUTF(rawAction)
             }
@@ -52,13 +52,13 @@ open class GenericAgentModule(
     override fun on() {
         logger.debug { "on(), pluginApiClass=$pluginApiClassName" }
         CallVoidMethodA(
-            userPlugin, GetMethodID(pluginApiClass, AbstractAgentModule<*>::on.name, "()V"), null
+            userPlugin, GetMethodID(pluginApiClass, AgentModule<*>::on.name, "()V"), null
         )
     }
 
     override fun load() {
         CallVoidMethodA(
-            userPlugin, GetMethodID(pluginApiClass, AbstractAgentModule<*>::load.name, "()V"), null
+            userPlugin, GetMethodID(pluginApiClass, AgentModule<*>::load.name, "()V"), null
         )
 
     }

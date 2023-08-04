@@ -27,9 +27,7 @@ import com.epam.drill.agent.configuration.defaultJvmLoggingConfiguration
 import com.epam.drill.agent.configuration.updateJvmLoggingConfiguration
 import com.epam.drill.agent.configuration.updatePackagePrefixesConfiguration
 import com.epam.drill.agent.request.RequestHolder
-import com.epam.drill.common.Family
 import com.epam.drill.agent.globalCallbacks
-import com.epam.drill.agent.module.GenericAgentModule
 import com.epam.drill.agent.module.InstrumentationAgentModule
 import com.epam.drill.core.transport.configureHttp
 import com.epam.drill.core.ws.WsSocket
@@ -63,21 +61,18 @@ fun vmInitEvent(env: CPointer<jvmtiEnvVar>?, jniEnv: CPointer<JNIEnvVar>?, threa
 
     globalCallbacks()
     updatePackagePrefixesConfiguration()
-    loadJvmModule("test2code", Family.INSTRUMENTATION)
+    loadJvmModule("test2code")
     WsSocket().connect(adminAddress.toString())
     RequestHolder.init(isAsync = agentParameters.isAsyncApp)
 }
 
 @Suppress("UNCHECKED_CAST")
-private fun loadJvmModule(id: String, family: Family) {
+private fun loadJvmModule(id: String) {
     try {
         val agentPart = JvmModuleLoader.loadJvmModule(id) as? jobject
         val pluginApiClass = NewGlobalRef(GetObjectClass(agentPart))!!
         val agentPartRef = NewGlobalRef(agentPart)!!
-        val plugin = when (family) {
-            Family.INSTRUMENTATION -> InstrumentationAgentModule(id, pluginApiClass, agentPartRef)
-            Family.GENERIC -> GenericAgentModule(id, pluginApiClass, agentPartRef)
-        }
+        val plugin = InstrumentationAgentModule(id, pluginApiClass, agentPartRef)
         addPluginToStorage(plugin)
         plugin.load()
     } catch (ex: Exception) {

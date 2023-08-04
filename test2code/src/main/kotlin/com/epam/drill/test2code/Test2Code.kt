@@ -22,7 +22,7 @@ import mu.KotlinLogging
 import com.github.luben.zstd.Zstd
 import com.epam.drill.common.classloading.ClassScanner
 import com.epam.drill.common.classloading.EntitySource
-import com.epam.drill.common.agent.AbstractAgentModule
+import com.epam.drill.common.agent.AgentModule
 import com.epam.drill.common.agent.AgentContext
 import com.epam.drill.common.agent.Instrumenter
 import com.epam.drill.common.agent.Sender
@@ -36,7 +36,7 @@ class Test2Code(
     id: String,
     agentContext: AgentContext,
     sender: Sender
-) : AbstractAgentModule<AgentAction>(id, agentContext, sender), Instrumenter, ClassScanner {
+) : AgentModule<AgentAction>(id, agentContext, sender), Instrumenter, ClassScanner {
 
     internal val logger = KotlinLogging.logger {}
 

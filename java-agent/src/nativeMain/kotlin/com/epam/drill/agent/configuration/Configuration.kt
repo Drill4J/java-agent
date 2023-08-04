@@ -34,7 +34,7 @@ import com.epam.drill.common.AgentConfigUpdater
 import com.epam.drill.common.AgentParameter
 import com.epam.drill.common.AgentType
 import com.epam.drill.common.PackagesPrefixes
-import com.epam.drill.common.ws.URL
+import com.epam.drill.common.URL
 import com.epam.drill.core.setPackagesPrefixes
 import com.epam.drill.jvmapi.callObjectIntMethod
 import com.epam.drill.jvmapi.callObjectStringMethod
