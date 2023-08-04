@@ -26,12 +26,19 @@ import com.github.luben.zstd.*
 import kotlinx.atomicfu.*
 import kotlinx.serialization.json.*
 import kotlinx.serialization.protobuf.*
+import com.github.luben.zstd.Zstd
+import kotlinx.atomicfu.atomic
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.protobuf.ProtoBuf
 import java.util.*
+import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.atomic.AtomicInteger
 import mu.KotlinLogging
 
 /**
  * Service for managing the plugin on the agent side
  */
+@Suppress("unused")
 class Plugin(
     id: String,
     agentContext: AgentContext,
@@ -64,6 +71,16 @@ class Plugin(
         logger.info { "Initializing plugin $id..." }
         scanAndSendMetadataClasses()
         sendMessage(Initialized(msg = "Initialized"))
+
+        //Create global session
+        val sessionId = "global"
+        val isRealtime = true
+        val handler = probeSender(sessionId, isRealtime)
+        val isGlobal = true
+        instrContext.start(sessionId, isGlobal, "GlobalSession", handler)
+        //TODO add creation agent-session here and remove checking on active-session on admin part
+        sendMessage(SessionStarted(sessionId, "AUTO", isRealtime, isGlobal, currentTimeMillis()))
+
         logger.info { "Plugin $id initialized!" }
     }
 
@@ -76,56 +93,57 @@ class Plugin(
         logger.info { "Plugin $id: initializing..." }
     }
 
+    // TODO remove after merging to java-agent repo
     override fun doAction(action: AgentAction) {
         when (action) {
             /**
              * @features Session starting
              */
             is StartAgentSession -> action.payload.run {
-                logger.info { "Start recording for session $sessionId (isGlobal=$isGlobal)" }
-                val handler = probeSender(sessionId, isRealtime)
-                instrContext.start(sessionId, isGlobal, testName, handler)
-                sendMessage(SessionStarted(sessionId, testType, isRealtime, currentTimeMillis()))
+//                logger.info { "Start recording for session $sessionId (isGlobal=$isGlobal)" }
+//                val handler = probeSender(sessionId, isRealtime)
+//                instrContext.start(sessionId, isGlobal, testName, handler)
+//                sendMessage(SessionStarted(sessionId, testType, isRealtime, currentTimeMillis()))
             }
             is AddAgentSessionData -> {
                 //ignored
             }
             is AddAgentSessionTests -> action.payload.run {
-                instrContext.addCompletedTests(sessionId, tests)
+//                instrContext.addCompletedTests(sessionId, tests)
             }
             /**
              * @features Session stopping
              */
             is StopAgentSession -> {
-                val sessionId = action.payload.sessionId
-                logger.info { "End of recording for session $sessionId" }
-                val runtimeData = instrContext.stop(sessionId) ?: emptySequence()
-                if (runtimeData.any()) {
-                    probeSender(sessionId)(runtimeData)
-                } else logger.info { "No data for session $sessionId" }
-                sendMessage(SessionFinished(sessionId, currentTimeMillis()))
+//                val sessionId = action.payload.sessionId
+//                logger.info { "End of recording for session $sessionId" }
+//                val runtimeData = instrContext.stop(sessionId) ?: emptySequence()
+//                if (runtimeData.any()) {
+//                    probeSender(sessionId)(runtimeData)
+//                } else logger.info { "No data for session $sessionId" }
+//                sendMessage(SessionFinished(sessionId, currentTimeMillis()))
             }
             is StopAllAgentSessions -> {
-                val stopped = instrContext.stopAll()
-                logger.info { "End of recording for sessions $stopped" }
-                for ((sessionId, data) in stopped) {
-                    if (data.any()) {
-                        probeSender(sessionId)(data)
-                    }
-                }
-                val ids = stopped.map { it.first }
-                sendMessage(SessionsFinished(ids, currentTimeMillis()))
+//                val stopped = instrContext.stopAll()
+//                logger.info { "End of recording for sessions $stopped" }
+//                for ((sessionId, data) in stopped) {
+//                    if (data.any()) {
+//                        probeSender(sessionId)(data)
+//                    }
+//                }
+//                val ids = stopped.map { it.first }
+//                sendMessage(SessionsFinished(ids, currentTimeMillis()))
             }
             is CancelAgentSession -> {
-                val sessionId = action.payload.sessionId
-                logger.info { "Cancellation of recording for session $sessionId" }
-                instrContext.cancel(sessionId)
-                sendMessage(SessionCancelled(sessionId, currentTimeMillis()))
+//                val sessionId = action.payload.sessionId
+//                logger.info { "Cancellation of recording for session $sessionId" }
+//                instrContext.cancel(sessionId)
+//                sendMessage(SessionCancelled(sessionId, currentTimeMillis()))
             }
             is CancelAllAgentSessions -> {
-                val cancelled = instrContext.cancelAll()
-                logger.info { "Cancellation of recording for sessions $cancelled" }
-                sendMessage(SessionsCancelled(cancelled, currentTimeMillis()))
+//                val cancelled = instrContext.cancelAll()
+//                logger.info { "Cancellation of recording for sessions $cancelled" }
+//                sendMessage(SessionsCancelled(cancelled, currentTimeMillis()))
             }
             else -> Unit
         }
@@ -139,17 +157,45 @@ class Plugin(
     @Suppress("UNUSED")
     fun processServerRequest() {
         (instrContext as DrillProbeArrayProvider).run {
-            val sessionId = context()
+            // TODO session id can be null
+            val sessionId = context() ?: ""
+            // TODO make session/test-key context extraction independent
+            //  (after coverage storing in "flat" map is implemented)
+            if (Objects.isNull(sessionId)) return
+
             val name = context[DRIlL_TEST_NAME_HEADER] ?: DEFAULT_TEST_NAME
             val id = context[DRILL_TEST_ID_HEADER] ?: name.id()
             val testKey = TestKey(name, id)
-            runtimes[sessionId]?.run {
-                val execDatum = getOrPut(testKey) {
-                    arrayOfNulls<ExecDatum>(MAX_CLASS_COUNT).apply { fillFromMeta(testKey) }
-                }
-                logger.trace { "processServerRequest. thread '${Thread.currentThread().id}' sessionId '$sessionId' testKey '$testKey'" }
-                requestThreadLocal.set(execDatum)
+
+            // Start runtime + agent session if none created for supplied context.sessionId.
+            if (runtimes[sessionId] == null) {
+                logger.trace { "processServerRequest. session is null" }
+                runtimes.forEach { logger.trace { "runtime: $it" } }
+                val handler = probeSender(sessionId, true)
+                val isGlobal = false
+                instrContext.start(sessionId, isGlobal, name, handler)
+                sendMessage(SessionStarted(sessionId, "AUTO", true, isGlobal, currentTimeMillis()))
             }
+            val runtime = runtimes[sessionId]
+            if (runtime == null) {
+                logger?.trace { "processServerRequest. thread '${Thread.currentThread().id}' sessionId '$sessionId' testKey '$testKey' runtime is null" }
+                return
+            }
+
+            // Check on null
+            if (sessionTestKeyPairToThreadNumber[Pair(sessionId, testKey)] == null) {
+                // Create if it does not exist
+                sessionTestKeyPairToThreadNumber[Pair(sessionId, testKey)] = AtomicInteger(0)
+            }
+            // Increment value for thread
+            sessionTestKeyPairToThreadNumber[Pair(sessionId, testKey)]?.incrementAndGet()
+
+            // TODO potential concurrency issue (if execData is removed by timer)
+            val execData = runtime.getOrPut(Pair(sessionId, testKey)) {
+                ExecData().apply { fillFromMeta(testKey) }
+            }
+            logger?.trace { "CATDOG. processServerRequest. thread '${Thread.currentThread().id}' sessionId '$sessionId' testKey '$testKey'" }
+            requestThreadLocal.set(execData)
         }
     }
 
@@ -160,6 +206,13 @@ class Plugin(
     @Suppress("UNUSED")
     fun processServerResponse() {
         (instrContext as DrillProbeArrayProvider).run {
+            val sessionId = context()
+            val name = context[DRIlL_TEST_NAME_HEADER] ?: DEFAULT_TEST_NAME
+            val id = context[DRILL_TEST_ID_HEADER] ?: name.id()
+            val testKey = TestKey(name, id)
+
+            sessionTestKeyPairToThreadNumber[Pair(sessionId, testKey)]?.decrementAndGet()
+            logger?.trace { "CATDOG. processServerResponse. after decrementAtomicInt thread '${Thread.currentThread().id}' $sessionTestKeyPairToThreadNumber " }
             requestThreadLocal.remove()
         }
     }
