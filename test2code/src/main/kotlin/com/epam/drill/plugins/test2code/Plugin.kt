@@ -245,6 +245,11 @@ class Plugin(
     }
 }
 
+val sessionTestKeyPairToThreadNumber = ConcurrentHashMap<Pair<String, TestKey>, AtomicInteger>()
+
+//TODO impl
+val sessionToThreadNumber = ConcurrentHashMap<String, AtomicInteger>()
+
 /**
  * Create a function which sends chunks of test coverage to the admin part of the plugin
  * @param sessionId the test session ID
