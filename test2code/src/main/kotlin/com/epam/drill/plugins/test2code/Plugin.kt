@@ -15,25 +15,23 @@
  */
 package com.epam.drill.plugins.test2code
 
-import com.epam.drill.agent.*
-import com.epam.drill.plugin.api.*
-import com.epam.drill.plugin.api.processing.*
-import com.epam.drill.plugins.test2code.classloading.*
-import com.epam.drill.plugins.test2code.common.api.*
+import com.epam.drill.agent.NativeCalls
 import com.epam.drill.common.classloading.ClassScanner
 import com.epam.drill.common.classloading.EntitySource
-import com.github.luben.zstd.*
-import kotlinx.atomicfu.*
-import kotlinx.serialization.json.*
-import kotlinx.serialization.protobuf.*
+import com.epam.drill.plugin.api.processing.AgentContext
+import com.epam.drill.plugin.api.processing.AgentPart
+import com.epam.drill.plugin.api.processing.Instrumenter
+import com.epam.drill.plugin.api.processing.Sender
+import com.epam.drill.plugins.test2code.DrillProbeArrayProvider.fillFromMeta
+import com.epam.drill.plugins.test2code.classloading.ClassLoadersScanner
+import com.epam.drill.plugins.test2code.common.api.*
 import com.github.luben.zstd.Zstd
-import kotlinx.atomicfu.atomic
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.protobuf.ProtoBuf
+import mu.KotlinLogging
 import java.util.*
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicInteger
-import mu.KotlinLogging
 
 /**
  * Service for managing the plugin on the agent side
@@ -69,18 +67,9 @@ class Plugin(
         val initInfo = InitInfo(message = "Initializing plugin $id...")
         sendMessage(initInfo)
         logger.info { "Initializing plugin $id..." }
+
         scanAndSendMetadataClasses()
         sendMessage(Initialized(msg = "Initialized"))
-
-        //Create global session
-        val sessionId = "global"
-        val isRealtime = true
-        val handler = probeSender(sessionId, isRealtime)
-        val isGlobal = true
-        instrContext.start(sessionId, isGlobal, "GlobalSession", handler)
-        //TODO add creation agent-session here and remove checking on active-session on admin part
-        sendMessage(SessionStarted(sessionId, "AUTO", isRealtime, isGlobal, currentTimeMillis()))
-
         logger.info { "Plugin $id initialized!" }
     }
 
@@ -91,6 +80,15 @@ class Plugin(
 
     override fun load() {
         logger.info { "Plugin $id: initializing..." }
+//        //Create global session
+        val sessionId = "global"
+        val isRealtime = true
+        val handler = probeSender(sessionId, isRealtime)
+        val isGlobal = true
+        instrContext.start(sessionId, isGlobal, "GlobalSession", handler)
+        //TODO add creation agent-session here and remove checking on active-session on admin part
+        sendMessage(SessionStarted(sessionId, "AUTO", isRealtime, isGlobal, currentTimeMillis()))
+        logger.info { "Plugin $id: global session was created." }
     }
 
     // TODO remove after merging to java-agent repo
@@ -105,9 +103,11 @@ class Plugin(
 //                instrContext.start(sessionId, isGlobal, testName, handler)
 //                sendMessage(SessionStarted(sessionId, testType, isRealtime, currentTimeMillis()))
             }
+
             is AddAgentSessionData -> {
                 //ignored
             }
+
             is AddAgentSessionTests -> action.payload.run {
 //                instrContext.addCompletedTests(sessionId, tests)
             }
@@ -123,6 +123,7 @@ class Plugin(
 //                } else logger.info { "No data for session $sessionId" }
 //                sendMessage(SessionFinished(sessionId, currentTimeMillis()))
             }
+
             is StopAllAgentSessions -> {
 //                val stopped = instrContext.stopAll()
 //                logger.info { "End of recording for sessions $stopped" }
@@ -134,17 +135,20 @@ class Plugin(
 //                val ids = stopped.map { it.first }
 //                sendMessage(SessionsFinished(ids, currentTimeMillis()))
             }
+
             is CancelAgentSession -> {
 //                val sessionId = action.payload.sessionId
 //                logger.info { "Cancellation of recording for session $sessionId" }
 //                instrContext.cancel(sessionId)
 //                sendMessage(SessionCancelled(sessionId, currentTimeMillis()))
             }
+
             is CancelAllAgentSessions -> {
 //                val cancelled = instrContext.cancelAll()
 //                logger.info { "Cancellation of recording for sessions $cancelled" }
 //                sendMessage(SessionsCancelled(cancelled, currentTimeMillis()))
             }
+
             else -> Unit
         }
     }
@@ -156,46 +160,48 @@ class Plugin(
      */
     @Suppress("UNUSED")
     fun processServerRequest() {
-        (instrContext as DrillProbeArrayProvider).run {
-            // TODO session id can be null
-            val sessionId = context() ?: ""
+        logger.trace { "processServerRequest before instrContext. thread '${Thread.currentThread().id}' " }
+        val drillProbeArrayProvider = instrContext as DrillProbeArrayProvider
 
-            val name = context[DRIlL_TEST_NAME_HEADER] ?: DEFAULT_TEST_NAME
-            val id = context[DRILL_TEST_ID_HEADER] ?: name.id()
-            val testKey = TestKey(name, id)
+        // TODO session id can be null
+        val sessionId = context() ?: return
 
-            // Start runtime + agent session if none created for supplied context.sessionId.
-            if (runtimes[sessionId] == null) {
-                logger.trace { "processServerRequest. session is null" }
-                runtimes.forEach { logger.trace { "runtime: $it" } }
-                val handler = probeSender(sessionId, true)
-                val isGlobal = false
-                instrContext.start(sessionId, isGlobal, name, handler)
-                sendMessage(SessionStarted(sessionId, "AUTO", true, isGlobal, currentTimeMillis()))
-            }
-            val runtime = runtimes[sessionId]
-            if (runtime == null) {
-                logger.trace { "processServerRequest. thread '${Thread.currentThread().id}' sessionId '$sessionId' testKey '$testKey' runtime is null" }
-                return
-            }
+        val name = context[DRIlL_TEST_NAME_HEADER] ?: DEFAULT_TEST_NAME
+        val id = context[DRILL_TEST_ID_HEADER] ?: name.id()
+        val testKey = TestKey(name, id)
 
-            // Check on null
-            if (sessionTestKeyPairToThreadNumber[Pair(sessionId, testKey)] == null) {
-                // Create if it does not exist
-                sessionTestKeyPairToThreadNumber[Pair(sessionId, testKey)] = AtomicInteger(0)
-            }
-            // Increment value for thread
-            logger.trace { "CATDOG. processServerRequest. before incrementAndGet thread '${Thread.currentThread().id}' $sessionTestKeyPairToThreadNumber " }
-            sessionTestKeyPairToThreadNumber[Pair(sessionId, testKey)]?.incrementAndGet()
-            logger.trace { "CATDOG. processServerRequest. after incrementAndGet thread '${Thread.currentThread().id}' $sessionTestKeyPairToThreadNumber " }
-
-            // TODO potential concurrency issue (if execData is removed by timer)
-            val execData = runtime.getOrPut(Pair(sessionId, testKey)) {
-                ExecData().apply { fillFromMeta(testKey) }
-            }
-            logger.trace { "CATDOG. processServerRequest. thread '${Thread.currentThread().id}' sessionId '$sessionId' testKey '$testKey'" }
-            requestThreadLocal.set(execData)
+        // Start runtime + agent session if none created for supplied context.sessionId.
+        if (drillProbeArrayProvider.runtimes[sessionId] == null) {
+            logger.trace { "processServerRequest. session is null" }
+            drillProbeArrayProvider.runtimes.forEach { logger.trace { "runtime: $it" } }
+            val handler = probeSender(sessionId, true)
+            val isGlobal = false
+            instrContext.start(sessionId, isGlobal, name, handler)
+            sendMessage(SessionStarted(sessionId, "AUTO", true, isGlobal, currentTimeMillis()))
         }
+        val runtime = drillProbeArrayProvider.runtimes[sessionId]
+        if (runtime == null) {
+            logger.trace { "processServerRequest. thread '${Thread.currentThread().id}' sessionId '$sessionId' testKey '$testKey' runtime is null" }
+            return
+        }
+
+        // Check on null
+        if (sessionTestKeyPairToThreadNumber[Pair(sessionId, testKey)] == null) {
+            // Create if it does not exist
+            sessionTestKeyPairToThreadNumber[Pair(sessionId, testKey)] = AtomicInteger(0)
+        }
+        // Increment value for thread
+        logger.trace { "CATDOG. processServerRequest. before incrementAndGet thread '${Thread.currentThread().id}' $sessionTestKeyPairToThreadNumber " }
+        sessionTestKeyPairToThreadNumber[Pair(sessionId, testKey)]?.incrementAndGet()
+        logger.trace { "CATDOG. processServerRequest. after incrementAndGet thread '${Thread.currentThread().id}' $sessionTestKeyPairToThreadNumber " }
+
+        // TODO potential concurrency issue (if execData is removed by timer)
+        val execData = runtime.getOrPut(Pair(sessionId, testKey)) {
+            ExecData().apply { fillFromMeta(testKey) }
+        }
+
+        logger.trace { "CATDOG. processServerRequest. thread '${Thread.currentThread().id}' sessionId '$sessionId' testKey '$testKey'" }
+        drillProbeArrayProvider.requestThreadLocal.set(execData)
     }
 
     /**

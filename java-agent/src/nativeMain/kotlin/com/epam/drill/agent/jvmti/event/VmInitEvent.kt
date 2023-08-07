@@ -63,8 +63,8 @@ fun vmInitEvent(env: CPointer<jvmtiEnvVar>?, jniEnv: CPointer<JNIEnvVar>?, threa
 
     globalCallbacks()
     updatePackagePrefixesConfiguration()
-    loadJvmModule("test2code", Family.INSTRUMENTATION)
     WsSocket().connect(adminAddress.toString())
+    loadJvmModule("test2code", Family.INSTRUMENTATION)
     RequestHolder.init(isAsync = agentParameters.isAsyncApp)
 }
 

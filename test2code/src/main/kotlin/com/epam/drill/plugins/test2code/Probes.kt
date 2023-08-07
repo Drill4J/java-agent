@@ -297,7 +297,7 @@ open class SimpleSessionProbeArrayProvider(
         probeCount: Int,
     ): AgentProbes = getClassProbesInSession(id)
         ?: global?.second?.get(id)
-        ?: stubProbes.also { logger?.trace { "Stub probes call. Class id: $id, class name: $name" } }
+        ?: stubProbes.also { logger.trace { "Stub probes call. Class id: $id, class name: $name, Probe num: $num / $probeCount" } }
 
     /**
      * requestThreadLocal stores probes of classes for a specific session
