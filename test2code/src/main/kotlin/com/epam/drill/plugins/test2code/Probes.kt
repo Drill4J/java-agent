@@ -161,7 +161,7 @@ class ExecRuntime(
         }
         logger.trace { "CATDOG . collect(). pair before filter: $sessionTestKeyPairToThreadNumber " }
 
-        return filteredMap.flatMap { it.value.values }.asSequence()
+        return filteredMap.flatMap { it.value.values }.filter { it.probes.values.isNotEmpty() }.asSequence()
     }
 
     fun getOrPut(
@@ -187,7 +187,6 @@ class GlobalExecRuntime(
     realtimeHandler: RealtimeHandler,
 ) : Runtime(realtimeHandler) {
     internal val execData = ExecData()
-    private val logger = KotlinLogging.logger {}
 
     /**
      * Get probes from the completed tests
@@ -247,11 +246,6 @@ class ProbeMetaContainer {
     }
 }
 
-data class ExecDataWithTimer(
-    val execData: ExecData,
-    val lastUpdateTime: Long
-)
-
 /**
  * Simple probe array provider that employs a lock-free map for runtime data storage.
  * This class is intended to be an ancestor for a concrete probe array provider object.
@@ -295,7 +289,7 @@ open class SimpleSessionProbeArrayProvider(
         num: Int,
         name: String,
         probeCount: Int,
-    ): AgentProbes = getClassProbesInSession(id)
+    ): AgentProbes =  getClassProbesInSession(id)
         ?: global?.second?.get(id)
         ?: stubProbes.also { logger.trace { "Stub probes call. Class id: $id, class name: $name, Probe num: $num / $probeCount" } }
 
