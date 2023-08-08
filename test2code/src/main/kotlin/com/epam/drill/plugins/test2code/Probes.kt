@@ -22,7 +22,6 @@ import com.epam.drill.plugins.test2code.common.api.DEFAULT_TEST_NAME
 import com.epam.drill.plugins.test2code.common.api.ExecClassData
 import com.epam.drill.plugins.test2code.common.api.toBitSet
 import kotlinx.atomicfu.atomic
-import kotlinx.collections.immutable.*
 import kotlinx.coroutines.*
 import mu.KotlinLogging
 import java.util.concurrent.ConcurrentHashMap
@@ -130,18 +129,15 @@ class ExecRuntime(
 ) : Runtime(realtimeHandler) {
 
     private val logger = KotlinLogging.logger {}
-    private val _execData = ConcurrentHashMap<TestKey, ExecData>()
-
-    private val _completedTests = atomic(persistentListOf<String>())
     private val isPerformanceMode = System.getProperty("drill.probes.perf.mode")?.toBoolean() ?: false
-
-    init {
-        logger.debug { "drill.probes.perf.mode=$isPerformanceMode" }
-        logger.trace { "CATDOG .ExecRuntime init. thread '${Thread.currentThread().id}' " }
-    }
 
     // key - pair of sessionId and testKey; value - ExecData
     private val testCoverageMap = ConcurrentHashMap<Pair<String, TestKey>, ExecData>()
+
+
+    init {
+        logger.debug { "drill.probes.perf.mode=$isPerformanceMode" }
+    }
 
 
     override fun collect(): Sequence<ExecDatum> {
@@ -152,16 +148,15 @@ class ExecRuntime(
         //clean up process
         //TODO potential concurrency issue
         filteredMap.filter { (pair, _) ->
-            logger.trace { "CATDOG . collect(). pair before filter: $pair " }
             sessionTestKeyPairToThreadNumber[pair]?.get() == 0
         }.forEach { (pair, _) ->
-            logger.trace { "CATDOG . collect(). pair to delete: $pair " }
             testCoverageMap.remove(pair)
             sessionTestKeyPairToThreadNumber.remove(pair)
         }
-        logger.trace { "CATDOG . collect(). pair before filter: $sessionTestKeyPairToThreadNumber " }
 
-        return filteredMap.flatMap { it.value.values }.filter { it.probes.values.isNotEmpty() }.asSequence()
+        return filteredMap.flatMap { it.value.values }
+            .filter { it.probes.values.isNotEmpty() }
+            .asSequence()
     }
 
     fun getOrPut(
@@ -220,10 +215,6 @@ class GlobalExecRuntime(
 class ProbeMetaContainer {
     //key: class-id ; value: ProbeDescriptor
     val probesDescriptorMap = ConcurrentHashMap<Long, ProbeDescriptor>()
-
-    init {
-        println("CATDOG. ProbeMetaContainer init. thread '${Thread.currentThread().id}' ")
-    }
 
     fun addDescriptor(
         // number of class at instrumentation
@@ -289,7 +280,7 @@ open class SimpleSessionProbeArrayProvider(
         num: Int,
         name: String,
         probeCount: Int,
-    ): AgentProbes =  getClassProbesInSession(id)
+    ): AgentProbes = getClassProbesInSession(id)
         ?: global?.second?.get(id)
         ?: stubProbes.also { logger.trace { "Stub probes call. Class id: $id, class name: $name, Probe num: $num / $probeCount" } }
 

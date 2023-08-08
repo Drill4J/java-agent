@@ -33,6 +33,8 @@ import java.util.*
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicInteger
 
+val sessionTestKeyPairToThreadNumber = ConcurrentHashMap<Pair<String, TestKey>, AtomicInteger>()
+
 /**
  * Service for managing the plugin on the agent side
  */
@@ -191,16 +193,13 @@ class Plugin(
             sessionTestKeyPairToThreadNumber[Pair(sessionId, testKey)] = AtomicInteger(0)
         }
         // Increment value for thread
-        logger.trace { "CATDOG. processServerRequest. before incrementAndGet thread '${Thread.currentThread().id}' $sessionTestKeyPairToThreadNumber " }
         sessionTestKeyPairToThreadNumber[Pair(sessionId, testKey)]?.incrementAndGet()
-        logger.trace { "CATDOG. processServerRequest. after incrementAndGet thread '${Thread.currentThread().id}' $sessionTestKeyPairToThreadNumber " }
 
         // TODO potential concurrency issue (if execData is removed by timer)
         val execData = runtime.getOrPut(Pair(sessionId, testKey)) {
             ExecData().apply { fillFromMeta(testKey) }
         }
 
-        logger.trace { "CATDOG. processServerRequest. thread '${Thread.currentThread().id}' sessionId '$sessionId' testKey '$testKey'" }
         drillProbeArrayProvider.requestThreadLocal.set(execData)
     }
 
@@ -217,7 +216,6 @@ class Plugin(
             val testKey = TestKey(name, id)
 
             sessionTestKeyPairToThreadNumber[Pair(sessionId, testKey)]?.decrementAndGet()
-            logger?.trace { "CATDOG. processServerResponse. after decrementAtomicInt thread '${Thread.currentThread().id}' $sessionTestKeyPairToThreadNumber " }
             requestThreadLocal.remove()
         }
     }
@@ -249,11 +247,6 @@ class Plugin(
         logger.info { "Scanned $classCount classes" }
     }
 }
-
-val sessionTestKeyPairToThreadNumber = ConcurrentHashMap<Pair<String, TestKey>, AtomicInteger>()
-
-//TODO impl
-val sessionToThreadNumber = ConcurrentHashMap<String, AtomicInteger>()
 
 /**
  * Create a function which sends chunks of test coverage to the admin part of the plugin
