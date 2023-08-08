@@ -26,11 +26,9 @@ import com.epam.drill.*
 import com.epam.drill.agent.*
 import com.epam.drill.agent.configuration.*
 import com.epam.drill.agent.instrument.*
-import com.epam.drill.agent.instrument.http.apache.*
-import com.epam.drill.agent.instrument.http.java.*
-import com.epam.drill.agent.instrument.http.ok.*
 import com.epam.drill.agent.module.*
 import com.epam.drill.common.classloading.*
+import com.epam.drill.instrument.http.*
 import com.epam.drill.jvmapi.gen.*
 
 @SharedImmutable

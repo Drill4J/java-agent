@@ -19,7 +19,7 @@ import javassist.CtMethod
 import mu.KotlinLogging
 import com.epam.drill.agent.instrument.error.wrapCatching
 import com.epam.drill.agent.instrument.request.HttpRequest
-import com.epam.drill.agent.instrument.util.createAndTransform
+import com.epam.drill.instrument.util.createAndTransform
 
 actual object SSLTransformer {
 
