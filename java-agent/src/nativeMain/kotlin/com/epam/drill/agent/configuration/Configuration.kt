@@ -29,11 +29,11 @@ import com.epam.drill.drillInstallationDir
 import com.epam.drill.agent.SYSTEM_JAVA_APP_JAR
 import com.epam.drill.agent.agentVersion
 import com.epam.drill.agent.configuration.serialization.SimpleMapDecoder
-import com.epam.drill.common.AgentConfig
 import com.epam.drill.common.AgentConfigUpdater
-import com.epam.drill.common.AgentParameter
-import com.epam.drill.common.AgentType
-import com.epam.drill.common.PackagesPrefixes
+import com.epam.drill.common.agent.AgentConfig
+import com.epam.drill.common.agent.AgentParameter
+import com.epam.drill.common.agent.AgentType
+import com.epam.drill.common.agent.PackagesPrefixes
 import com.epam.drill.common.URL
 import com.epam.drill.core.setPackagesPrefixes
 import com.epam.drill.jvmapi.callObjectIntMethod
