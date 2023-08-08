@@ -20,7 +20,6 @@ import mu.KotlinLogging
 import com.alibaba.ttl.TransmittableThreadLocal
 import com.epam.drill.agent.RequestAgentContext
 import com.epam.drill.common.agent.AgentContext
-import com.epam.drill.plugin.DrillRequest
 
 actual object RequestHolder {
 

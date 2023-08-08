@@ -17,20 +17,20 @@ package com.epam.drill.agent.jvmti.event
 
 import kotlinx.cinterop.CPointer
 import mu.KotlinLogging
-import com.epam.drill.addPluginToStorage
-import com.epam.drill.adminAddress
 import com.epam.drill.agent.Agent
 import com.epam.drill.agent.JvmModuleLoader
+import com.epam.drill.agent.addPluginToStorage
+import com.epam.drill.agent.configuration.adminAddress
 import com.epam.drill.agent.configuration.agentParameters
 import com.epam.drill.agent.configuration.agentStartTimeMark
+import com.epam.drill.agent.configuration.configureHttp
 import com.epam.drill.agent.configuration.defaultJvmLoggingConfiguration
 import com.epam.drill.agent.configuration.updateJvmLoggingConfiguration
 import com.epam.drill.agent.configuration.updatePackagePrefixesConfiguration
 import com.epam.drill.agent.request.RequestHolder
 import com.epam.drill.agent.globalCallbacks
 import com.epam.drill.agent.module.InstrumentationAgentModule
-import com.epam.drill.core.transport.configureHttp
-import com.epam.drill.core.ws.WsSocket
+import com.epam.drill.agent.ws.WsSocket
 import com.epam.drill.jvmapi.gen.GetObjectClass
 import com.epam.drill.jvmapi.gen.JNIEnvVar
 import com.epam.drill.jvmapi.gen.JVMTI_ENABLE

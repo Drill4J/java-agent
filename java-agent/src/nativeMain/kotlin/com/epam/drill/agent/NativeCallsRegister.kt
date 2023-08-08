@@ -18,7 +18,7 @@ package com.epam.drill.agent
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
 import mu.KotlinLogging
-import com.epam.drill.agentConfig
+import com.epam.drill.agent.configuration.agentConfig
 import com.epam.drill.agent.configuration.agentParameters
 import com.epam.drill.agent.configuration.agentStartTimeMark
 import com.epam.drill.agent.jvmti.sendToSocket
