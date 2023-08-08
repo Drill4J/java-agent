@@ -15,20 +15,20 @@
  */
 package com.epam.drill.plugins.test2code
 
-import com.epam.drill.agent.*
-import com.epam.drill.plugin.api.*
-import com.epam.drill.plugin.api.processing.*
-import com.epam.drill.plugins.test2code.classloading.*
-import com.epam.drill.plugins.test2code.common.api.*
+import com.epam.drill.agent.NativeCalls
 import com.epam.drill.common.classloading.ClassScanner
 import com.epam.drill.common.classloading.EntitySource
-import com.github.luben.zstd.*
-import kotlinx.atomicfu.*
-import kotlinx.serialization.json.*
-import kotlinx.serialization.protobuf.*
+import com.epam.drill.plugin.api.processing.AgentContext
+import com.epam.drill.plugin.api.processing.AgentPart
+import com.epam.drill.plugin.api.processing.Instrumenter
+import com.epam.drill.plugin.api.processing.Sender
+import com.epam.drill.plugins.test2code.DrillProbeArrayProvider.fillFromMeta
+import com.epam.drill.plugins.test2code.classloading.ClassLoadersScanner
+import com.epam.drill.plugins.test2code.common.api.*
 import com.github.luben.zstd.Zstd
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.protobuf.ProtoBuf
+import mu.KotlinLogging
 import java.util.*
 import mu.KotlinLogging
 
@@ -64,16 +64,27 @@ class Plugin(
         val initInfo = InitInfo(message = "Initializing plugin $id...")
         sendMessage(initInfo)
         logger.info { "Initializing plugin $id..." }
+
         scanAndSendMetadataClasses()
         sendMessage(Initialized(msg = "Initialized"))
+        logger.info { "Plugin $id initialized!" }
+    }
 
-        //Create global session
+    override fun instrument(
+        className: String,
+        initialBytes: ByteArray,
+    ): ByteArray? = instrumenter.instrument(className, initialBytes)
+
+    override fun load() {
+        logger.info { "Plugin $id: initializing..." }
+//        //Create global session
         val sessionId = "global"
         val isRealtime = true
         val isGlobal = true
         instrContext.startSession(DEFAULT_SESSION_ID, isGlobal, DEFAULT_TEST_NAME.id(), DEFAULT_TEST_NAME)
         //TODO add creation agent-session here and remove checking on active-session on admin part
         sendMessage(SessionStarted(sessionId, "AUTO", isRealtime, isGlobal, currentTimeMillis()))
+        logger.info { "Plugin $id: global session was created." }
 
         logger.info { "Plugin $id initialized!" }
     }
