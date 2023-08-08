@@ -60,16 +60,13 @@ class DrillInstrumenter(
         )
         reader.accept(visitor, ClassReader.EXPAND_FRAMES)
 
-        (probeArrayProvider as? SimpleSessionProbeArrayProvider)?.run {
-            probeMetaContainer.addDescriptor(
-                genId,
+        (probeArrayProvider as? ProbeDescriptorProvider)?.run {
+            addProbeDescriptor(
                 ProbeDescriptor(
                     id = classId,
                     name = className,
                     probeCount = probeCount
-                ),
-                global?.second,
-                runtimes.values
+                )
             )
         }
 

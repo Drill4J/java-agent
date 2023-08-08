@@ -27,11 +27,14 @@ import kotlinx.atomicfu.*
 import kotlinx.serialization.json.*
 import kotlinx.serialization.protobuf.*
 import com.github.luben.zstd.Zstd
-import kotlinx.atomicfu.atomic
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.protobuf.ProtoBuf
 import java.util.*
 import mu.KotlinLogging
+
+const val DRIlL_TEST_NAME_HEADER = "drill-test-name"
+const val DRILL_TEST_ID_HEADER = "drill-test-id"
+const val DEFAULT_SESSION_ID = "global"
 
 /**
  * Service for managing the plugin on the agent side
@@ -47,17 +50,11 @@ class Plugin(
 
     internal val json = Json { encodeDefaults = true }
 
-    private val instrContext: SessionProbeArrayProvider = DrillProbeArrayProvider.apply {
-        defaultContext = agentContext
-    }
+    private val instrContext = DrillProbeArrayProvider.apply { setSendingHandler(probeSender()) }
 
     private val instrumenter = DrillInstrumenter(instrContext)
 
-    override fun onConnect() {
-        val ids = instrContext.getActiveSessions()
-        logger.info { "Send active sessions after reconnect: ${ids.count()}" }
-        sendMessage(SyncMessage(ids))
-    }
+    override fun onConnect() {}
 
     /**
      * Switch on the plugin
@@ -73,9 +70,8 @@ class Plugin(
         //Create global session
         val sessionId = "global"
         val isRealtime = true
-        val handler = probeSender(sessionId, isRealtime)
         val isGlobal = true
-        instrContext.start(sessionId, isGlobal, "GlobalSession", handler)
+        instrContext.startSession(DEFAULT_SESSION_ID, isGlobal, DEFAULT_TEST_NAME.id(), DEFAULT_TEST_NAME)
         //TODO add creation agent-session here and remove checking on active-session on admin part
         sendMessage(SessionStarted(sessionId, "AUTO", isRealtime, isGlobal, currentTimeMillis()))
 
@@ -89,6 +85,7 @@ class Plugin(
 
     override fun load() {
         logger.info { "Plugin $id: initializing..." }
+        instrContext.startSendingCoverage()
     }
 
     // TODO remove after merging to java-agent repo
@@ -103,9 +100,11 @@ class Plugin(
 //                instrContext.start(sessionId, isGlobal, testName, handler)
 //                sendMessage(SessionStarted(sessionId, testType, isRealtime, currentTimeMillis()))
             }
+
             is AddAgentSessionData -> {
                 //ignored
             }
+
             is AddAgentSessionTests -> action.payload.run {
 //                instrContext.addCompletedTests(sessionId, tests)
             }
@@ -121,6 +120,7 @@ class Plugin(
 //                } else logger.info { "No data for session $sessionId" }
 //                sendMessage(SessionFinished(sessionId, currentTimeMillis()))
             }
+
             is StopAllAgentSessions -> {
 //                val stopped = instrContext.stopAll()
 //                logger.info { "End of recording for sessions $stopped" }
@@ -132,17 +132,20 @@ class Plugin(
 //                val ids = stopped.map { it.first }
 //                sendMessage(SessionsFinished(ids, currentTimeMillis()))
             }
+
             is CancelAgentSession -> {
 //                val sessionId = action.payload.sessionId
 //                logger.info { "Cancellation of recording for session $sessionId" }
 //                instrContext.cancel(sessionId)
 //                sendMessage(SessionCancelled(sessionId, currentTimeMillis()))
             }
+
             is CancelAllAgentSessions -> {
 //                val cancelled = instrContext.cancelAll()
 //                logger.info { "Cancellation of recording for sessions $cancelled" }
 //                sendMessage(SessionsCancelled(cancelled, currentTimeMillis()))
             }
+
             else -> Unit
         }
     }
@@ -154,37 +157,10 @@ class Plugin(
      */
     @Suppress("UNUSED")
     fun processServerRequest() {
-        (instrContext as DrillProbeArrayProvider).run {
-            // TODO session id can be null
-            val sessionId = context() ?: return
-            // TODO make session/test-key context extraction independent
-            //  (after coverage storing in "flat" map is implemented)
-
-            val name = context[DRIlL_TEST_NAME_HEADER] ?: DEFAULT_TEST_NAME
-            val id = context[DRILL_TEST_ID_HEADER] ?: name.id()
-            val testKey = TestKey(name, id)
-
-            // Start runtime + agent session if none created for supplied context.sessionId.
-            if (runtimes[sessionId] == null) {
-                logger.trace { "processServerRequest. session is null" }
-                runtimes.forEach { logger.trace { "runtime: $it" } }
-                val handler = probeSender(sessionId, true)
-                val isGlobal = false
-                instrContext.start(sessionId, isGlobal, name, handler)
-                sendMessage(SessionStarted(sessionId, "AUTO", true, isGlobal, currentTimeMillis()))
-            }
-            val runtime = runtimes[sessionId]
-            if (runtime == null) {
-                logger.trace { "processServerRequest. thread '${Thread.currentThread().id}' sessionId '$sessionId' testKey '$testKey' runtime is null" }
-                return
-            }
-
-            val execData = runtime.getOrPut(Pair(sessionId, testKey)) {
-                ExecData().apply { fillFromMeta(testKey) }
-            }
-            logger.trace { "CATDOG. processServerRequest. thread '${Thread.currentThread().id}' sessionId '$sessionId' testKey '$testKey'" }
-            requestThreadLocal.set(execData)
-        }
+        val sessionId = context() ?: DEFAULT_SESSION_ID
+        val testName = context[DRIlL_TEST_NAME_HEADER] ?: DEFAULT_TEST_NAME
+        val testId = context[DRILL_TEST_ID_HEADER] ?: testName.id()
+        instrContext.startRecording(sessionId, testId, testName)
     }
 
     /**
@@ -193,16 +169,10 @@ class Plugin(
      */
     @Suppress("UNUSED")
     fun processServerResponse() {
-        (instrContext as DrillProbeArrayProvider).run {
-            val sessionId = context()
-            val name = context[DRIlL_TEST_NAME_HEADER] ?: DEFAULT_TEST_NAME
-            val id = context[DRILL_TEST_ID_HEADER] ?: name.id()
-            val testKey = TestKey(name, id)
-            val execData = requestThreadLocal.get()
-            if (sessionId != null)
-                runtimes[sessionId]?.release(Pair(sessionId, testKey), execData)
-            requestThreadLocal.remove()
-        }
+        val sessionId = context() ?: DEFAULT_SESSION_ID
+        val testName = context[DRIlL_TEST_NAME_HEADER] ?: DEFAULT_TEST_NAME
+        val testId = context[DRILL_TEST_ID_HEADER] ?: testName.id()
+        instrContext.stopRecording(sessionId, testId, testName)
     }
 
     override fun parseAction(
@@ -241,21 +211,23 @@ class Plugin(
  * @features Coverage data sending
  */
 fun Plugin.probeSender(
-    sessionId: String,
     sendChanged: Boolean = false,
 ): RealtimeHandler = { execData ->
     execData
-        .map(ExecDatum::toExecClassData)
-        .chunked(0xffff)
-        .map { chunk -> CoverDataPart(sessionId, chunk) }
-        .sumOf { message ->
-            logger.trace { "send to admin-part '$message'..." }
-            val encoded = ProtoBuf.encodeToByteArray(CoverMessage.serializer(), message)
-            val compressed = Zstd.compress(encoded)
-            send(Base64.getEncoder().encodeToString(compressed))
-            message.data.count()
-        }.takeIf { sendChanged && it > 0 }?.let {
-            sendMessage(SessionChanged(sessionId, it))
+        .groupBy { it.sessionId }
+        .forEach { (sessionId, data) ->
+            data.map(ExecDatum::toExecClassData)
+                .chunked(0xffff)
+                .map { chunk -> CoverDataPart(sessionId, chunk) }
+                .sumOf { message ->
+                    logger.trace { "send to admin-part '$message'..." }
+                    val encoded = ProtoBuf.encodeToByteArray(CoverMessage.serializer(), message)
+                    val compressed = Zstd.compress(encoded)
+                    send(Base64.getEncoder().encodeToString(compressed))
+                    message.data.count()
+                }.takeIf { sendChanged && it > 0 }?.let {
+                    sendMessage(SessionChanged(sessionId, it))
+                }
         }
 }
 
