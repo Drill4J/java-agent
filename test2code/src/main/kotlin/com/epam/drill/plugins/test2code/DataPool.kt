@@ -19,7 +19,7 @@ import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.ConcurrentLinkedQueue
 
 interface DataPool<K, V> {
-    fun hold(key: K, default: () -> V): V
+    fun getOrPut(key: K, default: () -> V): V
     fun release(key: K, value: V)
     fun pollReleased(): Sequence<V>
 }
@@ -28,7 +28,7 @@ class ConcurrentDataPool<K, V> : DataPool<K, V> {
     private val dataMap = ConcurrentHashMap<K, V>()
     private val released = ConcurrentLinkedQueue<V>()
 
-    override fun hold(key: K, default: () -> V): V {
+    override fun getOrPut(key: K, default: () -> V): V {
         return dataMap.getOrPut(key, default)
     }
 

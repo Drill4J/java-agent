@@ -50,7 +50,7 @@ class ProbeDescriptor(
 
 interface ProbeDescriptorProvider {
     fun addProbeDescriptor(descriptor: ProbeDescriptor)
-    fun ExecData.fillExecData(testId: String, testName: String)
+    fun ExecData.fillExecData(sessionId: String, testId: String, testName: String)
 }
 
 interface CoverageRecorder {
@@ -116,7 +116,7 @@ open class SimpleSessionProbeArrayProvider() : ProbeArrayProvider, SessionManage
         testName: String,
     ) {
         if (isGlobal) {
-            global = sessionId to ExecData().apply { fillExecData(testId, testName) }
+            global = sessionId to ExecData().apply { fillExecData(sessionId, testId, testName) }
         }
     }
 
@@ -134,12 +134,13 @@ open class SimpleSessionProbeArrayProvider() : ProbeArrayProvider, SessionManage
         probeMetaContainer[descriptor.id] = descriptor
     }
 
-    override fun ExecData.fillExecData(testId: String, testName: String) {
+    override fun ExecData.fillExecData(sessionId: String, testId: String, testName: String) {
         probeMetaContainer.values.forEach { descriptor ->
             this.putIfAbsent(descriptor.id, ExecDatum(
                 id = descriptor.id,
                 name = descriptor.name,
                 probes = AgentProbes(descriptor.probeCount),
+                sessionId = sessionId,
                 testName = testName,
                 testId = testId
             ))
@@ -147,10 +148,11 @@ open class SimpleSessionProbeArrayProvider() : ProbeArrayProvider, SessionManage
     }
 
     override fun startRecording(sessionId: String, testId: String, testName: String) {
-        val data = execData.hold(SessionTestKey(sessionId, testId to testName)) {
-            ExecData().apply { fillExecData(testId, testName) }
+        val data = execData.getOrPut(SessionTestKey(sessionId, testId to testName)) {
+            ExecData().apply { fillExecData(sessionId, testId, testName) }
         }
         requestThreadLocal.set(data)
+        logger.trace { "Test recording started (sessionId = $sessionId, testId=$testId, threadId=${Thread.currentThread().id})." }
     }
 
     override fun stopRecording(sessionId: String, testId: String, testName: String) {
@@ -158,11 +160,12 @@ open class SimpleSessionProbeArrayProvider() : ProbeArrayProvider, SessionManage
         if (data != null) {
             execData.release(SessionTestKey(sessionId, testId to testName), data)
             requestThreadLocal.remove()
+            logger.trace { "Test recording stopped (sessionId = $sessionId, testId=$testId, threadId=${Thread.currentThread().id})." }
         }
     }
 
     override fun collectProbes(): Sequence<ExecDatum> {
-        return execData.pollReleased().filter { it.hasProbes() }.flatMap { it.values }
+        return execData.pollReleased().flatMap { it.values }.filter { it.probes.hasProbes() }
     }
 
     override fun setSendingHandler(handler: RealtimeHandler) {
@@ -171,10 +174,12 @@ open class SimpleSessionProbeArrayProvider() : ProbeArrayProvider, SessionManage
 
     override fun startSendingCoverage() {
         job.start()
+        logger.debug { "Coverage sending job is started." }
     }
 
     override fun stopSendingCoverage() {
         job.cancel()
+        logger.debug { "Coverage sending job is stopped." }
     }
 
     /**

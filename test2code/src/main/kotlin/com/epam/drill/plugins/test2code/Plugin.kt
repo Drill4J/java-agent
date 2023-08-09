@@ -22,7 +22,6 @@ import com.epam.drill.plugin.api.processing.AgentContext
 import com.epam.drill.plugin.api.processing.AgentPart
 import com.epam.drill.plugin.api.processing.Instrumenter
 import com.epam.drill.plugin.api.processing.Sender
-import com.epam.drill.plugins.test2code.DrillProbeArrayProvider.fillFromMeta
 import com.epam.drill.plugins.test2code.classloading.ClassLoadersScanner
 import com.epam.drill.plugins.test2code.common.api.*
 import com.github.luben.zstd.Zstd
@@ -30,7 +29,7 @@ import kotlinx.serialization.json.Json
 import kotlinx.serialization.protobuf.ProtoBuf
 import mu.KotlinLogging
 import java.util.*
-import mu.KotlinLogging
+import java.util.concurrent.ConcurrentHashMap
 
 const val DRIlL_TEST_NAME_HEADER = "drill-test-name"
 const val DRILL_TEST_ID_HEADER = "drill-test-id"
@@ -53,6 +52,9 @@ class Plugin(
     private val instrContext = DrillProbeArrayProvider.apply { setSendingHandler(probeSender()) }
 
     private val instrumenter = DrillInstrumenter(instrContext)
+
+    //TODO remove after admin refactoring
+    private val sessions = ConcurrentHashMap<String, Boolean>()
 
     override fun onConnect() {}
 
@@ -77,26 +79,9 @@ class Plugin(
 
     override fun load() {
         logger.info { "Plugin $id: initializing..." }
-//        //Create global session
-        val sessionId = "global"
-        val isRealtime = true
-        val isGlobal = true
-        instrContext.startSession(DEFAULT_SESSION_ID, isGlobal, DEFAULT_TEST_NAME.id(), DEFAULT_TEST_NAME)
-        //TODO add creation agent-session here and remove checking on active-session on admin part
-        sendMessage(SessionStarted(sessionId, "AUTO", isRealtime, isGlobal, currentTimeMillis()))
-        logger.info { "Plugin $id: global session was created." }
-
-        logger.info { "Plugin $id initialized!" }
-    }
-
-    override fun instrument(
-        className: String,
-        initialBytes: ByteArray,
-    ): ByteArray? = instrumenter.instrument(className, initialBytes)
-
-    override fun load() {
-        logger.info { "Plugin $id: initializing..." }
+        createSession(sessionId = "global", testId = "GlobalSession".id(), testName = "GlobalSession", isGlobal = true)
         instrContext.startSendingCoverage()
+        logger.info { "Plugin $id initialized!" }
     }
 
     // TODO remove after merging to java-agent repo
@@ -161,6 +146,7 @@ class Plugin(
         }
     }
 
+
     /**
      * When the application under test receive a request from the caller
      * For each request we fill the thread local variable with an array of [ExecDatum]
@@ -171,6 +157,7 @@ class Plugin(
         val sessionId = context() ?: DEFAULT_SESSION_ID
         val testName = context[DRIlL_TEST_NAME_HEADER] ?: DEFAULT_TEST_NAME
         val testId = context[DRILL_TEST_ID_HEADER] ?: testName.id()
+        createSession(sessionId = sessionId, testId = testId, testName = testName, isGlobal = false)
         instrContext.startRecording(sessionId, testId, testName)
     }
 
@@ -211,6 +198,23 @@ class Plugin(
                 .also { classCount += it.astEntities.size }
         }
         logger.info { "Scanned $classCount classes" }
+    }
+
+    //TODO remove after admin refactoring
+    private fun createSession(
+        sessionId: String, testId: String, testName: String,
+        isRealtime: Boolean = true, isGlobal: Boolean = false
+    ) {
+        if (sessions[sessionId] != null)
+            return
+        synchronized(sessionId.intern()) {
+            if (sessions[sessionId] != null)
+                return
+            sendMessage(SessionStarted(sessionId, "AUTO", isRealtime, isGlobal, currentTimeMillis()))
+            instrContext.startSession(sessionId, isGlobal, testId, testName)
+            logger.info { "Session $sessionId was created." }
+            sessions[sessionId] = true
+        }
     }
 }
 
