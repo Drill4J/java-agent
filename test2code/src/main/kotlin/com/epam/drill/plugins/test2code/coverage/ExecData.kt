@@ -13,17 +13,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.epam.drill.plugins.test2code
+package com.epam.drill.plugins.test2code.coverage
 
 import com.epam.drill.jacoco.AgentProbes
 import com.epam.drill.plugins.test2code.common.api.ExecClassData
 import com.epam.drill.plugins.test2code.common.api.toBitSet
 import java.util.concurrent.ConcurrentHashMap
 
-// key - classId ; value - ExecDatum
-typealias ExecData = ConcurrentHashMap<Long, ExecDatum>
+typealias ClassId = Long
+typealias ExecData = ConcurrentHashMap<ClassId, ExecDatum>
 data class ExecDatum(
-    val id: Long,
+    val id: ClassId,
     val name: String,
     val probes: AgentProbes,
     val sessionId: String = "",
@@ -38,7 +38,3 @@ internal fun ExecDatum.toExecClassData() = ExecClassData(
     testName = testName,
     testId = testId,
 )
-
-fun ExecData.hasProbes(): Boolean {
-    return values.any { data -> data.probes.values.any { it } }
-}

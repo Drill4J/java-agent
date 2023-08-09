@@ -13,17 +13,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.epam.drill.plugins.test2code
+package com.epam.drill.plugins.test2code.coverage
 
-import com.epam.drill.plugin.api.processing.AgentContext
+import mu.KotlinLogging
+
+typealias RealtimeHandler = (Sequence<ExecDatum>) -> Unit
 
 
+class StubRealtimeHandler: RealtimeHandler {
+    private val logger = KotlinLogging.logger {}
+    override fun invoke(data: Sequence<ExecDatum>) {
+        data.forEach {
+            logger.info { "Handled coverage data by class ${it.name}" }
+        }
+    }
 
-class GlobalContext(
-    private val sessionId: String,
-    private val testName: String?,
-) : AgentContext {
-    override fun get(key: String): String? = testName?.takeIf { key == DRIlL_TEST_NAME_HEADER }
-
-    override fun invoke(): String = sessionId
 }

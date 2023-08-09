@@ -23,7 +23,11 @@ import com.epam.drill.plugin.api.processing.AgentPart
 import com.epam.drill.plugin.api.processing.Instrumenter
 import com.epam.drill.plugin.api.processing.Sender
 import com.epam.drill.plugins.test2code.classloading.ClassLoadersScanner
+import com.epam.drill.plugins.test2code.classparsing.parseAstClass
 import com.epam.drill.plugins.test2code.common.api.*
+import com.epam.drill.plugins.test2code.coverage.*
+import com.epam.drill.plugins.test2code.coverage.DrillProbeArrayProvider
+import com.epam.drill.plugins.test2code.coverage.toExecClassData
 import com.github.luben.zstd.Zstd
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.protobuf.ProtoBuf

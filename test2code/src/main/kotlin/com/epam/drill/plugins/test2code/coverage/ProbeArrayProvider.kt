@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.epam.drill.plugins.test2code
+package com.epam.drill.plugins.test2code.coverage
 
 import com.epam.drill.jacoco.AgentProbes
 import com.epam.drill.jacoco.StubAgentProbes
@@ -43,7 +43,7 @@ interface SessionManager {
 }
 
 class ProbeDescriptor(
-    val id: Long,
+    val id: ClassId,
     val name: String,
     val probeCount: Int,
 )
@@ -77,7 +77,8 @@ internal object ProbeWorker : CoroutineScope {
  * This class is intended to be an ancestor for a concrete probe array provider object.
  * The provider must be a Kotlin singleton object, otherwise the instrumented probe calls will fail.
  */
-open class SimpleSessionProbeArrayProvider() : ProbeArrayProvider, SessionManager, ProbeDescriptorProvider, CoverageRecorder, CoverageSender {
+open class SimpleSessionProbeArrayProvider() : ProbeArrayProvider, SessionManager, ProbeDescriptorProvider,
+    CoverageRecorder, CoverageSender {
 
     private val logger = KotlinLogging.logger {}
 
@@ -97,7 +98,7 @@ open class SimpleSessionProbeArrayProvider() : ProbeArrayProvider, SessionManage
     @Volatile
     private var global: Pair<String, ExecData>? = null
     private val stubProbes = StubAgentProbes()
-    private val probeMetaContainer = ConcurrentHashMap<Long, ProbeDescriptor>()
+    private val probeMetaContainer = ConcurrentHashMap<ClassId, ProbeDescriptor>()
     private val execData = ConcurrentDataPool<SessionTestKey, ExecData>()
 
     override fun invoke(
@@ -143,7 +144,8 @@ open class SimpleSessionProbeArrayProvider() : ProbeArrayProvider, SessionManage
                 sessionId = sessionId,
                 testName = testName,
                 testId = testId
-            ))
+            )
+            )
         }
     }
 
