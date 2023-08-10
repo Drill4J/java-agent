@@ -17,7 +17,7 @@ package com.epam.drill.plugins.test2code.coverage
 
 import com.epam.drill.jacoco.AgentProbes
 import com.epam.drill.jacoco.StubAgentProbes
-import com.epam.drill.plugins.test2code.GLOBAL_SESSION_ID
+import com.epam.drill.plugins.test2code.common.api.DEFAULT_TEST_NAME
 import kotlinx.coroutines.*
 import mu.KotlinLogging
 import java.util.concurrent.ConcurrentHashMap
@@ -30,57 +30,6 @@ import kotlin.coroutines.CoroutineContext
  */
 typealias ProbeArrayProvider = (ClassId, Int, String, Int) -> AgentProbes
 
-/**
- * A pair containing test ID and test name
- */
-typealias TestKey = Pair<String, String>
-
-/**
- * A pair containing session ID and test key
- */
-typealias SessionTestKey = Pair<SessionId, TestKey>
-
-val globalSessionTestKey = GLOBAL_SESSION_ID to Pair("", "")
-
-/**
- * Descriptor of class probes
- * @param id a class ID
- * @param name a full class name
- * @param probeCount a number of probes in the class
- */
-class ProbeDescriptor(
-    val id: ClassId,
-    val name: String,
-    val probeCount: Int,
-)
-
-interface ProbeDescriptorProvider {
-    /**
-     * Add a new probe descriptor
-     */
-    fun addProbeDescriptor(descriptor: ProbeDescriptor)
-
-    fun ExecData.fillExecData(sessionId: String = GLOBAL_SESSION_ID, testId: String = "", testName: String = "")
-}
-
-interface CoverageRecorder {
-    fun startRecording(sessionId: String, testId: String, testName: String)
-    fun stopRecording(sessionId: String, testId: String, testName: String)
-    fun collectProbes(): Sequence<ExecDatum>
-}
-
-interface CoverageSender {
-    fun setSendingHandler(handler: RealtimeHandler)
-    fun startSendingCoverage()
-    fun stopSendingCoverage()
-}
-
-internal object ProbeWorker : CoroutineScope {
-    override val coroutineContext: CoroutineContext = run {
-        // TODO ProbeWorker thread count configure via env.variable?
-        Executors.newFixedThreadPool(2).asCoroutineDispatcher() + SupervisorJob()
-    }
-}
 
 /**
  * Simple probe array provider that employs a lock-free map for runtime data storage.
@@ -182,7 +131,7 @@ open class SimpleSessionProbeArrayProvider() : ProbeArrayProvider, ProbeDescript
                 )
             )
         }.associateByTo(ExecData()) { it.id }.also { data ->
-            execDataPool.release(globalSessionTestKey, data)
+            execDataPool.release(GLOBAL_SESSION_TEST_KEY, data)
         }
     }
 
@@ -210,8 +159,8 @@ open class SimpleSessionProbeArrayProvider() : ProbeArrayProvider, ProbeDescript
 
     private fun ProbeDescriptor.toExecDatum(
         sessionId: String = GLOBAL_SESSION_ID,
-        testId: String = "",
-        testName: String = ""
+        testId: String = DEFAULT_TEST_ID,
+        testName: String = DEFAULT_TEST_NAME
     ) = ExecDatum(
         id = id,
         name = name,
@@ -220,6 +169,15 @@ open class SimpleSessionProbeArrayProvider() : ProbeArrayProvider, ProbeDescript
         testName = testName,
         testId = testId
     )
+
+
+}
+
+internal object ProbeWorker : CoroutineScope {
+    override val coroutineContext: CoroutineContext = run {
+        // TODO ProbeWorker thread count configure via env.variable?
+        Executors.newFixedThreadPool(2).asCoroutineDispatcher() + SupervisorJob()
+    }
 }
 
 /**

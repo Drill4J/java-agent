@@ -37,9 +37,6 @@ import java.util.concurrent.ConcurrentHashMap
 
 const val DRIlL_TEST_NAME_HEADER = "drill-test-name"
 const val DRILL_TEST_ID_HEADER = "drill-test-id"
-const val GLOBAL_SESSION_ID = "global"
-const val GLOBAL_TEST_ID = "global"
-const val GLOBAL_TEST_NAME = "global"
 
 /**
  * Service for managing the plugin on the agent side
@@ -55,7 +52,7 @@ class Plugin(
 
     internal val json = Json { encodeDefaults = true }
 
-    private val instrContext = DrillProbeArrayProvider.apply { setSendingHandler(probeSender()) }
+    private val instrContext = DrillProbeArrayProvider.apply { setSendingHandler(probeSender(sendChanged = true)) }
 
     private val instrumenter = DrillInstrumenter(instrContext)
 
@@ -85,7 +82,7 @@ class Plugin(
 
     override fun load() {
         logger.info { "Plugin $id: initializing..." }
-        createSession(sessionId = "global", testId = "GlobalSession".id(), testName = "GlobalSession", isGlobal = true)
+        createSession(sessionId = "global", isGlobal = true)
         instrContext.startSendingCoverage()
         logger.info { "Plugin $id initialized!" }
     }
@@ -163,7 +160,7 @@ class Plugin(
         val sessionId = context() ?: GLOBAL_SESSION_ID
         val testName = context[DRIlL_TEST_NAME_HEADER] ?: DEFAULT_TEST_NAME
         val testId = context[DRILL_TEST_ID_HEADER] ?: testName.id()
-        createSession(sessionId = sessionId, testId = testId, testName = testName, isGlobal = false)
+        createSession(sessionId = sessionId, isGlobal = false)
         instrContext.startRecording(sessionId, testId, testName)
     }
 
@@ -208,7 +205,7 @@ class Plugin(
 
     //TODO remove after admin refactoring
     private fun createSession(
-        sessionId: String, testId: String, testName: String,
+        sessionId: String,
         isRealtime: Boolean = true, isGlobal: Boolean = false
     ) {
         if (sessions[sessionId] != null)
@@ -240,7 +237,7 @@ fun Plugin.probeSender(
                 .chunked(0xffff)
                 .map { chunk -> CoverDataPart(sessionId, chunk) }
                 .sumOf { message ->
-                    logger.trace { "send to admin-part '$message'..." }
+                    logger.debug { "Send compressed message $message" }
                     val encoded = ProtoBuf.encodeToByteArray(CoverMessage.serializer(), message)
                     val compressed = Zstd.compress(encoded)
                     send(Base64.getEncoder().encodeToString(compressed))
