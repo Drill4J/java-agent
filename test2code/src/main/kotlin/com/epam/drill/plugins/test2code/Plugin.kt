@@ -82,7 +82,7 @@ class Plugin(
 
     override fun load() {
         logger.info { "Plugin $id: initializing..." }
-        createSession(sessionId = "global", isGlobal = true)
+        createSession(sessionId = GLOBAL_SESSION_ID, isGlobal = true)
         instrContext.startSendingCoverage()
         logger.info { "Plugin $id initialized!" }
     }
