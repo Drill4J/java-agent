@@ -17,6 +17,7 @@ package com.epam.drill.plugins.test2code.coverage
 
 import com.epam.drill.jacoco.AgentProbes
 import com.epam.drill.jacoco.StubAgentProbes
+import com.epam.drill.plugins.test2code.GLOBAL_SESSION_ID
 import kotlinx.coroutines.*
 import mu.KotlinLogging
 import java.util.concurrent.ConcurrentHashMap
@@ -27,21 +28,26 @@ import kotlin.coroutines.CoroutineContext
  * Provides boolean array for the probe.
  * Implementations must be kotlin singleton objects.
  */
-typealias ProbeArrayProvider = (Long, Int, String, Int) -> AgentProbes
+typealias ProbeArrayProvider = (ClassId, Int, String, Int) -> AgentProbes
+
+/**
+ * A pair containing test ID and test name
+ */
 typealias TestKey = Pair<String, String>
-typealias SessionTestKey = Pair<String, TestKey>
-interface SessionManager {
 
-    fun startSession(
-        sessionId: String,
-        isGlobal: Boolean,
-        testId: String,
-        testName: String,
-    )
+/**
+ * A pair containing session ID and test key
+ */
+typealias SessionTestKey = Pair<SessionId, TestKey>
 
-    fun stopSession(sessionId: String)
-}
+val globalSessionTestKey = GLOBAL_SESSION_ID to Pair("", "")
 
+/**
+ * Descriptor of class probes
+ * @param id a class ID
+ * @param name a full class name
+ * @param probeCount a number of probes in the class
+ */
 class ProbeDescriptor(
     val id: ClassId,
     val name: String,
@@ -49,8 +55,12 @@ class ProbeDescriptor(
 )
 
 interface ProbeDescriptorProvider {
+    /**
+     * Add a new probe descriptor
+     */
     fun addProbeDescriptor(descriptor: ProbeDescriptor)
-    fun ExecData.fillExecData(sessionId: String, testId: String, testName: String)
+
+    fun ExecData.fillExecData(sessionId: String = GLOBAL_SESSION_ID, testId: String = "", testName: String = "")
 }
 
 interface CoverageRecorder {
@@ -77,7 +87,7 @@ internal object ProbeWorker : CoroutineScope {
  * This class is intended to be an ancestor for a concrete probe array provider object.
  * The provider must be a Kotlin singleton object, otherwise the instrumented probe calls will fail.
  */
-open class SimpleSessionProbeArrayProvider() : ProbeArrayProvider, SessionManager, ProbeDescriptorProvider,
+open class SimpleSessionProbeArrayProvider() : ProbeArrayProvider, ProbeDescriptorProvider,
     CoverageRecorder, CoverageSender {
 
     private val logger = KotlinLogging.logger {}
@@ -95,11 +105,10 @@ open class SimpleSessionProbeArrayProvider() : ProbeArrayProvider, SessionManage
         }
     }
 
-    @Volatile
-    private var global: Pair<String, ExecData>? = null
+    private var globalExecData = ExecData()
     private val stubProbes = StubAgentProbes()
     private val probeMetaContainer = ConcurrentHashMap<ClassId, ProbeDescriptor>()
-    private val execData = ConcurrentDataPool<SessionTestKey, ExecData>()
+    private val execDataPool: DataPool<SessionTestKey, ExecData> = ConcurrentDataPool()
 
     override fun invoke(
         id: Long,
@@ -110,47 +119,34 @@ open class SimpleSessionProbeArrayProvider() : ProbeArrayProvider, SessionManage
         ?: getGlobalClassProbes(id)
         ?: stubProbes
 
-    override fun startSession(
-        sessionId: String,
-        isGlobal: Boolean,
-        testId: String,
-        testName: String,
-    ) {
-        if (isGlobal) {
-            global = sessionId to ExecData().apply { fillExecData(sessionId, testId, testName) }
-        }
-    }
-
-    /**
-     * Remove the test session from the active session list and return probes
-     * @features Session finishing
-     */
-    override fun stopSession(sessionId: String) {
-        if (isGlobal(sessionId)) {
-            global = null
-        }
-    }
-
     override fun addProbeDescriptor(descriptor: ProbeDescriptor) {
         probeMetaContainer[descriptor.id] = descriptor
+        globalExecData.getOrPut(descriptor.id) {
+            descriptor.toExecDatum()
+        }
     }
 
-    override fun ExecData.fillExecData(sessionId: String, testId: String, testName: String) {
+    override fun ExecData.fillExecData(
+        sessionId: String,
+        testId: String,
+        testName: String
+    ) {
         probeMetaContainer.values.forEach { descriptor ->
-            this.putIfAbsent(descriptor.id, ExecDatum(
-                id = descriptor.id,
-                name = descriptor.name,
-                probes = AgentProbes(descriptor.probeCount),
-                sessionId = sessionId,
-                testName = testName,
-                testId = testId
-            )
+            this.putIfAbsent(
+                descriptor.id, ExecDatum(
+                    id = descriptor.id,
+                    name = descriptor.name,
+                    probes = AgentProbes(descriptor.probeCount),
+                    sessionId = sessionId,
+                    testName = testName,
+                    testId = testId
+                )
             )
         }
     }
 
     override fun startRecording(sessionId: String, testId: String, testName: String) {
-        val data = execData.getOrPut(SessionTestKey(sessionId, testId to testName)) {
+        val data = execDataPool.getOrPut(SessionTestKey(sessionId, testId to testName)) {
             ExecData().apply { fillExecData(sessionId, testId, testName) }
         }
         requestThreadLocal.set(data)
@@ -160,14 +156,34 @@ open class SimpleSessionProbeArrayProvider() : ProbeArrayProvider, SessionManage
     override fun stopRecording(sessionId: String, testId: String, testName: String) {
         val data = requestThreadLocal.get()
         if (data != null) {
-            execData.release(SessionTestKey(sessionId, testId to testName), data)
+            execDataPool.release(SessionTestKey(sessionId, testId to testName), data)
             requestThreadLocal.remove()
             logger.trace { "Test recording stopped (sessionId = $sessionId, testId=$testId, threadId=${Thread.currentThread().id})." }
         }
     }
 
     override fun collectProbes(): Sequence<ExecDatum> {
-        return execData.pollReleased().flatMap { it.values }.filter { it.probes.hasProbes() }
+        releaseGlobalExecData()
+        return execDataPool.pollReleased().flatMap { it.values }.filter { it.probes.hasPositive() }
+    }
+
+    private fun releaseGlobalExecData() {
+        globalExecData.values.filter { datum ->
+            datum.probes.hasPositive()
+        }.map { datum ->
+            val probesToSend = datum.probes.values.copyOf()
+            probesToSend.forEachIndexed { index, value ->
+                if (value)
+                    datum.probes.values[index] = false
+            }
+            datum.copy(
+                probes = AgentProbes(
+                    values = probesToSend
+                )
+            )
+        }.associateByTo(ExecData()) { it.id }.also { data ->
+            execDataPool.release(globalSessionTestKey, data)
+        }
     }
 
     override fun setSendingHandler(handler: RealtimeHandler) {
@@ -188,14 +204,24 @@ open class SimpleSessionProbeArrayProvider() : ProbeArrayProvider, SessionManage
      * requestThreadLocal stores probes of classes for a specific session
      * (see requestThreadLocal.set(execData) in processServerRequest method in Plugin.kt)
      */
-    private fun getSessionClassProbes(id: Long) = requestThreadLocal.get()?.get(id)?.probes
+    private fun getSessionClassProbes(id: ClassId) = requestThreadLocal.get()?.get(id)?.probes
 
-    private fun getGlobalClassProbes(id: Long) = global?.second?.get(id)?.probes
-    /**
-     * Is the session global?
-     */
-    private fun isGlobal(sessionId: String) = sessionId == global?.first
+    private fun getGlobalClassProbes(id: ClassId) = globalExecData[id]?.probes
+
+    private fun ProbeDescriptor.toExecDatum(
+        sessionId: String = GLOBAL_SESSION_ID,
+        testId: String = "",
+        testName: String = ""
+    ) = ExecDatum(
+        id = id,
+        name = name,
+        probes = AgentProbes(probeCount),
+        sessionId = sessionId,
+        testName = testName,
+        testId = testId
+    )
 }
+
 /**
  * The probe provider MUST be a Kotlin singleton object
  */

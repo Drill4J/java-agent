@@ -21,7 +21,12 @@ import com.epam.drill.plugins.test2code.common.api.toBitSet
 import java.util.concurrent.ConcurrentHashMap
 
 typealias ClassId = Long
+typealias SessionId = String
 typealias ExecData = ConcurrentHashMap<ClassId, ExecDatum>
+
+/**
+ * A class containing probes obtained from a specific test
+ */
 data class ExecDatum(
     val id: ClassId,
     val name: String,

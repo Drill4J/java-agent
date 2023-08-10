@@ -18,12 +18,38 @@ package com.epam.drill.plugins.test2code.coverage
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.ConcurrentLinkedQueue
 
+/**
+ * Data pool for getting objects by key and releasing them after use
+ * @param K the key
+ * @param V the object
+ */
 interface DataPool<K, V> {
+    /**
+     * Get an object from the pool by the key if it is contained there, or put a default value into the pool
+     * @param key a key
+     * @param default a function that returns a default value
+     * @return an object that is obtained by key
+     */
     fun getOrPut(key: K, default: () -> V): V
+
+    /**
+     * Release the used object by key and move it into the released queue
+     * @param key a key
+     * @param value a used object
+     */
     fun release(key: K, value: V)
+
+    /**
+     * Poll objects from the released queue
+     * @return a sequence of released objects
+     */
     fun pollReleased(): Sequence<V>
 }
 
+/**
+ * Thread safety implementation of DataPool
+ * @see DataPool
+ */
 class ConcurrentDataPool<K, V> : DataPool<K, V> {
     private val dataMap = ConcurrentHashMap<K, V>()
     private val released = ConcurrentLinkedQueue<V>()

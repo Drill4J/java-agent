@@ -37,7 +37,9 @@ import java.util.concurrent.ConcurrentHashMap
 
 const val DRIlL_TEST_NAME_HEADER = "drill-test-name"
 const val DRILL_TEST_ID_HEADER = "drill-test-id"
-const val DEFAULT_SESSION_ID = "global"
+const val GLOBAL_SESSION_ID = "global"
+const val GLOBAL_TEST_ID = "global"
+const val GLOBAL_TEST_NAME = "global"
 
 /**
  * Service for managing the plugin on the agent side
@@ -158,7 +160,7 @@ class Plugin(
      */
     @Suppress("UNUSED")
     fun processServerRequest() {
-        val sessionId = context() ?: DEFAULT_SESSION_ID
+        val sessionId = context() ?: GLOBAL_SESSION_ID
         val testName = context[DRIlL_TEST_NAME_HEADER] ?: DEFAULT_TEST_NAME
         val testId = context[DRILL_TEST_ID_HEADER] ?: testName.id()
         createSession(sessionId = sessionId, testId = testId, testName = testName, isGlobal = false)
@@ -171,7 +173,7 @@ class Plugin(
      */
     @Suppress("UNUSED")
     fun processServerResponse() {
-        val sessionId = context() ?: DEFAULT_SESSION_ID
+        val sessionId = context() ?: GLOBAL_SESSION_ID
         val testName = context[DRIlL_TEST_NAME_HEADER] ?: DEFAULT_TEST_NAME
         val testId = context[DRILL_TEST_ID_HEADER] ?: testName.id()
         instrContext.stopRecording(sessionId, testId, testName)
@@ -215,7 +217,6 @@ class Plugin(
             if (sessions[sessionId] != null)
                 return
             sendMessage(SessionStarted(sessionId, "AUTO", isRealtime, isGlobal, currentTimeMillis()))
-            instrContext.startSession(sessionId, isGlobal, testId, testName)
             logger.info { "Session $sessionId was created." }
             sessions[sessionId] = true
         }
