@@ -107,8 +107,8 @@ open class SimpleSessionProbeArrayProvider() : ProbeArrayProvider, ProbeDescript
         if (data != null) {
             execDataPool.release(SessionTestKey(sessionId, testId to testName), data)
             requestThreadLocal.remove()
-            logger.trace { "Test recording stopped (sessionId = $sessionId, testId=$testId, threadId=${Thread.currentThread().id})." }
         }
+        logger.trace { "Test recording stopped (sessionId = $sessionId, testId=$testId, threadId=${Thread.currentThread().id})." }
     }
 
     override fun collectProbes(): Sequence<ExecDatum> {
