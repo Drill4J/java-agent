@@ -26,7 +26,7 @@ import com.epam.drill.plugins.test2code.classloading.ClassLoadersScanner
 import com.epam.drill.plugins.test2code.classparsing.parseAstClass
 import com.epam.drill.plugins.test2code.common.api.*
 import com.epam.drill.plugins.test2code.coverage.*
-import com.epam.drill.plugins.test2code.coverage.DrillProbeArrayProvider
+import com.epam.drill.plugins.test2code.coverage.DrillProbesArrayProvider
 import com.epam.drill.plugins.test2code.coverage.toExecClassData
 import com.github.luben.zstd.Zstd
 import kotlinx.serialization.json.Json
@@ -52,9 +52,9 @@ class Plugin(
 
     internal val json = Json { encodeDefaults = true }
 
-    private val instrContext = DrillProbeArrayProvider.apply { setSendingHandler(probeSender(sendChanged = true)) }
+    private val instrContext = DrillProbesArrayProvider.apply { setSendingHandler(probeSender(sendChanged = true)) }
 
-    private val instrumenter = DrillInstrumenter(instrContext)
+    private val instrumenter = DrillInstrumenter(instrContext, instrContext)
 
     //TODO remove after admin refactoring
     private val sessions = ConcurrentHashMap<String, Boolean>()
@@ -208,11 +208,9 @@ class Plugin(
         sessionId: String,
         isRealtime: Boolean = true, isGlobal: Boolean = false
     ) {
-        if (sessions[sessionId] != null)
-            return
+        if (sessions[sessionId] != null) return
         synchronized(sessionId.intern()) {
-            if (sessions[sessionId] != null)
-                return
+            if (sessions[sessionId] != null) return
             sendMessage(SessionStarted(sessionId, "AUTO", isRealtime, isGlobal, currentTimeMillis()))
             logger.info { "Session $sessionId was created." }
             sessions[sessionId] = true
@@ -229,7 +227,7 @@ class Plugin(
  */
 fun Plugin.probeSender(
     sendChanged: Boolean = false,
-): RealtimeHandler = { execData ->
+): SendingHandler = { execData ->
     execData
         .groupBy { it.sessionId }
         .forEach { (sessionId, data) ->

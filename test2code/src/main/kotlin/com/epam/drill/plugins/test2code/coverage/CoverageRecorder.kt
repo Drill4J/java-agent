@@ -15,8 +15,58 @@
  */
 package com.epam.drill.plugins.test2code.coverage
 
+import com.epam.drill.jacoco.AgentProbes
+import mu.KotlinLogging
+
 interface CoverageRecorder {
     fun startRecording(sessionId: String, testId: String, testName: String)
     fun stopRecording(sessionId: String, testId: String, testName: String)
     fun collectProbes(): Sequence<ExecDatum>
+}
+
+class ThreadCoverageRecorder(
+    private val execDataPool: DataPool<SessionTestKey, ExecData>,
+    private val requestThreadLocal: ThreadLocal<ExecData?>,
+    private val probesDescriptorProvider: ProbesDescriptorProvider,
+) : CoverageRecorder {
+    private val logger = KotlinLogging.logger {}
+
+    override fun startRecording(sessionId: String, testId: String, testName: String) {
+        val data = execDataPool.getOrPut(SessionTestKey(sessionId, testId to testName)) {
+            createExecData(sessionId, testId, testName)
+        }
+        requestThreadLocal.set(data)
+        logger.trace { "Test recording started (sessionId = $sessionId, testId=$testId, threadId=${Thread.currentThread().id})." }
+    }
+
+    override fun stopRecording(sessionId: String, testId: String, testName: String) {
+        val data = requestThreadLocal.get()
+        if (data != null) {
+            execDataPool.release(SessionTestKey(sessionId, testId to testName), data)
+            requestThreadLocal.remove()
+        }
+        logger.trace { "Test recording stopped (sessionId = $sessionId, testId=$testId, threadId=${Thread.currentThread().id})." }
+    }
+
+    override fun collectProbes(): Sequence<ExecDatum> {
+        return execDataPool.pollReleased().flatMap { it.values }.filter { it.probes.containCovered() }
+    }
+
+
+    private fun createExecData(
+        sessionId: String,
+        testId: String,
+        testName: String
+    ) = ExecData().also {
+        probesDescriptorProvider.forEach { descriptor ->
+            it[descriptor.id] = ExecDatum(
+                id = descriptor.id,
+                name = descriptor.name,
+                probes = AgentProbes(descriptor.probeCount),
+                sessionId = sessionId,
+                testName = testName,
+                testId = testId
+            )
+        }
+    }
 }

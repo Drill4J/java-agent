@@ -15,17 +15,4 @@
  */
 package com.epam.drill.plugins.test2code.coverage
 
-import mu.KotlinLogging
-
-typealias RealtimeHandler = (Sequence<ExecDatum>) -> Unit
-
-
-class StubRealtimeHandler: RealtimeHandler {
-    private val logger = KotlinLogging.logger {}
-    override fun invoke(data: Sequence<ExecDatum>) {
-        data.forEach {
-            logger.info { "Handled coverage data by class ${it.name}" }
-        }
-    }
-
-}
+typealias SendingHandler = (Sequence<ExecDatum>) -> Unit
