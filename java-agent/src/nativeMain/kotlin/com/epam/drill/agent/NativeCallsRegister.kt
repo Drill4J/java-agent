@@ -20,7 +20,6 @@ import kotlinx.coroutines.runBlocking
 import mu.KotlinLogging
 import com.epam.drill.agent.configuration.agentConfig
 import com.epam.drill.agent.configuration.agentParameters
-import com.epam.drill.agent.configuration.agentStartTimeMark
 import com.epam.drill.agent.jvmti.sendToSocket
 import com.epam.drill.jvmapi.withJString
 import com.epam.drill.jvmapi.gen.JNIEnv
@@ -53,7 +52,7 @@ fun getScanClassPath(): jstring? {
 @Suppress("UNUSED")
 @CName("Java_com_epam_drill_test2code_NativeCalls_waitClassScanning")
 fun waitClassScanning() = runBlocking {
-    val classScanDelay = agentParameters.classScanDelay - agentStartTimeMark.elapsedNow()
+    val classScanDelay = agentParameters.classScanDelay - Agent.startTimeMark.elapsedNow()
     if (classScanDelay.isPositive()) {
         logger.debug { "Waiting class scan delay ($classScanDelay left)..." }
         delay(classScanDelay)

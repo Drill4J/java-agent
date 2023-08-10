@@ -22,7 +22,6 @@ import com.epam.drill.agent.JvmModuleLoader
 import com.epam.drill.agent.addPluginToStorage
 import com.epam.drill.agent.configuration.adminAddress
 import com.epam.drill.agent.configuration.agentParameters
-import com.epam.drill.agent.configuration.agentStartTimeMark
 import com.epam.drill.agent.configuration.configureHttp
 import com.epam.drill.agent.configuration.defaultJvmLoggingConfiguration
 import com.epam.drill.agent.configuration.updateJvmLoggingConfiguration
@@ -50,7 +49,6 @@ fun vmInitEvent(env: CPointer<jvmtiEnvVar>?, jniEnv: CPointer<JNIEnvVar>?, threa
 
     defaultJvmLoggingConfiguration()
     updateJvmLoggingConfiguration()
-    agentStartTimeMark
 
     if (Agent.isHttpHookEnabled) {
         logger.info { "run with http hook" }

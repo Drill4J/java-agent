@@ -17,13 +17,8 @@ package com.epam.drill.agent.configuration
 
 import kotlin.native.concurrent.AtomicReference
 import kotlin.native.concurrent.freeze
-import kotlin.time.TimeMark
-import kotlin.time.TimeSource
 
 private val _agentParameters = AtomicReference(AgentParameters().freeze()).freeze()
-
-@SharedImmutable
-val agentStartTimeMark: TimeMark = TimeSource.Monotonic.markNow().freeze()
 
 var agentParameters: AgentParameters
     get() = _agentParameters.value

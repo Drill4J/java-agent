@@ -113,6 +113,18 @@ fun updatePackagePrefixesConfiguration() {
     setPackagesPrefixes(PackagesPrefixes(agentParameters.packagePrefixes.split(";")))
 }
 
+fun idHeaderPairFromConfig(): Pair<String, String> =
+    when (val groupId = agentConfig.serviceGroupId) {
+        "" -> "drill-agent-id" to agentConfig.id
+        else -> "drill-group-id" to groupId
+    }
+
+fun retrieveAdminUrl(): String {
+    return if (secureAdminAddress != null) {
+        secureAdminAddress?.toUrlString(false).toString()
+    } else adminAddress?.toUrlString(false).toString()
+}
+
 private inline fun <reified T : Any> Map<String, String>.parseAs(): T = run {
     val serializer = T::class.serializer()
     val module = serializersModuleOf(serializer)

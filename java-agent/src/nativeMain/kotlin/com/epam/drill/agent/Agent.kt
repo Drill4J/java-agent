@@ -17,12 +17,13 @@ package com.epam.drill.agent
 
 import kotlin.native.concurrent.*
 import kotlin.test.*
+import kotlin.time.TimeMark
+import kotlin.time.TimeSource
 import kotlinx.cinterop.*
 import platform.posix.*
 import io.ktor.utils.io.core.*
 import io.ktor.utils.io.streams.*
 import mu.*
-import com.epam.drill.*
 import com.epam.drill.agent.configuration.*
 import com.epam.drill.agent.jvmti.event.*
 import com.epam.drill.jvmapi.gen.*
@@ -42,6 +43,8 @@ U| |_| |\|  _ <       | |    \| |/__ \| |/__     |__   _|        | |_| |_,-.
         """.trimIndent()
 
 object Agent {
+
+    val startTimeMark: TimeMark = TimeSource.Monotonic.markNow().freeze()
 
     val isHttpHookEnabled: Boolean by lazy {
         getenv(SYSTEM_HTTP_HOOK_ENABLED)?.toKString()?.toBoolean() ?: memScoped {
