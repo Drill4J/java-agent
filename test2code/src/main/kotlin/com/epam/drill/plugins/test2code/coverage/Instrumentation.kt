@@ -31,7 +31,7 @@ private val classCounter = atomic(0)
 class DrillInstrumenter(
     private val probesProvider: ProbesProvider,
     private val probesDescriptorProvider: ProbesDescriptorProvider
-): Instrumenter {
+) : Instrumenter {
 
     private val logger = KotlinLogging.logger {}
 
@@ -62,15 +62,13 @@ class DrillInstrumenter(
         )
         reader.accept(visitor, ClassReader.EXPAND_FRAMES)
 
-        probesDescriptorProvider.run {
-            addDescriptor(
-                ProbesDescriptor(
-                    id = classId,
-                    name = className,
-                    probeCount = probeCount
-                )
+        probesDescriptorProvider.addDescriptor(
+            ProbesDescriptor(
+                id = classId,
+                name = className,
+                probeCount = probeCount
             )
-        }
+        )
 
         writer.toByteArray()
     } catch (e: Exception) {
@@ -78,7 +76,6 @@ class DrillInstrumenter(
         null
     }
 }
-
 
 
 private class DrillProbeStrategy(

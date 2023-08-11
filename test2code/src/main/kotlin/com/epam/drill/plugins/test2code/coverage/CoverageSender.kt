@@ -27,8 +27,8 @@ interface CoverageSender {
 }
 
 class IntervalCoverageSender(
-    coverageRecorder: CoverageRecorder,
-    intervalMs: Long
+    intervalMs: Long,
+    collectProbes: () -> Sequence<ExecDatum> = { emptySequence() }
 ) : CoverageSender {
     private val logger = KotlinLogging.logger {}
     private var sendingHandler: SendingHandler = {}
@@ -36,7 +36,7 @@ class IntervalCoverageSender(
     private val job = ProbeWorker.launch(start = CoroutineStart.LAZY) {
         while (isActive) {
             delay(intervalMs)
-            sendingHandler(coverageRecorder.collectProbes())
+            sendingHandler(collectProbes())
         }
     }
 
