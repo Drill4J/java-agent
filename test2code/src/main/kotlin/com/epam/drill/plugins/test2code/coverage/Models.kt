@@ -50,6 +50,7 @@ internal fun ExecDatum.toExecClassData() = ExecClassData(
     id = id,
     className = name,
     probes = probes.values.toBitSet(),
+    sessionId = sessionId,
     testName = testName,
     testId = testId,
 )

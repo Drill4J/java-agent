@@ -2,7 +2,6 @@ package com.epam.drill.plugins.test2code.coverage
 
 import com.epam.drill.jacoco.AgentProbes
 import com.epam.drill.plugins.test2code.common.api.DEFAULT_TEST_NAME
-import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch

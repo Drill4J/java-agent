@@ -52,7 +52,7 @@ class Plugin(
 
     internal val json = Json { encodeDefaults = true }
 
-    private val instrContext = DrillProbesArrayProvider.apply { setSendingHandler(probeSender(sendChanged = true)) }
+    private val instrContext = DrillProbesArrayProvider.apply { setSendingHandler(probeSender()) }
 
     private val instrumenter = DrillInstrumenter(instrContext, instrContext)
 
@@ -216,38 +216,29 @@ class Plugin(
             sessions[sessionId] = true
         }
     }
-}
 
-/**
- * Create a function which sends chunks of test coverage to the admin part of the plugin
- * @param sessionId the test session ID
- * @param sendChanged the sign of the need to send the number of data
- * @return the function of sending test coverage
- * @features Coverage data sending
- */
-fun Plugin.probeSender(
-    sendChanged: Boolean = false,
-): SendingHandler = { execData ->
-    execData
-        .groupBy { it.sessionId }
-        .forEach { (sessionId, data) ->
-            data.map(ExecDatum::toExecClassData)
-                .chunked(0xffff)
-                .map { chunk -> CoverDataPart(sessionId, chunk) }
-                .sumOf { message ->
-                    logger.debug { "Send compressed message $message" }
-                    val encoded = ProtoBuf.encodeToByteArray(CoverMessage.serializer(), message)
-                    val compressed = Zstd.compress(encoded)
-                    send(Base64.getEncoder().encodeToString(compressed))
-                    message.data.count()
-                }.takeIf { sendChanged && it > 0 }?.let {
-                    sendMessage(SessionChanged(sessionId, it))
-                }
-        }
-}
 
-fun Plugin.sendMessage(message: CoverMessage) {
-    val messageStr = json.encodeToString(CoverMessage.serializer(), message)
-    logger.debug { "Send message $messageStr" }
-    send(messageStr)
+    /**
+     * Create a function which sends chunks of test coverage to the admin part of the plugin
+     * @return the function of sending test coverage
+     * @features Coverage data sending
+     */
+    private fun probeSender(): SendingHandler = { execData ->
+        execData.map(ExecDatum::toExecClassData)
+            .chunked(0xffff)
+            .map { chunk -> CoverDataPart(data = chunk) }
+            .forEach { message ->
+                logger.debug { "Send compressed message $message" }
+                val encoded = ProtoBuf.encodeToByteArray(CoverMessage.serializer(), message)
+                val compressed = Zstd.compress(encoded)
+                send(Base64.getEncoder().encodeToString(compressed))
+            }
+    }
+
+    private fun sendMessage(message: CoverMessage) {
+        val messageStr = json.encodeToString(CoverMessage.serializer(), message)
+        logger.debug { "Send message $messageStr" }
+        send(messageStr)
+    }
+
 }
