@@ -88,72 +88,11 @@ class Plugin(
         val handler = probeSender(sessionId, isRealtime)
         val isGlobal = true
         instrContext.start(sessionId, isGlobal, "GlobalSession", handler)
-        //TODO add creation agent-session here and remove checking on active-session on admin part
-        sendMessage(SessionStarted(sessionId, "AUTO", isRealtime, isGlobal, currentTimeMillis()))
         logger.info { "Plugin $id: global session was created." }
     }
 
     // TODO remove after merging to java-agent repo
-    override fun doAction(action: AgentAction) {
-        when (action) {
-            /**
-             * @features Session starting
-             */
-            is StartAgentSession -> action.payload.run {
-//                logger.info { "Start recording for session $sessionId (isGlobal=$isGlobal)" }
-//                val handler = probeSender(sessionId, isRealtime)
-//                instrContext.start(sessionId, isGlobal, testName, handler)
-//                sendMessage(SessionStarted(sessionId, testType, isRealtime, currentTimeMillis()))
-            }
-
-            is AddAgentSessionData -> {
-                //ignored
-            }
-
-            is AddAgentSessionTests -> action.payload.run {
-//                instrContext.addCompletedTests(sessionId, tests)
-            }
-            /**
-             * @features Session stopping
-             */
-            is StopAgentSession -> {
-//                val sessionId = action.payload.sessionId
-//                logger.info { "End of recording for session $sessionId" }
-//                val runtimeData = instrContext.stop(sessionId) ?: emptySequence()
-//                if (runtimeData.any()) {
-//                    probeSender(sessionId)(runtimeData)
-//                } else logger.info { "No data for session $sessionId" }
-//                sendMessage(SessionFinished(sessionId, currentTimeMillis()))
-            }
-
-            is StopAllAgentSessions -> {
-//                val stopped = instrContext.stopAll()
-//                logger.info { "End of recording for sessions $stopped" }
-//                for ((sessionId, data) in stopped) {
-//                    if (data.any()) {
-//                        probeSender(sessionId)(data)
-//                    }
-//                }
-//                val ids = stopped.map { it.first }
-//                sendMessage(SessionsFinished(ids, currentTimeMillis()))
-            }
-
-            is CancelAgentSession -> {
-//                val sessionId = action.payload.sessionId
-//                logger.info { "Cancellation of recording for session $sessionId" }
-//                instrContext.cancel(sessionId)
-//                sendMessage(SessionCancelled(sessionId, currentTimeMillis()))
-            }
-
-            is CancelAllAgentSessions -> {
-//                val cancelled = instrContext.cancelAll()
-//                logger.info { "Cancellation of recording for sessions $cancelled" }
-//                sendMessage(SessionsCancelled(cancelled, currentTimeMillis()))
-            }
-
-            else -> Unit
-        }
-    }
+    override fun doAction(action: AgentAction) {}
 
     /**
      * When the application under test receive a request from the caller
@@ -179,7 +118,6 @@ class Plugin(
             val handler = probeSender(sessionId, true)
             val isGlobal = false
             instrContext.start(sessionId, isGlobal, name, handler)
-            sendMessage(SessionStarted(sessionId, "AUTO", true, isGlobal, currentTimeMillis()))
         }
         val runtime = drillProbeArrayProvider.runtimes[sessionId]
         if (runtime == null) {
