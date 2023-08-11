@@ -26,7 +26,7 @@ import com.epam.drill.plugins.test2code.classloading.ClassLoadersScanner
 import com.epam.drill.plugins.test2code.classparsing.parseAstClass
 import com.epam.drill.plugins.test2code.common.api.*
 import com.epam.drill.plugins.test2code.coverage.*
-import com.epam.drill.plugins.test2code.coverage.DrillProbesArrayProvider
+import com.epam.drill.plugins.test2code.coverage.DrillCoverageManager
 import com.epam.drill.plugins.test2code.coverage.toExecClassData
 import com.github.luben.zstd.Zstd
 import kotlinx.serialization.json.Json
@@ -52,9 +52,9 @@ class Plugin(
 
     internal val json = Json { encodeDefaults = true }
 
-    private val instrContext = DrillProbesArrayProvider.apply { setSendingHandler(probeSender(sendChanged = true)) }
+    private val coverageManager = DrillCoverageManager.apply { setSendingHandler(probeSender(sendChanged = true)) }
 
-    private val instrumenter = DrillInstrumenter(instrContext, instrContext)
+    private val instrumenter = DrillInstrumenter(coverageManager, coverageManager)
 
     //TODO remove after admin refactoring
     private val sessions = ConcurrentHashMap<String, Boolean>()
@@ -82,7 +82,7 @@ class Plugin(
 
     override fun load() {
         logger.info { "Plugin $id: initializing..." }
-        instrContext.startSendingCoverage()
+        coverageManager.startSendingCoverage()
         logger.info { "Plugin $id initialized!" }
     }
 
@@ -100,7 +100,7 @@ class Plugin(
         val sessionId = context() ?: GLOBAL_SESSION_ID
         val testName = context[DRIlL_TEST_NAME_HEADER] ?: DEFAULT_TEST_NAME
         val testId = context[DRILL_TEST_ID_HEADER] ?: testName.id()
-        instrContext.startRecording(sessionId, testId, testName)
+        coverageManager.startRecording(sessionId, testId, testName)
     }
 
     /**
@@ -112,7 +112,7 @@ class Plugin(
         val sessionId = context() ?: GLOBAL_SESSION_ID
         val testName = context[DRIlL_TEST_NAME_HEADER] ?: DEFAULT_TEST_NAME
         val testId = context[DRILL_TEST_ID_HEADER] ?: testName.id()
-        instrContext.stopRecording(sessionId, testId, testName)
+        coverageManager.stopRecording(sessionId, testId, testName)
     }
 
     override fun parseAction(

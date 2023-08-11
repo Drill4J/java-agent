@@ -2,10 +2,8 @@ package com.epam.drill.plugins.test2code.coverage
 
 import com.epam.drill.jacoco.AgentProbes
 import com.epam.drill.plugins.test2code.common.api.DEFAULT_TEST_NAME
-import kotlinx.coroutines.CoroutineStart
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.isActive
-import kotlinx.coroutines.launch
+import com.epam.drill.plugins.test2code.coverage.DrillCoverageManager.collectGlobalExecData
+import com.epam.drill.plugins.test2code.coverage.DrillCoverageManager.createExecData
 
 /**
  * Simple probe provider that employs a lock-free map for runtime data storage.
@@ -23,26 +21,52 @@ open class CoverageManager(
     private val coverageRecorder: CoverageRecorder = ThreadCoverageRecorder(
         execDataPool,
         requestThreadLocal,
-        probesDescriptorProvider
+        ::createExecData
     ),
-    private val coverageSender: CoverageSender = IntervalCoverageSender(coverageRecorder, 2000L)
+    private val coverageSender: CoverageSender = IntervalCoverageSender(2000L) {
+        coverageRecorder.collectProbes() + collectGlobalExecData()
+    }
 ) : ProbesProvider by probesProvider,
     ProbesDescriptorProvider by probesDescriptorProvider,
     CoverageRecorder by coverageRecorder,
     CoverageSender by coverageSender {
 
-    private val globalExecDataReleaseJob = ProbeWorker.launch {
-        while (isActive) {
-            delay(5000L)
-            releaseGlobalExecData()
+    //TODO instead of overriding, pass the side effect addExecDatum to the constructor as a lambda
+    override fun addDescriptor(descriptor: ProbesDescriptor) {
+        probesDescriptorProvider.addDescriptor(descriptor)
+        addExecDatum(descriptor)
+    }
+
+    internal fun collectGlobalExecData() = globalExecData.values.filter { datum ->
+        datum.probes.containCovered()
+    }.map { datum ->
+        datum.copy(
+            probes = AgentProbes(
+                values = datum.probes.values.copyOf()
+            )
+        ).also {
+            datum.probes.values.fill(false)
         }
     }
 
-    override fun addDescriptor(descriptor: ProbesDescriptor) {
-        probesDescriptorProvider.addDescriptor(descriptor)
-        globalExecData.getOrPut(descriptor.id) {
-            descriptor.toExecDatum()
-        }
+    internal fun createExecData(
+        sessionId: String,
+        testId: String,
+        testName: String
+    ) = probesDescriptorProvider.fold(ExecData()) { execData, descriptor ->
+        execData[descriptor.id] = ExecDatum(
+            id = descriptor.id,
+            name = descriptor.name,
+            probes = AgentProbes(descriptor.probeCount),
+            sessionId = sessionId,
+            testId = testId,
+            testName = testName
+        )
+        execData
+    }
+
+    internal fun addExecDatum(descriptor: ProbesDescriptor) {
+        globalExecData[descriptor.id] = descriptor.toExecDatum()
     }
 
     private fun ProbesDescriptor.toExecDatum(
@@ -57,28 +81,9 @@ open class CoverageManager(
         testName = testName,
         testId = testId
     )
-
-
-    private fun releaseGlobalExecData() {
-        globalExecData.values.filter { datum ->
-            datum.probes.containCovered()
-        }.map { datum ->
-            datum.copy(
-                probes = AgentProbes(
-                    values = datum.probes.values.copyOf()
-                )
-            ).also {
-                datum.probes.values.fill(false)
-            }
-        }.associateByTo(ExecData()) { it.id }.also { data ->
-            execDataPool.release(GLOBAL_SESSION_TEST_KEY, data)
-        }
-    }
-
-
 }
 
 /**
  * The probe provider MUST be a Kotlin singleton object
  */
-internal object DrillProbesArrayProvider : CoverageManager()
+internal object DrillCoverageManager : CoverageManager()
