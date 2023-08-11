@@ -52,7 +52,7 @@ class Plugin(
 
     internal val json = Json { encodeDefaults = true }
 
-    private val coverageManager = DrillCoverageManager.apply { setSendingHandler(probeSender(sendChanged = true)) }
+    private val coverageManager = DrillCoverageManager.apply { setSendingHandler(::sendProbes) }
 
     private val instrumenter = DrillInstrumenter(coverageManager, coverageManager)
 
@@ -141,15 +141,14 @@ class Plugin(
         }
         logger.info { "Scanned $classCount classes" }
     }
-}
 
     /**
      * Create a function which sends chunks of test coverage to the admin part of the plugin
      * @return the function of sending test coverage
      * @features Coverage data sending
      */
-    private fun probeSender(): SendingHandler = { execData ->
-        execData.map(ExecDatum::toExecClassData)
+    private fun sendProbes(data: Sequence<ExecDatum>) {
+        data.map(ExecDatum::toExecClassData)
             .chunked(0xffff)
             .map { chunk -> CoverDataPart(data = chunk) }
             .forEach { message ->
