@@ -34,7 +34,7 @@ class IntervalCoverageSender(
     private var sendingHandler: SendingHandler = {}
 
     private val job = ProbeWorker.launch(start = CoroutineStart.LAZY) {
-        while (true) {
+        while (isActive) {
             delay(intervalMs)
             sendingHandler(coverageRecorder.collectProbes())
         }
