@@ -22,18 +22,21 @@ import com.epam.drill.plugin.api.processing.AgentContext
 import com.epam.drill.plugin.api.processing.AgentPart
 import com.epam.drill.plugin.api.processing.Instrumenter
 import com.epam.drill.plugin.api.processing.Sender
-import com.epam.drill.plugins.test2code.DrillProbeArrayProvider.fillFromMeta
 import com.epam.drill.plugins.test2code.classloading.ClassLoadersScanner
+import com.epam.drill.plugins.test2code.classparsing.parseAstClass
 import com.epam.drill.plugins.test2code.common.api.*
+import com.epam.drill.plugins.test2code.coverage.*
+import com.epam.drill.plugins.test2code.coverage.DrillCoverageManager
+import com.epam.drill.plugins.test2code.coverage.toExecClassData
 import com.github.luben.zstd.Zstd
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.protobuf.ProtoBuf
 import mu.KotlinLogging
 import java.util.*
 import java.util.concurrent.ConcurrentHashMap
-import java.util.concurrent.atomic.AtomicInteger
 
-val sessionTestKeyPairToThreadNumber = ConcurrentHashMap<Pair<String, TestKey>, AtomicInteger>()
+const val DRIlL_TEST_NAME_HEADER = "drill-test-name"
+const val DRILL_TEST_ID_HEADER = "drill-test-id"
 
 /**
  * Service for managing the plugin on the agent side
@@ -49,17 +52,14 @@ class Plugin(
 
     internal val json = Json { encodeDefaults = true }
 
-    private val instrContext: SessionProbeArrayProvider = DrillProbeArrayProvider.apply {
-        defaultContext = agentContext
-    }
+    private val coverageManager = DrillCoverageManager.apply { setSendingHandler(probeSender(sendChanged = true)) }
 
-    private val instrumenter = DrillInstrumenter(instrContext)
+    private val instrumenter = DrillInstrumenter(coverageManager, coverageManager)
 
-    override fun onConnect() {
-        val ids = instrContext.getActiveSessions()
-        logger.info { "Send active sessions after reconnect: ${ids.count()}" }
-        sendMessage(SyncMessage(ids))
-    }
+    //TODO remove after admin refactoring
+    private val sessions = ConcurrentHashMap<String, Boolean>()
+
+    override fun onConnect() {}
 
     /**
      * Switch on the plugin
@@ -82,17 +82,13 @@ class Plugin(
 
     override fun load() {
         logger.info { "Plugin $id: initializing..." }
-//        //Create global session
-        val sessionId = "global"
-        val isRealtime = true
-        val handler = probeSender(sessionId, isRealtime)
-        val isGlobal = true
-        instrContext.start(sessionId, isGlobal, "GlobalSession", handler)
-        logger.info { "Plugin $id: global session was created." }
+        coverageManager.startSendingCoverage()
+        logger.info { "Plugin $id initialized!" }
     }
 
     // TODO remove after merging to java-agent repo
     override fun doAction(action: AgentAction) {}
+
 
     /**
      * When the application under test receive a request from the caller
@@ -101,44 +97,10 @@ class Plugin(
      */
     @Suppress("UNUSED")
     fun processServerRequest() {
-        logger.trace { "processServerRequest before instrContext. thread '${Thread.currentThread().id}' " }
-        val drillProbeArrayProvider = instrContext as DrillProbeArrayProvider
-
-        // TODO session id can be null
-        val sessionId = context() ?: return
-
-        val name = context[DRIlL_TEST_NAME_HEADER] ?: DEFAULT_TEST_NAME
-        val id = context[DRILL_TEST_ID_HEADER] ?: name.id()
-        val testKey = TestKey(name, id)
-
-        // Start runtime + agent session if none created for supplied context.sessionId.
-        if (drillProbeArrayProvider.runtimes[sessionId] == null) {
-            logger.trace { "processServerRequest. session is null" }
-            drillProbeArrayProvider.runtimes.forEach { logger.trace { "runtime: $it" } }
-            val handler = probeSender(sessionId, true)
-            val isGlobal = false
-            instrContext.start(sessionId, isGlobal, name, handler)
-        }
-        val runtime = drillProbeArrayProvider.runtimes[sessionId]
-        if (runtime == null) {
-            logger.trace { "processServerRequest. thread '${Thread.currentThread().id}' sessionId '$sessionId' testKey '$testKey' runtime is null" }
-            return
-        }
-
-        // Check on null
-        if (sessionTestKeyPairToThreadNumber[Pair(sessionId, testKey)] == null) {
-            // Create if it does not exist
-            sessionTestKeyPairToThreadNumber[Pair(sessionId, testKey)] = AtomicInteger(0)
-        }
-        // Increment value for thread
-        sessionTestKeyPairToThreadNumber[Pair(sessionId, testKey)]?.incrementAndGet()
-
-        // TODO potential concurrency issue (if execData is removed by timer)
-        val execData = runtime.getOrPut(Pair(sessionId, testKey)) {
-            ExecData().apply { fillFromMeta(testKey) }
-        }
-
-        drillProbeArrayProvider.requestThreadLocal.set(execData)
+        val sessionId = context() ?: GLOBAL_SESSION_ID
+        val testName = context[DRIlL_TEST_NAME_HEADER] ?: DEFAULT_TEST_NAME
+        val testId = context[DRILL_TEST_ID_HEADER] ?: testName.id()
+        coverageManager.startRecording(sessionId, testId, testName)
     }
 
     /**
@@ -147,15 +109,10 @@ class Plugin(
      */
     @Suppress("UNUSED")
     fun processServerResponse() {
-        (instrContext as DrillProbeArrayProvider).run {
-            val sessionId = context()
-            val name = context[DRIlL_TEST_NAME_HEADER] ?: DEFAULT_TEST_NAME
-            val id = context[DRILL_TEST_ID_HEADER] ?: name.id()
-            val testKey = TestKey(name, id)
-
-            sessionTestKeyPairToThreadNumber[Pair(sessionId, testKey)]?.decrementAndGet()
-            requestThreadLocal.remove()
-        }
+        val sessionId = context() ?: GLOBAL_SESSION_ID
+        val testName = context[DRIlL_TEST_NAME_HEADER] ?: DEFAULT_TEST_NAME
+        val testId = context[DRILL_TEST_ID_HEADER] ?: testName.id()
+        coverageManager.stopRecording(sessionId, testId, testName)
     }
 
     override fun parseAction(
@@ -194,21 +151,23 @@ class Plugin(
  * @features Coverage data sending
  */
 fun Plugin.probeSender(
-    sessionId: String,
     sendChanged: Boolean = false,
-): RealtimeHandler = { execData ->
+): SendingHandler = { execData ->
     execData
-        .map(ExecDatum::toExecClassData)
-        .chunked(0xffff)
-        .map { chunk -> CoverDataPart(sessionId, chunk) }
-        .sumOf { message ->
-            logger.trace { "send to admin-part '$message'..." }
-            val encoded = ProtoBuf.encodeToByteArray(CoverMessage.serializer(), message)
-            val compressed = Zstd.compress(encoded)
-            send(Base64.getEncoder().encodeToString(compressed))
-            message.data.count()
-        }.takeIf { sendChanged && it > 0 }?.let {
-            sendMessage(SessionChanged(sessionId, it))
+        .groupBy { it.sessionId }
+        .forEach { (sessionId, data) ->
+            data.map(ExecDatum::toExecClassData)
+                .chunked(0xffff)
+                .map { chunk -> CoverDataPart(sessionId, chunk) }
+                .sumOf { message ->
+                    logger.debug { "Send compressed message $message" }
+                    val encoded = ProtoBuf.encodeToByteArray(CoverMessage.serializer(), message)
+                    val compressed = Zstd.compress(encoded)
+                    send(Base64.getEncoder().encodeToString(compressed))
+                    message.data.count()
+                }.takeIf { sendChanged && it > 0 }?.let {
+                    sendMessage(SessionChanged(sessionId, it))
+                }
         }
 }
 

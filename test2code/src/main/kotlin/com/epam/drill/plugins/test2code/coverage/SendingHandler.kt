@@ -13,9 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.epam.drill.plugins.test2code
+package com.epam.drill.plugins.test2code.coverage
 
-/**
- * The probe provider MUST be a Kotlin singleton object
- */
-internal object DrillProbeArrayProvider : SimpleSessionProbeArrayProvider()
+typealias SendingHandler = (Sequence<ExecDatum>) -> Unit
