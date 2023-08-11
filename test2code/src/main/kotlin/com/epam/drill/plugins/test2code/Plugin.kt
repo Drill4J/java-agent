@@ -82,72 +82,12 @@ class Plugin(
 
     override fun load() {
         logger.info { "Plugin $id: initializing..." }
-        createSession(sessionId = GLOBAL_SESSION_ID, isGlobal = true)
         instrContext.startSendingCoverage()
         logger.info { "Plugin $id initialized!" }
     }
 
     // TODO remove after merging to java-agent repo
-    override fun doAction(action: AgentAction) {
-        when (action) {
-            /**
-             * @features Session starting
-             */
-            is StartAgentSession -> action.payload.run {
-//                logger.info { "Start recording for session $sessionId (isGlobal=$isGlobal)" }
-//                val handler = probeSender(sessionId, isRealtime)
-//                instrContext.start(sessionId, isGlobal, testName, handler)
-//                sendMessage(SessionStarted(sessionId, testType, isRealtime, currentTimeMillis()))
-            }
-
-            is AddAgentSessionData -> {
-                //ignored
-            }
-
-            is AddAgentSessionTests -> action.payload.run {
-//                instrContext.addCompletedTests(sessionId, tests)
-            }
-            /**
-             * @features Session stopping
-             */
-            is StopAgentSession -> {
-//                val sessionId = action.payload.sessionId
-//                logger.info { "End of recording for session $sessionId" }
-//                val runtimeData = instrContext.stop(sessionId) ?: emptySequence()
-//                if (runtimeData.any()) {
-//                    probeSender(sessionId)(runtimeData)
-//                } else logger.info { "No data for session $sessionId" }
-//                sendMessage(SessionFinished(sessionId, currentTimeMillis()))
-            }
-
-            is StopAllAgentSessions -> {
-//                val stopped = instrContext.stopAll()
-//                logger.info { "End of recording for sessions $stopped" }
-//                for ((sessionId, data) in stopped) {
-//                    if (data.any()) {
-//                        probeSender(sessionId)(data)
-//                    }
-//                }
-//                val ids = stopped.map { it.first }
-//                sendMessage(SessionsFinished(ids, currentTimeMillis()))
-            }
-
-            is CancelAgentSession -> {
-//                val sessionId = action.payload.sessionId
-//                logger.info { "Cancellation of recording for session $sessionId" }
-//                instrContext.cancel(sessionId)
-//                sendMessage(SessionCancelled(sessionId, currentTimeMillis()))
-            }
-
-            is CancelAllAgentSessions -> {
-//                val cancelled = instrContext.cancelAll()
-//                logger.info { "Cancellation of recording for sessions $cancelled" }
-//                sendMessage(SessionsCancelled(cancelled, currentTimeMillis()))
-            }
-
-            else -> Unit
-        }
-    }
+    override fun doAction(action: AgentAction) {}
 
 
     /**
@@ -160,7 +100,6 @@ class Plugin(
         val sessionId = context() ?: GLOBAL_SESSION_ID
         val testName = context[DRIlL_TEST_NAME_HEADER] ?: DEFAULT_TEST_NAME
         val testId = context[DRILL_TEST_ID_HEADER] ?: testName.id()
-        createSession(sessionId = sessionId, isGlobal = false)
         instrContext.startRecording(sessionId, testId, testName)
     }
 
@@ -201,20 +140,6 @@ class Plugin(
                 .also { classCount += it.astEntities.size }
         }
         logger.info { "Scanned $classCount classes" }
-    }
-
-    //TODO remove after admin refactoring
-    private fun createSession(
-        sessionId: String,
-        isRealtime: Boolean = true, isGlobal: Boolean = false
-    ) {
-        if (sessions[sessionId] != null) return
-        synchronized(sessionId.intern()) {
-            if (sessions[sessionId] != null) return
-            sendMessage(SessionStarted(sessionId, "AUTO", isRealtime, isGlobal, currentTimeMillis()))
-            logger.info { "Session $sessionId was created." }
-            sessions[sessionId] = true
-        }
     }
 }
 
