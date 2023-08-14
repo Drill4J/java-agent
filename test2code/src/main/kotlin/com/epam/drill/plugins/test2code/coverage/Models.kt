@@ -16,7 +16,6 @@
 package com.epam.drill.plugins.test2code.coverage
 
 import com.epam.drill.jacoco.AgentProbes
-import com.epam.drill.plugins.test2code.common.api.DEFAULT_TEST_NAME
 import com.epam.drill.plugins.test2code.common.api.ExecClassData
 import com.epam.drill.plugins.test2code.common.api.toBitSet
 import com.epam.drill.plugins.test2code.id
@@ -29,8 +28,7 @@ typealias SessionTestKey = Pair<SessionId, TestId>
 typealias ExecData = ConcurrentHashMap<ClassId, ExecDatum>
 
 const val GLOBAL_SESSION_ID = "global"
-val DEFAULT_TEST_ID = DEFAULT_TEST_NAME.id()
-val GLOBAL_SESSION_TEST_KEY = GLOBAL_SESSION_ID to DEFAULT_TEST_ID
+val DEFAULT_TEST_ID = "unspecified".id()
 
 /**
  * A class containing probes obtained from a specific test

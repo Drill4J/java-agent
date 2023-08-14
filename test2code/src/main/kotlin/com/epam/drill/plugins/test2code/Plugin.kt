@@ -97,9 +97,8 @@ class Plugin(
     @Suppress("UNUSED")
     fun processServerRequest() {
         val sessionId = context() ?: GLOBAL_SESSION_ID
-        val testName = context[DRIlL_TEST_NAME_HEADER] ?: DEFAULT_TEST_NAME
-        val testId = context[DRILL_TEST_ID_HEADER] ?: testName.id()
-        coverageManager.startRecording(sessionId, testId, testName)
+        val testId = context[DRILL_TEST_ID_HEADER] ?: DEFAULT_TEST_ID
+        coverageManager.startRecording(sessionId, testId)
     }
 
     /**
@@ -109,9 +108,8 @@ class Plugin(
     @Suppress("UNUSED")
     fun processServerResponse() {
         val sessionId = context() ?: GLOBAL_SESSION_ID
-        val testName = context[DRIlL_TEST_NAME_HEADER] ?: DEFAULT_TEST_NAME
-        val testId = context[DRILL_TEST_ID_HEADER] ?: testName.id()
-        coverageManager.stopRecording(sessionId, testId, testName)
+        val testId = context[DRILL_TEST_ID_HEADER] ?: DEFAULT_TEST_ID
+        coverageManager.stopRecording(sessionId, testId)
     }
 
     override fun parseAction(
