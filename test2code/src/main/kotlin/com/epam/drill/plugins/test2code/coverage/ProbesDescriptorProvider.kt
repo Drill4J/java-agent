@@ -15,7 +15,7 @@
  */
 package com.epam.drill.plugins.test2code.coverage
 
-import com.epam.drill.plugins.test2code.common.api.DEFAULT_TEST_NAME
+import java.util.concurrent.ConcurrentHashMap
 
 /**
  * Descriptor of class probes
@@ -23,20 +23,27 @@ import com.epam.drill.plugins.test2code.common.api.DEFAULT_TEST_NAME
  * @param name a full class name
  * @param probeCount a number of probes in the class
  */
-class ProbeDescriptor(
+class ProbesDescriptor(
     val id: ClassId,
     val name: String,
     val probeCount: Int,
 )
 
-interface ProbeDescriptorProvider {
+interface ProbesDescriptorProvider: Iterable<ProbesDescriptor> {
     /**
      * Add a new probe descriptor
      */
-    fun addProbeDescriptor(descriptor: ProbeDescriptor)
+    fun addDescriptor(descriptor: ProbesDescriptor)
+}
 
-    fun ExecData.fillExecData(
-        sessionId: String = GLOBAL_SESSION_ID,
-        testId: String = DEFAULT_TEST_ID,
-    )
+class ConcurrentProbesDescriptorProvider: ProbesDescriptorProvider {
+
+    private val probesDescriptors = ConcurrentHashMap<ClassId, ProbesDescriptor>()
+
+    override fun addDescriptor(descriptor: ProbesDescriptor) {
+        probesDescriptors[descriptor.id] = descriptor
+    }
+
+    override fun iterator(): Iterator<ProbesDescriptor> = probesDescriptors.values.iterator()
+
 }

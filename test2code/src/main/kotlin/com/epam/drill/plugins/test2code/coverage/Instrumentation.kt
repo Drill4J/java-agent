@@ -29,8 +29,9 @@ import mu.KotlinLogging
 private val classCounter = atomic(0)
 
 class DrillInstrumenter(
-    private val probeArrayProvider: ProbeArrayProvider
-): Instrumenter {
+    private val probesProvider: ProbesProvider,
+    private val probesDescriptorProvider: ProbesDescriptorProvider
+) : Instrumenter {
 
     private val logger = KotlinLogging.logger {}
 
@@ -46,7 +47,7 @@ class DrillInstrumenter(
         val genId = classCounter.incrementAndGet()
         val probeCount = counter.count
         val strategy = DrillProbeStrategy(
-            probeArrayProvider,
+            probesProvider,
             className,
             classId,
             genId,
@@ -61,15 +62,13 @@ class DrillInstrumenter(
         )
         reader.accept(visitor, ClassReader.EXPAND_FRAMES)
 
-        (probeArrayProvider as? ProbeDescriptorProvider)?.run {
-            addProbeDescriptor(
-                ProbeDescriptor(
-                    id = classId,
-                    name = className,
-                    probeCount = probeCount
-                )
+        probesDescriptorProvider.addDescriptor(
+            ProbesDescriptor(
+                id = classId,
+                name = className,
+                probeCount = probeCount
             )
-        }
+        )
 
         writer.toByteArray()
     } catch (e: Exception) {
@@ -79,16 +78,15 @@ class DrillInstrumenter(
 }
 
 
-
 private class DrillProbeStrategy(
-    private val probeArrayProvider: ProbeArrayProvider,
+    private val probesProvider: ProbesProvider,
     private val className: String,
     private val classId: Long,
     private val number: Int,
     private val probeCount: Int
 ) : IProbeArrayStrategy {
     override fun storeInstance(mv: MethodVisitor?, clinit: Boolean, variable: Int): Int = mv!!.run {
-        val drillClassName = probeArrayProvider.javaClass.name.replace('.', '/')
+        val drillClassName = probesProvider.javaClass.name.replace('.', '/')
         visitFieldInsn(Opcodes.GETSTATIC, drillClassName, "INSTANCE", "L$drillClassName;")
         // Stack[0]: Lcom/epam/drill/jacoco/Stuff;
 

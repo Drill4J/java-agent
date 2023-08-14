@@ -35,7 +35,7 @@ open class AgentProbes(
         }
     }
 
-    fun hasPositive() = values.any { it }
+    fun containCovered() = values.any { it }
 }
 
 class StubAgentProbes(size: Int = 0) : AgentProbes(size) {

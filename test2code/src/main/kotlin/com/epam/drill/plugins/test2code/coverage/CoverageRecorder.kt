@@ -15,8 +15,40 @@
  */
 package com.epam.drill.plugins.test2code.coverage
 
+import com.epam.drill.jacoco.AgentProbes
+import mu.KotlinLogging
+
 interface CoverageRecorder {
     fun startRecording(sessionId: String, testId: String)
     fun stopRecording(sessionId: String, testId: String)
     fun collectProbes(): Sequence<ExecDatum>
+}
+
+class ThreadCoverageRecorder(
+    private val execDataPool: DataPool<SessionTestKey, ExecData>,
+    private val requestThreadLocal: ThreadLocal<ExecData?>,
+    private val execDataCreator: (SessionId, TestId, TestName) -> ExecData = { _,_,_ -> ExecData() },
+) : CoverageRecorder {
+    private val logger = KotlinLogging.logger {}
+
+    override fun startRecording(sessionId: String, testId: String, testName: String) {
+        val data = execDataPool.getOrPut(SessionTestKey(sessionId, testId to testName)) {
+            execDataCreator(sessionId, testId, testName)
+        }
+        requestThreadLocal.set(data)
+        logger.trace { "Test recording started (sessionId = $sessionId, testId=$testId, threadId=${Thread.currentThread().id})." }
+    }
+
+    override fun stopRecording(sessionId: String, testId: String, testName: String) {
+        val data = requestThreadLocal.get()
+        if (data != null) {
+            execDataPool.release(SessionTestKey(sessionId, testId to testName), data)
+            requestThreadLocal.remove()
+        }
+        logger.trace { "Test recording stopped (sessionId = $sessionId, testId=$testId, threadId=${Thread.currentThread().id})." }
+    }
+
+    override fun collectProbes(): Sequence<ExecDatum> {
+        return execDataPool.pollReleased().flatMap { it.values }.filter { it.probes.containCovered() }
+    }
 }

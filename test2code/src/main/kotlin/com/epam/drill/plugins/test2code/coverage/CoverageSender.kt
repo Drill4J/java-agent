@@ -15,8 +15,49 @@
  */
 package com.epam.drill.plugins.test2code.coverage
 
+import kotlinx.coroutines.*
+import mu.KotlinLogging
+import java.util.concurrent.Executors
+import kotlin.coroutines.CoroutineContext
+
 interface CoverageSender {
-    fun setSendingHandler(handler: RealtimeHandler)
+    fun setSendingHandler(handler: SendingHandler)
     fun startSendingCoverage()
     fun stopSendingCoverage()
+}
+
+class IntervalCoverageSender(
+    intervalMs: Long,
+    collectProbes: () -> Sequence<ExecDatum> = { emptySequence() }
+) : CoverageSender {
+    private val logger = KotlinLogging.logger {}
+    private var sendingHandler: SendingHandler = {}
+
+    private val job = ProbeWorker.launch(start = CoroutineStart.LAZY) {
+        while (isActive) {
+            delay(intervalMs)
+            sendingHandler(collectProbes())
+        }
+    }
+
+    override fun setSendingHandler(handler: SendingHandler) {
+        sendingHandler = handler
+    }
+
+    override fun startSendingCoverage() {
+        job.start()
+        logger.debug { "Coverage sending job is started." }
+    }
+
+    override fun stopSendingCoverage() {
+        job.cancel()
+        logger.debug { "Coverage sending job is stopped." }
+    }
+}
+
+internal object ProbeWorker : CoroutineScope {
+    override val coroutineContext: CoroutineContext = run {
+        // TODO ProbeWorker thread count configure via env.variable?
+        Executors.newFixedThreadPool(2).asCoroutineDispatcher() + SupervisorJob()
+    }
 }
