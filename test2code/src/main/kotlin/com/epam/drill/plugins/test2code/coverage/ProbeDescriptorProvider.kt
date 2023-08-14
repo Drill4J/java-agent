@@ -38,6 +38,5 @@ interface ProbeDescriptorProvider {
     fun ExecData.fillExecData(
         sessionId: String = GLOBAL_SESSION_ID,
         testId: String = DEFAULT_TEST_ID,
-        testName: String = DEFAULT_TEST_NAME
     )
 }

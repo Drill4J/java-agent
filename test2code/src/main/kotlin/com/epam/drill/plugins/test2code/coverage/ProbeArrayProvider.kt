@@ -77,8 +77,7 @@ open class SimpleSessionProbeArrayProvider() : ProbeArrayProvider, ProbeDescript
 
     override fun ExecData.fillExecData(
         sessionId: String,
-        testId: String,
-        testName: String
+        testId: String
     ) {
         probeMetaContainer.values.forEach { descriptor ->
             this.putIfAbsent(
@@ -87,25 +86,24 @@ open class SimpleSessionProbeArrayProvider() : ProbeArrayProvider, ProbeDescript
                     name = descriptor.name,
                     probes = AgentProbes(descriptor.probeCount),
                     sessionId = sessionId,
-                    testName = testName,
                     testId = testId
                 )
             )
         }
     }
 
-    override fun startRecording(sessionId: String, testId: String, testName: String) {
-        val data = execDataPool.getOrPut(SessionTestKey(sessionId, testId to testName)) {
-            ExecData().apply { fillExecData(sessionId, testId, testName) }
+    override fun startRecording(sessionId: String, testId: String) {
+        val data = execDataPool.getOrPut(SessionTestKey(sessionId, testId )) {
+            ExecData().apply { fillExecData(sessionId, testId) }
         }
         requestThreadLocal.set(data)
         logger.trace { "Test recording started (sessionId = $sessionId, testId=$testId, threadId=${Thread.currentThread().id})." }
     }
 
-    override fun stopRecording(sessionId: String, testId: String, testName: String) {
+    override fun stopRecording(sessionId: String, testId: String) {
         val data = requestThreadLocal.get()
         if (data != null) {
-            execDataPool.release(SessionTestKey(sessionId, testId to testName), data)
+            execDataPool.release(SessionTestKey(sessionId, testId), data)
             requestThreadLocal.remove()
         }
         logger.trace { "Test recording stopped (sessionId = $sessionId, testId=$testId, threadId=${Thread.currentThread().id})." }
@@ -160,13 +158,11 @@ open class SimpleSessionProbeArrayProvider() : ProbeArrayProvider, ProbeDescript
     private fun ProbeDescriptor.toExecDatum(
         sessionId: String = GLOBAL_SESSION_ID,
         testId: String = DEFAULT_TEST_ID,
-        testName: String = DEFAULT_TEST_NAME
     ) = ExecDatum(
         id = id,
         name = name,
         probes = AgentProbes(probeCount),
         sessionId = sessionId,
-        testName = testName,
         testId = testId
     )
 

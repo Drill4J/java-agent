@@ -26,8 +26,6 @@ import com.epam.drill.plugins.test2code.classloading.ClassLoadersScanner
 import com.epam.drill.plugins.test2code.classparsing.parseAstClass
 import com.epam.drill.plugins.test2code.common.api.*
 import com.epam.drill.plugins.test2code.coverage.*
-import com.epam.drill.plugins.test2code.coverage.DrillProbeArrayProvider
-import com.epam.drill.plugins.test2code.coverage.toExecClassData
 import com.github.luben.zstd.Zstd
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.protobuf.ProtoBuf
@@ -35,7 +33,6 @@ import mu.KotlinLogging
 import java.util.*
 import java.util.concurrent.ConcurrentHashMap
 
-const val DRIlL_TEST_NAME_HEADER = "drill-test-name"
 const val DRILL_TEST_ID_HEADER = "drill-test-id"
 
 /**
@@ -158,10 +155,9 @@ class Plugin(
     @Suppress("UNUSED")
     fun processServerRequest() {
         val sessionId = context() ?: GLOBAL_SESSION_ID
-        val testName = context[DRIlL_TEST_NAME_HEADER] ?: DEFAULT_TEST_NAME
-        val testId = context[DRILL_TEST_ID_HEADER] ?: testName.id()
+        val testId = context[DRILL_TEST_ID_HEADER] ?: DEFAULT_TEST_ID.id()
         createSession(sessionId = sessionId, isGlobal = false)
-        instrContext.startRecording(sessionId, testId, testName)
+        instrContext.startRecording(sessionId, testId)
     }
 
     /**
@@ -171,9 +167,8 @@ class Plugin(
     @Suppress("UNUSED")
     fun processServerResponse() {
         val sessionId = context() ?: GLOBAL_SESSION_ID
-        val testName = context[DRIlL_TEST_NAME_HEADER] ?: DEFAULT_TEST_NAME
-        val testId = context[DRILL_TEST_ID_HEADER] ?: testName.id()
-        instrContext.stopRecording(sessionId, testId, testName)
+        val testId = context[DRILL_TEST_ID_HEADER] ?: DEFAULT_TEST_ID.id()
+        instrContext.stopRecording(sessionId, testId)
     }
 
     override fun parseAction(
