@@ -3,7 +3,6 @@ package com.epam.drill.plugins.test2code.coverage
 import com.epam.drill.jacoco.AgentProbes
 import com.epam.drill.plugins.test2code.common.api.DEFAULT_TEST_NAME
 import com.epam.drill.plugins.test2code.coverage.DrillCoverageManager.collectGlobalExecData
-import com.epam.drill.plugins.test2code.coverage.DrillCoverageManager.createExecData
 
 /**
  * Simple probe provider that employs a lock-free map for runtime data storage.
@@ -20,9 +19,20 @@ open class CoverageManager(
     private val probesDescriptorProvider: ProbesDescriptorProvider = ConcurrentProbesDescriptorProvider(),
     private val coverageRecorder: CoverageRecorder = ThreadCoverageRecorder(
         execDataPool,
-        requestThreadLocal,
-        ::createExecData
-    ),
+        requestThreadLocal
+    ) { sessionId, testId, testName ->
+        probesDescriptorProvider.fold(ExecData()) { execData, descriptor ->
+            execData[descriptor.id] = ExecDatum(
+                id = descriptor.id,
+                name = descriptor.name,
+                probes = AgentProbes(descriptor.probeCount),
+                sessionId = sessionId,
+                testId = testId,
+                testName = testName
+            )
+            execData
+        }
+    },
     private val coverageSender: CoverageSender = IntervalCoverageSender(2000L) {
         coverageRecorder.collectProbes() + collectGlobalExecData()
     }
@@ -47,22 +57,6 @@ open class CoverageManager(
         ).also {
             datum.probes.values.fill(false)
         }
-    }
-
-    internal fun createExecData(
-        sessionId: String,
-        testId: String,
-        testName: String
-    ) = probesDescriptorProvider.fold(ExecData()) { execData, descriptor ->
-        execData[descriptor.id] = ExecDatum(
-            id = descriptor.id,
-            name = descriptor.name,
-            probes = AgentProbes(descriptor.probeCount),
-            sessionId = sessionId,
-            testId = testId,
-            testName = testName
-        )
-        execData
     }
 
     internal fun addExecDatum(descriptor: ProbesDescriptor) {
