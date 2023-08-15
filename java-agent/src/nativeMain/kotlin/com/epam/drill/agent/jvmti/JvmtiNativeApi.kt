@@ -17,10 +17,11 @@
 package com.epam.drill.agent.jvmti
 
 import kotlinx.cinterop.*
-import com.epam.drill.core.messanger.*
+import com.epam.drill.agent.request.*
+import com.epam.drill.agent.ws.*
+import com.epam.drill.agent.ws.send.*
 import com.epam.drill.jvmapi.*
 import com.epam.drill.jvmapi.gen.*
-import com.epam.drill.plugin.*
 
 /**
  * we should duplicate all of this methods signature with "external" keyword and "@SymbolName" annotation, without body,

@@ -15,9 +15,9 @@
  */
 package com.epam.drill.agent.request
 
-import com.epam.drill.requestPattern
-import com.epam.drill.core.transport.idHeaderPairFromConfig
-import com.epam.drill.core.transport.retrieveAdminUrl
+import com.epam.drill.agent.configuration.idHeaderPairFromConfig
+import com.epam.drill.agent.configuration.requestPattern
+import com.epam.drill.agent.configuration.retrieveAdminUrl
 
 actual object HeadersRetriever {
 

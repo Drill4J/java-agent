@@ -13,10 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.epam.drill.plugins.test2code
+package com.epam.drill.test2code
 
 import com.epam.drill.jacoco.*
-import com.epam.drill.plugin.api.processing.*
+import com.epam.drill.common.agent.*
 import com.epam.drill.plugins.test2code.common.api.*
 import kotlinx.atomicfu.*
 import kotlinx.collections.immutable.*

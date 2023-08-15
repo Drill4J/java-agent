@@ -16,14 +16,10 @@
 package com.epam.drill.agent
 
 import kotlinx.serialization.protobuf.ProtoBuf
-import com.epam.drill.agentConfig
+import com.epam.drill.agent.configuration.agentConfig
+import com.epam.drill.agent.request.DrillRequest
 import com.epam.drill.agent.request.RequestProcessor
 import com.epam.drill.agent.request.RequestHolder
-import com.epam.drill.core.closeSession
-import com.epam.drill.core.drillRequest
-import com.epam.drill.core.sessionStorage
-import com.epam.drill.core.setPackagesPrefixes
-import com.epam.drill.plugin.DrillRequest
 
 fun globalCallbacks(): Unit = run {
     setPackagesPrefixes = { prefixes ->

@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.epam.drill.plugins.test2code.checksum
+package com.epam.drill.test2code.checksum
 
 import org.apache.bcel.classfile.ClassParser
 import org.apache.bcel.classfile.Method

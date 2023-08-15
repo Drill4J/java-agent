@@ -69,7 +69,6 @@ kotlin {
                 implementation(project(":common"))
                 implementation(project(":jvmapi"))
                 implementation(project(":knasm"))
-                implementation(project(":plugin-api-agent"))
                 implementation(project(":agent"))
             }
         }

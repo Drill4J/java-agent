@@ -13,21 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.epam.drill.agent.request
+package com.epam.drill.test2code
 
-import com.epam.drill.agent.pstorage
-import com.epam.drill.agent.module.GenericAgentModule
-
-actual object RequestProcessor {
-
-    actual fun processServerRequest() {
-        plugins().forEach { it.processServerRequest() }
-    }
-
-    actual fun processServerResponse() {
-        plugins().forEach { it.processServerResponse() }
-    }
-
-    private fun plugins() = pstorage.values.filterIsInstance<GenericAgentModule>()
-
-}
+/**
+ * The probe provider MUST be a Kotlin singleton object
+ */
+internal object DrillProbeArrayProvider : SimpleSessionProbeArrayProvider()

@@ -15,9 +15,9 @@
  */
 package com.epam.drill.agent
 
-import java.util.*
-import com.epam.drill.plugin.*
-import com.epam.drill.plugin.api.processing.*
+import java.util.Locale
+import com.epam.drill.agent.request.DrillRequest
+import com.epam.drill.common.agent.AgentContext
 
 class RequestAgentContext(
     private val requestProvider: () -> DrillRequest?

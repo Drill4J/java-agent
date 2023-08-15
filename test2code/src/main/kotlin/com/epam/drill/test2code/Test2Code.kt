@@ -13,30 +13,30 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.epam.drill.plugins.test2code
+package com.epam.drill.test2code
 
-import com.epam.drill.agent.*
-import com.epam.drill.plugin.api.*
-import com.epam.drill.plugin.api.processing.*
-import com.epam.drill.plugins.test2code.classloading.*
-import com.epam.drill.plugins.test2code.common.api.*
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.protobuf.ProtoBuf
+import java.util.Base64
+import mu.KotlinLogging
+import com.github.luben.zstd.Zstd
 import com.epam.drill.common.classloading.ClassScanner
 import com.epam.drill.common.classloading.EntitySource
-import com.github.luben.zstd.*
-import kotlinx.atomicfu.*
-import kotlinx.serialization.json.*
-import kotlinx.serialization.protobuf.*
-import java.util.*
-import mu.KotlinLogging
+import com.epam.drill.common.agent.AgentModule
+import com.epam.drill.common.agent.AgentContext
+import com.epam.drill.common.agent.Instrumenter
+import com.epam.drill.common.agent.Sender
+import com.epam.drill.plugins.test2code.common.api.*
+import com.epam.drill.test2code.classloading.ClassLoadersScanner
 
 /**
  * Service for managing the plugin on the agent side
  */
-class Plugin(
+class Test2Code(
     id: String,
     agentContext: AgentContext,
     sender: Sender
-) : AgentPart<AgentAction>(id, agentContext, sender), Instrumenter, ClassScanner {
+) : AgentModule<AgentAction>(id, agentContext, sender), Instrumenter, ClassScanner {
 
     internal val logger = KotlinLogging.logger {}
 
@@ -190,36 +190,37 @@ class Plugin(
         }
         logger.info { "Scanned $classCount classes" }
     }
-}
 
-/**
- * Create a function which sends chunks of test coverage to the admin part of the plugin
- * @param sessionId the test session ID
- * @param sendChanged the sign of the need to send the number of data
- * @return the function of sending test coverage
- * @features Coverage data sending
- */
-fun Plugin.probeSender(
-    sessionId: String,
-    sendChanged: Boolean = false,
-): RealtimeHandler = { execData ->
-    execData
-        .map(ExecDatum::toExecClassData)
-        .chunked(0xffff)
-        .map { chunk -> CoverDataPart(sessionId, chunk) }
-        .sumOf { message ->
-            logger.trace { "send to admin-part '$message'..." }
-            val encoded = ProtoBuf.encodeToByteArray(CoverMessage.serializer(), message)
-            val compressed = Zstd.compress(encoded)
-            send(Base64.getEncoder().encodeToString(compressed))
-            message.data.count()
-        }.takeIf { sendChanged && it > 0 }?.let {
-            sendMessage(SessionChanged(sessionId, it))
-        }
-}
+    /**
+     * Create a function which sends chunks of test coverage to the admin part of the plugin
+     * @param sessionId the test session ID
+     * @param sendChanged the sign of the need to send the number of data
+     * @return the function of sending test coverage
+     * @features Coverage data sending
+     */
+    fun probeSender(
+        sessionId: String,
+        sendChanged: Boolean = false,
+    ): RealtimeHandler = { execData ->
+        execData
+            .map(ExecDatum::toExecClassData)
+            .chunked(0xffff)
+            .map { chunk -> CoverDataPart(sessionId, chunk) }
+            .sumOf { message ->
+                logger.trace { "send to admin-part '$message'..." }
+                val encoded = ProtoBuf.encodeToByteArray(CoverMessage.serializer(), message)
+                val compressed = Zstd.compress(encoded)
+                send(Base64.getEncoder().encodeToString(compressed))
+                message.data.count()
+            }.takeIf { sendChanged && it > 0 }?.let {
+                sendMessage(SessionChanged(sessionId, it))
+            }
+    }
 
-fun Plugin.sendMessage(message: CoverMessage) {
-    val messageStr = json.encodeToString(CoverMessage.serializer(), message)
-    logger.debug { "Send message $messageStr" }
-    send(messageStr)
+    fun sendMessage(message: CoverMessage) {
+        val messageStr = json.encodeToString(CoverMessage.serializer(), message)
+        logger.debug { "Send message $messageStr" }
+        send(messageStr)
+    }
+
 }

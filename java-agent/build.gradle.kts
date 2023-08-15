@@ -92,7 +92,6 @@ kotlin {
                 implementation(project(":common"))
                 implementation(project(":agent"))
                 implementation(project(":http-clients-instrumentation"))
-                implementation(project(":plugin-api-agent"))
                 implementation(project(":test2code"))
             }
         }
@@ -104,7 +103,6 @@ kotlin {
                 implementation(project(":agent"))
                 implementation(project(":jvmapi"))
                 implementation(project(":knasm"))
-                implementation(project(":plugin-api-agent"))
             }
         }
         val linuxX64Main by getting(configuration = configureNativeDependencies)

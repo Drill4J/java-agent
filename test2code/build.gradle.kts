@@ -46,7 +46,7 @@ dependencies {
     implementation("com.github.luben:zstd-jni:$lubenZstdVersion")
 
     implementation(project(":jacoco"))
-    implementation(project(":plugin-api-agent"))
+    implementation(project(":common"))
     implementation(project(":test2code-common"))
 }
 
