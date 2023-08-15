@@ -15,6 +15,7 @@
  */
 package com.epam.drill.plugins.test2code.coverage
 
+import com.epam.drill.jacoco.AgentProbes
 import mu.KotlinLogging
 
 interface CoverageRecorder {
@@ -26,13 +27,13 @@ interface CoverageRecorder {
 class ThreadCoverageRecorder(
     private val execDataPool: DataPool<SessionTestKey, ExecData>,
     private val requestThreadLocal: ThreadLocal<ExecData?>,
-    private val execDataCreator: (SessionId, TestId) -> ExecData = { _, _ -> ExecData() },
+    private val probesDescriptorProvider: ProbesDescriptorProvider,
 ) : CoverageRecorder {
     private val logger = KotlinLogging.logger {}
 
     override fun startRecording(sessionId: String, testId: String) {
         val data = execDataPool.getOrPut(SessionTestKey(sessionId, testId)) {
-            execDataCreator(sessionId, testId)
+            createExecData(sessionId, testId)
         }
         requestThreadLocal.set(data)
         logger.trace { "Test recording started (sessionId = $sessionId, testId=$testId, threadId=${Thread.currentThread().id})." }
@@ -50,4 +51,19 @@ class ThreadCoverageRecorder(
     override fun collectProbes(): Sequence<ExecDatum> {
         return execDataPool.pollReleased().flatMap { it.values }.filter { it.probes.containCovered() }
     }
+
+    private fun createExecData(
+        sessionId: String,
+        testId: String
+    ) = probesDescriptorProvider.fold(ExecData()) { execData, descriptor ->
+        execData[descriptor.id] = ExecDatum(
+            id = descriptor.id,
+            name = descriptor.name,
+            probes = AgentProbes(descriptor.probeCount),
+            sessionId = sessionId,
+            testId = testId,
+        )
+        execData
+    }
+
 }
