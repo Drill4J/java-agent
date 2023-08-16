@@ -34,15 +34,14 @@ open class CoverageManager(
     private val coverageRecorder: CoverageRecorder = ThreadCoverageRecorder(
         execDataPool,
         requestThreadLocal
-    ) { sessionId, testId, testName ->
+    ) { sessionId, testId ->
         probesDescriptorProvider.fold(ExecData()) { execData, descriptor ->
             execData[descriptor.id] = ExecDatum(
                 id = descriptor.id,
                 name = descriptor.name,
                 probes = AgentProbes(descriptor.probeCount),
                 sessionId = sessionId,
-                testId = testId,
-                testName = testName
+                testId = testId
             )
             execData
         }
