@@ -13,11 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.epam.drill.test2code
+package com.epam.drill.test2code.coverage
 
 import com.epam.drill.common.agent.*
 import com.epam.drill.jacoco.*
 import com.epam.drill.jacoco.BooleanArrayProbeInserter.*
+import com.epam.drill.test2code.classparsing.ProbeCounter
 import kotlinx.atomicfu.*
 import org.jacoco.core.internal.data.CRC64
 import org.jacoco.core.internal.flow.*
@@ -28,8 +29,9 @@ import mu.KotlinLogging
 private val classCounter = atomic(0)
 
 class DrillInstrumenter(
-    private val probeArrayProvider: ProbeArrayProvider
-): Instrumenter {
+    private val probesProvider: ProbesProvider,
+    private val probesDescriptorProvider: ProbesDescriptorProvider
+) : Instrumenter {
 
     private val logger = KotlinLogging.logger {}
 
@@ -45,7 +47,7 @@ class DrillInstrumenter(
         val genId = classCounter.incrementAndGet()
         val probeCount = counter.count
         val strategy = DrillProbeStrategy(
-            probeArrayProvider,
+            probesProvider,
             className,
             classId,
             genId,
@@ -60,18 +62,13 @@ class DrillInstrumenter(
         )
         reader.accept(visitor, ClassReader.EXPAND_FRAMES)
 
-        (probeArrayProvider as? SimpleSessionProbeArrayProvider)?.run {
-            probeMetaContainer.addDescriptor(
-                genId,
-                ProbeDescriptor(
-                    id = classId,
-                    name = className,
-                    probeCount = probeCount
-                ),
-                global?.second,
-                runtimes.values
+        probesDescriptorProvider.addDescriptor(
+            ProbesDescriptor(
+                id = classId,
+                name = className,
+                probeCount = probeCount
             )
-        }
+        )
 
         writer.toByteArray()
     } catch (e: Exception) {
@@ -81,16 +78,15 @@ class DrillInstrumenter(
 }
 
 
-
 private class DrillProbeStrategy(
-    private val probeArrayProvider: ProbeArrayProvider,
+    private val probesProvider: ProbesProvider,
     private val className: String,
     private val classId: Long,
     private val number: Int,
     private val probeCount: Int
 ) : IProbeArrayStrategy {
     override fun storeInstance(mv: MethodVisitor?, clinit: Boolean, variable: Int): Int = mv!!.run {
-        val drillClassName = probeArrayProvider.javaClass.name.replace('.', '/')
+        val drillClassName = probesProvider.javaClass.name.replace('.', '/')
         visitFieldInsn(Opcodes.GETSTATIC, drillClassName, "INSTANCE", "L$drillClassName;")
         // Stack[0]: Lcom/epam/drill/jacoco/Stuff;
 

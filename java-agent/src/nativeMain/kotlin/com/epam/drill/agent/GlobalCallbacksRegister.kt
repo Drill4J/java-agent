@@ -29,6 +29,7 @@ fun globalCallbacks(): Unit = run {
     closeSession = {
         RequestHolder.closeSession()
         RequestProcessor.processServerResponse()
+        RequestHolder.closeSession()
     }
     drillRequest = RequestHolder::get
 }
