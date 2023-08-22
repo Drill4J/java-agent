@@ -18,20 +18,29 @@ package com.epam.drill.test2code
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.protobuf.ProtoBuf
 import java.util.Base64
-import mu.KotlinLogging
+import java.util.concurrent.ConcurrentHashMap
 import com.github.luben.zstd.Zstd
+import mu.KotlinLogging
 import com.epam.drill.common.classloading.ClassScanner
 import com.epam.drill.common.classloading.EntitySource
 import com.epam.drill.common.agent.AgentModule
 import com.epam.drill.common.agent.AgentContext
 import com.epam.drill.common.agent.Instrumenter
 import com.epam.drill.common.agent.Sender
-import com.epam.drill.plugins.test2code.common.api.*
 import com.epam.drill.test2code.classloading.ClassLoadersScanner
+import com.epam.drill.test2code.classparsing.parseAstClass
+import com.epam.drill.plugins.test2code.common.api.*
+import com.epam.drill.test2code.coverage.*
+import com.epam.drill.test2code.coverage.DrillCoverageManager
+import com.epam.drill.test2code.coverage.toExecClassData
+
+const val DRIlL_TEST_NAME_HEADER = "drill-test-name"
+const val DRILL_TEST_ID_HEADER = "drill-test-id"
 
 /**
  * Service for managing the plugin on the agent side
  */
+@Suppress("unused")
 class Test2Code(
     id: String,
     agentContext: AgentContext,
@@ -42,17 +51,14 @@ class Test2Code(
 
     internal val json = Json { encodeDefaults = true }
 
-    private val instrContext: SessionProbeArrayProvider = DrillProbeArrayProvider.apply {
-        defaultContext = agentContext
-    }
+    private val coverageManager = DrillCoverageManager.apply { setSendingHandler(::sendProbes) }
 
-    private val instrumenter = DrillInstrumenter(instrContext)
+    private val instrumenter = DrillInstrumenter(coverageManager, coverageManager)
 
-    override fun onConnect() {
-        val ids = instrContext.getActiveSessions()
-        logger.info { "Send active sessions after reconnect: ${ids.count()}" }
-        sendMessage(SyncMessage(ids))
-    }
+    //TODO remove after admin refactoring
+    private val sessions = ConcurrentHashMap<String, Boolean>()
+
+    override fun onConnect() {}
 
     /**
      * Switch on the plugin
@@ -62,6 +68,7 @@ class Test2Code(
         val initInfo = InitInfo(message = "Initializing plugin $id...")
         sendMessage(initInfo)
         logger.info { "Initializing plugin $id..." }
+
         scanAndSendMetadataClasses()
         sendMessage(Initialized(msg = "Initialized"))
         logger.info { "Plugin $id initialized!" }
@@ -74,62 +81,13 @@ class Test2Code(
 
     override fun load() {
         logger.info { "Plugin $id: initializing..." }
+        coverageManager.startSendingCoverage()
+        logger.info { "Plugin $id initialized!" }
     }
 
-    override fun doAction(action: AgentAction) {
-        when (action) {
-            /**
-             * @features Session starting
-             */
-            is StartAgentSession -> action.payload.run {
-                logger.info { "Start recording for session $sessionId (isGlobal=$isGlobal)" }
-                val handler = probeSender(sessionId, isRealtime)
-                instrContext.start(sessionId, isGlobal, testName, handler)
-                sendMessage(SessionStarted(sessionId, testType, isRealtime, currentTimeMillis()))
-            }
-            is AddAgentSessionData -> {
-                //ignored
-            }
-            is AddAgentSessionTests -> action.payload.run {
-                instrContext.addCompletedTests(sessionId, tests)
-            }
-            /**
-             * @features Session stopping
-             */
-            is StopAgentSession -> {
-                val sessionId = action.payload.sessionId
-                logger.info { "End of recording for session $sessionId" }
-                val runtimeData = instrContext.stop(sessionId) ?: emptySequence()
-                if (runtimeData.any()) {
-                    probeSender(sessionId)(runtimeData)
-                } else logger.info { "No data for session $sessionId" }
-                sendMessage(SessionFinished(sessionId, currentTimeMillis()))
-            }
-            is StopAllAgentSessions -> {
-                val stopped = instrContext.stopAll()
-                logger.info { "End of recording for sessions $stopped" }
-                for ((sessionId, data) in stopped) {
-                    if (data.any()) {
-                        probeSender(sessionId)(data)
-                    }
-                }
-                val ids = stopped.map { it.first }
-                sendMessage(SessionsFinished(ids, currentTimeMillis()))
-            }
-            is CancelAgentSession -> {
-                val sessionId = action.payload.sessionId
-                logger.info { "Cancellation of recording for session $sessionId" }
-                instrContext.cancel(sessionId)
-                sendMessage(SessionCancelled(sessionId, currentTimeMillis()))
-            }
-            is CancelAllAgentSessions -> {
-                val cancelled = instrContext.cancelAll()
-                logger.info { "Cancellation of recording for sessions $cancelled" }
-                sendMessage(SessionsCancelled(cancelled, currentTimeMillis()))
-            }
-            else -> Unit
-        }
-    }
+    // TODO remove after merging to java-agent repo
+    override fun doAction(action: AgentAction) {}
+
 
     /**
      * When the application under test receive a request from the caller
@@ -138,19 +96,10 @@ class Test2Code(
      */
     @Suppress("UNUSED")
     fun processServerRequest() {
-        (instrContext as DrillProbeArrayProvider).run {
-            val sessionId = context()
-            val name = context[DRIlL_TEST_NAME_HEADER] ?: DEFAULT_TEST_NAME
-            val id = context[DRILL_TEST_ID_HEADER] ?: name.id()
-            val testKey = TestKey(name, id)
-            runtimes[sessionId]?.run {
-                val execDatum = getOrPut(testKey) {
-                    arrayOfNulls<ExecDatum>(MAX_CLASS_COUNT).apply { fillFromMeta(testKey) }
-                }
-                logger.trace { "processServerRequest. thread '${Thread.currentThread().id}' sessionId '$sessionId' testKey '$testKey'" }
-                requestThreadLocal.set(execDatum)
-            }
-        }
+        val sessionId = context() ?: GLOBAL_SESSION_ID
+        val testName = context[DRIlL_TEST_NAME_HEADER] ?: DEFAULT_TEST_NAME
+        val testId = context[DRILL_TEST_ID_HEADER] ?: testName.id()
+        coverageManager.startRecording(sessionId, testId, testName)
     }
 
     /**
@@ -159,9 +108,10 @@ class Test2Code(
      */
     @Suppress("UNUSED")
     fun processServerResponse() {
-        (instrContext as DrillProbeArrayProvider).run {
-            requestThreadLocal.remove()
-        }
+        val sessionId = context() ?: GLOBAL_SESSION_ID
+        val testName = context[DRIlL_TEST_NAME_HEADER] ?: DEFAULT_TEST_NAME
+        val testId = context[DRILL_TEST_ID_HEADER] ?: testName.id()
+        coverageManager.stopRecording(sessionId, testId, testName)
     }
 
     override fun parseAction(
@@ -193,31 +143,22 @@ class Test2Code(
 
     /**
      * Create a function which sends chunks of test coverage to the admin part of the plugin
-     * @param sessionId the test session ID
-     * @param sendChanged the sign of the need to send the number of data
      * @return the function of sending test coverage
      * @features Coverage data sending
      */
-    fun probeSender(
-        sessionId: String,
-        sendChanged: Boolean = false,
-    ): RealtimeHandler = { execData ->
-        execData
-            .map(ExecDatum::toExecClassData)
+    private fun sendProbes(data: Sequence<ExecDatum>) {
+        data.map(ExecDatum::toExecClassData)
             .chunked(0xffff)
-            .map { chunk -> CoverDataPart(sessionId, chunk) }
-            .sumOf { message ->
-                logger.trace { "send to admin-part '$message'..." }
+            .map { chunk -> CoverDataPart(data = chunk) }
+            .forEach { message ->
+                logger.debug { "Send compressed message $message" }
                 val encoded = ProtoBuf.encodeToByteArray(CoverMessage.serializer(), message)
                 val compressed = Zstd.compress(encoded)
                 send(Base64.getEncoder().encodeToString(compressed))
-                message.data.count()
-            }.takeIf { sendChanged && it > 0 }?.let {
-                sendMessage(SessionChanged(sessionId, it))
             }
     }
 
-    fun sendMessage(message: CoverMessage) {
+    private fun sendMessage(message: CoverMessage) {
         val messageStr = json.encodeToString(CoverMessage.serializer(), message)
         logger.debug { "Send message $messageStr" }
         send(messageStr)
