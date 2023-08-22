@@ -27,7 +27,6 @@ fun globalCallbacks(): Unit = run {
     }
     sessionStorage = RequestHolder::storeRequestMetadata
     closeSession = {
-        RequestHolder.closeSession()
         RequestProcessor.processServerResponse()
         RequestHolder.closeSession()
     }
