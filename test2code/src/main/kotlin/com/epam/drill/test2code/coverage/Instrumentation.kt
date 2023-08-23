@@ -13,12 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.epam.drill.plugins.test2code.coverage
+package com.epam.drill.test2code.coverage
 
+import com.epam.drill.common.agent.*
 import com.epam.drill.jacoco.*
 import com.epam.drill.jacoco.BooleanArrayProbeInserter.*
-import com.epam.drill.plugin.api.processing.Instrumenter
-import com.epam.drill.plugins.test2code.classparsing.ProbeCounter
+import com.epam.drill.test2code.classparsing.ProbeCounter
 import kotlinx.atomicfu.*
 import org.jacoco.core.internal.data.CRC64
 import org.jacoco.core.internal.flow.*

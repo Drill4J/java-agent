@@ -25,8 +25,8 @@ import platform.posix.FILE
 import platform.posix.fscanf
 import platform.posix.getc
 import platform.posix.ungetc
-import com.epam.drill.close
-import com.epam.drill.openPipe
+import com.epam.drill.agent.configuration.close
+import com.epam.drill.agent.configuration.openPipe
 
 fun getProcessInfo(bufferSize: Int = 128): List<String> = memScoped {
     val buffer = " ".repeat(bufferSize).cstr.getPointer(this)

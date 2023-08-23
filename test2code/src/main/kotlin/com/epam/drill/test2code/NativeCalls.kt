@@ -13,14 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.epam.drill.plugins.test2code
+package com.epam.drill.test2code
 
-import java.util.zip.*
-import java.lang.Long.*
-
-fun currentTimeMillis() = System.currentTimeMillis()
-
-fun String.id(): String = CRC32().let {
-    it.update(toByteArray())
-    toHexString(it.value)
+object NativeCalls {
+    external fun getPackagePrefixes(): String
+    external fun getScanClassPath(): String
+    external fun waitClassScanning()
 }

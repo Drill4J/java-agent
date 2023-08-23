@@ -13,21 +13,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.epam.drill.agent.request
+package com.epam.drill.test2code.coverage
 
-import com.epam.drill.agent.pstorage
-import com.epam.drill.agent.module.GenericAgentModule
+import com.epam.drill.test2code.coverage.ExecDatum
 
-actual object RequestProcessor {
-
-    actual fun processServerRequest() {
-        plugins().forEach { it.processServerRequest() }
-    }
-
-    actual fun processServerResponse() {
-        plugins().forEach { it.processServerResponse() }
-    }
-
-    private fun plugins() = pstorage.values.filterIsInstance<GenericAgentModule>()
-
-}
+typealias SendingHandler = (Sequence<ExecDatum>) -> Unit

@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.epam.drill.plugins.test2code
+package com.epam.drill.test2code
 
 import com.epam.drill.agent.NativeCalls
 import com.epam.drill.common.classloading.ClassScanner
@@ -38,11 +38,11 @@ const val DRILL_TEST_ID_HEADER = "drill-test-id"
  * Service for managing the plugin on the agent side
  */
 @Suppress("unused")
-class Plugin(
+class Test2Code(
     id: String,
     agentContext: AgentContext,
     private val sender: Sender
-) : AgentPart<AgentAction>(id, agentContext, sender), Instrumenter, ClassScanner {
+) : AgentModule<AgentAction>(id, agentContext, sender), Instrumenter, ClassScanner {
 
     internal val logger = KotlinLogging.logger {}
 

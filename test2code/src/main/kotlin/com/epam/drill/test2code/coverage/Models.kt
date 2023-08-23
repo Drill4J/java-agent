@@ -13,13 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.epam.drill.plugins.test2code.coverage
+package com.epam.drill.test2code.coverage
 
 import com.epam.drill.jacoco.AgentProbes
 import com.epam.drill.plugins.test2code.common.api.DEFAULT_TEST_NAME
 import com.epam.drill.plugins.test2code.common.api.ExecClassData
 import com.epam.drill.plugins.test2code.common.api.toBitSet
-import com.epam.drill.plugins.test2code.id
+import com.epam.drill.test2code.id
 import java.util.concurrent.ConcurrentHashMap
 
 typealias ClassId = Long

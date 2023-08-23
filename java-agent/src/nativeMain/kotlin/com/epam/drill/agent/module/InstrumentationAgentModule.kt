@@ -13,18 +13,22 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.epam.drill.agent.plugin
+package com.epam.drill.agent.module
 
-import kotlinx.cinterop.*
+import kotlinx.cinterop.COpaquePointer
+import kotlinx.cinterop.addressOf
+import kotlinx.cinterop.convert
+import kotlinx.cinterop.memScoped
+import kotlinx.cinterop.usePinned
+import com.epam.drill.common.agent.Instrumenter
 import com.epam.drill.jvmapi.gen.*
-import com.epam.drill.plugin.api.processing.*
 
-class InstrumentationNativePlugin(
+class InstrumentationAgentModule(
     pluginId: String,
     pluginApiClass: jclass,
     userPlugin: jobject,
     private val qs: jmethodID? = GetMethodID(pluginApiClass, "instrument", "(Ljava/lang/String;[B)[B")
-) : GenericNativePlugin(pluginId, pluginApiClass, userPlugin), Instrumenter {
+) : GenericAgentModule(pluginId, pluginApiClass, userPlugin), Instrumenter {
 
     override fun instrument(className: String, initialBytes: ByteArray) = memScoped<ByteArray?> {
         val classDataLen = initialBytes.size

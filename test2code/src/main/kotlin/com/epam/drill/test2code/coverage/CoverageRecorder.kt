@@ -13,9 +13,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.epam.drill.plugins.test2code.coverage
+package com.epam.drill.test2code.coverage
 
-import com.epam.drill.jacoco.AgentProbes
 import mu.KotlinLogging
 
 interface CoverageRecorder {
@@ -27,7 +26,7 @@ interface CoverageRecorder {
 class ThreadCoverageRecorder(
     private val execDataPool: DataPool<SessionTestKey, ExecData>,
     private val requestThreadLocal: ThreadLocal<ExecData?>,
-    private val execDataCreator: (SessionId, TestId, TestName) -> ExecData = { _,_,_ -> ExecData() },
+    private val execDataCreator: (SessionId, TestId, TestName) -> ExecData = { _, _, _ -> ExecData() },
 ) : CoverageRecorder {
     private val logger = KotlinLogging.logger {}
 

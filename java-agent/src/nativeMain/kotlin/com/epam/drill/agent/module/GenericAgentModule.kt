@@ -13,28 +13,28 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.epam.drill.agent.plugin
+package com.epam.drill.agent.module
 
 import com.epam.drill.*
 import com.epam.drill.agent.*
 import com.epam.drill.common.*
+import com.epam.drill.common.agent.*
 import com.epam.drill.jvmapi.*
 import com.epam.drill.jvmapi.gen.*
-import com.epam.drill.plugin.api.processing.*
 import kotlinx.cinterop.*
 import mu.KotlinLogging
 
-open class GenericNativePlugin(
+open class GenericAgentModule(
     pluginId: String,
     val pluginApiClass: jclass,
     val userPlugin: jobject
-) : AgentPart<Any>(
+) : AgentModule<Any>(
     pluginId,
     NopAgentContext,
     NopPluginSender
 ) {
 
-    private val logger = KotlinLogging.logger(GenericNativePlugin::class.qualifiedName!!)
+    private val logger = KotlinLogging.logger(GenericAgentModule::class.qualifiedName!!)
     private val pluginApiClassName = pluginApiClass.signature()
         .removePrefix("L").removeSuffix(";").replace("<L", "<").replace(";>", ">").replace("/", ".")
 
@@ -42,7 +42,7 @@ open class GenericNativePlugin(
         logger.debug { "doRawAction: $rawAction" }
         return CallObjectMethodA(
             userPlugin,
-            GetMethodID(pluginApiClass, AgentPart<*>::doRawAction.name, "(Ljava/lang/String;)Ljava/lang/Object;"),
+            GetMethodID(pluginApiClass, AgentModule<*>::doRawAction.name, "(Ljava/lang/String;)Ljava/lang/Object;"),
             nativeHeap.allocArray(1L) {
                 l = NewStringUTF(rawAction)
             }
@@ -52,13 +52,13 @@ open class GenericNativePlugin(
     override fun on() {
         logger.debug { "on(), pluginApiClass=$pluginApiClassName" }
         CallVoidMethodA(
-            userPlugin, GetMethodID(pluginApiClass, AgentPart<*>::on.name, "()V"), null
+            userPlugin, GetMethodID(pluginApiClass, AgentModule<*>::on.name, "()V"), null
         )
     }
 
     override fun load() {
         CallVoidMethodA(
-            userPlugin, GetMethodID(pluginApiClass, AgentPart<*>::load.name, "()V"), null
+            userPlugin, GetMethodID(pluginApiClass, AgentModule<*>::load.name, "()V"), null
         )
 
     }
@@ -66,20 +66,20 @@ open class GenericNativePlugin(
     override fun onConnect() {
         CallVoidMethodA(
             userPlugin,
-            GetMethodID(pluginApiClass, GenericNativePlugin::onConnect.name, "()V"),
+            GetMethodID(pluginApiClass, GenericAgentModule::onConnect.name, "()V"),
             null
         )
     }
 
     fun processServerRequest() {
-        val methodID = GetMethodID(pluginApiClass, GenericNativePlugin::processServerRequest.name, "()V")
+        val methodID = GetMethodID(pluginApiClass, GenericAgentModule::processServerRequest.name, "()V")
         methodID?.let {
             CallVoidMethodA(userPlugin, it, null)
         }
     }
 
     fun processServerResponse() {
-        val methodID = GetMethodID(pluginApiClass, GenericNativePlugin::processServerResponse.name, "()V")
+        val methodID = GetMethodID(pluginApiClass, GenericAgentModule::processServerResponse.name, "()V")
         methodID?.let {
             CallVoidMethodA(userPlugin, it, null)
         }

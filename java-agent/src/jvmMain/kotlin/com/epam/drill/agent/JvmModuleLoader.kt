@@ -16,10 +16,10 @@
 package com.epam.drill.agent
 
 import com.epam.drill.agent.request.RequestHolder
-import com.epam.drill.plugin.api.processing.AgentContext
-import com.epam.drill.plugin.api.processing.AgentPart
-import com.epam.drill.plugin.api.processing.Sender
-import com.epam.drill.plugins.test2code.Plugin
+import com.epam.drill.common.agent.AgentModule
+import com.epam.drill.common.agent.AgentContext
+import com.epam.drill.common.agent.Sender
+import com.epam.drill.test2code.Test2Code
 
 actual object JvmModuleLoader {
 
@@ -30,8 +30,8 @@ actual object JvmModuleLoader {
     }
 
     @Suppress("UNCHECKED_CAST")
-    private fun getJvmModuleClass(id: String): Class<AgentPart<*>>? = when(id) {
-        "test2code" -> Plugin::class.java as Class<AgentPart<*>>
+    private fun getJvmModuleClass(id: String): Class<AgentModule<*>>? = when(id) {
+        "test2code" -> Test2Code::class.java as Class<AgentModule<*>>
         else -> null
     }
 
