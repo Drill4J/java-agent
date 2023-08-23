@@ -15,33 +15,32 @@
  */
 package com.epam.drill.plugins.test2code.coverage
 
+import com.epam.drill.plugins.test2code.common.api.*
+import com.github.luben.zstd.*
 import kotlinx.coroutines.*
+import kotlinx.serialization.protobuf.*
 import mu.KotlinLogging
+import java.util.*
 import java.util.concurrent.Executors
 import kotlin.coroutines.CoroutineContext
 
 interface CoverageSender {
-    fun setSendingHandler(handler: SendingHandler)
     fun startSendingCoverage()
     fun stopSendingCoverage()
 }
 
 class IntervalCoverageSender(
     intervalMs: Long,
+    private val coverageTransport: CoverageTransport,
+    private val inMemoryBuffer: InMemoryBuffer = InMemoryBuffer(),
     collectProbes: () -> Sequence<ExecDatum> = { emptySequence() }
 ) : CoverageSender {
     private val logger = KotlinLogging.logger {}
-    private var sendingHandler: SendingHandler = {}
-
     private val job = ProbeWorker.launch(start = CoroutineStart.LAZY) {
         while (isActive) {
             delay(intervalMs)
-            sendingHandler(collectProbes())
+            sendProbes(collectProbes())
         }
-    }
-
-    override fun setSendingHandler(handler: SendingHandler) {
-        sendingHandler = handler
     }
 
     override fun startSendingCoverage() {
@@ -52,6 +51,29 @@ class IntervalCoverageSender(
     override fun stopSendingCoverage() {
         job.cancel()
         logger.debug { "Coverage sending job is stopped." }
+    }
+
+    /**
+     * Create a function which sends chunks of test coverage to the admin part of the plugin
+     * @return the function of sending test coverage
+     * @features Coverage data sending
+     */
+    private fun sendProbes(data: Sequence<ExecDatum>) {
+        logger.info { "Send probes" }
+        if (!coverageTransport.isAvailable().get()) {
+            inMemoryBuffer.collect(data)
+        } else {
+            data.plus(inMemoryBuffer.flush())
+                .map(ExecDatum::toExecClassData)
+                .chunked(0xffff)
+                .map { chunk -> CoverDataPart(data = chunk) }
+                .forEach { message ->
+                    logger.debug { "Send compressed message $message" }
+                    val encoded = ProtoBuf.encodeToByteArray(CoverMessage.serializer(), message)
+                    val compressed = Zstd.compress(encoded)
+                    coverageTransport.send(Base64.getEncoder().encodeToString(compressed))
+                }
+        }
     }
 }
 

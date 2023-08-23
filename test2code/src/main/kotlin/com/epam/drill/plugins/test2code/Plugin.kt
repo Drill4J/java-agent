@@ -26,14 +26,10 @@ import com.epam.drill.plugins.test2code.classloading.ClassLoadersScanner
 import com.epam.drill.plugins.test2code.classparsing.parseAstClass
 import com.epam.drill.plugins.test2code.common.api.*
 import com.epam.drill.plugins.test2code.coverage.*
-import com.epam.drill.plugins.test2code.coverage.DrillCoverageManager
-import com.epam.drill.plugins.test2code.coverage.toExecClassData
-import com.github.luben.zstd.Zstd
 import kotlinx.serialization.json.Json
-import kotlinx.serialization.protobuf.ProtoBuf
 import mu.KotlinLogging
-import java.util.*
 import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.atomic.*
 
 const val DRIlL_TEST_NAME_HEADER = "drill-test-name"
 const val DRILL_TEST_ID_HEADER = "drill-test-id"
@@ -45,14 +41,33 @@ const val DRILL_TEST_ID_HEADER = "drill-test-id"
 class Plugin(
     id: String,
     agentContext: AgentContext,
-    sender: Sender
+    private val sender: Sender
 ) : AgentPart<AgentAction>(id, agentContext, sender), Instrumenter, ClassScanner {
 
     internal val logger = KotlinLogging.logger {}
 
     internal val json = Json { encodeDefaults = true }
 
-    private val coverageManager = DrillCoverageManager.apply { setSendingHandler(::sendProbes) }
+    private val coverageManager = CoverageManager(coverageTransport = object : CoverageTransport {
+
+        private var isTransportAvailable = AtomicBoolean(false)
+
+        override fun isAvailable(): AtomicBoolean {
+            return isTransportAvailable
+        }
+
+        override fun send(message: String) {
+            sender.send(id, message)
+        }
+
+        override fun onAvailable(cb: () -> Unit) {
+//            sender.onAvailable { isTransportAvailable.set(true) }
+        }
+
+        override fun onUnavailable(cb: () -> Unit) {
+//            sender.onUnavailable { isTransportAvailable.set(false) }
+        }
+    })
 
     private val instrumenter = DrillInstrumenter(coverageManager, coverageManager)
 
@@ -142,22 +157,6 @@ class Plugin(
         logger.info { "Scanned $classCount classes" }
     }
 
-    /**
-     * Create a function which sends chunks of test coverage to the admin part of the plugin
-     * @return the function of sending test coverage
-     * @features Coverage data sending
-     */
-    private fun sendProbes(data: Sequence<ExecDatum>) {
-        data.map(ExecDatum::toExecClassData)
-            .chunked(0xffff)
-            .map { chunk -> CoverDataPart(data = chunk) }
-            .forEach { message ->
-                logger.debug { "Send compressed message $message" }
-                val encoded = ProtoBuf.encodeToByteArray(CoverMessage.serializer(), message)
-                val compressed = Zstd.compress(encoded)
-                send(Base64.getEncoder().encodeToString(compressed))
-            }
-    }
 
     private fun sendMessage(message: CoverMessage) {
         val messageStr = json.encodeToString(CoverMessage.serializer(), message)
