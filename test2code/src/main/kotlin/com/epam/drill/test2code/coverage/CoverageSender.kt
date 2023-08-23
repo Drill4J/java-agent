@@ -59,8 +59,7 @@ class IntervalCoverageSender(
      * @features Coverage data sending
      */
     private fun sendProbes(data: Sequence<ExecDatum>) {
-        logger.info { "Send probes" }
-        if (!coverageTransport.isAvailable().get()) {
+        if (!coverageTransport.isAvailable()) {
             inMemoryBuffer.collect(data)
         } else {
             data.plus(inMemoryBuffer.flush())

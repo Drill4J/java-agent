@@ -16,16 +16,14 @@
 package com.epam.drill.test2code
 
 import com.epam.drill.common.agent.*
-import com.epam.drill.common.classloading.ClassScanner
-import com.epam.drill.common.classloading.EntitySource
+import com.epam.drill.common.classloading.*
 import com.epam.drill.plugins.test2code.common.api.*
 import com.epam.drill.test2code.classloading.*
 import com.epam.drill.test2code.classparsing.*
 import com.epam.drill.test2code.coverage.*
-import kotlinx.serialization.json.Json
-import mu.KotlinLogging
-import java.util.concurrent.ConcurrentHashMap
-import java.util.concurrent.atomic.*
+import kotlinx.serialization.json.*
+import mu.*
+import java.util.concurrent.*
 
 const val DRIlL_TEST_NAME_HEADER = "drill-test-name"
 const val DRILL_TEST_ID_HEADER = "drill-test-id"
@@ -37,33 +35,14 @@ const val DRILL_TEST_ID_HEADER = "drill-test-id"
 class Test2Code(
     id: String,
     agentContext: AgentContext,
-    private val sender: Sender
+    sender: Sender
 ) : AgentModule<AgentAction>(id, agentContext, sender), Instrumenter, ClassScanner {
 
     internal val logger = KotlinLogging.logger {}
 
     internal val json = Json { encodeDefaults = true }
 
-    private val coverageManager = CoverageManager(coverageTransport = object : CoverageTransport {
-
-        private var isTransportAvailable = AtomicBoolean(false)
-
-        override fun isAvailable(): AtomicBoolean {
-            return isTransportAvailable
-        }
-
-        override fun send(message: String) {
-            sender.send(id, message)
-        }
-
-        override fun onAvailable(cb: () -> Unit) {
-//            sender.onAvailable { isTransportAvailable.set(true) }
-        }
-
-        override fun onUnavailable(cb: () -> Unit) {
-//            sender.onUnavailable { isTransportAvailable.set(false) }
-        }
-    })
+    private val coverageManager = CoverageManager(coverageTransport = CoverageTransportImpl(id, sender))
 
     private val instrumenter = DrillInstrumenter(coverageManager, coverageManager)
 

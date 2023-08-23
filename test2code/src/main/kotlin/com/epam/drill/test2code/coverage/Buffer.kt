@@ -29,8 +29,8 @@ class InMemoryBuffer(
     }
 
     override fun flush(): Sequence<ExecDatum> {
-        return buffer.also {
-            buffer = emptySequence()
-        }
+        val copyBuffer = buffer
+        buffer = emptySequence()
+        return copyBuffer
     }
 }
