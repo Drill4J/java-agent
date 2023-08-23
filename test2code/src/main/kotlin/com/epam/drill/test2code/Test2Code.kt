@@ -15,17 +15,13 @@
  */
 package com.epam.drill.test2code
 
-import com.epam.drill.agent.NativeCalls
+import com.epam.drill.common.agent.*
 import com.epam.drill.common.classloading.ClassScanner
 import com.epam.drill.common.classloading.EntitySource
-import com.epam.drill.plugin.api.processing.AgentContext
-import com.epam.drill.plugin.api.processing.AgentPart
-import com.epam.drill.plugin.api.processing.Instrumenter
-import com.epam.drill.plugin.api.processing.Sender
-import com.epam.drill.plugins.test2code.classloading.ClassLoadersScanner
-import com.epam.drill.plugins.test2code.classparsing.parseAstClass
 import com.epam.drill.plugins.test2code.common.api.*
-import com.epam.drill.plugins.test2code.coverage.*
+import com.epam.drill.test2code.classloading.*
+import com.epam.drill.test2code.classparsing.*
+import com.epam.drill.test2code.coverage.*
 import kotlinx.serialization.json.Json
 import mu.KotlinLogging
 import java.util.concurrent.ConcurrentHashMap
