@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.epam.drill.plugins.test2code.classparsing
+package com.epam.drill.test2code.classparsing
 
 import com.epam.drill.jacoco.DrillClassProbesAdapter
 import com.epam.drill.plugins.test2code.common.api.AstEntity

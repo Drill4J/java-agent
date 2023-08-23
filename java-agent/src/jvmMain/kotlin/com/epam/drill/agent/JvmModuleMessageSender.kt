@@ -15,7 +15,7 @@
  */
 package com.epam.drill.agent
 
-import com.epam.drill.plugin.api.processing.Sender
+import com.epam.drill.common.agent.Sender
 
 object JvmModuleMessageSender : Sender {
     external override fun send(pluginId: String, message: String)

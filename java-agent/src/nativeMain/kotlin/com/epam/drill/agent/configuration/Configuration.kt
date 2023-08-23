@@ -22,26 +22,21 @@ import kotlinx.serialization.modules.serializersModuleOf
 import kotlinx.serialization.serializer
 import platform.posix.getenv
 import mu.KotlinLogging
-import com.epam.drill.adminAddress
-import com.epam.drill.agentConfig
-import com.epam.drill.agentConfigUpdater
-import com.epam.drill.drillInstallationDir
 import com.epam.drill.agent.SYSTEM_JAVA_APP_JAR
 import com.epam.drill.agent.agentVersion
+import com.epam.drill.agent.setPackagesPrefixes
 import com.epam.drill.agent.configuration.serialization.SimpleMapDecoder
-import com.epam.drill.common.AgentConfig
-import com.epam.drill.common.AgentConfigUpdater
-import com.epam.drill.common.AgentParameter
-import com.epam.drill.common.AgentType
-import com.epam.drill.common.PackagesPrefixes
-import com.epam.drill.common.ws.URL
-import com.epam.drill.core.setPackagesPrefixes
+import com.epam.drill.common.agent.configuration.AgentConfig
+import com.epam.drill.common.agent.configuration.AgentParameter
+import com.epam.drill.common.agent.configuration.AgentType
+import com.epam.drill.common.agent.configuration.PackagesPrefixes
 import com.epam.drill.jvmapi.callObjectIntMethod
 import com.epam.drill.jvmapi.callObjectStringMethod
 import com.epam.drill.jvmapi.callObjectVoidMethod
 import com.epam.drill.jvmapi.callObjectVoidMethodWithInt
 import com.epam.drill.jvmapi.callObjectVoidMethodWithString
 import com.epam.drill.logging.LoggingConfiguration
+import com.epam.drill.transport.URL
 
 private val logger = KotlinLogging.logger("com.epam.drill.agent.configuration.Configuration")
 
@@ -116,6 +111,18 @@ fun updateJvmLoggingConfiguration() {
 
 fun updatePackagePrefixesConfiguration() {
     setPackagesPrefixes(PackagesPrefixes(agentParameters.packagePrefixes.split(";")))
+}
+
+fun idHeaderPairFromConfig(): Pair<String, String> =
+    when (val groupId = agentConfig.serviceGroupId) {
+        "" -> "drill-agent-id" to agentConfig.id
+        else -> "drill-group-id" to groupId
+    }
+
+fun retrieveAdminUrl(): String {
+    return if (secureAdminAddress != null) {
+        secureAdminAddress?.toUrlString(false).toString()
+    } else adminAddress?.toUrlString(false).toString()
 }
 
 private inline fun <reified T : Any> Map<String, String>.parseAs(): T = run {

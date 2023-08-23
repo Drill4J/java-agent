@@ -17,22 +17,19 @@ package com.epam.drill.agent.jvmti.event
 
 import kotlinx.cinterop.CPointer
 import mu.KotlinLogging
-import com.epam.drill.addPluginToStorage
-import com.epam.drill.adminAddress
 import com.epam.drill.agent.Agent
 import com.epam.drill.agent.JvmModuleLoader
+import com.epam.drill.agent.addPluginToStorage
+import com.epam.drill.agent.configuration.adminAddress
 import com.epam.drill.agent.configuration.agentParameters
-import com.epam.drill.agent.configuration.agentStartTimeMark
+import com.epam.drill.agent.configuration.configureHttp
 import com.epam.drill.agent.configuration.defaultJvmLoggingConfiguration
 import com.epam.drill.agent.configuration.updateJvmLoggingConfiguration
 import com.epam.drill.agent.configuration.updatePackagePrefixesConfiguration
 import com.epam.drill.agent.request.RequestHolder
-import com.epam.drill.common.Family
 import com.epam.drill.agent.globalCallbacks
-import com.epam.drill.agent.plugin.GenericNativePlugin
-import com.epam.drill.agent.plugin.InstrumentationNativePlugin
-import com.epam.drill.core.transport.configureHttp
-import com.epam.drill.core.ws.WsSocket
+import com.epam.drill.agent.module.InstrumentationAgentModule
+import com.epam.drill.agent.ws.WsSocket
 import com.epam.drill.jvmapi.gen.GetObjectClass
 import com.epam.drill.jvmapi.gen.JNIEnvVar
 import com.epam.drill.jvmapi.gen.JVMTI_ENABLE
@@ -52,7 +49,6 @@ fun vmInitEvent(env: CPointer<jvmtiEnvVar>?, jniEnv: CPointer<JNIEnvVar>?, threa
 
     defaultJvmLoggingConfiguration()
     updateJvmLoggingConfiguration()
-    agentStartTimeMark
 
     if (Agent.isHttpHookEnabled) {
         logger.info { "run with http hook" }
@@ -63,21 +59,18 @@ fun vmInitEvent(env: CPointer<jvmtiEnvVar>?, jniEnv: CPointer<JNIEnvVar>?, threa
 
     globalCallbacks()
     updatePackagePrefixesConfiguration()
+    loadJvmModule("test2code")
     WsSocket().connect(adminAddress.toString())
-    loadJvmModule("test2code", Family.INSTRUMENTATION)
     RequestHolder.init(isAsync = agentParameters.isAsyncApp)
 }
 
 @Suppress("UNCHECKED_CAST")
-private fun loadJvmModule(id: String, family: Family) {
+private fun loadJvmModule(id: String) {
     try {
         val agentPart = JvmModuleLoader.loadJvmModule(id) as? jobject
         val pluginApiClass = NewGlobalRef(GetObjectClass(agentPart))!!
         val agentPartRef = NewGlobalRef(agentPart)!!
-        val plugin = when (family) {
-            Family.INSTRUMENTATION -> InstrumentationNativePlugin(id, pluginApiClass, agentPartRef)
-            Family.GENERIC -> GenericNativePlugin(id, pluginApiClass, agentPartRef)
-        }
+        val plugin = InstrumentationAgentModule(id, pluginApiClass, agentPartRef)
         addPluginToStorage(plugin)
         plugin.load()
     } catch (ex: Exception) {

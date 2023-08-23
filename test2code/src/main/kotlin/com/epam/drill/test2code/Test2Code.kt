@@ -13,27 +13,26 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.epam.drill.plugins.test2code
+package com.epam.drill.test2code
 
-import com.epam.drill.agent.NativeCalls
-import com.epam.drill.common.classloading.ClassScanner
-import com.epam.drill.common.classloading.EntitySource
-import com.epam.drill.plugin.api.processing.AgentContext
-import com.epam.drill.plugin.api.processing.AgentPart
-import com.epam.drill.plugin.api.processing.Instrumenter
-import com.epam.drill.plugin.api.processing.Sender
-import com.epam.drill.plugins.test2code.classloading.ClassLoadersScanner
-import com.epam.drill.plugins.test2code.classparsing.parseAstClass
-import com.epam.drill.plugins.test2code.common.api.*
-import com.epam.drill.plugins.test2code.coverage.*
-import com.epam.drill.plugins.test2code.coverage.DrillCoverageManager
-import com.epam.drill.plugins.test2code.coverage.toExecClassData
-import com.github.luben.zstd.Zstd
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.protobuf.ProtoBuf
-import mu.KotlinLogging
-import java.util.*
+import java.util.Base64
 import java.util.concurrent.ConcurrentHashMap
+import com.github.luben.zstd.Zstd
+import mu.KotlinLogging
+import com.epam.drill.common.classloading.ClassScanner
+import com.epam.drill.common.classloading.EntitySource
+import com.epam.drill.common.agent.AgentModule
+import com.epam.drill.common.agent.AgentContext
+import com.epam.drill.common.agent.Instrumenter
+import com.epam.drill.common.agent.Sender
+import com.epam.drill.test2code.classloading.ClassLoadersScanner
+import com.epam.drill.test2code.classparsing.parseAstClass
+import com.epam.drill.plugins.test2code.common.api.*
+import com.epam.drill.test2code.coverage.*
+import com.epam.drill.test2code.coverage.DrillCoverageManager
+import com.epam.drill.test2code.coverage.toExecClassData
 
 const val DRILL_TEST_ID_HEADER = "drill-test-id"
 
@@ -41,11 +40,11 @@ const val DRILL_TEST_ID_HEADER = "drill-test-id"
  * Service for managing the plugin on the agent side
  */
 @Suppress("unused")
-class Plugin(
+class Test2Code(
     id: String,
     agentContext: AgentContext,
     sender: Sender
-) : AgentPart<AgentAction>(id, agentContext, sender), Instrumenter, ClassScanner {
+) : AgentModule<AgentAction>(id, agentContext, sender), Instrumenter, ClassScanner {
 
     internal val logger = KotlinLogging.logger {}
 
