@@ -23,7 +23,7 @@ import java.util.concurrent.ConcurrentHashMap
  * @param name a full class name
  * @param probeCount a number of probes in the class
  */
-class ProbesDescriptor(
+data class ProbesDescriptor(
     val id: ClassId,
     val name: String,
     val probeCount: Int,
@@ -36,12 +36,15 @@ interface ProbesDescriptorProvider: Iterable<ProbesDescriptor> {
     fun addDescriptor(descriptor: ProbesDescriptor)
 }
 
-class ConcurrentProbesDescriptorProvider: ProbesDescriptorProvider {
+class ConcurrentProbesDescriptorProvider(
+    val addDescriptorCallback: (descriptor: ProbesDescriptor) -> Unit = {}
+): ProbesDescriptorProvider {
 
     private val probesDescriptors = ConcurrentHashMap<ClassId, ProbesDescriptor>()
 
     override fun addDescriptor(descriptor: ProbesDescriptor) {
         probesDescriptors[descriptor.id] = descriptor
+        addDescriptorCallback(descriptor)
     }
 
     override fun iterator(): Iterator<ProbesDescriptor> = probesDescriptors.values.iterator()
