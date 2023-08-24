@@ -32,7 +32,6 @@ import com.epam.drill.test2code.classparsing.parseAstClass
 import com.epam.drill.plugins.test2code.common.api.*
 import com.epam.drill.test2code.coverage.*
 import com.epam.drill.test2code.coverage.DrillCoverageManager
-import com.epam.drill.test2code.coverage.toExecClassData
 
 const val DRILL_TEST_ID_HEADER = "drill-test-id"
 
@@ -146,7 +145,16 @@ class Test2Code(
      * @features Coverage data sending
      */
     private fun sendProbes(data: Sequence<ExecDatum>) {
-        data.map(ExecDatum::toExecClassData)
+        data
+            .map {
+                ExecClassData(
+                    id = it.id,
+                    className = it.name,
+                    probes = it.probes.values.toBitSet(),
+                    sessionId = it.sessionId,
+                    testId = it.testId,
+                )
+            }
             .chunked(0xffff)
             .map { chunk -> CoverDataPart(data = chunk) }
             .forEach { message ->

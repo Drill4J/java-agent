@@ -40,10 +40,3 @@ data class ExecDatum(
     val sessionId: String = GLOBAL_SESSION_ID,
     val testId: String = DEFAULT_TEST_ID,
 )
-
-internal fun ExecDatum.toExecClassData() = ExecClassData(
-    id = id,
-    className = name,
-    probes = probes.values.toBitSet(),
-    testId = testId,
-)
