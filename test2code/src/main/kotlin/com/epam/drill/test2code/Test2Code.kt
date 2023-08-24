@@ -95,8 +95,9 @@ class Test2Code(
      */
     @Suppress("UNUSED")
     fun processServerRequest() {
-        val sessionId = context() ?: GLOBAL_SESSION_ID
-        val testId = context[DRILL_TEST_ID_HEADER] ?: DEFAULT_TEST_ID
+        val sessionId = context()
+        val testId = context[DRILL_TEST_ID_HEADER]
+        if (sessionId == null || testId == null) return
         coverageManager.startRecording(sessionId, testId)
     }
 
@@ -106,8 +107,9 @@ class Test2Code(
      */
     @Suppress("UNUSED")
     fun processServerResponse() {
-        val sessionId = context() ?: GLOBAL_SESSION_ID
-        val testId = context[DRILL_TEST_ID_HEADER] ?: DEFAULT_TEST_ID
+        val sessionId = context()
+        val testId = context[DRILL_TEST_ID_HEADER]
+        if (sessionId == null || testId == null) return
         coverageManager.stopRecording(sessionId, testId)
     }
 
