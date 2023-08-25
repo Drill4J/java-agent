@@ -32,7 +32,7 @@ interface CoverageSender {
 class IntervalCoverageSender(
     intervalMs: Long,
     private val coverageTransport: CoverageTransport,
-    private val inMemoryBuffer: InMemoryBuffer<ExecDatum> = InMemoryBuffer(),
+    private val inMemoryBuffer: InMemoryBuffer<String> = InMemoryBuffer(),
     collectProbes: () -> Sequence<ExecDatum> = { emptySequence() }
 ) : CoverageSender {
     private val logger = KotlinLogging.logger {}
@@ -59,19 +59,22 @@ class IntervalCoverageSender(
      * @features Coverage data sending
      */
     private fun sendProbes(data: Sequence<ExecDatum>) {
-        if (!coverageTransport.isAvailable().get()) {
-            inMemoryBuffer.add(data)
+        val compressedStrings = data
+            .map(ExecDatum::toExecClassData)
+            .chunked(0xffff)
+            .map { chunk -> CoverDataPart(data = chunk) }
+            .map { message ->
+                logger.debug { "Compress message $message" }
+                val encoded = ProtoBuf.encodeToByteArray(CoverMessage.serializer(), message)
+                val compressed = Zstd.compress(encoded)
+                Base64.getEncoder().encodeToString(compressed)
+            }
+        if (coverageTransport.isAvailable().get()) {
+            (compressedStrings + inMemoryBuffer.flush()).forEach {
+                coverageTransport.send(it)
+            }
         } else {
-            data.plus(inMemoryBuffer.flush())
-                .map(ExecDatum::toExecClassData)
-                .chunked(0xffff)
-                .map { chunk -> CoverDataPart(data = chunk) }
-                .forEach { message ->
-                    logger.debug { "Send compressed message $message" }
-                    val encoded = ProtoBuf.encodeToByteArray(CoverMessage.serializer(), message)
-                    val compressed = Zstd.compress(encoded)
-                    coverageTransport.send(Base64.getEncoder().encodeToString(compressed))
-                }
+            inMemoryBuffer.add(compressedStrings)
         }
     }
 }

@@ -29,6 +29,7 @@ class InMemoryBuffer<T>(
     }
 
     override fun flush(): Sequence<T> {
+        //todo potential concurrency issue
         val copyBuffer = buffer
         buffer = emptySequence()
         return copyBuffer
