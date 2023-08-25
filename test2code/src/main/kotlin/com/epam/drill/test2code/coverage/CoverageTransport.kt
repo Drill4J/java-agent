@@ -16,22 +16,22 @@
 package com.epam.drill.test2code.coverage
 
 import com.epam.drill.common.agent.*
+import java.util.concurrent.atomic.*
 
 interface CoverageTransport {
     fun send(message: String)
 
-    fun isAvailable(): Boolean
+    fun isAvailable(): AtomicBoolean
 }
 
-class CoverageTransportImpl(
+open class CoverageTransportImpl(
     private val id: String,
     private val sender: Sender
 ) : CoverageTransport {
+    private var isTransportAvailable = AtomicBoolean(false)
 
-    override fun isAvailable(): Boolean {
-//        return sender.isAvailable()
-//        TODO call sender.isAvailable()
-        return true
+    override fun isAvailable(): AtomicBoolean {
+        return isTransportAvailable
     }
 
     override fun send(message: String) {

@@ -4,13 +4,12 @@ import com.epam.drill.common.agent.*
 import com.epam.drill.jacoco.*
 import com.nhaarman.mockitokotlin2.*
 import kotlinx.coroutines.*
-import org.junit.Ignore
 import org.junit.jupiter.api.*
 import org.junit.jupiter.api.Assertions.*
 import java.util.*
+import java.util.concurrent.atomic.*
 import kotlin.random.Random
 
-@Ignore
 class BufferTest {
 
     // General services and vars at test execution
@@ -25,7 +24,7 @@ class BufferTest {
         id = UUID.randomUUID().toString()
         sender = mock()
         inMemoryBuffer = InMemoryBuffer()
-        coverageTransport = CoverageTransportImpl(id, sender)
+        coverageTransport = spy(CoverageTransportImpl(id, sender))
         coverageSender = IntervalCoverageSender(2500, coverageTransport, inMemoryBuffer) {
             sequenceOf(
                 ExecDatum(
@@ -51,27 +50,29 @@ class BufferTest {
 
     @Test
     fun `buffer turn on sending onAvailable`() = runBlocking {
-//        whenever(sender.isAvailable()).thenReturn(false)
+        whenever(coverageTransport.isAvailable()).thenReturn(AtomicBoolean(false))
         coverageSender.startSendingCoverage()
 
         //fill 3 times (intervalMs = 2500, 2500*3 = 7500, so we have to set 8000)
         delay(8000)
-//        whenever(sender.isAvailable()).thenReturn(true)
+        whenever(coverageTransport.isAvailable()).thenReturn(AtomicBoolean(true))
+
         delay(2600)
         verify(sender, times(1)).send(eq(id), any())
     }
 
 
     @Test
-    fun `buffer toggle sending`() = runBlocking {
-//        whenever(sender.isAvailable()).thenReturn(true)
+    fun `turn on buffer data sending`() = runBlocking {
+        whenever(coverageTransport.isAvailable()).thenReturn(AtomicBoolean(true))
+
         coverageSender.startSendingCoverage()
 
         //fill 3 times (intervalMs = 2500, 2500*3 = 7500, so we have to set 8000)
         delay(8000)
         verify(sender, times(3)).send(eq(id), any())
 
-//        whenever(sender.isAvailable()).thenReturn(false)
+        whenever(coverageTransport.isAvailable()).thenReturn(AtomicBoolean(false))
         delay(2500)
         val flush = inMemoryBuffer.flush().toList()
         //assert on none-empty buffer when coverageTransport.isAvailable() set to `false`
