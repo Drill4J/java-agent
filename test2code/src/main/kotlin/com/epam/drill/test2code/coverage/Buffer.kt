@@ -16,19 +16,19 @@
 package com.epam.drill.test2code.coverage
 
 
-interface Buffer {
-    fun collect(data: Sequence<ExecDatum>)
-    fun flush(): Sequence<ExecDatum>
+interface Buffer<T> {
+    fun add(data: Sequence<T>)
+    fun flush(): Sequence<T>
 }
 
-class InMemoryBuffer(
-    private var buffer: Sequence<ExecDatum> = sequenceOf()
-) : Buffer {
-    override fun collect(data: Sequence<ExecDatum>) {
+class InMemoryBuffer<T>(
+    private var buffer: Sequence<T> = sequenceOf()
+) : Buffer<T> {
+    override fun add(data: Sequence<T>) {
         buffer = buffer.plus(data)
     }
 
-    override fun flush(): Sequence<ExecDatum> {
+    override fun flush(): Sequence<T> {
         val copyBuffer = buffer
         buffer = emptySequence()
         return copyBuffer

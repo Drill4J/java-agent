@@ -19,10 +19,10 @@ import com.epam.drill.plugins.test2code.common.api.*
 import com.github.luben.zstd.*
 import kotlinx.coroutines.*
 import kotlinx.serialization.protobuf.*
-import mu.KotlinLogging
+import mu.*
 import java.util.*
-import java.util.concurrent.Executors
-import kotlin.coroutines.CoroutineContext
+import java.util.concurrent.*
+import kotlin.coroutines.*
 
 interface CoverageSender {
     fun startSendingCoverage()
@@ -32,7 +32,7 @@ interface CoverageSender {
 class IntervalCoverageSender(
     intervalMs: Long,
     private val coverageTransport: CoverageTransport,
-    private val inMemoryBuffer: InMemoryBuffer = InMemoryBuffer(),
+    private val inMemoryBuffer: InMemoryBuffer<ExecDatum> = InMemoryBuffer(),
     collectProbes: () -> Sequence<ExecDatum> = { emptySequence() }
 ) : CoverageSender {
     private val logger = KotlinLogging.logger {}
@@ -60,7 +60,7 @@ class IntervalCoverageSender(
      */
     private fun sendProbes(data: Sequence<ExecDatum>) {
         if (!coverageTransport.isAvailable().get()) {
-            inMemoryBuffer.collect(data)
+            inMemoryBuffer.add(data)
         } else {
             data.plus(inMemoryBuffer.flush())
                 .map(ExecDatum::toExecClassData)

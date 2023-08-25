@@ -22,9 +22,13 @@ interface CoverageTransport {
     fun send(message: String)
 
     fun isAvailable(): AtomicBoolean
+
+    fun onAvailable()
+
+    fun onUnavailable()
 }
 
-open class CoverageTransportImpl(
+open class WebsocketCoverageTransport(
     private val id: String,
     private val sender: Sender
 ) : CoverageTransport {
@@ -32,6 +36,14 @@ open class CoverageTransportImpl(
 
     override fun isAvailable(): AtomicBoolean {
         return isTransportAvailable
+    }
+
+    override fun onAvailable() {
+        isTransportAvailable.set(true)
+    }
+
+    override fun onUnavailable() {
+        isTransportAvailable.set(false)
     }
 
     override fun send(message: String) {

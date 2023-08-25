@@ -7,24 +7,21 @@ import kotlinx.coroutines.*
 import org.junit.jupiter.api.*
 import org.junit.jupiter.api.Assertions.*
 import java.util.*
-import java.util.concurrent.atomic.*
 import kotlin.random.Random
 
-class BufferTest {
+class CoverageRetentionTest {
 
     // General services and vars at test execution
     private lateinit var sender: Sender
-    private lateinit var id: String
     private lateinit var coverageSender: CoverageSender
-    private lateinit var inMemoryBuffer: InMemoryBuffer
+    private lateinit var inMemoryBuffer: InMemoryBuffer<ExecDatum>
     private lateinit var coverageTransport: CoverageTransport
 
     @BeforeEach
     fun setUp() {
-        id = UUID.randomUUID().toString()
         sender = mock()
         inMemoryBuffer = InMemoryBuffer()
-        coverageTransport = spy(CoverageTransportImpl(id, sender))
+        coverageTransport = spy(WebsocketCoverageTransport( UUID.randomUUID().toString(), sender))
         coverageSender = IntervalCoverageSender(2500, coverageTransport, inMemoryBuffer) {
             sequenceOf(
                 ExecDatum(
@@ -50,29 +47,27 @@ class BufferTest {
 
     @Test
     fun `buffer turn on sending onAvailable`() = runBlocking {
-        whenever(coverageTransport.isAvailable()).thenReturn(AtomicBoolean(false))
+        coverageTransport.onUnavailable()
         coverageSender.startSendingCoverage()
 
         //fill 3 times (intervalMs = 2500, 2500*3 = 7500, so we have to set 8000)
         delay(8000)
-        whenever(coverageTransport.isAvailable()).thenReturn(AtomicBoolean(true))
-
+        coverageTransport.onAvailable()
         delay(2600)
-        verify(sender, times(1)).send(eq(id), any())
+        verify(sender, times(1)).send(any(), any())
     }
 
 
     @Test
     fun `turn on buffer data sending`() = runBlocking {
-        whenever(coverageTransport.isAvailable()).thenReturn(AtomicBoolean(true))
-
+        coverageTransport.onAvailable()
         coverageSender.startSendingCoverage()
 
         //fill 3 times (intervalMs = 2500, 2500*3 = 7500, so we have to set 8000)
         delay(8000)
-        verify(sender, times(3)).send(eq(id), any())
+        verify(sender, times(3)).send(any(), any())
 
-        whenever(coverageTransport.isAvailable()).thenReturn(AtomicBoolean(false))
+        coverageTransport.onUnavailable()
         delay(2500)
         val flush = inMemoryBuffer.flush().toList()
         //assert on none-empty buffer when coverageTransport.isAvailable() set to `false`
