@@ -18,30 +18,30 @@ package com.epam.drill.test2code.coverage
 import mu.KotlinLogging
 
 interface CoverageRecorder {
-    fun startRecording(sessionId: String, testId: String, testName: String)
-    fun stopRecording(sessionId: String, testId: String, testName: String)
+    fun startRecording(sessionId: String, testId: String)
+    fun stopRecording(sessionId: String, testId: String)
     fun collectProbes(): Sequence<ExecDatum>
 }
 
 class ThreadCoverageRecorder(
     private val execDataPool: DataPool<SessionTestKey, ExecData>,
     private val requestThreadLocal: ThreadLocal<ExecData?>,
-    private val execDataCreator: (SessionId, TestId, TestName) -> ExecData = { _, _, _ -> ExecData() },
+    private val execDataCreator: (SessionId, TestId) -> ExecData = { _, _ -> ExecData() },
 ) : CoverageRecorder {
     private val logger = KotlinLogging.logger {}
 
-    override fun startRecording(sessionId: String, testId: String, testName: String) {
-        val data = execDataPool.getOrPut(SessionTestKey(sessionId, testId to testName)) {
-            execDataCreator(sessionId, testId, testName)
+    override fun startRecording(sessionId: String, testId: String) {
+        val data = execDataPool.getOrPut(SessionTestKey(sessionId, testId)) {
+            execDataCreator(sessionId, testId)
         }
         requestThreadLocal.set(data)
         logger.trace { "Test recording started (sessionId = $sessionId, testId=$testId, threadId=${Thread.currentThread().id})." }
     }
 
-    override fun stopRecording(sessionId: String, testId: String, testName: String) {
+    override fun stopRecording(sessionId: String, testId: String) {
         val data = requestThreadLocal.get()
         if (data != null) {
-            execDataPool.release(SessionTestKey(sessionId, testId to testName), data)
+            execDataPool.release(SessionTestKey(sessionId, testId), data)
             requestThreadLocal.remove()
         }
         logger.trace { "Test recording stopped (sessionId = $sessionId, testId=$testId, threadId=${Thread.currentThread().id})." }

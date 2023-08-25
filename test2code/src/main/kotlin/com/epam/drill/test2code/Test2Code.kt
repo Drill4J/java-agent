@@ -15,17 +15,24 @@
  */
 package com.epam.drill.test2code
 
-import com.epam.drill.common.agent.*
-import com.epam.drill.common.classloading.*
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.protobuf.ProtoBuf
+import java.util.Base64
+import java.util.concurrent.ConcurrentHashMap
+import com.github.luben.zstd.Zstd
+import mu.KotlinLogging
+import com.epam.drill.common.classloading.ClassScanner
+import com.epam.drill.common.classloading.EntitySource
+import com.epam.drill.common.agent.AgentModule
+import com.epam.drill.common.agent.AgentContext
+import com.epam.drill.common.agent.Instrumenter
+import com.epam.drill.common.agent.Sender
+import com.epam.drill.test2code.classloading.ClassLoadersScanner
+import com.epam.drill.test2code.classparsing.parseAstClass
 import com.epam.drill.plugins.test2code.common.api.*
-import com.epam.drill.test2code.classloading.*
-import com.epam.drill.test2code.classparsing.*
 import com.epam.drill.test2code.coverage.*
-import kotlinx.serialization.json.*
-import mu.*
-import java.util.concurrent.*
+import com.epam.drill.test2code.coverage.DrillCoverageManager
 
-const val DRIlL_TEST_NAME_HEADER = "drill-test-name"
 const val DRILL_TEST_ID_HEADER = "drill-test-id"
 
 /**
@@ -42,7 +49,7 @@ class Test2Code(
 
     internal val json = Json { encodeDefaults = true }
 
-    private val coverageManager = CoverageManager(coverageTransport = WebsocketCoverageTransport(id, sender))
+    private val coverageManager = DrillCoverageManager.apply { setSendingHandler(::sendProbes) }
 
     private val instrumenter = DrillInstrumenter(coverageManager, coverageManager)
 
@@ -87,10 +94,10 @@ class Test2Code(
      */
     @Suppress("UNUSED")
     fun processServerRequest() {
-        val sessionId = context() ?: GLOBAL_SESSION_ID
-        val testName = context[DRIlL_TEST_NAME_HEADER] ?: DEFAULT_TEST_NAME
-        val testId = context[DRILL_TEST_ID_HEADER] ?: testName.id()
-        coverageManager.startRecording(sessionId, testId, testName)
+        val sessionId = context()
+        val testId = context[DRILL_TEST_ID_HEADER]
+        if (sessionId == null || testId == null) return
+        coverageManager.startRecording(sessionId, testId)
     }
 
     /**
@@ -99,10 +106,10 @@ class Test2Code(
      */
     @Suppress("UNUSED")
     fun processServerResponse() {
-        val sessionId = context() ?: GLOBAL_SESSION_ID
-        val testName = context[DRIlL_TEST_NAME_HEADER] ?: DEFAULT_TEST_NAME
-        val testId = context[DRILL_TEST_ID_HEADER] ?: testName.id()
-        coverageManager.stopRecording(sessionId, testId, testName)
+        val sessionId = context()
+        val testId = context[DRILL_TEST_ID_HEADER]
+        if (sessionId == null || testId == null) return
+        coverageManager.stopRecording(sessionId, testId)
     }
 
     override fun parseAction(
@@ -132,6 +139,31 @@ class Test2Code(
         logger.info { "Scanned $classCount classes" }
     }
 
+    /**
+     * Create a function which sends chunks of test coverage to the admin part of the plugin
+     * @return the function of sending test coverage
+     * @features Coverage data sending
+     */
+    private fun sendProbes(data: Sequence<ExecDatum>) {
+        data
+            .map {
+                ExecClassData(
+                    id = it.id,
+                    className = it.name,
+                    probes = it.probes.values.toBitSet(),
+                    sessionId = it.sessionId,
+                    testId = it.testId,
+                )
+            }
+            .chunked(0xffff)
+            .map { chunk -> CoverDataPart(data = chunk) }
+            .forEach { message ->
+                logger.debug { "Send compressed message $message" }
+                val encoded = ProtoBuf.encodeToByteArray(CoverMessage.serializer(), message)
+                val compressed = Zstd.compress(encoded)
+                send(Base64.getEncoder().encodeToString(compressed))
+            }
+    }
 
     private fun sendMessage(message: CoverMessage) {
         val messageStr = json.encodeToString(CoverMessage.serializer(), message)
