@@ -55,8 +55,9 @@ open class CoverageManager(
             execData
         }
     },
-
-    private val coverageSender: CoverageSender = IntervalCoverageSender(2000L) {
+    coverageTransport: CoverageTransport,
+    private val coverageSender: CoverageSender = IntervalCoverageSender(2000L, coverageTransport) {
+        //TODO return globalExecData from collectProbes()
         coverageRecorder.collectProbes() + globalExecData.values.filter { datum ->
             datum.probes.containCovered()
         }.map { datum ->
@@ -73,8 +74,3 @@ open class CoverageManager(
     ProbesDescriptorProvider by probesDescriptorProvider,
     CoverageRecorder by coverageRecorder,
     CoverageSender by coverageSender
-
-/**
- * The probe provider MUST be a Kotlin singleton object
- */
-internal object DrillCoverageManager : CoverageManager()

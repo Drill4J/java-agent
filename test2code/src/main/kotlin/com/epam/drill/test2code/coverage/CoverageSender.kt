@@ -60,7 +60,15 @@ class IntervalCoverageSender(
      */
     private fun sendProbes(data: Sequence<ExecDatum>) {
         val compressedStrings = data
-            .map(ExecDatum::toExecClassData)
+            .map {
+                ExecClassData(
+                    id = it.id,
+                    className = it.name,
+                    probes = it.probes.values.toBitSet(),
+                    sessionId = it.sessionId,
+                    testId = it.testId,
+                )
+            }
             .chunked(0xffff)
             .map { chunk -> CoverDataPart(data = chunk) }
             .map { message ->
