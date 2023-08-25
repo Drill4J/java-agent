@@ -32,9 +32,7 @@ import com.epam.drill.test2code.classparsing.parseAstClass
 import com.epam.drill.plugins.test2code.common.api.*
 import com.epam.drill.test2code.coverage.*
 import com.epam.drill.test2code.coverage.DrillCoverageManager
-import com.epam.drill.test2code.coverage.toExecClassData
 
-const val DRIlL_TEST_NAME_HEADER = "drill-test-name"
 const val DRILL_TEST_ID_HEADER = "drill-test-id"
 
 /**
@@ -96,10 +94,10 @@ class Test2Code(
      */
     @Suppress("UNUSED")
     fun processServerRequest() {
-        val sessionId = context() ?: GLOBAL_SESSION_ID
-        val testName = context[DRIlL_TEST_NAME_HEADER] ?: DEFAULT_TEST_NAME
-        val testId = context[DRILL_TEST_ID_HEADER] ?: testName.id()
-        coverageManager.startRecording(sessionId, testId, testName)
+        val sessionId = context()
+        val testId = context[DRILL_TEST_ID_HEADER]
+        if (sessionId == null || testId == null) return
+        coverageManager.startRecording(sessionId, testId)
     }
 
     /**
@@ -108,10 +106,10 @@ class Test2Code(
      */
     @Suppress("UNUSED")
     fun processServerResponse() {
-        val sessionId = context() ?: GLOBAL_SESSION_ID
-        val testName = context[DRIlL_TEST_NAME_HEADER] ?: DEFAULT_TEST_NAME
-        val testId = context[DRILL_TEST_ID_HEADER] ?: testName.id()
-        coverageManager.stopRecording(sessionId, testId, testName)
+        val sessionId = context()
+        val testId = context[DRILL_TEST_ID_HEADER]
+        if (sessionId == null || testId == null) return
+        coverageManager.stopRecording(sessionId, testId)
     }
 
     override fun parseAction(
@@ -147,7 +145,16 @@ class Test2Code(
      * @features Coverage data sending
      */
     private fun sendProbes(data: Sequence<ExecDatum>) {
-        data.map(ExecDatum::toExecClassData)
+        data
+            .map {
+                ExecClassData(
+                    id = it.id,
+                    className = it.name,
+                    probes = it.probes.values.toBitSet(),
+                    sessionId = it.sessionId,
+                    testId = it.testId,
+                )
+            }
             .chunked(0xffff)
             .map { chunk -> CoverDataPart(data = chunk) }
             .forEach { message ->
