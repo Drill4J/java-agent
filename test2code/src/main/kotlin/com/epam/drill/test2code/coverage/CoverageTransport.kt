@@ -21,7 +21,7 @@ import java.util.concurrent.atomic.*
 interface CoverageTransport {
     fun send(message: String)
 
-    fun isAvailable(): AtomicBoolean
+    fun isAvailable(): Boolean
 
     fun onAvailable()
 
@@ -34,8 +34,8 @@ open class WebsocketCoverageTransport(
 ) : CoverageTransport {
     private var isTransportAvailable = AtomicBoolean(false)
 
-    override fun isAvailable(): AtomicBoolean {
-        return isTransportAvailable
+    override fun isAvailable(): Boolean {
+        return isTransportAvailable.get()
     }
 
     override fun onAvailable() {

@@ -15,23 +15,35 @@
  */
 package com.epam.drill.test2code.coverage
 
+import mu.*
+import java.util.*
+import java.util.concurrent.*
+
 
 interface Buffer<T> {
-    fun add(data: Sequence<T>)
+    fun addAll(data: Sequence<ByteArray>)
     fun flush(): Sequence<T>
 }
 
-class InMemoryBuffer<T>(
-    private var buffer: Sequence<T> = sequenceOf()
-) : Buffer<T> {
-    override fun add(data: Sequence<T>) {
-        buffer = buffer.plus(data)
+class InMemoryBuffer(
+    private var buffer: Queue<ByteArray> = ConcurrentLinkedQueue(),
+) : Buffer<ByteArray> {
+    private val logger = KotlinLogging.logger {}
+
+    override fun addAll(data: Sequence<ByteArray>) {
+        if (buffer.sumOf { it.size } >= 2000) {
+            logger.info { "Cannot add to buffer. Buffer is full" }
+            return
+        }
+        data.forEach {
+            buffer.offer(it)
+        }
     }
 
-    override fun flush(): Sequence<T> {
+    override fun flush(): Sequence<ByteArray> {
         //todo potential concurrency issue
         val copyBuffer = buffer
-        buffer = emptySequence()
-        return copyBuffer
+        buffer.clear()
+        return copyBuffer.asSequence()
     }
 }

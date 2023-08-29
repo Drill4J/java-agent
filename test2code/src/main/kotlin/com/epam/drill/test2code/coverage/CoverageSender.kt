@@ -32,7 +32,7 @@ interface CoverageSender {
 class IntervalCoverageSender(
     intervalMs: Long,
     private val coverageTransport: CoverageTransport,
-    private val inMemoryBuffer: InMemoryBuffer<String> = InMemoryBuffer(),
+    private val inMemoryBuffer: InMemoryBuffer = InMemoryBuffer(),
     collectProbes: () -> Sequence<ExecDatum> = { emptySequence() }
 ) : CoverageSender {
     private val logger = KotlinLogging.logger {}
@@ -72,17 +72,24 @@ class IntervalCoverageSender(
             .chunked(0xffff)
             .map { chunk -> CoverDataPart(data = chunk) }
             .map { message ->
-                logger.debug { "Compress message $message" }
+                logger.debug { "Compress message $message." }
                 val encoded = ProtoBuf.encodeToByteArray(CoverMessage.serializer(), message)
-                val compressed = Zstd.compress(encoded)
-                Base64.getEncoder().encodeToString(compressed)
+                Zstd.compress(encoded)
             }
-        if (coverageTransport.isAvailable().get()) {
-            (compressedStrings + inMemoryBuffer.flush()).forEach {
-                coverageTransport.send(it)
+        val flushedBytes = inMemoryBuffer.flush()
+        try {
+            if (coverageTransport.isAvailable()) {
+                (compressedStrings + flushedBytes).forEach {
+                    val encoded = Base64.getEncoder().encodeToString(it)
+                    coverageTransport.send(encoded)
+                }
+            } else {
+                logger.debug { "Fill buffer with compressedStrings." }
+                inMemoryBuffer.addAll(compressedStrings)
             }
-        } else {
-            inMemoryBuffer.add(compressedStrings)
+        } catch (e: Exception) {
+            logger.debug { "Execution.Fill buffer with compressedStrings." }
+            inMemoryBuffer.addAll(compressedStrings + flushedBytes)
         }
     }
 }
@@ -90,6 +97,6 @@ class IntervalCoverageSender(
 internal object ProbeWorker : CoroutineScope {
     override val coroutineContext: CoroutineContext = run {
         // TODO ProbeWorker thread count configure via env.variable?
-        Executors.newFixedThreadPool(2).asCoroutineDispatcher() + SupervisorJob()
+        Executors.newSingleThreadExecutor().asCoroutineDispatcher() + SupervisorJob()
     }
 }

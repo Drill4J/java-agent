@@ -14,18 +14,19 @@ class CoverageRetentionTest {
     // General services and vars at test execution
     private lateinit var sender: Sender
     private lateinit var coverageSender: CoverageSender
-    private lateinit var inMemoryBuffer: InMemoryBuffer<ExecDatum>
+    private lateinit var inMemoryBuffer: InMemoryBuffer
     private lateinit var coverageTransport: CoverageTransport
 
     @BeforeEach
     fun setUp() {
         sender = mock()
         inMemoryBuffer = InMemoryBuffer()
-        coverageTransport = spy(WebsocketCoverageTransport( UUID.randomUUID().toString(), sender))
+        coverageTransport = spy(WebsocketCoverageTransport(UUID.randomUUID().toString(), sender))
         coverageSender = IntervalCoverageSender(2500, coverageTransport, inMemoryBuffer) {
             sequenceOf(
                 ExecDatum(
                     id = Random.nextLong(),
+                    sessionId = "1",
                     probes = AgentProbes(initialSize = 3, values = booleanArrayOf(true, true, true)),
                     name = "foo/bar"
                 )
@@ -36,7 +37,6 @@ class CoverageRetentionTest {
     @Test
     fun `buffer collect`() = runBlocking {
         coverageSender.startSendingCoverage()
-
         //fill 3 times (intervalMs = 2500, 2500*3 = 7500, so we have to set 8000)
         delay(8000)
         val flush = inMemoryBuffer.flush().toList()
@@ -54,10 +54,9 @@ class CoverageRetentionTest {
         delay(8000)
         coverageTransport.onAvailable()
         delay(2600)
-        verify(sender, times(1)).send(any(), any())
+        verify(sender, times(4)).send(any(), any())
     }
-
-
+    
     @Test
     fun `turn on buffer data sending`() = runBlocking {
         coverageTransport.onAvailable()
