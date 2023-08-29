@@ -22,7 +22,6 @@ import kotlinx.serialization.protobuf.*
 import mu.*
 import java.util.*
 import java.util.concurrent.*
-import kotlin.coroutines.*
 
 interface CoverageSender {
     fun startSendingCoverage()
@@ -30,26 +29,26 @@ interface CoverageSender {
 }
 
 class IntervalCoverageSender(
-    intervalMs: Long,
+    private val intervalMs: Long,
     private val coverageTransport: CoverageTransport,
     private val inMemoryBuffer: InMemoryBuffer = InMemoryBuffer(),
-    collectProbes: () -> Sequence<ExecDatum> = { emptySequence() }
+    private val collectProbes: () -> Sequence<ExecDatum> = { emptySequence() }
 ) : CoverageSender {
     private val logger = KotlinLogging.logger {}
-    private val job = ProbeWorker.launch(start = CoroutineStart.LAZY) {
-        while (isActive) {
-            delay(intervalMs)
-            sendProbes(collectProbes())
-        }
-    }
+    private val scheduledThreadPool = Executors.newSingleThreadScheduledExecutor()
 
     override fun startSendingCoverage() {
-        job.start()
+        scheduledThreadPool.scheduleAtFixedRate(
+            Runnable { sendProbes(collectProbes()) },
+            intervalMs,
+            intervalMs,
+            TimeUnit.MILLISECONDS
+        )
         logger.debug { "Coverage sending job is started." }
     }
 
     override fun stopSendingCoverage() {
-        job.cancel()
+        scheduledThreadPool.shutdown()
         logger.debug { "Coverage sending job is stopped." }
     }
 
@@ -76,27 +75,22 @@ class IntervalCoverageSender(
                 val encoded = ProtoBuf.encodeToByteArray(CoverMessage.serializer(), message)
                 Zstd.compress(encoded)
             }
-        val flushedBytes = inMemoryBuffer.flush()
-        try {
-            if (coverageTransport.isAvailable()) {
+
+        if (coverageTransport.isAvailable()) {
+            val flushedBytes = inMemoryBuffer.flush()
+            try {
                 (compressedStrings + flushedBytes).forEach {
                     val encoded = Base64.getEncoder().encodeToString(it)
                     coverageTransport.send(encoded)
                 }
-            } else {
-                logger.debug { "Fill buffer with compressedStrings." }
-                inMemoryBuffer.addAll(compressedStrings)
+            } catch (e: Exception) {
+                logger.debug { "Execution.Fill buffer with compressedStrings." }
+                inMemoryBuffer.addAll(compressedStrings + flushedBytes)
             }
-        } catch (e: Exception) {
-            logger.debug { "Execution.Fill buffer with compressedStrings." }
-            inMemoryBuffer.addAll(compressedStrings + flushedBytes)
+        } else {
+            logger.debug { "Fill buffer with compressedStrings." }
+            inMemoryBuffer.addAll(compressedStrings)
         }
-    }
-}
 
-internal object ProbeWorker : CoroutineScope {
-    override val coroutineContext: CoroutineContext = run {
-        // TODO ProbeWorker thread count configure via env.variable?
-        Executors.newSingleThreadExecutor().asCoroutineDispatcher() + SupervisorJob()
     }
 }

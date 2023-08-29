@@ -36,6 +36,7 @@ class CoverageRetentionTest {
 
     @Test
     fun `buffer collect`() = runBlocking {
+        coverageTransport.onUnavailable()
         coverageSender.startSendingCoverage()
         //fill 3 times (intervalMs = 2500, 2500*3 = 7500, so we have to set 8000)
         delay(8000)
@@ -56,7 +57,7 @@ class CoverageRetentionTest {
         delay(2600)
         verify(sender, times(4)).send(any(), any())
     }
-    
+
     @Test
     fun `turn on buffer data sending`() = runBlocking {
         coverageTransport.onAvailable()

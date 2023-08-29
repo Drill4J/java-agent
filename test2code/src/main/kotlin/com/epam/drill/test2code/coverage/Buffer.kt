@@ -41,9 +41,12 @@ class InMemoryBuffer(
     }
 
     override fun flush(): Sequence<ByteArray> {
-        //todo potential concurrency issue
-        val copyBuffer = buffer
-        buffer.clear()
-        return copyBuffer.asSequence()
+//        return ConcurrentLinkedQueue(buffer).asSequence().also { buffer.clear() }
+        return sequence {
+            for (item in buffer) {
+                yield(item)
+            }
+            buffer.clear()
+        }
     }
 }
