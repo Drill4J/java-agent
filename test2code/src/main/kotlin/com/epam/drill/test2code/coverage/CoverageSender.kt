@@ -23,6 +23,7 @@ import mu.*
 import java.util.*
 import java.util.concurrent.*
 
+private const val RETENTION_QUEUE_LIMIT = 2000L
 interface CoverageSender {
     fun startSendingCoverage()
     fun stopSendingCoverage()
@@ -31,7 +32,7 @@ interface CoverageSender {
 class IntervalCoverageSender(
     private val intervalMs: Long,
     private val coverageTransport: CoverageTransport,
-    private val inMemoryBuffer: InMemoryBuffer = InMemoryBuffer(),
+    private val inMemoryRetentionQueue: InMemoryRetentionQueue = InMemoryRetentionQueue(totalSizeByteLimit = RETENTION_QUEUE_LIMIT),
     private val collectProbes: () -> Sequence<ExecDatum> = { emptySequence() }
 ) : CoverageSender {
     private val logger = KotlinLogging.logger {}
@@ -40,7 +41,8 @@ class IntervalCoverageSender(
     override fun startSendingCoverage() {
         scheduledThreadPool.scheduleAtFixedRate(
             Runnable { sendProbes(collectProbes()) },
-            intervalMs,
+            0,
+            //TODO investigate which number is preferable
             intervalMs,
             TimeUnit.MILLISECONDS
         )
@@ -58,7 +60,7 @@ class IntervalCoverageSender(
      * @features Coverage data sending
      */
     private fun sendProbes(data: Sequence<ExecDatum>) {
-        val compressedStrings = data
+        val dataToSend = data
             .map {
                 ExecClassData(
                     id = it.id,
@@ -68,6 +70,7 @@ class IntervalCoverageSender(
                     testId = it.testId,
                 )
             }
+            //TODO investigate which number is preferable
             .chunked(0xffff)
             .map { chunk -> CoverDataPart(data = chunk) }
             .map { message ->
@@ -77,19 +80,19 @@ class IntervalCoverageSender(
             }
 
         if (coverageTransport.isAvailable()) {
-            val flushedBytes = inMemoryBuffer.flush()
+            val flushedBytes = inMemoryRetentionQueue.flush()
             try {
-                (compressedStrings + flushedBytes).forEach {
+                (dataToSend + flushedBytes).forEach {
                     val encoded = Base64.getEncoder().encodeToString(it)
                     coverageTransport.send(encoded)
                 }
             } catch (e: Exception) {
                 logger.debug { "Execution.Fill buffer with compressedStrings." }
-                inMemoryBuffer.addAll(compressedStrings + flushedBytes)
+                inMemoryRetentionQueue.addAll(dataToSend + flushedBytes)
             }
         } else {
             logger.debug { "Fill buffer with compressedStrings." }
-            inMemoryBuffer.addAll(compressedStrings)
+            inMemoryRetentionQueue.addAll(dataToSend)
         }
 
     }
