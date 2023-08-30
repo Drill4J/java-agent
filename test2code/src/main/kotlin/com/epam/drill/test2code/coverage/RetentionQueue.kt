@@ -54,6 +54,7 @@ class InMemoryRetentionQueue(
                 yield(item)
             }
             queue.clear()
+            sizeOfQueue.set(0)
         }
     }
 }
