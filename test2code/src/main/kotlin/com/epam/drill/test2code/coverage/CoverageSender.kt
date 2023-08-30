@@ -24,6 +24,7 @@ import java.util.*
 import java.util.concurrent.*
 
 private const val RETENTION_QUEUE_LIMIT = 2000L
+
 interface CoverageSender {
     fun startSendingCoverage()
     fun stopSendingCoverage()
@@ -80,20 +81,24 @@ class IntervalCoverageSender(
             }
 
         if (coverageTransport.isAvailable()) {
-            val flushedBytes = inMemoryRetentionQueue.flush()
-            try {
-                (dataToSend + flushedBytes).forEach {
-                    val encoded = Base64.getEncoder().encodeToString(it)
+            val dataFromQueue = inMemoryRetentionQueue.flush()
+            val failedToSend = mutableListOf<ByteArray>()
+
+            val send = { message: ByteArray ->
+                val encoded = Base64.getEncoder().encodeToString(message)
+                try {
                     coverageTransport.send(encoded)
+                } catch (e: Exception) {
+                    failedToSend.add(message)
                 }
-            } catch (e: Exception) {
-                logger.debug { "Execution.Fill buffer with compressedStrings." }
-                inMemoryRetentionQueue.addAll(dataToSend + flushedBytes)
             }
+            dataToSend.forEach { send(it) }
+            dataFromQueue.forEach { send(it) }
+            if (failedToSend.size > 0) inMemoryRetentionQueue.addAll(failedToSend.asSequence())
         } else {
-            logger.debug { "Fill buffer with compressedStrings." }
             inMemoryRetentionQueue.addAll(dataToSend)
         }
+
 
     }
 }
