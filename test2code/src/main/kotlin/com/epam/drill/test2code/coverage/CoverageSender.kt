@@ -23,7 +23,8 @@ import mu.*
 import java.util.*
 import java.util.concurrent.*
 
-private const val RETENTION_QUEUE_LIMIT = 2000L
+//TODO move to config
+private const val RETENTION_QUEUE_LIMIT_BYTES = 2000L
 
 interface CoverageSender {
     fun startSendingCoverage()
@@ -33,7 +34,7 @@ interface CoverageSender {
 class IntervalCoverageSender(
     private val intervalMs: Long,
     private val coverageTransport: CoverageTransport,
-    private val inMemoryRetentionQueue: InMemoryRetentionQueue = InMemoryRetentionQueue(totalSizeByteLimit = RETENTION_QUEUE_LIMIT),
+    private val inMemoryRetentionQueue: RetentionQueue = InMemoryRetentionQueue(totalSizeByteLimit = RETENTION_QUEUE_LIMIT_BYTES),
     private val collectProbes: () -> Sequence<ExecDatum> = { emptySequence() }
 ) : CoverageSender {
     private val logger = KotlinLogging.logger {}
@@ -81,7 +82,6 @@ class IntervalCoverageSender(
             }
 
         if (coverageTransport.isAvailable()) {
-            val dataFromQueue = inMemoryRetentionQueue.flush()
             val failedToSend = mutableListOf<ByteArray>()
 
             val send = { message: ByteArray ->
@@ -92,13 +92,12 @@ class IntervalCoverageSender(
                     failedToSend.add(message)
                 }
             }
+
             dataToSend.forEach { send(it) }
-            dataFromQueue.forEach { send(it) }
+            inMemoryRetentionQueue.flush().forEach { send(it) }
             if (failedToSend.size > 0) inMemoryRetentionQueue.addAll(failedToSend.asSequence())
         } else {
             inMemoryRetentionQueue.addAll(dataToSend)
         }
-
-
     }
 }
