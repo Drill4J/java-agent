@@ -18,7 +18,6 @@ package com.epam.drill.test2code.coverage
 import mu.*
 import java.util.*
 import java.util.concurrent.*
-import java.util.concurrent.atomic.*
 
 
 interface RetentionQueue {
@@ -31,20 +30,20 @@ class InMemoryRetentionQueue(
     private val totalSizeByteLimit: Long,
 ) : RetentionQueue {
     private val logger = KotlinLogging.logger("com.epam.drill.test2code.coverage.InMemoryRetentionQueue")
-    private val sizeOfQueue: AtomicLong = AtomicLong(0)
+    private var totalBytes: Long = 0
 
     override fun addAll(data: Sequence<ByteArray>) {
-        data.filter { it.size < totalSizeByteLimit }.forEach { bytes ->
-            if (sizeOfQueue.get() >= totalSizeByteLimit) {
+        data.forEach { bytes ->
+            if (totalBytes + bytes.size >= totalSizeByteLimit) {
                 logger.info { "InMemoryRetentionQueue is full. Cannot add to queue, count of bytes: ${bytes.size}." }
                 return@forEach
             }
-            val isOffer = queue.offer(bytes)
-            if (!isOffer) {
+            val added = queue.offer(bytes)
+            if (!added) {
                 logger.info { "Cannot add to queue: ${bytes.size}" }
                 return@forEach
             }
-            sizeOfQueue.set(bytes.size.toLong())
+            totalBytes += bytes.size.toLong()
         }
     }
 
@@ -54,7 +53,7 @@ class InMemoryRetentionQueue(
                 yield(item)
             }
             queue.clear()
-            sizeOfQueue.set(0)
+            totalBytes = 0
         }
     }
 }
