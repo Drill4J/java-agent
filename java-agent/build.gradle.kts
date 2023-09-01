@@ -79,6 +79,7 @@ kotlin {
                 implementation("org.jetbrains.kotlinx:kotlinx-serialization-core:$kotlinxSerializationVersion")
                 implementation(project(":http-clients-instrumentation"))
                 implementation(project(":logging"))
+                implementation(project(":common"))
             }
         }
         val jvmMain by getting {
@@ -89,7 +90,6 @@ kotlin {
                 implementation("org.jetbrains.kotlinx:kotlinx-serialization-protobuf:$kotlinxSerializationVersion")
                 implementation("org.javassist:javassist:$javassistVersion")
                 implementation("com.alibaba:transmittable-thread-local:$transmittableThreadLocalVersion")
-                implementation(project(":common"))
                 implementation(project(":agent"))
                 implementation(project(":http-clients-instrumentation"))
                 implementation(project(":test2code"))
@@ -99,7 +99,6 @@ kotlin {
             dependencies {
                 implementation("org.jetbrains.kotlinx:kotlinx-serialization-protobuf:$kotlinxSerializationVersion")
                 implementation("io.ktor:ktor-utils:$ktorVersion")
-                implementation(project(":common"))
                 implementation(project(":agent"))
                 implementation(project(":jvmapi"))
                 implementation(project(":knasm"))

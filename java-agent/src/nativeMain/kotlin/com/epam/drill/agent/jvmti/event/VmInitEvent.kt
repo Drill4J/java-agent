@@ -19,7 +19,6 @@ import kotlinx.cinterop.CPointer
 import mu.KotlinLogging
 import com.epam.drill.agent.Agent
 import com.epam.drill.agent.JvmModuleLoader
-import com.epam.drill.agent.addPluginToStorage
 import com.epam.drill.agent.configuration.adminAddress
 import com.epam.drill.agent.configuration.agentParameters
 import com.epam.drill.agent.configuration.configureHttp
@@ -28,15 +27,11 @@ import com.epam.drill.agent.configuration.updateJvmLoggingConfiguration
 import com.epam.drill.agent.configuration.updatePackagePrefixesConfiguration
 import com.epam.drill.agent.request.RequestHolder
 import com.epam.drill.agent.globalCallbacks
-import com.epam.drill.agent.module.InstrumentationAgentModule
 import com.epam.drill.agent.ws.WsSocket
-import com.epam.drill.jvmapi.gen.GetObjectClass
 import com.epam.drill.jvmapi.gen.JNIEnvVar
 import com.epam.drill.jvmapi.gen.JVMTI_ENABLE
 import com.epam.drill.jvmapi.gen.JVMTI_EVENT_CLASS_FILE_LOAD_HOOK
-import com.epam.drill.jvmapi.gen.NewGlobalRef
 import com.epam.drill.jvmapi.gen.SetEventNotificationMode
-import com.epam.drill.jvmapi.gen.jobject
 import com.epam.drill.jvmapi.gen.jthread
 import com.epam.drill.jvmapi.gen.jvmtiEnvVar
 
@@ -67,12 +62,7 @@ fun vmInitEvent(env: CPointer<jvmtiEnvVar>?, jniEnv: CPointer<JNIEnvVar>?, threa
 @Suppress("UNCHECKED_CAST")
 private fun loadJvmModule(id: String) {
     try {
-        val agentPart = JvmModuleLoader.loadJvmModule(id) as? jobject
-        val pluginApiClass = NewGlobalRef(GetObjectClass(agentPart))!!
-        val agentPartRef = NewGlobalRef(agentPart)!!
-        val plugin = InstrumentationAgentModule(id, pluginApiClass, agentPartRef)
-        addPluginToStorage(plugin)
-        plugin.load()
+        JvmModuleLoader.loadJvmModule(id).load()
     } catch (ex: Exception) {
         logger.error(ex) { "Fatal error processing plugin: id=${id}" }
     }

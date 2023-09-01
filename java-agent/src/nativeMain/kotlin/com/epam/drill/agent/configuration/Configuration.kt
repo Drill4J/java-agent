@@ -24,7 +24,6 @@ import platform.posix.getenv
 import mu.KotlinLogging
 import com.epam.drill.agent.SYSTEM_JAVA_APP_JAR
 import com.epam.drill.agent.agentVersion
-import com.epam.drill.agent.setPackagesPrefixes
 import com.epam.drill.agent.configuration.serialization.SimpleMapDecoder
 import com.epam.drill.common.agent.configuration.AgentConfig
 import com.epam.drill.common.agent.configuration.AgentParameter
@@ -55,9 +54,6 @@ fun performInitialConfiguration(initialParams: Map<String, String>) {
             parameters = aa.defaultParameters(),
         )
         updateAgentParameters(agentConfig.parameters, true)
-        agentConfigUpdater = object : AgentConfigUpdater {
-            override fun updateParameters(config: AgentConfig) = updateAgentParameters(config.parameters)
-        }
     }
 }
 
@@ -110,7 +106,7 @@ fun updateJvmLoggingConfiguration() {
 }
 
 fun updatePackagePrefixesConfiguration() {
-    setPackagesPrefixes(PackagesPrefixes(agentParameters.packagePrefixes.split(";")))
+    agentConfig = agentConfig.copy(packagesPrefixes = PackagesPrefixes(agentParameters.packagePrefixes.split(";")))
 }
 
 fun idHeaderPairFromConfig(): Pair<String, String> =
