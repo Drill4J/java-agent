@@ -117,9 +117,9 @@ class Test2Code(
     ): AgentAction = json.decodeFromString(AgentAction.serializer(), rawAction)
 
     override fun scanClasses(consumer: (Set<EntitySource>) -> Unit) {
-        NativeCalls.waitClassScanning()
-        val packagePrefixes = NativeCalls.getPackagePrefixes().split(", ")
-        val additionalPaths = NativeCalls.getScanClassPath().split(";")
+        JvmModuleConfiguration.waitClassScanning()
+        val packagePrefixes = JvmModuleConfiguration.getPackagePrefixes().split(", ")
+        val additionalPaths = JvmModuleConfiguration.getScanClassPath().split(";")
         logger.info { "Scanning classes, package prefixes: $packagePrefixes... " }
         ClassLoadersScanner(packagePrefixes, 50, consumer, additionalPaths).scanClasses()
     }

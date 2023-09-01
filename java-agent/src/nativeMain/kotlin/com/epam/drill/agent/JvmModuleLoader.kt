@@ -15,11 +15,19 @@
  */
 package com.epam.drill.agent
 
-import com.epam.drill.jvmapi.callObjectObjectMethodWithString
+import com.epam.drill.agent.jvm.callObjectAgentModuleMethodWithString
+import com.epam.drill.agent.module.InstrumentationAgentModule
+import com.epam.drill.common.agent.AgentModule
+import com.epam.drill.jvmapi.gen.GetObjectClass
+import com.epam.drill.jvmapi.gen.NewGlobalRef
 
 actual object JvmModuleLoader {
 
-    actual fun loadJvmModule(id: String): Any? =
-        callObjectObjectMethodWithString(JvmModuleLoader::class, JvmModuleLoader::loadJvmModule, id)
+    actual fun loadJvmModule(id: String): AgentModule<*> =
+        callObjectAgentModuleMethodWithString(JvmModuleLoader::class, JvmModuleLoader::loadJvmModule, id).run {
+            val pluginApiClass = NewGlobalRef(GetObjectClass(this))!!
+            val agentPartRef = NewGlobalRef(this)!!
+            InstrumentationAgentModule(id, pluginApiClass, agentPartRef).also { PluginStorage.add(it) }
+        }
 
 }

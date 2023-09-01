@@ -23,10 +23,10 @@ import com.epam.drill.test2code.Test2Code
 
 actual object JvmModuleLoader {
 
-    actual fun loadJvmModule(id: String): Any? = run {
+    actual fun loadJvmModule(id: String): AgentModule<*> = run {
         val jvmModuleClass = getJvmModuleClass(id)!!
         val constructor = jvmModuleClass.getConstructor(String::class.java, AgentContext::class.java, Sender::class.java)
-        constructor.newInstance(id, RequestHolder.agentContext, JvmModuleMessageSender)
+        constructor.newInstance(id, RequestHolder.agentContext, JvmModuleMessageSender).also { PluginStorage.add(it) }
     }
 
     @Suppress("UNCHECKED_CAST")
