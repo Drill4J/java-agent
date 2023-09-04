@@ -1,80 +1,163 @@
 package com.epam.drill.test2code.coverage
 
 import org.junit.jupiter.api.*
+import java.math.*
 
 class InMemoryRetentionQueueTest {
 
-    private lateinit var retentionQueue: InMemoryRetentionQueue
+    @Test
+    fun `adding multiple elements exceeding limit should maintain total size at limit`() {
+        val byteCount = 6
+        val innerArraySize = 2
+        val bytes = Array(byteCount) { ByteArray(innerArraySize) { 1 } }.asSequence()
+        val sizeLimit = BigInteger.valueOf(10)
+        val queue = InMemoryRetentionQueue(totalSizeByteLimit = sizeLimit)
 
-    @BeforeEach
-    fun setUp() {
-        retentionQueue = InMemoryRetentionQueue(totalSizeByteLimit = 10)
+        queue.addAll(bytes)
+
+        val actualSizeOfQueue = queue.flush().sumOf { it.size }
+        Assertions.assertEquals(sizeLimit.toInt(), actualSizeOfQueue)
     }
 
     @Test
-    fun `multiple elements over limit must cause`() {
-        val arraySequence = sequenceOf(
-            byteArrayOf(1, 1),
-            byteArrayOf(1, 1),
-            byteArrayOf(1, 1),
-            byteArrayOf(1, 1),
-            byteArrayOf(1, 1),
-            byteArrayOf(1, 1)
-        )
-        retentionQueue.addAll(arraySequence)
+    fun `adding elements with size equal to limit should result in queue size exactly at limit`() {
+        val byteCount = 1
+        val innerArraySize = 10
+        val bytes = Array(byteCount) { ByteArray(innerArraySize) { 1 } }.asSequence()
+        val sizeLimit = BigInteger.valueOf(10)
+        val queue = InMemoryRetentionQueue(totalSizeByteLimit = sizeLimit)
 
-        val flush = retentionQueue.flush()
+        queue.addAll(bytes)
 
-        Assertions.assertEquals(10, flush.sumOf { it.size })
+        val actualSizeOfQueue = queue.flush().sumOf { it.size }
+        Assertions.assertEquals(sizeLimit.toInt(), actualSizeOfQueue)
     }
 
     @Test
-    fun `elements size to exact limit`() {
-        val arraySequence = sequenceOf(
-            byteArrayOf(1, 1, 1, 1, 1, 1, 1, 1, 1, 1)
-        )
-        retentionQueue.addAll(arraySequence)
+    fun `adding single element larger than limit should result in an empty queue`() {
+        val queue = InMemoryRetentionQueue(totalSizeByteLimit = BigInteger.valueOf(10))
+        val byteCount = 1
+        val innerArraySize = 12
+        val bytes = Array(byteCount) { ByteArray(innerArraySize) { 1 } }.asSequence()
 
-        val flush = retentionQueue.flush()
+        queue.addAll(bytes)
 
-        Assertions.assertEquals(10, flush.sumOf { it.size })
+        Assertions.assertTrue(queue.flush().count() == 0)
     }
 
     @Test
-    fun `singular big element`() {
-        val arraySequence = sequenceOf(
-            byteArrayOf(1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1)
-        )
-        retentionQueue.addAll(arraySequence)
+    fun `flush should return the same elements as added to the queue`() {
+        val queue = InMemoryRetentionQueue(totalSizeByteLimit = BigInteger.valueOf(10))
+        val byteCount = 1
+        val innerArraySize = 5
+        val bytes = Array(byteCount) { ByteArray(innerArraySize) { 1 } }.asSequence()
 
-        val flush = retentionQueue.flush()
+        queue.addAll(bytes)
+        val actualBytes = queue.flush()
 
-        Assertions.assertTrue(flush.toList().isEmpty())
-    }
-
-    @Test
-    fun `flush must return the exact same elements as inserted`() {
-        val arraySequence = sequenceOf(
-            byteArrayOf(1, 1, 1, 1)
-        )
-        retentionQueue.addAll(arraySequence)
-
-        val flush = retentionQueue.flush()
-
-        Assertions.assertEquals(4, flush.sumOf { it.size })
+        Assertions.assertEquals(bytes.toList(), actualBytes.toList())
     }
 
     @Test
     fun `queue after flush must be empty`() {
-        val arraySequence = sequenceOf(
-            byteArrayOf(1, 1, 1, 1, 1)
-        )
-        retentionQueue.addAll(arraySequence)
+        val queue = InMemoryRetentionQueue(totalSizeByteLimit = BigInteger.valueOf(10))
+        val byteCount = 1
+        val innerArraySize = 5
+        val bytes = Array(byteCount) { ByteArray(innerArraySize) { 1 } }.asSequence()
 
-        val flush1 = retentionQueue.flush().toList()
-        Assertions.assertTrue(flush1.isNotEmpty())
+        queue.addAll(bytes)
 
-        val flush2 = retentionQueue.flush().toList()
-        Assertions.assertTrue(flush2.isEmpty())
+        val bytes1 = queue.flush().toList()
+        val bytes2 = queue.flush().toList()
+
+        Assertions.assertTrue(bytes2.isEmpty())
     }
+
+    @Test
+    fun `queue should only fit elements with size less than or equal to total limit`() {
+        val queue = InMemoryRetentionQueue(totalSizeByteLimit = BigInteger.valueOf(10))
+        val expectedSizeOfQueue = 4
+        val bytes = sequenceOf(
+            ByteArray(12) { 1 },
+            ByteArray(2) { 1 },
+            ByteArray(2) { 1 }
+        )
+
+        queue.addAll(bytes)
+        val actualSizeOfQueue = queue.flush().sumOf { it.size }
+
+        Assertions.assertEquals(expectedSizeOfQueue, actualSizeOfQueue)
+    }
+
+    @Test
+    fun `queue should contain elements within limit and exclude element exceeding limit `() {
+        val sizeLimit = BigInteger.valueOf(10)
+        val queue = InMemoryRetentionQueue(totalSizeByteLimit = sizeLimit)
+        val expectedBytes1 = ByteArray(2) { 1 }
+        val expectedBytes2 = ByteArray(2) { 2 }
+        val expectedBytes3 = ByteArray(2) { 3 }
+        val notExpectedBytes = ByteArray(12) { 4 }
+        val bytes = sequenceOf(
+            expectedBytes1,
+            expectedBytes2,
+            notExpectedBytes,
+            expectedBytes3
+        )
+
+        queue.addAll(bytes)
+
+        val actualSizeOfQueue = queue.flush().toList()
+
+        Assertions.assertTrue(actualSizeOfQueue.contains(expectedBytes1))
+        Assertions.assertTrue(actualSizeOfQueue.contains(expectedBytes2))
+        Assertions.assertTrue(actualSizeOfQueue.contains(expectedBytes3))
+        Assertions.assertFalse(actualSizeOfQueue.contains(notExpectedBytes))
+    }
+
+    @Test
+    fun `adding new elements after flush should be reflected in queue content`() {
+        val sizeLimit = BigInteger.valueOf(10)
+        val queue = InMemoryRetentionQueue(totalSizeByteLimit = sizeLimit)
+        val expectedBytes1 = ByteArray(2) { 1 }
+        val expectedBytes2 = ByteArray(2) { 2 }
+        var bytes = sequenceOf(
+            expectedBytes1,
+            expectedBytes2
+        )
+
+        queue.addAll(bytes)
+        val bytesFromQueue1 = queue.flush().toList()
+
+        val expectedBytes3 = ByteArray(2) { 3 }
+        bytes = sequenceOf(expectedBytes3)
+        queue.addAll(bytes)
+
+        val bytesFromQueue2 = queue.flush().toList()
+
+        Assertions.assertTrue(bytesFromQueue2.contains(expectedBytes3))
+    }
+
+    @Test
+    fun `initializing queue with negative totalSizeByteLimit should throw exception`() {
+        val sizeLimit = BigInteger.valueOf(-10)
+
+        assertThrows<IllegalArgumentException> {
+            val queue = InMemoryRetentionQueue(totalSizeByteLimit = sizeLimit)
+        }
+    }
+
+    @Test
+    fun `adding elements to a queue with zero totalSizeByteLimit should return an empty queue`() {
+        val expectedSizeOfQueue = 0
+        val sizeLimit = BigInteger.ZERO
+        val queue = InMemoryRetentionQueue(totalSizeByteLimit = sizeLimit)
+        val bytes = sequenceOf(ByteArray(1) { 1 })
+
+        queue.addAll(bytes)
+
+        val actualSizeOfQueue = queue.flush().count()
+
+        Assertions.assertEquals(expectedSizeOfQueue, actualSizeOfQueue)
+    }
+
 }
