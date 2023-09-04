@@ -38,7 +38,9 @@ data class AgentArguments(
     val isAsyncApp: Boolean = false,
     val classScanDelay: Long = 0L,
     val scanClassPath: String = "",
-    val packagePrefixes: String = ""
+    val packagePrefixes: String = "",
+    val coverageRetentionLimitBytes: Long = 2000,
+    val sendCoverageIntervalMs: Long = 2000
 ) {
 
     fun defaultParameters(): Map<String, AgentParameter> = mapOf(
@@ -96,6 +98,16 @@ data class AgentArguments(
             type = packagePrefixes.toType(),
             value = packagePrefixes,
             description = "Configure package prefixes for scanning and instrumentation",
+        ),
+        AgentArguments::coverageRetentionLimitBytes.name to AgentParameter(
+            type = coverageRetentionLimitBytes.toType(),
+            value = coverageRetentionLimitBytes.toString(),
+            description = "Configure limit in bytes for coverage retention in case, when admin is unreachable",
+        ),
+        AgentArguments::sendCoverageIntervalMs.name to AgentParameter(
+            type = sendCoverageIntervalMs.toType(),
+            value = sendCoverageIntervalMs.toString(),
+            description = "Configure sending coverage interval in milliseconds",
         )
     )
 

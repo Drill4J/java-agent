@@ -16,15 +16,13 @@
 package com.epam.drill.test2code.coverage
 
 import com.epam.drill.plugins.test2code.common.api.*
+import com.epam.drill.test2code.*
 import com.github.luben.zstd.*
 import kotlinx.coroutines.*
 import kotlinx.serialization.protobuf.*
 import mu.*
 import java.util.*
 import java.util.concurrent.*
-
-//TODO move to config
-private const val RETENTION_QUEUE_LIMIT_BYTES = 2000L
 
 interface CoverageSender {
     fun startSendingCoverage()
@@ -34,7 +32,7 @@ interface CoverageSender {
 class IntervalCoverageSender(
     private val intervalMs: Long,
     private val coverageTransport: CoverageTransport,
-    private val inMemoryRetentionQueue: RetentionQueue = InMemoryRetentionQueue(totalSizeByteLimit = RETENTION_QUEUE_LIMIT_BYTES),
+    private val inMemoryRetentionQueue: RetentionQueue = InMemoryRetentionQueue(totalSizeByteLimit = JvmModuleConfiguration.getCoverageRetentionLimit()),
     private val collectProbes: () -> Sequence<ExecDatum> = { emptySequence() }
 ) : CoverageSender {
     private val logger = KotlinLogging.logger {}

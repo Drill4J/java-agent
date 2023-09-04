@@ -28,5 +28,7 @@ data class AgentParameters(
     val isWebApp: Boolean = false,
     val isKafka: Boolean = false,
     val isCadence: Boolean = false,
-    val isTlsApp: Boolean = false
+    val isTlsApp: Boolean = false,
+    val coverageRetentionLimit: Long  = 2000,
+    val sendCoverageInterval: Long  = 2000,
 )

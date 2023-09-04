@@ -28,6 +28,10 @@ object JvmModuleConfiguration {
 
     fun getScanClassPath(): String = agentParameters.scanClassPath
 
+    fun getCoverageRetentionLimit(): Long = agentParameters.coverageRetentionLimit
+
+    fun getSendCoverageInterval(): Long = agentParameters.sendCoverageInterval
+
     fun waitClassScanning() = runBlocking {
         val classScanDelay = agentParameters.classScanDelay - Agent.startTimeMark.elapsedNow()
         if (classScanDelay.isPositive()) {
