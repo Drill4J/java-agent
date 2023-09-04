@@ -21,6 +21,7 @@ import com.github.luben.zstd.*
 import kotlinx.coroutines.*
 import kotlinx.serialization.protobuf.*
 import mu.*
+import java.math.*
 import java.util.*
 import java.util.concurrent.*
 
@@ -29,10 +30,12 @@ interface CoverageSender {
     fun stopSendingCoverage()
 }
 
+private val COVERAGE_RETENTION_LIMIT_BYTES = BigInteger.valueOf(JvmModuleConfiguration.getCoverageRetentionLimit())
+
 class IntervalCoverageSender(
     private val intervalMs: Long,
     private val coverageTransport: CoverageTransport,
-    private val inMemoryRetentionQueue: RetentionQueue = InMemoryRetentionQueue(totalSizeByteLimit = JvmModuleConfiguration.getCoverageRetentionLimit()),
+    private val inMemoryRetentionQueue: RetentionQueue = InMemoryRetentionQueue(totalSizeByteLimit = COVERAGE_RETENTION_LIMIT_BYTES),
     private val collectProbes: () -> Sequence<ExecDatum> = { emptySequence() }
 ) : CoverageSender {
     private val logger = KotlinLogging.logger {}

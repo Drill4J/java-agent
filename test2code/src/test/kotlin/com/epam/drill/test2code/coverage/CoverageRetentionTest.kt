@@ -7,6 +7,7 @@ import kotlinx.coroutines.*
 import org.junit.jupiter.api.*
 import org.junit.jupiter.api.Assertions.*
 import org.mockito.ArgumentMatchers.*
+import java.math.*
 import java.util.*
 import kotlin.random.Random
 
@@ -21,7 +22,7 @@ class CoverageRetentionTest {
     @BeforeEach
     fun setUp() {
         sender = mock()
-        inMemoryRetentionQueue = InMemoryRetentionQueue(totalSizeByteLimit = 90)
+        inMemoryRetentionQueue = InMemoryRetentionQueue(totalSizeByteLimit = BigInteger.valueOf(90))
         coverageTransport = spy(WebsocketCoverageTransport(UUID.randomUUID().toString(), sender))
         coverageSender = IntervalCoverageSender(2500, coverageTransport, inMemoryRetentionQueue) {
             sequenceOf(
@@ -83,7 +84,7 @@ class CoverageRetentionTest {
 
     @Test
     fun `queue limit exceeded`() = runBlocking {
-        inMemoryRetentionQueue = InMemoryRetentionQueue(totalSizeByteLimit = 10)
+        inMemoryRetentionQueue = InMemoryRetentionQueue(totalSizeByteLimit = BigInteger.valueOf(10))
         coverageSender = IntervalCoverageSender(2500, coverageTransport, inMemoryRetentionQueue) {
             sequenceOf(
                 ExecDatum(
