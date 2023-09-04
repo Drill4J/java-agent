@@ -29,6 +29,7 @@ interface RetentionQueue {
 class InMemoryRetentionQueue(
     private var queue: Queue<ByteArray> = ConcurrentLinkedQueue(),
     private val totalSizeByteLimit: BigInteger,
+    //TODO PR: check additional  Unit param. Investigate Parsing Mb to Unit.MegaBytes e.t.c
 ) : RetentionQueue {
 
     init {
@@ -56,12 +57,9 @@ class InMemoryRetentionQueue(
     }
 
     override fun flush(): Sequence<ByteArray> {
-        return sequence {
-            for (item in queue) {
-                yield(item)
-            }
-            queue.clear()
-            totalBytes = BigInteger.ZERO
-        }
+        val bytes = queue.toList().asSequence()
+        queue.clear()
+        totalBytes = BigInteger.ZERO
+        return bytes
     }
 }
