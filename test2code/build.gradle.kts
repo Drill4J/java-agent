@@ -43,6 +43,7 @@ dependencies {
     testImplementation("ch.qos.logback:logback-classic:$logbackVersion")
     compileOnly("org.jetbrains.kotlinx:atomicfu:$atomicfuVersion")
 
+    implementation("io.aesy:aesy:1.0.0")
     implementation("org.jetbrains.kotlinx:kotlinx-collections-immutable-jvm:$kotlinxCollectionsVersion")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:$kotlinxCoroutinesVersion")
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:$kotlinxSerializationVersion")
