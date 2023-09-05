@@ -18,10 +18,10 @@ package com.epam.drill.test2code.coverage
 import com.epam.drill.plugins.test2code.common.api.*
 import com.epam.drill.test2code.*
 import com.github.luben.zstd.*
+import io.aesy.datasize.*
 import kotlinx.coroutines.*
 import kotlinx.serialization.protobuf.*
 import mu.*
-import java.math.*
 import java.util.*
 import java.util.concurrent.*
 
@@ -30,7 +30,10 @@ interface CoverageSender {
     fun stopSendingCoverage()
 }
 
-private val COVERAGE_RETENTION_LIMIT_BYTES = BigInteger.valueOf(JvmModuleConfiguration.getCoverageRetentionLimit())
+private val COVERAGE_RETENTION_LIMIT_BYTES = DataSize.parse(JvmModuleConfiguration.getCoverageRetentionLimit())
+    .toUnit(ByteUnit.BYTE)
+    .value
+
 
 class IntervalCoverageSender(
     private val intervalMs: Long,

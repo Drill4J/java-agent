@@ -39,7 +39,7 @@ data class AgentArguments(
     val classScanDelay: Long = 0L,
     val scanClassPath: String = "",
     val packagePrefixes: String = "",
-    val coverageRetentionLimitBytes: Long = 2000L,
+    val coverageRetentionLimit: String = "2Mb",
     val sendCoverageIntervalMs: Long = 2000L
 ) {
 
@@ -99,9 +99,9 @@ data class AgentArguments(
             value = packagePrefixes,
             description = "Configure package prefixes for scanning and instrumentation",
         ),
-        AgentArguments::coverageRetentionLimitBytes.name to AgentParameter(
-            type = coverageRetentionLimitBytes.toType(),
-            value = coverageRetentionLimitBytes.toString(),
+        AgentArguments::coverageRetentionLimit.name to AgentParameter(
+            type = coverageRetentionLimit.toType(),
+            value = coverageRetentionLimit,
             description = "Coverage retention queue size limit in bytes; Retention queue stores coverage when Drill4J Admin is unreachable"
         ),
         AgentArguments::sendCoverageIntervalMs.name to AgentParameter(

@@ -28,7 +28,7 @@ object JvmModuleConfiguration {
 
     fun getScanClassPath(): String = agentParameters.scanClassPath
 
-    fun getCoverageRetentionLimit(): Long = agentParameters.coverageRetentionLimit
+    fun getCoverageRetentionLimit(): String = agentParameters.coverageRetentionLimit
 
     fun getSendCoverageInterval(): Long = agentParameters.sendCoverageInterval
 
