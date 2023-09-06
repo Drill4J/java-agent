@@ -39,7 +39,11 @@ class CoverageRetentionTest {
         sender = mock()
         inMemoryRetentionQueue = InMemoryRetentionQueue(totalSizeByteLimit = BigInteger.valueOf(375))
         coverageTransport = spy(WebsocketCoverageTransport(UUID.randomUUID().toString(), sender))
-        coverageSender = IntervalCoverageSender(2500, coverageTransport, inMemoryRetentionQueue) {
+        coverageSender = IntervalCoverageSender(
+            intervalMs = 2500,
+            coverageTransport = coverageTransport,
+            inMemoryRetentionQueue = inMemoryRetentionQueue
+        ) {
             sequenceOf(
                 ExecDatum(
                     id = Random.nextLong(),
@@ -100,7 +104,11 @@ class CoverageRetentionTest {
     @Test
     fun `queue limit exceeded`() = runBlocking {
         inMemoryRetentionQueue = InMemoryRetentionQueue(totalSizeByteLimit = BigInteger.valueOf(10))
-        coverageSender = IntervalCoverageSender(2500, coverageTransport, inMemoryRetentionQueue) {
+        coverageSender = IntervalCoverageSender(
+            intervalMs = 2500,
+            coverageTransport = coverageTransport,
+            inMemoryRetentionQueue = inMemoryRetentionQueue
+        ) {
             sequenceOf(
                 ExecDatum(
                     id = Random.nextLong(),

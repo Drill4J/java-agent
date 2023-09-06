@@ -58,8 +58,8 @@ open class CoverageManager(
     },
     coverageTransport: CoverageTransport,
     private val coverageSender: CoverageSender = IntervalCoverageSender(
-        JvmModuleConfiguration.getSendCoverageInterval(),
-        coverageTransport
+        intervalMs = JvmModuleConfiguration.getSendCoverageInterval(),
+        coverageTransport = coverageTransport
     ) {
         //TODO return globalExecData from collectProbes()
         coverageRecorder.collectProbes() + globalExecData.values.filter { datum ->
