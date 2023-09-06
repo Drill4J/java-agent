@@ -22,6 +22,8 @@ import io.aesy.datasize.*
 import kotlinx.coroutines.*
 import kotlinx.serialization.protobuf.*
 import mu.*
+import java.math.*
+import java.text.*
 import java.util.*
 import java.util.concurrent.*
 
@@ -30,19 +32,25 @@ interface CoverageSender {
     fun stopSendingCoverage()
 }
 
-private val coverageRetentionLimit = DataSize.parse(JvmModuleConfiguration.getCoverageRetentionLimit())
-    .toUnit(ByteUnit.BYTE)
-    .value
-    .toBigInteger()
-
 class IntervalCoverageSender(
+    private val logger: KLogger = KotlinLogging.logger("com.epam.drill.test2code.coverage.IntervalCoverageSender"),
     private val intervalMs: Long,
     private val coverageTransport: CoverageTransport,
-    private val inMemoryRetentionQueue: RetentionQueue = InMemoryRetentionQueue(totalSizeByteLimit = coverageRetentionLimit),
+    private val inMemoryRetentionQueue: RetentionQueue = InMemoryRetentionQueue(
+        totalSizeByteLimit = try {
+            DataSize.parse(JvmModuleConfiguration.getCoverageRetentionLimit())
+                .toUnit(ByteUnit.BYTE)
+                .value
+                .toBigInteger()
+        } catch (e: ParseException) {
+            logger.warn { "Catch exception while parsing CoverageRetentionLimit. Exception: ${e.message}" }
+            BigInteger.valueOf(1024 * 1024 * 512)
+        }
+    ),
     private val collectProbes: () -> Sequence<ExecDatum> = { emptySequence() }
 ) : CoverageSender {
-    private val logger = KotlinLogging.logger {}
     private val scheduledThreadPool = Executors.newSingleThreadScheduledExecutor()
+
 
     override fun startSendingCoverage() {
         scheduledThreadPool.scheduleAtFixedRate(
