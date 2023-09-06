@@ -28,7 +28,6 @@ import kotlin.random.Random
 
 class CoverageRetentionTest {
 
-    // General services and vars at test execution
     private lateinit var sender: Sender
     private lateinit var coverageSender: CoverageSender
     private lateinit var inMemoryRetentionQueue: InMemoryRetentionQueue
