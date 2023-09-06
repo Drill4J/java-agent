@@ -30,15 +30,15 @@ interface CoverageSender {
     fun stopSendingCoverage()
 }
 
-private val COVERAGE_RETENTION_LIMIT_BYTES = DataSize.parse(JvmModuleConfiguration.getCoverageRetentionLimit())
+private val coverageRetentionLimit = DataSize.parse(JvmModuleConfiguration.getCoverageRetentionLimit())
     .toUnit(ByteUnit.BYTE)
     .value
-
+    .toBigInteger()
 
 class IntervalCoverageSender(
     private val intervalMs: Long,
     private val coverageTransport: CoverageTransport,
-    private val inMemoryRetentionQueue: RetentionQueue = InMemoryRetentionQueue(totalSizeByteLimit = COVERAGE_RETENTION_LIMIT_BYTES),
+    private val inMemoryRetentionQueue: RetentionQueue = InMemoryRetentionQueue(totalSizeByteLimit = coverageRetentionLimit),
     private val collectProbes: () -> Sequence<ExecDatum> = { emptySequence() }
 ) : CoverageSender {
     private val logger = KotlinLogging.logger {}
@@ -48,7 +48,6 @@ class IntervalCoverageSender(
         scheduledThreadPool.scheduleAtFixedRate(
             Runnable { sendProbes(collectProbes()) },
             0,
-            //TODO investigate which number is preferable
             intervalMs,
             TimeUnit.MILLISECONDS
         )
@@ -76,7 +75,6 @@ class IntervalCoverageSender(
                     testId = it.testId,
                 )
             }
-            //TODO investigate which number is preferable
             .chunked(0xffff)
             .map { chunk -> CoverDataPart(data = chunk) }
             .map { message ->

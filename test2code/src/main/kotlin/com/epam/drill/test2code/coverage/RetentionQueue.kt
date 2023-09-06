@@ -28,21 +28,21 @@ interface RetentionQueue {
 
 class InMemoryRetentionQueue(
     private var queue: Queue<ByteArray> = ConcurrentLinkedQueue(),
-    private val totalSizeByteLimit: BigDecimal
+    private val totalSizeByteLimit: BigInteger
 ) : RetentionQueue {
 
     init {
-        require(totalSizeByteLimit >= BigDecimal.ZERO) {
+        require(totalSizeByteLimit >= BigInteger.ZERO) {
             "Total size byte limit must be a positive value"
         }
     }
 
     private val logger = KotlinLogging.logger("com.epam.drill.test2code.coverage.InMemoryRetentionQueue")
-    private var totalBytes: BigDecimal = BigDecimal.ZERO
+    private var totalBytes: BigInteger = BigInteger.ZERO
 
     override fun addAll(data: Sequence<ByteArray>) {
         data.forEach { bytes ->
-            if (totalBytes.plus(BigDecimal.valueOf(bytes.size.toLong())) > totalSizeByteLimit) {
+            if (totalBytes.plus(BigInteger.valueOf(bytes.size.toLong())) > totalSizeByteLimit) {
                 logger.info { "InMemoryRetentionQueue is full. Cannot add to queue, count of bytes: ${bytes.size}." }
                 return@forEach
             }
@@ -51,14 +51,14 @@ class InMemoryRetentionQueue(
                 logger.info { "Cannot add to queue: ${bytes.size}" }
                 return@forEach
             }
-            totalBytes += BigDecimal.valueOf(bytes.size.toLong())
+            totalBytes += BigInteger.valueOf(bytes.size.toLong())
         }
     }
 
     override fun flush(): Sequence<ByteArray> {
         val bytes = queue.toList().asSequence()
         queue.clear()
-        totalBytes = BigDecimal.ZERO
+        totalBytes = BigInteger.ZERO
         return bytes
     }
 }
