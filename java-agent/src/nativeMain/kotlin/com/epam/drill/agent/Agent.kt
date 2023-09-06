@@ -16,23 +16,20 @@
 package com.epam.drill.agent
 
 import kotlin.native.concurrent.*
-import kotlin.test.*
 import kotlin.time.TimeMark
 import kotlin.time.TimeSource
 import kotlinx.cinterop.*
 import platform.posix.*
-import io.ktor.utils.io.core.*
-import io.ktor.utils.io.streams.*
 import mu.*
 import com.epam.drill.agent.configuration.*
 import com.epam.drill.agent.jvmti.event.*
 import com.epam.drill.jvmapi.gen.*
-import com.epam.drill.transport.*
 
 @SharedImmutable
 private val logger = KotlinLogging.logger("com.epam.drill.agent.Agent")
 
 private val LOGO = """
+    1
   ____    ____                 _       _          _  _                _      
  |  _"\U |  _"\ u     ___     |"|     |"|        | ||"|            U |"| u   
 /| | | |\| |_) |/    |_"_|  U | | u U | | u      | || |_          _ \| |/    
@@ -58,8 +55,8 @@ object Agent {
         println(LOGO)
         try {
             defaultNativeLoggingConfiguration()
-            val initialParams = agentParams(options)
-            performInitialConfiguration(initialParams)
+            val agentArguments = convertToAgentArguments(options)
+            performInitialConfiguration(agentArguments)
             setUnhandledExceptionHook({ error: Throwable ->
                 logger.error(error) { "unhandled event $error" }
             }.freeze())
@@ -86,46 +83,6 @@ object Agent {
         logger.info { "Agent_OnUnload" }
     }
 
-    private fun agentParams(options: String): Map<String, String> {
-        logger.debug { "agent options:$options" }
-        val agentParameters = options.asAgentParams()
-        val configPath = agentParameters["configPath"] ?: getenv(SYSTEM_CONFIG_PATH)?.toKString()
-        logger.debug { "configFile=$configPath, agent parameters:$agentParameters" }
-        val agentParams = if (!configPath.isNullOrEmpty()) {
-            val properties = readFile(configPath)
-            logger.debug { "properties file:$properties" }
-            properties.asAgentParams("\n", "#")
-        } else {
-            logger.warn { "Deprecated. You should use a config file instead of options. It will be removed in the next release" }
-            agentParameters
-        }
-        logger.debug { "result of agent parameters:$agentParams" }
-        return agentParams.validate()
-    }
-
-    private fun String?.asAgentParams(
-        lineDelimiter: String = ",",
-        filterPrefix: String = "",
-        mapDelimiter: String = "="
-    ): Map<String, String> {
-        if (this.isNullOrEmpty()) return emptyMap()
-        return try {
-            this.split(lineDelimiter)
-                .filter { it.isNotEmpty() && (filterPrefix.isEmpty() || !it.startsWith(filterPrefix)) }
-                .associate {
-                    it.substringBefore(mapDelimiter) to it.substringAfter(mapDelimiter, "")
-                }
-        } catch (parseException: Exception) {
-            throw IllegalArgumentException("wrong agent parameters: $this")
-        }
-    }
-
-    private fun readFile(filePath: String): String {
-        val fileDescriptor = open(filePath, EROFS)
-        if (fileDescriptor == -1) throw IllegalArgumentException("Cannot open the config file with filePath='$filePath'")
-        val bytes = Input(fileDescriptor).readBytes()
-        return bytes.decodeToString()
-    }
 
     private fun callbackRegister() = memScoped {
         val alloc = alloc<jvmtiEventCallbacks>()
@@ -136,15 +93,5 @@ object Agent {
         SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_VM_INIT, null)
     }
 
-    private fun Map<String, String>.validate(): Map<String, String> = apply {
-        check("agentId" in this) { "Please set 'agentId' as agent parameters e.g. -agentpath:/path/to/agent=agentId={your ID}" }
-        val adminAddress = get("adminAddress")
-        checkNotNull(adminAddress) { "Please set 'adminAddress' as agent parameters e.g. -agentpath:/path/to/agent=adminAddress={hostname:port}" }
-        try {
-            URL("ws://$adminAddress")
-        } catch (parseException: RuntimeException) {
-            fail("Please check 'adminAddress' parameter. It should be a valid address to the admin service without schema and any additional paths, e.g. localhost:8090")
-        }
-    }
 
 }

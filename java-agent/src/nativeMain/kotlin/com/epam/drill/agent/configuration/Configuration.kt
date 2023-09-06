@@ -15,6 +15,7 @@
  */
 package com.epam.drill.agent.configuration
 
+import com.epam.drill.agent.SYSTEM_CONFIG_PATH
 import kotlin.time.DurationUnit
 import kotlin.time.toDuration
 import kotlinx.cinterop.toKString
@@ -36,25 +37,27 @@ import com.epam.drill.jvmapi.callObjectVoidMethodWithInt
 import com.epam.drill.jvmapi.callObjectVoidMethodWithString
 import com.epam.drill.logging.LoggingConfiguration
 import com.epam.drill.transport.URL
+import io.ktor.utils.io.core.*
+import io.ktor.utils.io.streams.*
+import platform.posix.EROFS
+import platform.posix.open
+import kotlin.test.fail
 
 private val logger = KotlinLogging.logger("com.epam.drill.agent.configuration.Configuration")
 
-fun performInitialConfiguration(initialParams: Map<String, String>) {
-    val agentArguments = initialParams.parseAs<AgentArguments>()
-    agentArguments.let { aa ->
-        drillInstallationDir = aa.drillInstallationDir
-        adminAddress = URL("ws://${aa.adminAddress}")
-        agentConfig = AgentConfig(
-            id = aa.agentId,
-            instanceId = aa.instanceId,
-            agentVersion = agentVersion,
-            buildVersion = aa.buildVersion ?: calculateBuildVersion() ?: "unspecified",
-            serviceGroupId = aa.groupId,
-            agentType = AgentType.JAVA,
-            parameters = aa.defaultParameters(),
-        )
-        updateAgentParameters(agentConfig.parameters, true)
-    }
+fun performInitialConfiguration(aa: AgentArguments) {
+    drillInstallationDir = aa.drillInstallationDir
+    adminAddress = URL("ws://${aa.adminAddress}")
+    agentConfig = AgentConfig(
+        id = aa.agentId,
+        instanceId = aa.instanceId,
+        agentVersion = agentVersion,
+        buildVersion = aa.buildVersion ?: calculateBuildVersion() ?: "unspecified",
+        serviceGroupId = aa.groupId,
+        agentType = AgentType.JAVA,
+        parameters = aa.defaultParameters(),
+    )
+    updateAgentParameters(agentConfig.parameters, true)
 }
 
 fun updateAgentParameters(parameters: Map<String, AgentParameter>, initialization: Boolean = false) {
@@ -121,6 +124,47 @@ fun retrieveAdminUrl(): String {
     } else adminAddress?.toUrlString(false).toString()
 }
 
+fun convertToAgentArguments(options: String): AgentArguments {
+    logger.debug { "agent options:$options" }
+    val agentParameters = options.asAgentParams()
+    val configPath = agentParameters["configPath"] ?: getenv(SYSTEM_CONFIG_PATH)?.toKString()
+    logger.debug { "configFile=$configPath, agent parameters:$agentParameters" }
+    val agentParams = if (!configPath.isNullOrEmpty()) {
+        val properties = readFile(configPath)
+        logger.debug { "properties file:$properties" }
+        properties.asAgentParams("\n", "#")
+    } else {
+        logger.warn { "Deprecated. You should use a config file instead of options. It will be removed in the next release" }
+        agentParameters
+    }
+    logger.debug { "result of agent parameters:$agentParams" }
+    return agentParams.validate().parseAs()
+}
+
+private fun String?.asAgentParams(
+    lineDelimiter: String = ",",
+    filterPrefix: String = "",
+    mapDelimiter: String = "="
+): Map<String, String> {
+    if (this.isNullOrEmpty()) return emptyMap()
+    return try {
+        this.split(lineDelimiter)
+            .filter { it.isNotEmpty() && (filterPrefix.isEmpty() || !it.startsWith(filterPrefix)) }
+            .associate {
+                it.substringBefore(mapDelimiter) to it.substringAfter(mapDelimiter, "")
+            }
+    } catch (parseException: Exception) {
+        throw IllegalArgumentException("wrong agent parameters: $this")
+    }
+}
+
+private fun readFile(filePath: String): String {
+    val fileDescriptor = open(filePath, EROFS)
+    if (fileDescriptor == -1) throw IllegalArgumentException("Cannot open the config file with filePath='$filePath'")
+    val bytes = Input(fileDescriptor).readBytes()
+    return bytes.decodeToString()
+}
+
 private inline fun <reified T : Any> Map<String, String>.parseAs(): T = run {
     val serializer = T::class.serializer()
     val module = serializersModuleOf(serializer)
@@ -140,3 +184,14 @@ private fun calculateBuildVersion(): String? = runCatching {
         }
     }
 }.getOrNull()
+
+private fun Map<String, String>.validate(): Map<String, String> = apply {
+    check("agentId" in this) { "Please set 'agentId' as agent parameters e.g. -agentpath:/path/to/agent=agentId={your ID}" }
+    val adminAddress = get("adminAddress")
+    checkNotNull(adminAddress) { "Please set 'adminAddress' as agent parameters e.g. -agentpath:/path/to/agent=adminAddress={hostname:port}" }
+    try {
+        URL("ws://$adminAddress")
+    } catch (parseException: RuntimeException) {
+        fail("Please check 'adminAddress' parameter. It should be a valid address to the admin service without schema and any additional paths, e.g. localhost:8090")
+    }
+}
