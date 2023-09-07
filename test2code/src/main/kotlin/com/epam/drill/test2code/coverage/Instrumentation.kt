@@ -37,7 +37,7 @@ class DrillInstrumenter(
 
     override fun instrument(className: String, initialBytes: ByteArray): ByteArray? = try {
         val version = InstrSupport.getMajorVersion(initialBytes)
-        val classId = CRC64.classId(initialBytes)
+        val classId = CRC64.classId(className.toByteArray())
 
         //count probes before transformation
         val counter = ProbeCounter()

@@ -149,7 +149,6 @@ class Test2Code(
             .map {
                 ExecClassData(
                     id = it.id,
-                    className = it.name,
                     probes = it.probes.values.toBitSet(),
                     sessionId = it.sessionId,
                     testId = it.testId,
