@@ -25,9 +25,9 @@ actual object JvmModuleLoader {
 
     actual fun loadJvmModule(id: String): AgentModule<*> =
         callObjectAgentModuleMethodWithString(JvmModuleLoader::class, JvmModuleLoader::loadJvmModule, id).run {
-            val pluginApiClass = NewGlobalRef(GetObjectClass(this))!!
-            val agentPartRef = NewGlobalRef(this)!!
-            InstrumentationAgentModule(id, pluginApiClass, agentPartRef).also { PluginStorage.add(it) }
+            val moduleClass = NewGlobalRef(GetObjectClass(this))!!
+            val moduleRef = NewGlobalRef(this)!!
+            InstrumentationAgentModule(id, moduleClass, moduleRef).also { PluginStorage.add(it) }
         }
 
 }
