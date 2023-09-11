@@ -26,27 +26,38 @@ import java.util.*
 import java.util.concurrent.*
 
 interface CoverageSender {
+    fun setCoverageTransport(transport: CoverageTransport)
     fun startSendingCoverage()
     fun stopSendingCoverage()
 }
 
+//TODO fix problem with JvmModuleConfiguration.getCoverageRetentionLimit
 private val COVERAGE_RETENTION_LIMIT_BYTES = BigInteger.valueOf(JvmModuleConfiguration.getCoverageRetentionLimit())
 
 class IntervalCoverageSender(
     private val intervalMs: Long,
-    private val coverageTransport: CoverageTransport,
-    private val inMemoryRetentionQueue: RetentionQueue = InMemoryRetentionQueue(totalSizeByteLimit = COVERAGE_RETENTION_LIMIT_BYTES),
+    private val inMemoryRetentionQueue: RetentionQueue = InMemoryRetentionQueue(
+        totalSizeByteLimit = BigInteger.valueOf(
+            10000
+        )
+    ),
     private val collectProbes: () -> Sequence<ExecDatum> = { emptySequence() }
 ) : CoverageSender {
     private val logger = KotlinLogging.logger {}
     private val scheduledThreadPool = Executors.newSingleThreadScheduledExecutor()
+    private var coverageTransport: CoverageTransport = StubTransport()
+
+    override fun setCoverageTransport(transport: CoverageTransport) {
+        coverageTransport = transport
+    }
 
     override fun startSendingCoverage() {
         scheduledThreadPool.scheduleAtFixedRate(
             Runnable { sendProbes(collectProbes()) },
             0,
             //TODO investigate which number is preferable
-            intervalMs,
+            //      fix and set up intervalMs
+            2000,
             TimeUnit.MILLISECONDS
         )
         logger.debug { "Coverage sending job is started." }
