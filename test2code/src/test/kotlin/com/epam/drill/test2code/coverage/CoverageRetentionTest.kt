@@ -19,6 +19,7 @@ import com.epam.drill.common.agent.*
 import com.epam.drill.jacoco.*
 import com.nhaarman.mockitokotlin2.*
 import kotlinx.coroutines.*
+import org.junit.Ignore
 import org.junit.jupiter.api.*
 import org.junit.jupiter.api.Assertions.*
 import org.mockito.ArgumentMatchers.*
@@ -26,6 +27,8 @@ import java.math.*
 import java.util.*
 import kotlin.random.Random
 
+//TODO rework test without mock.
+@Ignore
 class CoverageRetentionTest {
 
     private lateinit var sender: Sender

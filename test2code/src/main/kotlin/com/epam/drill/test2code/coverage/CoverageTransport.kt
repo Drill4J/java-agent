@@ -15,7 +15,9 @@
  */
 package com.epam.drill.test2code.coverage
 
+import com.epam.drill.agent.websocket.*
 import com.epam.drill.common.agent.*
+import mu.*
 import java.util.concurrent.atomic.*
 
 interface CoverageTransport {
@@ -28,22 +30,33 @@ interface CoverageTransport {
     fun onUnavailable()
 }
 
-open class WebsocketCoverageTransport(
+class WebsocketCoverageTransport(
     private val id: String,
-    private val sender: Sender
+    private val sender: Sender,
+    private var isTransportAvailable: AtomicBoolean = AtomicBoolean(false)
 ) : CoverageTransport {
-    private var isTransportAvailable = AtomicBoolean(false)
+    private val logger = KotlinLogging.logger {}
+    init {
+        onAvailable()
+        onUnavailable()
+    }
 
     override fun isAvailable(): Boolean {
         return isTransportAvailable.get()
     }
 
     override fun onAvailable() {
-        isTransportAvailable.set(true)
+        WsClient.endpoint.setOnAvailable {
+            logger.info { "onAvailable call callback" }
+            isTransportAvailable.set(true)
+        }
     }
 
     override fun onUnavailable() {
-        isTransportAvailable.set(false)
+        WsClient.endpoint.setOnUnavailable {
+            logger.info { "setOnUnavailable call callback" }
+            isTransportAvailable.set(false)
+        }
     }
 
     override fun send(message: String) {
