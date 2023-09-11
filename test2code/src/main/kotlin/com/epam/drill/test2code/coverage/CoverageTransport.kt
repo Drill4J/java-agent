@@ -30,12 +30,31 @@ interface CoverageTransport {
     fun onUnavailable()
 }
 
+class StubTransport : CoverageTransport {
+    override fun send(message: String) {
+        throw UnsupportedOperationException()
+    }
+
+    override fun isAvailable(): Boolean {
+        return false
+    }
+
+    override fun onAvailable() {
+        // stub
+    }
+
+    override fun onUnavailable() {
+        // stub
+    }
+}
+
 class WebsocketCoverageTransport(
     private val id: String,
     private val sender: Sender,
     private var isTransportAvailable: AtomicBoolean = AtomicBoolean(false)
 ) : CoverageTransport {
     private val logger = KotlinLogging.logger {}
+
     init {
         onAvailable()
         onUnavailable()

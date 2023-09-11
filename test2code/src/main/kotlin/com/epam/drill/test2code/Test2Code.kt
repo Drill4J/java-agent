@@ -45,7 +45,8 @@ class Test2Code(
 
     internal val json = Json { encodeDefaults = true }
 
-    private val coverageManager = CoverageManager(coverageTransport = WebsocketCoverageTransport(id, sender))
+    private val coverageManager =
+        DrillCoverageManager.apply { setCoverageTransport(WebsocketCoverageTransport(id, sender)) }
 
     private val instrumenter = DrillInstrumenter(coverageManager, coverageManager)
 
