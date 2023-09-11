@@ -55,8 +55,8 @@ fun vmInitEvent(env: CPointer<jvmtiEnvVar>?, jniEnv: CPointer<JNIEnvVar>?, threa
     globalCallbacks()
     updatePackagePrefixesConfiguration()
     loadJvmModule("test2code")
-    WsClient.connect(adminAddress.toString())
     RequestHolder.init(isAsync = agentParameters.isAsyncApp)
+    WsClient.connect(adminAddress.toString())
 }
 
 @Suppress("UNCHECKED_CAST")
