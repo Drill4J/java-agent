@@ -1,5 +1,5 @@
 /**
- * Copyright 2020 - 2022 EPAM Systems
+ * Copyright 2020 - 2023 EPAM Systems
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,7 +23,6 @@ import kotlinx.serialization.modules.serializersModuleOf
 import kotlinx.serialization.serializer
 import platform.posix.getenv
 import mu.KotlinLogging
-import com.epam.drill.agent.SYSTEM_JAVA_APP_JAR
 import com.epam.drill.agent.agentVersion
 import com.epam.drill.agent.configuration.serialization.SimpleMapDecoder
 import com.epam.drill.common.agent.configuration.AgentConfig
@@ -41,7 +40,6 @@ import io.ktor.utils.io.core.*
 import io.ktor.utils.io.streams.*
 import platform.posix.EROFS
 import platform.posix.open
-import kotlin.test.fail
 
 private val logger = KotlinLogging.logger("com.epam.drill.agent.configuration.Configuration")
 
@@ -49,10 +47,10 @@ fun performInitialConfiguration(aa: AgentArguments) {
     drillInstallationDir = aa.drillInstallationDir
     adminAddress = URL("ws://${aa.adminAddress}")
     agentConfig = AgentConfig(
-        id = aa.agentId,
+        id = aa.agentId!!,
         instanceId = aa.instanceId,
         agentVersion = agentVersion,
-        buildVersion = aa.buildVersion ?: calculateBuildVersion() ?: "unspecified",
+        buildVersion = aa.buildVersion!!,
         serviceGroupId = aa.groupId,
         agentType = AgentType.JAVA,
         parameters = aa.defaultParameters(),
@@ -138,7 +136,11 @@ fun convertToAgentArguments(options: String): AgentArguments {
         agentParameters
     }
     logger.debug { "result of agent parameters:$agentParams" }
-    return agentParams.validate().parseAs()
+    return agentParams.parseAs()
+}
+
+fun validate(args: AgentArguments) {
+    AgentArgumentsValidator.validate(args)
 }
 
 private fun String?.asAgentParams(
@@ -171,27 +173,3 @@ private inline fun <reified T : Any> Map<String, String>.parseAs(): T = run {
     serializer.deserialize(SimpleMapDecoder(module, this))
 }
 
-private fun calculateBuildVersion(): String? = runCatching {
-    getenv(SYSTEM_JAVA_APP_JAR)?.toKString()?.let {
-        "(.*)/(.*).jar".toRegex().matchEntire(it)?.let { matchResult ->
-            if (matchResult.groupValues.size == 3) {
-                val buildVersion = matchResult.groupValues[2]
-                logger.debug { "calculated build version = '$buildVersion'" }
-                buildVersion
-            } else {
-                null
-            }
-        }
-    }
-}.getOrNull()
-
-private fun Map<String, String>.validate(): Map<String, String> = apply {
-    check("agentId" in this) { "Please set 'agentId' as agent parameters e.g. -agentpath:/path/to/agent=agentId={your ID}" }
-    val adminAddress = get("adminAddress")
-    checkNotNull(adminAddress) { "Please set 'adminAddress' as agent parameters e.g. -agentpath:/path/to/agent=adminAddress={hostname:port}" }
-    try {
-        URL("ws://$adminAddress")
-    } catch (parseException: RuntimeException) {
-        fail("Please check 'adminAddress' parameter. It should be a valid address to the admin service without schema and any additional paths, e.g. localhost:8090")
-    }
-}
