@@ -65,14 +65,14 @@ class WebsocketCoverageTransport(
     }
 
     override fun onAvailable() {
-        WsClient.endpoint.setOnAvailable {
+        WsClient.setOnAvailable {
             logger.info { "onAvailable call callback" }
             isTransportAvailable.set(true)
         }
     }
 
     override fun onUnavailable() {
-        WsClient.endpoint.setOnUnavailable {
+        WsClient.setOnUnavailable {
             logger.info { "setOnUnavailable call callback" }
             isTransportAvailable.set(false)
         }
