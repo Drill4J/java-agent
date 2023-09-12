@@ -41,7 +41,6 @@ class InMemoryRetentionQueue(
     private var totalBytes: BigInteger = BigInteger.ZERO
 
     override fun addAll(data: Sequence<ByteArray>) {
-        logger.info { "Try to add to queue data: $data" }
         data.forEach { bytes ->
             if (totalBytes.plus(BigInteger.valueOf(bytes.size.toLong())) > totalSizeByteLimit) {
                 logger.info { "Cannot add element of size ${bytes.size}. Current usage ${totalBytes}/${totalSizeByteLimit} bytes" }
@@ -57,7 +56,6 @@ class InMemoryRetentionQueue(
     }
 
     override fun flush(): Sequence<ByteArray> {
-        logger.info { "Try to flush from queue" }
         val bytes = queue.toList().asSequence()
         queue.clear()
         totalBytes = BigInteger.ZERO
