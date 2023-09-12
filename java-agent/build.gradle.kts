@@ -102,6 +102,7 @@ kotlin {
                 implementation(project(":agent"))
                 implementation(project(":jvmapi"))
                 implementation(project(":knasm"))
+                implementation(project(":konform"))
             }
         }
         val linuxX64Main by getting(configuration = configureNativeDependencies)
