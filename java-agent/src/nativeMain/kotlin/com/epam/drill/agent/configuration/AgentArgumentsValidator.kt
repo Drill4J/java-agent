@@ -15,20 +15,20 @@
  */
 package com.epam.drill.agent.configuration
 
-import com.epam.drill.agent.configuration.exceptions.StrictValidationException
+import com.epam.drill.agent.configuration.exceptions.AgentValidationException
 import com.epam.drill.konform.validation.Invalid
 import com.epam.drill.konform.validation.Validation
-import com.epam.drill.konform.validation.ValidationResult
+import com.epam.drill.konform.validation.ValidationErrors
 import com.epam.drill.konform.validation.jsonschema.enum
 import com.epam.drill.konform.validation.jsonschema.minLength
 import com.epam.drill.konform.validation.jsonschema.minimum
-import mu.KotlinLogging
-import mu.KotlinLoggingLevel
 
 object AgentArgumentsValidator {
-    private val logger = KotlinLogging.logger {}
 
     val strictValidators = Validation<AgentArguments> {
+        AgentArguments::drillInstallationDir required {
+            pathExists()
+        }
         AgentArguments::agentId required {
             identifier()
             minLength(3)
@@ -51,9 +51,6 @@ object AgentArgumentsValidator {
         AgentArguments::instanceId ifPresent {
 
         }
-        AgentArguments::drillInstallationDir ifPresent {
-//            pathExists()
-        }
         AgentArguments::classScanDelay ifPresent {
             minimum(0)
         }
@@ -66,23 +63,25 @@ object AgentArgumentsValidator {
         AgentArguments::logLimit ifPresent {
             minimum(0)
         }
-        AgentArguments::logFile ifPresent {
-//            fileExists() TODO change to valid path
-        }
     }
 
     fun validate(args: AgentArguments) {
-        strictValidators(args).takeIf { it is Invalid }?.let {
-            throw StrictValidationException(mapToMessage(it))
+        strictValidators(args).takeIf { it is Invalid }?.let { result ->
+            throw AgentValidationException(
+                "Can’t load the agent because some agent parameters are set incorrectly. " +
+                        convertToMessage(result.errors)
+            )
         }
         softValidators(args).takeIf { it is Invalid }?.let { result ->
-            logger.warn { "Some parameters were set incorrectly and were replaced with default values. Please check next parameters:\n\r${mapToMessage(result)}\""}
+            println(
+                "Some agent parameters were set incorrectly and were replaced with default values. " +
+                        convertToMessage(result.errors)
+            )
             val defaultValue = AgentArguments()
             result.errors.forEach { error ->
-                when(mapToField(error.dataPath)) {
-                    AgentArguments::groupId.name -> defaultValue.groupId
-                    AgentArguments::instanceId.name -> defaultValue.instanceId
-                    AgentArguments::drillInstallationDir.name -> defaultValue.drillInstallationDir
+                when (convertToField(error.dataPath)) {
+                    AgentArguments::groupId.name -> args.groupId = defaultValue.groupId
+                    AgentArguments::instanceId.name -> args.instanceId = defaultValue.instanceId
                     AgentArguments::logLevel.name -> args.logLevel = defaultValue.logLevel
                     AgentArguments::logFile.name -> args.logFile = defaultValue.logFile
                     AgentArguments::logLimit.name -> args.logLimit = defaultValue.logLimit
@@ -93,9 +92,8 @@ object AgentArgumentsValidator {
         }
     }
 
-    private fun mapToMessage(validationResult: ValidationResult<AgentArguments>): String {
-        return validationResult.errors.joinToString("\n\r") { " - ${mapToField(it.dataPath)} ${it.message}" }
-    }
+    private fun convertToMessage(errors: ValidationErrors) = "Please check next parameters:\n" +
+            errors.joinToString("\n") { " - ${convertToField(it.dataPath)} ${it.message}" }
 
-    private fun mapToField(dataPath: String) = dataPath.replaceFirst(".", "")
+    private fun convertToField(dataPath: String) = dataPath.replaceFirst(".", "")
 }
