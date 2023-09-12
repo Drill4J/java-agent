@@ -16,6 +16,7 @@
 package com.epam.drill.test2code.coverage
 
 import java.util.concurrent.ConcurrentHashMap
+import mu.KotlinLogging
 
 /**
  * Descriptor of class probes
@@ -23,30 +24,35 @@ import java.util.concurrent.ConcurrentHashMap
  * @param name a full class name
  * @param probeCount a number of probes in the class
  */
-data class ProbesDescriptor(
+data class ClassDescriptor(
     val id: ClassId,
     val name: String,
     val probeCount: Int,
 )
 
-interface ProbesDescriptorProvider: Iterable<ProbesDescriptor> {
+interface IClassDescriptorProvider: Iterable<ClassDescriptor> {
     /**
      * Add a new probe descriptor
      */
-    fun addDescriptor(descriptor: ProbesDescriptor)
+    fun add(descriptor: ClassDescriptor)
+
+    fun get(classId: ClassId): ClassDescriptor?
 }
 
-class ConcurrentProbesDescriptorProvider(
-    val addDescriptorCallback: (descriptor: ProbesDescriptor) -> Unit = {}
-): ProbesDescriptorProvider {
+class ConcurrentClassDescriptorProvider: IClassDescriptorProvider {
+    private val logger = KotlinLogging.logger("${this.javaClass.`package`}.${this.javaClass.name}")
 
-    private val probesDescriptors = ConcurrentHashMap<ClassId, ProbesDescriptor>()
+    private val classDescriptors = ConcurrentHashMap<ClassId, ClassDescriptor>()
 
-    override fun addDescriptor(descriptor: ProbesDescriptor) {
-        probesDescriptors[descriptor.id] = descriptor
-        addDescriptorCallback(descriptor)
+    override fun add(descriptor: ClassDescriptor) {
+        classDescriptors[descriptor.id] = descriptor
     }
 
-    override fun iterator(): Iterator<ProbesDescriptor> = probesDescriptors.values.iterator()
+    override fun get(classId: ClassId): ClassDescriptor? {
+        val descriptor = classDescriptors[classId]
+        if (descriptor == null) logger.warn { "descriptor for class not found. classId: $$classId" }
+        return descriptor
+    }
 
+    override fun iterator(): Iterator<ClassDescriptor> = classDescriptors.values.iterator()
 }

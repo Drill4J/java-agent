@@ -17,32 +17,27 @@ package com.epam.drill.test2code.coverage
 
 import mu.KotlinLogging
 
-interface CoverageRecorder {
+interface ICoverageRecorder {
     fun startRecording(sessionId: String, testId: String)
     fun stopRecording(sessionId: String, testId: String)
     fun collectProbes(): Sequence<ExecDatum>
 }
 
-class ThreadCoverageRecorder(
+class CoverageRecorder(
     private val execDataPool: DataPool<SessionTestKey, ExecData>,
-    private val requestThreadLocal: ThreadLocal<ExecData?>,
-    private val execDataCreator: (SessionId, TestId) -> ExecData = { _, _ -> ExecData() },
-) : CoverageRecorder {
+    private val execDataProvider: IExecDataProvider,
+) : ICoverageRecorder {
     private val logger = KotlinLogging.logger {}
 
     override fun startRecording(sessionId: String, testId: String) {
-        val data = execDataPool.getOrPut(SessionTestKey(sessionId, testId)) {
-            execDataCreator(sessionId, testId)
-        }
-        requestThreadLocal.set(data)
+        execDataProvider.setContext(sessionId, testId)
         logger.trace { "Test recording started (sessionId = $sessionId, testId=$testId, threadId=${Thread.currentThread().id})." }
     }
 
     override fun stopRecording(sessionId: String, testId: String) {
-        val data = requestThreadLocal.get()
+        val data = execDataProvider.getExecData(sessionId, testId)
         if (data != null) {
             execDataPool.release(SessionTestKey(sessionId, testId), data)
-            requestThreadLocal.remove()
         }
         logger.trace { "Test recording stopped (sessionId = $sessionId, testId=$testId, threadId=${Thread.currentThread().id})." }
     }

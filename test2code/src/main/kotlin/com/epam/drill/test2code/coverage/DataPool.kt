@@ -23,7 +23,7 @@ import java.util.concurrent.ConcurrentLinkedQueue
  * @param K the key
  * @param V the object
  */
-interface DataPool<K, V> {
+interface DataPool<K: Any, V> {
     /**
      * Get an object from the pool by the key if it is contained there, or put a default value into the pool
      * @param key a key
@@ -31,6 +31,13 @@ interface DataPool<K, V> {
      * @return an object that is obtained by key
      */
     fun getOrPut(key: K, default: () -> V): V
+
+    /**
+     * Get an object from the pool by the key
+     * @param key a key
+     * @return object corresponding to the key
+     */
+    fun get(key: K): V?
 
     /**
      * Release the used object by key and move it into the released queue
@@ -50,7 +57,7 @@ interface DataPool<K, V> {
  * Thread safety implementation of DataPool
  * @see DataPool
  */
-class ConcurrentDataPool<K, V> : DataPool<K, V> {
+class ConcurrentDataPool<K : Any, V> : DataPool<K, V> {
     private val dataMap = ConcurrentHashMap<K, V>()
     private val released = ConcurrentLinkedQueue<V>()
 
@@ -61,6 +68,10 @@ class ConcurrentDataPool<K, V> : DataPool<K, V> {
     override fun release(key: K, value: V) {
         dataMap.remove(key)
         released.add(value)
+    }
+
+    override fun get(key: K): V? {
+        return dataMap[key]
     }
 
     override fun pollReleased(): Sequence<V> {

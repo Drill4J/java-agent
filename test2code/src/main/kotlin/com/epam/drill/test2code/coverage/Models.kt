@@ -25,8 +25,6 @@ typealias TestId = String
 typealias SessionTestKey = Pair<SessionId, TestId>
 typealias ExecData = ConcurrentHashMap<ClassId, ExecDatum>
 
-
-
 /**
  * A class containing probes obtained from a specific test
  */
@@ -35,5 +33,5 @@ data class ExecDatum(
     val name: String,
     val probes: AgentProbes,
     val sessionId: String,
-    val testId: String = DEFAULT_TEST_ID,
+    val testId: String,
 )
