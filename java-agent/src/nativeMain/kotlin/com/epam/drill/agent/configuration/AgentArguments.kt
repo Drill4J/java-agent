@@ -1,5 +1,5 @@
 /**
- * Copyright 2020 - 2022 EPAM Systems
+ * Copyright 2020 - 2023 EPAM Systems
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,23 +22,23 @@ import com.epam.drill.common.agent.configuration.AgentParameter
 
 @Serializable
 data class AgentArguments(
-    val agentId: String,
-    val adminAddress: String,
-    val drillInstallationDir: String = javaProcess().firstAgentPath,
-    val buildVersion: String? = null,
-    val instanceId: String = "",
-    val groupId: String = "",
-    val logLevel: String = KotlinLoggingLevel.ERROR.name,
-    val logFile: String? = null,
-    val logLimit: Int = 512,
-    val isWebApp: Boolean = false,
-    val isKafka: Boolean = false,
-    val isCadence: Boolean = false,
-    val isTlsApp: Boolean = false,
-    val isAsyncApp: Boolean = false,
-    val classScanDelay: Long = 0L,
-    val scanClassPath: String = "",
-    val packagePrefixes: String = ""
+    var adminAddress: String? = null,
+    var packagePrefixes: String? = null,
+    var agentId: String? = null,
+    var buildVersion: String? = null,
+    var groupId: String = "",
+    var instanceId: String = "",
+    var drillInstallationDir: String = javaProcess().firstAgentPath,
+    var logLevel: String = KotlinLoggingLevel.ERROR.name,
+    var logFile: String? = null,
+    var logLimit: Int = 512,
+    var isWebApp: Boolean = false,
+    var isKafka: Boolean = false,
+    var isCadence: Boolean = false,
+    var isTlsApp: Boolean = false,
+    var isAsyncApp: Boolean = false,
+    var classScanDelay: Long = 0L,
+    var scanClassPath: String = ""
 ) {
 
     fun defaultParameters(): Map<String, AgentParameter> = mapOf(
@@ -94,7 +94,7 @@ data class AgentArguments(
         ),
         AgentArguments::packagePrefixes.name to AgentParameter(
             type = packagePrefixes.toType(),
-            value = packagePrefixes,
+            value = packagePrefixes!!,
             description = "Configure package prefixes for scanning and instrumentation",
         )
     )
