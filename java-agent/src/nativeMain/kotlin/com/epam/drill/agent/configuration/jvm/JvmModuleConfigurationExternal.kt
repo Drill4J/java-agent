@@ -41,10 +41,10 @@ fun waitClassScanning(env: JNIEnv, thiz: jobject) =
 
 @Suppress("UNUSED")
 @CName("Java_com_epam_drill_test2code_JvmModuleConfiguration_getCoverageRetentionLimit")
-fun getCoverageRetentionLimit(env: JNIEnv, thiz: jobject): jlong? =
+fun getCoverageRetentionLimit(env: JNIEnv, thiz: jobject): Long =
     callNativeLongMethod(env, thiz, JvmModuleConfiguration::getCoverageRetentionLimit)
 
 @Suppress("UNUSED")
 @CName("Java_com_epam_drill_test2code_JvmModuleConfiguration_getSendCoverageInterval")
-fun getSendCoverageInterval(env: JNIEnv, thiz: jobject): jlong? =
+fun getSendCoverageInterval(env: JNIEnv, thiz: jobject): Long =
     callNativeLongMethod(env, thiz, JvmModuleConfiguration::getSendCoverageInterval)

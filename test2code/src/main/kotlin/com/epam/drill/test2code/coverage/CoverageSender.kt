@@ -31,15 +31,12 @@ interface CoverageSender {
     fun stopSendingCoverage()
 }
 
-//TODO fix problem with JvmModuleConfiguration.getCoverageRetentionLimit
 private val COVERAGE_RETENTION_LIMIT_BYTES = BigInteger.valueOf(JvmModuleConfiguration.getCoverageRetentionLimit())
 
 class IntervalCoverageSender(
     private val intervalMs: Long,
     private val inMemoryRetentionQueue: RetentionQueue = InMemoryRetentionQueue(
-        totalSizeByteLimit = BigInteger.valueOf(
-            10000
-        )
+        totalSizeByteLimit = COVERAGE_RETENTION_LIMIT_BYTES
     ),
     private val collectProbes: () -> Sequence<ExecDatum> = { emptySequence() }
 ) : CoverageSender {
@@ -55,9 +52,7 @@ class IntervalCoverageSender(
         scheduledThreadPool.scheduleAtFixedRate(
             Runnable { sendProbes(collectProbes()) },
             0,
-            //TODO investigate which number is preferable
-            //      fix and set up intervalMs
-            2000,
+            intervalMs,
             TimeUnit.MILLISECONDS
         )
         logger.debug { "Coverage sending job is started." }
