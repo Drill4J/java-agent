@@ -26,8 +26,8 @@ data class AgentArguments(
     var packagePrefixes: String? = null,
     var agentId: String? = null,
     var buildVersion: String? = null,
-    var groupId: String = "",
-    var instanceId: String = "",
+    var groupId: String? = null,
+    var instanceId: String? = null,
     var drillInstallationDir: String = javaProcess().firstAgentPath,
     var logLevel: String = KotlinLoggingLevel.ERROR.name,
     var logFile: String? = null,
@@ -38,7 +38,7 @@ data class AgentArguments(
     var isTlsApp: Boolean = false,
     var isAsyncApp: Boolean = false,
     var classScanDelay: Long = 0L,
-    var scanClassPath: String = ""
+    var scanClassPath: String? = null
 ) {
 
     fun defaultParameters(): Map<String, AgentParameter> = mapOf(
@@ -89,7 +89,7 @@ data class AgentArguments(
         ),
         AgentArguments::scanClassPath.name to AgentParameter(
             type = scanClassPath.toType(),
-            value = scanClassPath,
+            value = scanClassPath ?: "",
             description = "Add additional class path to scan",
         ),
         AgentArguments::packagePrefixes.name to AgentParameter(
