@@ -1,5 +1,5 @@
 /**
- * Copyright 2020 - 2022 EPAM Systems
+ * Copyright 2020 - 2023 EPAM Systems
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,7 +29,6 @@ import com.epam.drill.jvmapi.gen.*
 private val logger = KotlinLogging.logger("com.epam.drill.agent.Agent")
 
 private val LOGO = """
-    1
   ____    ____                 _       _          _  _                _      
  |  _"\U |  _"\ u     ___     |"|     |"|        | ||"|            U |"| u   
 /| | | |\| |_) |/    |_"_|  U | | u U | | u      | || |_          _ \| |/    
@@ -53,29 +52,27 @@ object Agent {
 
     fun agentOnLoad(options: String): Int {
         println(LOGO)
-        try {
-            defaultNativeLoggingConfiguration()
-            val agentArguments = convertToAgentArguments(options)
-            performInitialConfiguration(agentArguments)
-            setUnhandledExceptionHook({ error: Throwable ->
-                logger.error(error) { "unhandled event $error" }
-            }.freeze())
 
-            memScoped {
-                val jvmtiCapabilities = alloc<jvmtiCapabilities>()
-                jvmtiCapabilities.can_retransform_classes = 1.toUInt()
-                jvmtiCapabilities.can_maintain_original_method_order = 1.toUInt()
-                AddCapabilities(jvmtiCapabilities.ptr)
-            }
-            AddToBootstrapClassLoaderSearch("$drillInstallationDir/drillRuntime.jar")
-            callbackRegister()
+        defaultNativeLoggingConfiguration()
+        val agentArguments = convertToAgentArguments(options)
+        validate(agentArguments)
+        performInitialConfiguration(agentArguments)
+        setUnhandledExceptionHook({ error: Throwable ->
+            logger.error(error) { "unhandled event $error" }
+        }.freeze())
 
-            logger.info { "The native agent was loaded" }
-            logger.info { "Pid is: " + getpid() }
-        } catch (ex: Throwable) {
-            logger.error { "Can't load the agent. Ex: ${ex.message}" }
-            JNI_ERR
+        memScoped {
+            val jvmtiCapabilities = alloc<jvmtiCapabilities>()
+            jvmtiCapabilities.can_retransform_classes = 1.toUInt()
+            jvmtiCapabilities.can_maintain_original_method_order = 1.toUInt()
+            AddCapabilities(jvmtiCapabilities.ptr)
         }
+        AddToBootstrapClassLoaderSearch("$drillInstallationDir/drillRuntime.jar")
+        callbackRegister()
+
+        logger.info { "The native agent was loaded" }
+        logger.info { "Pid is: " + getpid() }
+
         return JNI_OK
     }
 
