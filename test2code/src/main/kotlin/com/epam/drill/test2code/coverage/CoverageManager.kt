@@ -33,7 +33,7 @@ open class CoverageManager(
     private val probesDescriptorProvider: ProbesDescriptorProvider = ConcurrentProbesDescriptorProvider { descriptor ->
         globalExecData[descriptor.id] = ExecDatum(
             id = descriptor.id,
-            name = descriptor.name,
+            nameId = descriptor.classNameId,
             probes = AgentProbes(descriptor.probeCount),
             sessionId = GLOBAL_SESSION_ID,
             testId = GLOBAL_SESSION_ID
@@ -47,7 +47,7 @@ open class CoverageManager(
         probesDescriptorProvider.fold(ExecData()) { execData, descriptor ->
             execData[descriptor.id] = ExecDatum(
                 id = descriptor.id,
-                name = descriptor.name,
+                nameId = descriptor.classNameId,
                 probes = AgentProbes(descriptor.probeCount),
                 sessionId = sessionId,
                 testId = testId
