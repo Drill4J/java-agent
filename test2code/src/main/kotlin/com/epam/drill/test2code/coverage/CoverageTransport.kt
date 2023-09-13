@@ -53,7 +53,6 @@ class WebsocketCoverageTransport(
     private val sender: Sender,
     private var isTransportAvailable: AtomicBoolean = AtomicBoolean(false)
 ) : CoverageTransport {
-    private val logger = KotlinLogging.logger {}
 
     init {
         onAvailable()
@@ -66,14 +65,12 @@ class WebsocketCoverageTransport(
 
     override fun onAvailable() {
         WsClient.setOnAvailable {
-            logger.info { "onAvailable call callback" }
             isTransportAvailable.set(true)
         }
     }
 
     override fun onUnavailable() {
         WsClient.setOnUnavailable {
-            logger.info { "setOnUnavailable call callback" }
             isTransportAvailable.set(false)
         }
     }
