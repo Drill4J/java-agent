@@ -64,7 +64,6 @@ fun javaProcess(): JavaProcess = getProcessInfo().filter(String::isNotBlank).run
             }
         }
     }
-    println(javaProcess)
     javaProcess
 }
 
