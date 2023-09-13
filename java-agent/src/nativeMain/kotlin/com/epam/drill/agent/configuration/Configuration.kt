@@ -42,7 +42,7 @@ fun performInitialConfiguration(initialParams: Map<String, String>) {
     val agentArguments = initialParams.parseAs<AgentArguments>()
     agentArguments.let { aa ->
         drillInstallationDir = aa.drillInstallationDir
-        adminAddress = URL("ws://${aa.adminAddress}")
+        adminAddress = URL(aa.adminAddress)
         agentConfig = AgentConfig(
             id = aa.agentId,
             instanceId = aa.instanceId,
@@ -50,7 +50,8 @@ fun performInitialConfiguration(initialParams: Map<String, String>) {
             buildVersion = aa.buildVersion ?: calculateBuildVersion() ?: "unspecified",
             serviceGroupId = aa.groupId,
             agentType = AgentType.JAVA,
-            parameters = aa.defaultParameters(),
+            sslTruststore = aa.sslTruststore,
+            parameters = aa.defaultParameters()
         )
         updateAgentParameters(agentConfig.parameters, true)
     }
@@ -114,11 +115,8 @@ fun idHeaderPairFromConfig(): Pair<String, String> =
         else -> "drill-group-id" to groupId
     }
 
-fun retrieveAdminUrl(): String {
-    return if (secureAdminAddress != null) {
-        secureAdminAddress?.toUrlString(false).toString()
-    } else adminAddress?.toUrlString(false).toString()
-}
+fun retrieveAdminUrl(): String =
+    adminAddress?.toUrlString(false).toString()
 
 private inline fun <reified T : Any> Map<String, String>.parseAs(): T = run {
     val serializer = T::class.serializer()

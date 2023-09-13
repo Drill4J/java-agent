@@ -37,3 +37,8 @@ fun setRequestPattern(env: JNIEnv, thiz: jobject, pattern: String) =
 @CName("Java_com_epam_drill_agent_configuration_WsConfiguration_generateAgentConfigInstanceId")
 fun generateAgentConfigInstanceId(env: JNIEnv, thiz: jobject) =
     callNativeVoidMethod(env, thiz, WsConfiguration::generateAgentConfigInstanceId)
+
+@Suppress("UNUSED")
+@CName("Java_com_epam_drill_agent_configuration_WsConfiguration_getSslTruststore")
+fun getSslThrustStore(env: JNIEnv, thiz: jobject) =
+    callNativeStringMethod(env, thiz, WsConfiguration::getSslTruststore)

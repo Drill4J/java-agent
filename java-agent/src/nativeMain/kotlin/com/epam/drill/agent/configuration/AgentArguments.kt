@@ -38,7 +38,8 @@ data class AgentArguments(
     val isAsyncApp: Boolean = false,
     val classScanDelay: Long = 0L,
     val scanClassPath: String = "",
-    val packagePrefixes: String = ""
+    val packagePrefixes: String = "",
+    val sslTruststore: String = ""
 ) {
 
     fun defaultParameters(): Map<String, AgentParameter> = mapOf(
@@ -96,6 +97,11 @@ data class AgentArguments(
             type = packagePrefixes.toType(),
             value = packagePrefixes,
             description = "Configure package prefixes for scanning and instrumentation",
+        ),
+        AgentArguments::sslTruststore.name to AgentParameter(
+            type = sslTruststore.toType(),
+            value = sslTruststore,
+            description = "Configure SSL thruststore for admin connection (leave empty to thrust all)",
         )
     )
 

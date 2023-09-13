@@ -140,9 +140,9 @@ object Agent {
         val adminAddress = get("adminAddress")
         checkNotNull(adminAddress) { "Please set 'adminAddress' as agent parameters e.g. -agentpath:/path/to/agent=adminAddress={hostname:port}" }
         try {
-            URL("ws://$adminAddress")
+            URL(adminAddress)
         } catch (parseException: RuntimeException) {
-            fail("Please check 'adminAddress' parameter. It should be a valid address to the admin service without schema and any additional paths, e.g. localhost:8090")
+            fail("Please check 'adminAddress' parameter. It should be a valid address to the admin service any additional paths, e.g. ws://localhost:8090")
         }
     }
 
