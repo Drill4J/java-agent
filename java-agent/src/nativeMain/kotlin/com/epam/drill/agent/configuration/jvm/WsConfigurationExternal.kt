@@ -40,5 +40,10 @@ fun generateAgentConfigInstanceId(env: JNIEnv, thiz: jobject) =
 
 @Suppress("UNUSED")
 @CName("Java_com_epam_drill_agent_configuration_WsConfiguration_getSslTruststore")
-fun getSslThrustStore(env: JNIEnv, thiz: jobject) =
+fun getSslTruststore(env: JNIEnv, thiz: jobject) =
     callNativeStringMethod(env, thiz, WsConfiguration::getSslTruststore)
+
+@Suppress("UNUSED")
+@CName("Java_com_epam_drill_agent_configuration_WsConfiguration_getSslTruststorePassword")
+fun getSslTruststorePassword(env: JNIEnv, thiz: jobject) =
+    callNativeStringMethod(env, thiz, WsConfiguration::getSslTruststorePassword)

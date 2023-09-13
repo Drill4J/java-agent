@@ -181,6 +181,7 @@ distributions {
                 from(nativeAgentLinkTask) {
                     duplicatesStrategy = DuplicatesStrategy.EXCLUDE
                 }
+                from("temporary.jks")
             }
         }
     }

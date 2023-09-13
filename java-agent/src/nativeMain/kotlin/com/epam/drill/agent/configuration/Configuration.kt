@@ -51,6 +51,7 @@ fun performInitialConfiguration(initialParams: Map<String, String>) {
             serviceGroupId = aa.groupId,
             agentType = AgentType.JAVA,
             sslTruststore = aa.sslTruststore,
+            sslTruststorePassword = aa.sslTruststorePassword,
             parameters = aa.defaultParameters()
         )
         updateAgentParameters(agentConfig.parameters, true)

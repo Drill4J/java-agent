@@ -39,7 +39,8 @@ data class AgentArguments(
     val classScanDelay: Long = 0L,
     val scanClassPath: String = "",
     val packagePrefixes: String = "",
-    val sslTruststore: String = ""
+    val sslTruststore: String = "",
+    val sslTruststorePassword: String = ""
 ) {
 
     fun defaultParameters(): Map<String, AgentParameter> = mapOf(
@@ -101,7 +102,12 @@ data class AgentArguments(
         AgentArguments::sslTruststore.name to AgentParameter(
             type = sslTruststore.toType(),
             value = sslTruststore,
-            description = "Configure SSL thruststore for admin connection (leave empty to thrust all)",
+            description = "Configure SSL truststore for admin connection (leave empty to thrust all)",
+        ),
+        AgentArguments::sslTruststorePassword.name to AgentParameter(
+            type = sslTruststorePassword.toType(),
+            value = sslTruststorePassword,
+            description = "Configure password for SSL truststore for admin connection",
         )
     )
 
