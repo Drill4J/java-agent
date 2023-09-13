@@ -40,7 +40,7 @@ fun ValidationBuilder<String>.identifier(): Constraint<String> = addConstraint(
 
 
 fun ValidationBuilder<String>.pathExists(): Constraint<String> = addConstraint(
-    "must have an existing file path",
+    "must have an existing file path, but was {value}",
 ) { pathExists(it) }
 
 fun ValidationBuilder<String>.isValidPackage(): Constraint<String> = addConstraint(

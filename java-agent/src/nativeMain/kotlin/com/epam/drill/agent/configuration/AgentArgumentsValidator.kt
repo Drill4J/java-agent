@@ -20,6 +20,13 @@ import com.epam.drill.konform.validation.Invalid
 import com.epam.drill.konform.validation.Validation
 import com.epam.drill.konform.validation.ValidationErrors
 import com.epam.drill.konform.validation.jsonschema.*
+import mu.KotlinLogging
+import mu.KotlinLoggingLevel
+import kotlin.native.concurrent.SharedImmutable
+
+
+@SharedImmutable
+private val logger = KotlinLogging.logger("com.epam.drill.agent.configuration")
 
 object AgentArgumentsValidator {
 
@@ -32,7 +39,7 @@ object AgentArgumentsValidator {
             minLength(3)
         }
         AgentArguments::buildVersion required {
-            pattern("^[a-zA-Z0-9_\\-\\.]+\$") hint "must contain only letters, digits, dots, dashes and underscores"
+            pattern("^\\S*$") hint "must not contain whitespaces"
         }
         AgentArguments::adminAddress required {
             hostAndPort()
@@ -53,7 +60,7 @@ object AgentArgumentsValidator {
             minimum(0)
         }
         AgentArguments::logLevel ifPresent {
-            enum("TRACE", "DEBUG", "INFO", "WARN", "ERROR")
+            enum<KotlinLoggingLevel>()
         }
         AgentArguments::logLimit ifPresent {
             minimum(0)
@@ -62,16 +69,18 @@ object AgentArgumentsValidator {
 
     fun validate(args: AgentArguments) {
         strictValidators(args).takeIf { it is Invalid }?.let { result ->
+            val message = "Can’t load the agent because some agent parameters are set incorrectly. " +
+                    convertToMessage(result.errors)
+            logger.error { message }
             throw AgentValidationException(
-                "Can’t load the agent because some agent parameters are set incorrectly. " +
-                        convertToMessage(result.errors)
+                message
             )
         }
         softValidators(args).takeIf { it is Invalid }?.let { result ->
-            println(
+            logger.error {
                 "Some agent parameters were set incorrectly and were replaced with default values. " +
                         convertToMessage(result.errors)
-            )
+            }
             val defaultValue = AgentArguments()
             result.errors.forEach { error ->
                 when (convertToField(error.dataPath)) {
@@ -84,7 +93,7 @@ object AgentArgumentsValidator {
         }
     }
 
-    private fun convertToMessage(errors: ValidationErrors) = "Please check next parameters:\n" +
+    private fun convertToMessage(errors: ValidationErrors) = "Please check the following parameters:\n" +
             errors.joinToString("\n") { " - ${convertToField(it.dataPath)} ${it.message}" }
 
     private fun convertToField(dataPath: String) = dataPath.replaceFirst(".", "")
