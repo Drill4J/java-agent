@@ -30,16 +30,17 @@ data class ClassDescriptor(
     val probeCount: Int,
 )
 
-interface IClassDescriptorProvider: Iterable<ClassDescriptor> {
-    /**
-     * Add a new probe descriptor
-     */
-    fun add(descriptor: ClassDescriptor)
-
+interface IClassDescriptorsProvider {
     fun get(classId: ClassId): ClassDescriptor?
 }
 
-class ConcurrentClassDescriptorProvider: IClassDescriptorProvider {
+interface IClassDescriptorStorage {
+    fun add(descriptor: ClassDescriptor)
+}
+
+interface IClassDescriptorsManager: IClassDescriptorsProvider, IClassDescriptorStorage
+
+class ConcurrentClassDescriptorsManager: IClassDescriptorsManager {
     private val logger = KotlinLogging.logger("${this.javaClass.`package`}.${this.javaClass.name}")
 
     private val classDescriptors = ConcurrentHashMap<ClassId, ClassDescriptor>()
@@ -54,5 +55,4 @@ class ConcurrentClassDescriptorProvider: IClassDescriptorProvider {
         return descriptor
     }
 
-    override fun iterator(): Iterator<ClassDescriptor> = classDescriptors.values.iterator()
 }

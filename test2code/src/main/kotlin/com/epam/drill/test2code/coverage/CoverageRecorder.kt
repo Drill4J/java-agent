@@ -20,11 +20,9 @@ import mu.KotlinLogging
 interface ICoverageRecorder {
     fun startRecording(sessionId: String, testId: String)
     fun stopRecording(sessionId: String, testId: String)
-    fun collectProbes(): Sequence<ExecDatum>
 }
 
 class CoverageRecorder(
-    private val execDataPool: DataPool<SessionTestKey, ExecData>,
     private val execDataProvider: IExecDataProvider,
 ) : ICoverageRecorder {
     private val logger = KotlinLogging.logger {}
@@ -35,14 +33,9 @@ class CoverageRecorder(
     }
 
     override fun stopRecording(sessionId: String, testId: String) {
-        val data = execDataProvider.getExecData(sessionId, testId)
-        if (data != null) {
-            execDataPool.release(SessionTestKey(sessionId, testId), data)
-        }
+        // TODO there might be a _large_ time gap between request - response
+        // hence - lots of coverage data piling up
+        execDataProvider.releaseContext(sessionId, testId)
         logger.trace { "Test recording stopped (sessionId = $sessionId, testId=$testId, threadId=${Thread.currentThread().id})." }
-    }
-
-    override fun collectProbes(): Sequence<ExecDatum> {
-        return execDataPool.pollReleased().flatMap { it.values }.filter { it.probes.containCovered() }
     }
 }

@@ -23,86 +23,103 @@ import com.epam.drill.jacoco.AgentProbes
  */
 typealias IProbesProxy = (ClassId, Int, String, Int) -> AgentProbes
 
-const val SESSION_ID_NO_CONTEXT = "SESSION_NO_CONTEXT"
-const val TEST_ID_NO_CONTEXT = "TEST_NO_CONTEXT"
-private val AMBIENT_CONTEXT_KEY = SessionTestKey("SESSION_CONTEXT_AMBIENT", "TEST_CONTEXT_AMBIENT")
-
 // TODO extending w/o explicit reason is not the most straightforward solution
 // reason for extension: to allow CoverageManager to use abstract ExecDataProvider as IProbesProxy
 interface IExecDataProvider: IProbesProxy {
     fun setContext(sessionId: String?, testId: String?)
-    fun clearContext(sessionId: String?, testId: String?)
-    fun getExecData(sessionId: String?, testId: String?): ExecData?
-    fun getExecDatumProbes(classId: ClassId): AgentProbes
+    fun releaseContext(sessionId: String?, testId: String?)
+    fun poll(): Sequence<ExecDatum>
 }
 
+const val SESSION_CONTEXT_NONE = "SESSION_CONTEXT_NONE"
+const val TEST_CONTEXT_NONE = "TEST_CONTEXT_NONE"
+const val SESSION_CONTEXT_AMBIENT = "GLOBAL"
+
+data class ContextKey(
+    private val _sessionId: SessionId? = null, // TODO there must be a better way to avoid nullability and assign defaults
+    private val _testId: TestId? = null
+) {
+    val sessionId: SessionId = _sessionId ?: SESSION_CONTEXT_NONE
+    val testId: TestId = _testId ?: TEST_CONTEXT_NONE
+}
+
+private val CONTEXT_AMBIENT = ContextKey(SESSION_CONTEXT_AMBIENT)
+
+/**
+ * Implements :
+ * - ThreadLocal storage for code execution context
+ * - coverage storage in ExecData/ExecDatum with "lazy" creation
+ * - access to class probes for instrumented code via IExecDataProvider
+ * - coverage polling
+
+ * Note #1:
+ *  TODO this implementation wont work with AUTs relying on async request handling (1 request = multiple handler threads)
+ *  the context will either be lost or wrong when request will get passed from one thread to the other
+ *  FIX: we might employ TransmittableThreadLocal storage (see EPMDJ-8256 and «com.alibaba.ttl.TransmittableThreadLocal»)
+
+ * Note #1:
+ *  Since ThreadExecDataProvider implements IExecDataProvider it _must_ be a Kotlin singleton object
+ *  otherwise the instrumented probe calls will fail
+ */
 class ThreadExecDataProvider(
-    private val execDataPool: DataPool<SessionTestKey, ExecData>,
-    private val probesDescriptorProvider: IClassDescriptorProvider,
+    private val classDescriptorsProvider: IClassDescriptorsProvider,
+    private val execDataPool: DataPool<ContextKey, ExecData> = ConcurrentDataPool(),
 ): IExecDataProvider {
 
+    // Context management
+    private var threadLocalContext: ThreadLocal<ContextKey> = ThreadLocal() // TODO maybe assign that in setContext call (I'm not sure if this really gona be thread-local)
+
+    override fun setContext(sessionId: String?, testId: String?) {
+        this.threadLocalContext.set(ContextKey(sessionId, testId))
+    }
+
+    override fun releaseContext(sessionId: String?, testId: String?) {
+        execDataPool.release(ContextKey(sessionId, testId))
+        this.threadLocalContext.remove()
+    }
+
+    // Coverage polling
+    override fun poll(): Sequence<ExecDatum> {
+        execDataPool.release(CONTEXT_AMBIENT)
+        return execDataPool
+            .pollReleased()
+            .flatMap { it.values }
+            .filter { it.probes.containCovered() }
+            // TODO this looks redundant, since we already create fresh sequence in pollReleased impl
+            .map { datum ->
+                datum.copy(
+                    probes = AgentProbes(
+                        values = datum.probes.values.copyOf()
+                    )
+                ).also {
+                    datum.probes.values.fill(false)
+                }
+            }
+    }
+
+    // IExecDataProvider
     override fun invoke(
         id: Long,
         num: Int,
         name: String,
         probeCount: Int,
-    ): AgentProbes = this.getExecDatumProbes(id)
+    ): AgentProbes = this.getProbesForClass(id)
 
-    // TODO ! wont work with AUTs implementing async request handling
-    // WHY: the context will either be lost or wrong when request handling will pass from one thread to the other)
-    // FIX: we might employ TransmittableThreadLocal storage (see EPMDJ-8256 and «com.alibaba.ttl.TransmittableThreadLocal»)
-    private var threadLocalContext: ThreadLocal<SessionTestKey> = ThreadLocal() // TODO maybe assign that in setContext call (I'm not sure if this really gona be thread-local)
-
-    init {
-        resetContext()
-    }
-
-    private fun resetContext() {
-        this.threadLocalContext.set(AMBIENT_CONTEXT_KEY)
-    }
-
-    override fun setContext(sessionId: String?, testId: String?) {
-        this.threadLocalContext.set(
-            SessionTestKey(
-                sessionId ?: SESSION_ID_NO_CONTEXT,
-                testId ?: TEST_ID_NO_CONTEXT)
-            // TODO Admin Backend relies on testId, rather than _context_
-            // because of that, it _will_ mix up contexts with the following keys:
-            //      SESSION_ID_NO_CONTEXT:TEST_ID_NO_CONTEXT
-            //      vs
-            //      *sessionId*:TEST_ID_NO_CONTEXT
-        )
-    }
-
-    override fun clearContext(sessionId: String?, testId: String?) {
-        resetContext()
-    }
-
-    override fun getExecData(sessionId: String?, testId: String?): ExecData {
-        TODO("Not yet implemented")
-    }
-
-    override fun getExecDatumProbes(classId: ClassId): AgentProbes {
-        val context = threadLocalContext.get();
-
-        // !!!!!!!!!!!!!!!!!!!!! two getOrPut calls might introduce concurrency issue !!!!!!!!!!!!!!!!!!!!!
+    private fun getProbesForClass(classId: ClassId): AgentProbes {
+        val context = threadLocalContext.get() ?: CONTEXT_AMBIENT;
         val execData = execDataPool.getOrPut(context) {
             ExecData()
         }
-        val classDescriptor = probesDescriptorProvider.get(classId)!! // TODO this will crash AUT, I don't like this
-        val (sessionId, testId) = context // TODO relies too much on the field order definition. FIX: store context as Map
-
-        // !!!!!!!!!!!!!!!!!!!!! two getOrPut calls might introduce concurrency issue !!!!!!!!!!!!!!!!!!!!!
+        val classDescriptor = classDescriptorsProvider.get(classId)!! // TODO this will crash AUT, I don't like this
         val execDatum = execData.getOrPut(classId) {
             ExecDatum(
                 id = classDescriptor.id,
                 name = classDescriptor.name,
                 probes = AgentProbes(classDescriptor.probeCount),
-                sessionId = sessionId,
-                testId = testId
+                sessionId = context.sessionId,
+                testId = context.testId
             )
         }
         return  execDatum.probes
     }
-
 }

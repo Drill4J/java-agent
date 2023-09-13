@@ -30,7 +30,7 @@ private val classCounter = atomic(0)
 
 class DrillInstrumenter(
     private val IProbesProxy: IProbesProxy,
-    private val probesDescriptorProvider: IClassDescriptorProvider
+    private val classDescriptorsStorage: IClassDescriptorStorage
 ) : Instrumenter {
 
     private val logger = KotlinLogging.logger {}
@@ -62,7 +62,7 @@ class DrillInstrumenter(
         )
         reader.accept(visitor, ClassReader.EXPAND_FRAMES)
 
-        probesDescriptorProvider.add(
+        classDescriptorsStorage.add(
             ClassDescriptor(
                 id = classId,
                 name = className,

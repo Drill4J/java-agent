@@ -15,38 +15,17 @@
  */
 package com.epam.drill.test2code.coverage
 
-import com.epam.drill.jacoco.AgentProbes
-
-/**
- * Simple probe provider that employs a lock-free map for runtime data storage.
- * This class is intended to be an ancestor for a concrete probe array provider object.
- * The provider must be a Kotlin singleton object, otherwise the instrumented probe calls will fail.
- */
 open class CoverageManager(
-    private val execDataPool: DataPool<SessionTestKey, ExecData> = ConcurrentDataPool(),
-    private val probesDescriptorProvider: IClassDescriptorProvider = ConcurrentClassDescriptorProvider(),
-    private val execDataProvider: IExecDataProvider = ThreadExecDataProvider(execDataPool, probesDescriptorProvider),
-    private val coverageRecorder: ICoverageRecorder = CoverageRecorder(
-        execDataPool,
-        execDataProvider
-    ),
-    private val coverageSender: CoverageSender = IntervalCoverageSender(2000L) {
-        coverageRecorder.collectProbes().map { datum ->
-            datum.copy(
-                probes = AgentProbes(
-                    values = datum.probes.values.copyOf()
-                )
-            ).also {
-                datum.probes.values.fill(false)
-            }
-        }
-    }
+    private val classDescriptorsManager: IClassDescriptorsManager = ConcurrentClassDescriptorsManager(),
+    private val execDataProvider: IExecDataProvider = ThreadExecDataProvider(classDescriptorsManager),
+    private val coverageRecorder: ICoverageRecorder = CoverageRecorder(execDataProvider),
+    private val coverageSender: CoverageSender = IntervalCoverageSender(2000L, execDataProvider::poll)
 ) : IProbesProxy by execDataProvider,
-    IClassDescriptorProvider by probesDescriptorProvider,
+    IClassDescriptorStorage by classDescriptorsManager,
     ICoverageRecorder by coverageRecorder,
     CoverageSender by coverageSender
 
 /**
- * The probe provider MUST be a Kotlin singleton object
+ * The probes proxy MUST be a Kotlin singleton object
  */
 internal object DrillCoverageManager : CoverageManager()

@@ -16,13 +16,11 @@
 package com.epam.drill.test2code.coverage
 
 import com.epam.drill.jacoco.AgentProbes
-import com.epam.drill.plugins.test2code.common.api.*
 import java.util.concurrent.ConcurrentHashMap
 
 typealias ClassId = Long
 typealias SessionId = String
 typealias TestId = String
-typealias SessionTestKey = Pair<SessionId, TestId>
 typealias ExecData = ConcurrentHashMap<ClassId, ExecDatum>
 
 /**
