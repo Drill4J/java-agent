@@ -23,7 +23,7 @@ import platform.posix.F_OK
 
 fun ValidationBuilder<String>.hostAndPort(): Constraint<String> {
     return addConstraint(
-        "must have a valid URL address without schema and any additional paths, e.g. localhost:8090"
+        "must have a valid URL address without schema and any additional paths, e.g. 'localhost:8090', but was '{value}'"
     ) {
         try {
             URL("ws://$it")
@@ -36,12 +36,16 @@ fun ValidationBuilder<String>.hostAndPort(): Constraint<String> {
 
 fun ValidationBuilder<String>.identifier(): Constraint<String> = addConstraint(
     "must contain only lowercase characters, dashes, and underscores",
-    ) { it.matches("^[a-z0-9_-]+\$".toRegex()) }
+) { it.matches("^[a-z0-9_-]+\$".toRegex()) }
 
 
 fun ValidationBuilder<String>.pathExists(): Constraint<String> = addConstraint(
-    "must have a valid file path",
+    "must have an existing file path",
 ) { pathExists(it) }
+
+fun ValidationBuilder<String>.isValidPackage(): Constraint<String> = addConstraint(
+    "must have a valid Java package delimited by a right slash, e.g. 'com/example', but was '{value}'"
+) { it.matches("^(?:[a-zA-Z_]\\w*(?:/[a-zA-Z_]\\w*)*)?$".toRegex()) }
 
 
 private fun pathExists(filePath: String): Boolean {

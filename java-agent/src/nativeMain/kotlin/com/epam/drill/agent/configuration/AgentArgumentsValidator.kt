@@ -19,9 +19,7 @@ import com.epam.drill.agent.configuration.exceptions.AgentValidationException
 import com.epam.drill.konform.validation.Invalid
 import com.epam.drill.konform.validation.Validation
 import com.epam.drill.konform.validation.ValidationErrors
-import com.epam.drill.konform.validation.jsonschema.enum
-import com.epam.drill.konform.validation.jsonschema.minLength
-import com.epam.drill.konform.validation.jsonschema.minimum
+import com.epam.drill.konform.validation.jsonschema.*
 
 object AgentArgumentsValidator {
 
@@ -34,13 +32,16 @@ object AgentArgumentsValidator {
             minLength(3)
         }
         AgentArguments::buildVersion required {
-
+            pattern("^[a-zA-Z0-9_\\-\\.]+\$") hint "must contain only letters, digits, dots, dashes and underscores"
         }
         AgentArguments::adminAddress required {
             hostAndPort()
         }
-        AgentArguments::packagePrefixes required {
-
+        AgentArguments::packagePrefixesToList {
+            minItems(1)
+        }
+        AgentArguments::packagePrefixesToList onEach {
+            isValidPackage()
         }
     }
     val softValidators = Validation<AgentArguments> {
@@ -48,14 +49,8 @@ object AgentArgumentsValidator {
             identifier()
             minLength(3)
         }
-        AgentArguments::instanceId ifPresent {
-
-        }
         AgentArguments::classScanDelay ifPresent {
             minimum(0)
-        }
-        AgentArguments::scanClassPath ifPresent {
-//            pathExists() //TODO ?
         }
         AgentArguments::logLevel ifPresent {
             enum("TRACE", "DEBUG", "INFO", "WARN", "ERROR")
@@ -81,12 +76,9 @@ object AgentArgumentsValidator {
             result.errors.forEach { error ->
                 when (convertToField(error.dataPath)) {
                     AgentArguments::groupId.name -> args.groupId = defaultValue.groupId
-                    AgentArguments::instanceId.name -> args.instanceId = defaultValue.instanceId
-                    AgentArguments::logLevel.name -> args.logLevel = defaultValue.logLevel
-                    AgentArguments::logFile.name -> args.logFile = defaultValue.logFile
-                    AgentArguments::logLimit.name -> args.logLimit = defaultValue.logLimit
                     AgentArguments::classScanDelay.name -> args.classScanDelay = defaultValue.classScanDelay
-                    AgentArguments::scanClassPath.name -> args.scanClassPath = defaultValue.scanClassPath
+                    AgentArguments::logLevel.name -> args.logLevel = defaultValue.logLevel
+                    AgentArguments::logLimit.name -> args.logLimit = defaultValue.logLimit
                 }
             }
         }
@@ -96,4 +88,5 @@ object AgentArgumentsValidator {
             errors.joinToString("\n") { " - ${convertToField(it.dataPath)} ${it.message}" }
 
     private fun convertToField(dataPath: String) = dataPath.replaceFirst(".", "")
+        .replace("ToList", "")
 }
