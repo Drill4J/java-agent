@@ -24,5 +24,11 @@ data class JavaProcess(
     var javaParams: List<String>? = null
 ) {
     val firstAgentPath
-        get() = nativeAgents.first().split("=").first().replace('/', '\\').substringBeforeLast('\\')
+        get() = nativeAgents
+            .find { it.contains("drill_agent") }
+            ?.split("=")
+            ?.first()
+            ?.substringBeforeLast('/')
+            ?.removePrefix("\"")
+            ?: ""
 }
