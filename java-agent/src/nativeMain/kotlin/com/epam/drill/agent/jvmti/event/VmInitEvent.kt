@@ -19,6 +19,7 @@ import kotlinx.cinterop.CPointer
 import mu.KotlinLogging
 import com.epam.drill.agent.Agent
 import com.epam.drill.agent.JvmModuleLoader
+import com.epam.drill.agent.globalCallbacks
 import com.epam.drill.agent.configuration.adminAddress
 import com.epam.drill.agent.configuration.agentParameters
 import com.epam.drill.agent.configuration.configureHttp
@@ -26,8 +27,7 @@ import com.epam.drill.agent.configuration.defaultJvmLoggingConfiguration
 import com.epam.drill.agent.configuration.updateJvmLoggingConfiguration
 import com.epam.drill.agent.configuration.updatePackagePrefixesConfiguration
 import com.epam.drill.agent.request.RequestHolder
-import com.epam.drill.agent.globalCallbacks
-import com.epam.drill.agent.ws.WsSocket
+import com.epam.drill.agent.websocket.WsClient
 import com.epam.drill.jvmapi.gen.JNIEnvVar
 import com.epam.drill.jvmapi.gen.JVMTI_ENABLE
 import com.epam.drill.jvmapi.gen.JVMTI_EVENT_CLASS_FILE_LOAD_HOOK
@@ -55,8 +55,8 @@ fun vmInitEvent(env: CPointer<jvmtiEnvVar>?, jniEnv: CPointer<JNIEnvVar>?, threa
     globalCallbacks()
     updatePackagePrefixesConfiguration()
     loadJvmModule("test2code")
-    WsSocket().connect(adminAddress.toString())
     RequestHolder.init(isAsync = agentParameters.isAsyncApp)
+    WsClient.connect(adminAddress.toString())
 }
 
 @Suppress("UNCHECKED_CAST")

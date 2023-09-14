@@ -15,6 +15,7 @@
  */
 package com.epam.drill.test2code.coverage
 
+import com.epam.drill.agent.websocket.*
 import com.epam.drill.common.agent.*
 import java.util.concurrent.atomic.*
 
@@ -23,27 +24,36 @@ interface CoverageTransport {
 
     fun isAvailable(): Boolean
 
-    fun onAvailable()
+}
 
-    fun onUnavailable()
+class StubTransport : CoverageTransport {
+    override fun send(message: String) {
+        throw UnsupportedOperationException()
+    }
+
+    override fun isAvailable(): Boolean {
+        return false
+    }
+
 }
 
 open class WebsocketCoverageTransport(
     private val id: String,
-    private val sender: Sender
+    private val sender: Sender,
+    private var isTransportAvailable: AtomicBoolean = AtomicBoolean(false)
 ) : CoverageTransport {
-    private var isTransportAvailable = AtomicBoolean(false)
+
+    init {
+        WsClient.setOnAvailable {
+            isTransportAvailable.set(true)
+        }
+        WsClient.setOnUnavailable {
+            isTransportAvailable.set(false)
+        }
+    }
 
     override fun isAvailable(): Boolean {
         return isTransportAvailable.get()
-    }
-
-    override fun onAvailable() {
-        isTransportAvailable.set(true)
-    }
-
-    override fun onUnavailable() {
-        isTransportAvailable.set(false)
     }
 
     override fun send(message: String) {

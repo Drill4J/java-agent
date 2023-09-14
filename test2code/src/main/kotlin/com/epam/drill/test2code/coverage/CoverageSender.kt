@@ -28,6 +28,7 @@ import java.util.*
 import java.util.concurrent.*
 
 interface CoverageSender {
+    fun setCoverageTransport(transport: CoverageTransport)
     fun startSendingCoverage()
     fun stopSendingCoverage()
 }
@@ -50,6 +51,10 @@ class IntervalCoverageSender(
     private val collectProbes: () -> Sequence<ExecDatum> = { emptySequence() }
 ) : CoverageSender {
     private val scheduledThreadPool = Executors.newSingleThreadScheduledExecutor()
+
+    override fun setCoverageTransport(transport: CoverageTransport) {
+        coverageTransport = transport
+    }
 
 
     override fun startSendingCoverage() {
@@ -86,7 +91,6 @@ class IntervalCoverageSender(
             .chunked(0xffff)
             .map { chunk -> CoverDataPart(data = chunk) }
             .map { message ->
-                logger.debug { "Compress message $message." }
                 val encoded = ProtoBuf.encodeToByteArray(CoverMessage.serializer(), message)
                 Zstd.compress(encoded)
             }

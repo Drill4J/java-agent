@@ -27,7 +27,6 @@ import mu.*
 import com.epam.drill.agent.configuration.*
 import com.epam.drill.agent.jvmti.event.*
 import com.epam.drill.jvmapi.gen.*
-import com.epam.drill.transport.*
 
 @SharedImmutable
 private val logger = KotlinLogging.logger("com.epam.drill.agent.Agent")

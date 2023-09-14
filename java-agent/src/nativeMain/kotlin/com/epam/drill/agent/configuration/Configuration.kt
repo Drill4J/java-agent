@@ -35,7 +35,6 @@ import com.epam.drill.jvmapi.callObjectVoidMethod
 import com.epam.drill.jvmapi.callObjectVoidMethodWithInt
 import com.epam.drill.jvmapi.callObjectVoidMethodWithString
 import com.epam.drill.logging.LoggingConfiguration
-import com.epam.drill.transport.URL
 
 private val logger = KotlinLogging.logger("com.epam.drill.agent.configuration.Configuration")
 

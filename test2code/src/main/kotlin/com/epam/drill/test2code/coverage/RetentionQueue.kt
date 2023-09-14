@@ -43,7 +43,7 @@ class InMemoryRetentionQueue(
     override fun addAll(data: Sequence<ByteArray>) {
         data.forEach { bytes ->
             if (totalBytes.plus(BigInteger.valueOf(bytes.size.toLong())) > totalSizeByteLimit) {
-                logger.info { "InMemoryRetentionQueue is full. Cannot add to queue, count of bytes: ${bytes.size}." }
+                logger.info { "Cannot add element of size ${bytes.size}. Current usage ${totalBytes}/${totalSizeByteLimit} bytes" }
                 return@forEach
             }
             val added = queue.offer(bytes)

@@ -44,6 +44,9 @@ dependencies {
     compileOnly("org.jetbrains.kotlinx:atomicfu:$atomicfuVersion")
 
     implementation("io.aesy:datasize:1.0.0")
+    implementation(project(mapOf("path" to ":agent")))
+    implementation("org.eclipse.jetty.websocket:javax-websocket-client-impl:9.4.51.v20230217")
+
     implementation("org.jetbrains.kotlinx:kotlinx-collections-immutable-jvm:$kotlinxCollectionsVersion")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:$kotlinxCoroutinesVersion")
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:$kotlinxSerializationVersion")
