@@ -59,6 +59,9 @@ object AgentArgumentsValidator {
         AgentArguments::classScanDelay ifPresent {
             minimum(0)
         }
+        AgentArguments::scanClassPathToList onEach {
+            pathExists()
+        }
         AgentArguments::logLevel ifPresent {
             enum<KotlinLoggingLevel>()
         }
