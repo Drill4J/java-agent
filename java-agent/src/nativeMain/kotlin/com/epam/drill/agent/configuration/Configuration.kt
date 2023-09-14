@@ -75,7 +75,7 @@ fun updateAgentParameters(parameters: Map<String, AgentParameter>, initializatio
     )
     updateNativeLoggingConfiguration()
     if (!initialization) updateJvmLoggingConfiguration()
-    logger.debug { "after update configs by params: config '$agentParameters'" }
+    logger.info { "Agent parameters '$agentParameters' is initialized." }
 }
 
 fun defaultNativeLoggingConfiguration() {
