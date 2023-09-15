@@ -69,7 +69,11 @@ fun updateAgentParameters(parameters: Map<String, AgentParameter>, initializatio
         isWebApp = parameters[AgentArguments::isWebApp.name]?.value.toBoolean(),
         isKafka = parameters[AgentArguments::isKafka.name]?.value.toBoolean(),
         isCadence = parameters[AgentArguments::isCadence.name]?.value.toBoolean(),
-        isTlsApp = parameters[AgentArguments::isTlsApp.name]?.value.toBoolean()
+        isTlsApp = parameters[AgentArguments::isTlsApp.name]?.value.toBoolean(),
+        coverageRetentionLimit = parameters[AgentArguments::coverageRetentionLimit.name]?.value
+            ?: agentParameters.coverageRetentionLimit,
+        sendCoverageInterval = parameters[AgentArguments::sendCoverageIntervalMs.name]?.value?.toLong()
+            ?: agentParameters.sendCoverageInterval
     )
     updateNativeLoggingConfiguration()
     if (!initialization) updateJvmLoggingConfiguration()

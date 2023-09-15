@@ -18,10 +18,12 @@ package com.epam.drill.test2code.coverage
 import com.epam.drill.plugins.test2code.common.api.*
 import com.epam.drill.test2code.*
 import com.github.luben.zstd.*
+import io.aesy.datasize.*
 import kotlinx.coroutines.*
 import kotlinx.serialization.protobuf.*
 import mu.*
 import java.math.*
+import java.text.*
 import java.util.*
 import java.util.concurrent.*
 
@@ -31,22 +33,29 @@ interface CoverageSender {
     fun stopSendingCoverage()
 }
 
-private val COVERAGE_RETENTION_LIMIT_BYTES = BigInteger.valueOf(JvmModuleConfiguration.getCoverageRetentionLimit())
-
 class IntervalCoverageSender(
+    private val logger: KLogger = KotlinLogging.logger("com.epam.drill.test2code.coverage.IntervalCoverageSender"),
     private val intervalMs: Long,
+    private var coverageTransport: CoverageTransport = StubTransport(),
     private val inMemoryRetentionQueue: RetentionQueue = InMemoryRetentionQueue(
-        totalSizeByteLimit = COVERAGE_RETENTION_LIMIT_BYTES
+        totalSizeByteLimit = try {
+            DataSize.parse(JvmModuleConfiguration.getCoverageRetentionLimit())
+                .toUnit(ByteUnit.BYTE)
+                .value
+                .toBigInteger()
+        } catch (e: ParseException) {
+            logger.warn { "Catch exception while parsing CoverageRetentionLimit. Exception: ${e.message}" }
+            BigInteger.valueOf(1024 * 1024 * 512)
+        }
     ),
     private val collectProbes: () -> Sequence<ExecDatum> = { emptySequence() }
 ) : CoverageSender {
-    private val logger = KotlinLogging.logger {}
     private val scheduledThreadPool = Executors.newSingleThreadScheduledExecutor()
-    private var coverageTransport: CoverageTransport = StubTransport()
 
     override fun setCoverageTransport(transport: CoverageTransport) {
         coverageTransport = transport
     }
+
 
     override fun startSendingCoverage() {
         scheduledThreadPool.scheduleAtFixedRate(
@@ -79,7 +88,6 @@ class IntervalCoverageSender(
                     testId = it.testId,
                 )
             }
-            //TODO investigate which number is preferable
             .chunked(0xffff)
             .map { chunk -> CoverDataPart(data = chunk) }
             .map { message ->

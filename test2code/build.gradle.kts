@@ -43,6 +43,7 @@ dependencies {
     testImplementation("ch.qos.logback:logback-classic:$logbackVersion")
     compileOnly("org.jetbrains.kotlinx:atomicfu:$atomicfuVersion")
 
+    implementation("io.aesy:datasize:1.0.0")
     implementation(project(mapOf("path" to ":agent")))
     implementation("org.eclipse.jetty.websocket:javax-websocket-client-impl:9.4.51.v20230217")
 

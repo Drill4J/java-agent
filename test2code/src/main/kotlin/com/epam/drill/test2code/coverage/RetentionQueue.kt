@@ -28,7 +28,7 @@ interface RetentionQueue {
 
 class InMemoryRetentionQueue(
     private var queue: Queue<ByteArray> = ConcurrentLinkedQueue(),
-    private val totalSizeByteLimit: BigInteger,
+    private val totalSizeByteLimit: BigInteger
 ) : RetentionQueue {
 
     init {
