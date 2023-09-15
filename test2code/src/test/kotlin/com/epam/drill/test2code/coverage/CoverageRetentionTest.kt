@@ -19,15 +19,12 @@ import com.epam.drill.common.agent.*
 import com.epam.drill.jacoco.*
 import com.nhaarman.mockitokotlin2.*
 import kotlinx.coroutines.*
-import org.junit.Ignore
 import org.junit.jupiter.api.*
 import org.junit.jupiter.api.Assertions.*
-import org.mockito.ArgumentMatchers.*
 import java.math.*
 import java.util.*
 import kotlin.random.Random
 
-@Ignore
 class CoverageRetentionTest {
 
     private lateinit var sender: Sender
@@ -40,7 +37,7 @@ class CoverageRetentionTest {
         sender = mock()
         inMemoryRetentionQueue = InMemoryRetentionQueue(totalSizeByteLimit = BigInteger.valueOf(375))
         coverageTransport = spy(WebsocketCoverageTransport(UUID.randomUUID().toString(), sender))
-        coverageSender = IntervalCoverageSender(2500, inMemoryRetentionQueue) {
+        coverageSender = IntervalCoverageSender(intervalMs = 2500, inMemoryRetentionQueue = inMemoryRetentionQueue) {
             sequenceOf(
                 ExecDatum(
                     id = Random.nextLong(),
@@ -52,10 +49,6 @@ class CoverageRetentionTest {
         }.apply { setCoverageTransport(coverageTransport) }
     }
 
-    @AfterEach
-    fun tearDown() {
-        coverageSender.stopSendingCoverage()
-    }
 
     @Test
     fun `send and shutdown connection with admin should fill the queue`() = runBlocking {
@@ -66,6 +59,7 @@ class CoverageRetentionTest {
         whenever(coverageTransport.isAvailable()).thenReturn(false)
 
         delay(2000)
+        coverageSender.stopSendingCoverage()
         val flush = inMemoryRetentionQueue.flush().toList()
 
         assertTrue(flush.isNotEmpty())
@@ -78,6 +72,7 @@ class CoverageRetentionTest {
         coverageSender.startSendingCoverage()
 
         delay(2000)
+        coverageSender.stopSendingCoverage()
         val flush = inMemoryRetentionQueue.flush().toList()
 
         assertTrue(flush.isNotEmpty())
