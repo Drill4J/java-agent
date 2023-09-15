@@ -36,7 +36,16 @@ interface CoverageSender {
 class IntervalCoverageSender(
     private val logger: KLogger = KotlinLogging.logger("com.epam.drill.test2code.coverage.IntervalCoverageSender"),
     private val intervalMs: Long,
-    private var coverageTransport: CoverageTransport = StubTransport(),
+    private var coverageTransport: CoverageTransport = object : CoverageTransport {
+        override fun send(message: String) {
+            // stub
+        }
+
+        override fun isAvailable(): Boolean {
+            // stub
+            return false
+        }
+    },
     private val inMemoryRetentionQueue: RetentionQueue = InMemoryRetentionQueue(
         totalSizeByteLimit = try {
             DataSize.parse(JvmModuleConfiguration.getCoverageRetentionLimit())
