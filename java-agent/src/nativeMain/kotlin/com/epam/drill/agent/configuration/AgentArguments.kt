@@ -39,6 +39,8 @@ data class AgentArguments(
     val classScanDelay: Long = 0L,
     val scanClassPath: String = "",
     val packagePrefixes: String = "",
+    val sslTruststore: String = "",
+    val sslTruststorePassword: String = "",
     val coverageRetentionLimit: String = "512Mb",
     val sendCoverageIntervalMs: Long = 2000L
 ) {
@@ -98,6 +100,16 @@ data class AgentArguments(
             type = packagePrefixes.toType(),
             value = packagePrefixes,
             description = "Configure package prefixes for scanning and instrumentation",
+        ),
+        AgentArguments::sslTruststore.name to AgentParameter(
+            type = sslTruststore.toType(),
+            value = sslTruststore,
+            description = "Configure SSL truststore for admin connection (leave empty to thrust all)",
+        ),
+        AgentArguments::sslTruststorePassword.name to AgentParameter(
+            type = sslTruststorePassword.toType(),
+            value = sslTruststorePassword,
+            description = "Configure password for SSL truststore for admin connection",
         ),
         AgentArguments::coverageRetentionLimit.name to AgentParameter(
             type = coverageRetentionLimit.toType(),
