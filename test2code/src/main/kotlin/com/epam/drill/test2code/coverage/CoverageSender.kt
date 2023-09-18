@@ -38,15 +38,7 @@ class IntervalCoverageSender(
     private val intervalMs: Long,
     private var coverageTransport: CoverageTransport = StubTransport(),
     private val inMemoryRetentionQueue: RetentionQueue = InMemoryRetentionQueue(
-        totalSizeByteLimit = try {
-            DataSize.parse(JvmModuleConfiguration.getCoverageRetentionLimit())
-                .toUnit(ByteUnit.BYTE)
-                .value
-                .toBigInteger()
-        } catch (e: ParseException) {
-            logger.warn { "Catch exception while parsing CoverageRetentionLimit. Exception: ${e.message}" }
-            BigInteger.valueOf(1024 * 1024 * 512)
-        }
+        totalSizeByteLimit = processTotalSizeByte(logger)
     ),
     private val collectProbes: () -> Sequence<ExecDatum> = { emptySequence() }
 ) : CoverageSender {
@@ -113,5 +105,24 @@ class IntervalCoverageSender(
         } else {
             inMemoryRetentionQueue.addAll(dataToSend)
         }
+    }
+}
+
+private fun processTotalSizeByte(logger: KLogger): BigInteger {
+    try {
+        val retentionLimit = JvmModuleConfiguration.getCoverageRetentionLimit()
+        val maxMemory = Runtime.getRuntime().maxMemory()
+        if (maxMemory == Long.MAX_VALUE) {
+            return DataSize.parse(retentionLimit)
+                .toUnit(ByteUnit.BYTE)
+                .value
+                .toBigInteger()
+        }
+        logger.warn { "CoverageRetentionLimit may be skipped." }
+        val percentage = 0.1
+        return (maxMemory * percentage).toLong().toBigInteger()
+    } catch (e: ParseException) {
+        logger.warn { "Catch exception while parsing CoverageRetentionLimit. Exception: ${e.message}" }
+        return BigInteger.valueOf(1024 * 1024 * 512)
     }
 }
