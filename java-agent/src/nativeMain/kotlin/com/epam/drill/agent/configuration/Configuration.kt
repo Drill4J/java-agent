@@ -50,8 +50,6 @@ fun performInitialConfiguration(initialParams: Map<String, String>) {
             buildVersion = aa.buildVersion ?: calculateBuildVersion() ?: "unspecified",
             serviceGroupId = aa.groupId,
             agentType = AgentType.JAVA,
-            sslTruststore = aa.sslTruststore,
-            sslTruststorePassword = aa.sslTruststorePassword,
             parameters = aa.defaultParameters()
         )
         updateAgentParameters(agentConfig.parameters, true)
@@ -60,6 +58,10 @@ fun performInitialConfiguration(initialParams: Map<String, String>) {
 
 fun updateAgentParameters(parameters: Map<String, AgentParameter>, initialization: Boolean = false) {
     agentParameters = agentParameters.copy(
+        sslTruststore = parameters[AgentArguments::sslTruststore.name]?.value
+            ?: agentParameters.sslTruststore,
+        sslTruststorePassword = parameters[AgentArguments::sslTruststorePassword.name]?.value
+            ?: agentParameters.sslTruststorePassword,
         classScanDelay = parameters[AgentArguments::classScanDelay.name]?.value
             ?.toLong()?.toDuration(DurationUnit.MILLISECONDS) ?: agentParameters.classScanDelay,
         packagePrefixes = parameters[AgentArguments::packagePrefixes.name]?.value ?: agentParameters.packagePrefixes,
