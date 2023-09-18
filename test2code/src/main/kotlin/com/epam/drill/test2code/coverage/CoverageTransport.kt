@@ -26,6 +26,10 @@ interface CoverageTransport {
 
 }
 
+class StubTransport : CoverageTransport {
+    override fun send(message: String) = Unit
+    override fun isAvailable(): Boolean = false
+}
 
 open class WebsocketCoverageTransport(
     private val id: String,
