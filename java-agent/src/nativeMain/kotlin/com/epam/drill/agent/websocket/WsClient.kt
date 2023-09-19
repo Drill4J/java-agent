@@ -15,10 +15,23 @@
  */
 package com.epam.drill.agent.websocket
 
-import com.epam.drill.jvmapi.callObjectVoidMethodWithString
+import kotlin.reflect.KCallable
+import kotlin.reflect.KClass
+import com.epam.drill.jvmapi.gen.CallVoidMethod
+import com.epam.drill.jvmapi.gen.NewStringUTF
+import com.epam.drill.jvmapi.getObjectMethod
 
 object WsClient {
 
-    fun connect(adminUrl: String): Unit = callObjectVoidMethodWithString(WsClient::class, WsClient::connect, adminUrl)
+    fun connect(adminUrl: String, async: Boolean = false): Unit =
+        callObjectVoidMethodWithStringAndBoolean(WsClient::class, WsClient::connect, adminUrl, async)
 
 }
+
+private fun callObjectVoidMethodWithStringAndBoolean(clazz: KClass<out Any>, method: String, string: String?, bool: Boolean) =
+    getObjectMethod(clazz, method, "(Ljava/lang/String;Z)V").run {
+        CallVoidMethod(this.first, this.second, string?.let(::NewStringUTF), bool)
+    }
+
+private fun callObjectVoidMethodWithStringAndBoolean(clazz: KClass<out Any>, method: KCallable<Unit>, string: String?, bool: Boolean) =
+    callObjectVoidMethodWithStringAndBoolean(clazz, method.name, string, bool)
