@@ -102,7 +102,7 @@ data class AgentArguments(
         AgentArguments::sslTruststore.name to AgentParameter(
             type = sslTruststore.toType(),
             value = sslTruststore,
-            description = "Configure SSL truststore for admin connection (leave empty to thrust all)",
+            description = "Configure path to SSL truststore for admin connection (leave empty to trust all)",
         ),
         AgentArguments::sslTruststorePassword.name to AgentParameter(
             type = sslTruststorePassword.toType(),
