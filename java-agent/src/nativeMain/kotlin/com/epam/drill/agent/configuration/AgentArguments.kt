@@ -38,7 +38,9 @@ data class AgentArguments(
     val isAsyncApp: Boolean = false,
     val classScanDelay: Long = 0L,
     val scanClassPath: String = "",
-    val packagePrefixes: String = ""
+    val packagePrefixes: String = "",
+    val sslTruststore: String = "",
+    val sslTruststorePassword: String = ""
 ) {
 
     fun defaultParameters(): Map<String, AgentParameter> = mapOf(
@@ -96,6 +98,16 @@ data class AgentArguments(
             type = packagePrefixes.toType(),
             value = packagePrefixes,
             description = "Configure package prefixes for scanning and instrumentation",
+        ),
+        AgentArguments::sslTruststore.name to AgentParameter(
+            type = sslTruststore.toType(),
+            value = sslTruststore,
+            description = "Configure path to SSL truststore for admin connection (leave empty to trust all)",
+        ),
+        AgentArguments::sslTruststorePassword.name to AgentParameter(
+            type = sslTruststorePassword.toType(),
+            value = sslTruststorePassword,
+            description = "Configure password for SSL truststore for admin connection",
         )
     )
 

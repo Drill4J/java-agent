@@ -18,8 +18,6 @@ package com.epam.drill.agent.jvmti
 
 import kotlinx.cinterop.*
 import com.epam.drill.agent.request.*
-import com.epam.drill.agent.ws.*
-import com.epam.drill.agent.ws.send.*
 import com.epam.drill.jvmapi.*
 import com.epam.drill.jvmapi.gen.*
 
@@ -37,12 +35,6 @@ fun JNIFun(): JNI {
 fun JNIEn(): JNI {
     return jni
 }
-
-@CName("sendToSocket")
-fun sendToSocket(pluginId: String, message: String) {
-    sendMessage(pluginId, message)
-}
-
 
 @CName("currentThread")
 fun currentThread() = memScoped {

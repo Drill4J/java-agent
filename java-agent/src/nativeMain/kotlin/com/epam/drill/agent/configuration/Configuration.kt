@@ -35,7 +35,6 @@ import com.epam.drill.jvmapi.callObjectVoidMethod
 import com.epam.drill.jvmapi.callObjectVoidMethodWithInt
 import com.epam.drill.jvmapi.callObjectVoidMethodWithString
 import com.epam.drill.logging.LoggingConfiguration
-import com.epam.drill.transport.URL
 
 private val logger = KotlinLogging.logger("com.epam.drill.agent.configuration.Configuration")
 
@@ -43,7 +42,7 @@ fun performInitialConfiguration(initialParams: Map<String, String>) {
     val agentArguments = initialParams.parseAs<AgentArguments>()
     agentArguments.let { aa ->
         drillInstallationDir = aa.drillInstallationDir
-        adminAddress = URL("ws://${aa.adminAddress}")
+        adminAddress = URL(aa.adminAddress)
         agentConfig = AgentConfig(
             id = aa.agentId,
             instanceId = aa.instanceId,
@@ -51,7 +50,7 @@ fun performInitialConfiguration(initialParams: Map<String, String>) {
             buildVersion = aa.buildVersion ?: calculateBuildVersion() ?: "unspecified",
             serviceGroupId = aa.groupId,
             agentType = AgentType.JAVA,
-            parameters = aa.defaultParameters(),
+            parameters = aa.defaultParameters()
         )
         updateAgentParameters(agentConfig.parameters, true)
     }
@@ -59,6 +58,10 @@ fun performInitialConfiguration(initialParams: Map<String, String>) {
 
 fun updateAgentParameters(parameters: Map<String, AgentParameter>, initialization: Boolean = false) {
     agentParameters = agentParameters.copy(
+        sslTruststore = parameters[AgentArguments::sslTruststore.name]?.value
+            ?: agentParameters.sslTruststore,
+        sslTruststorePassword = parameters[AgentArguments::sslTruststorePassword.name]?.value
+            ?: agentParameters.sslTruststorePassword,
         classScanDelay = parameters[AgentArguments::classScanDelay.name]?.value
             ?.toLong()?.toDuration(DurationUnit.MILLISECONDS) ?: agentParameters.classScanDelay,
         packagePrefixes = parameters[AgentArguments::packagePrefixes.name]?.value ?: agentParameters.packagePrefixes,
@@ -115,11 +118,8 @@ fun idHeaderPairFromConfig(): Pair<String, String> =
         else -> "drill-group-id" to groupId
     }
 
-fun retrieveAdminUrl(): String {
-    return if (secureAdminAddress != null) {
-        secureAdminAddress?.toUrlString(false).toString()
-    } else adminAddress?.toUrlString(false).toString()
-}
+fun retrieveAdminUrl(): String =
+    adminAddress?.toUrlString(false).toString()
 
 private inline fun <reified T : Any> Map<String, String>.parseAs(): T = run {
     val serializer = T::class.serializer()
