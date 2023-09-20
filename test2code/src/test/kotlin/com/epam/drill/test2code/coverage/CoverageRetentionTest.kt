@@ -79,4 +79,19 @@ class CoverageRetentionTest {
         assertEquals(1, flush.size)
     }
 
+    @Test
+    fun `connection with admin is shutdown, then reconnection should trigger a flush of all elements from the queue`() =
+        runBlocking {
+            whenever(coverageTransport.isAvailable()).thenReturn(false)
+            coverageSender.startSendingCoverage()
+
+            delay(2000)
+            whenever(coverageTransport.isAvailable()).thenReturn(true)
+            delay(2000)
+
+            coverageSender.stopSendingCoverage()
+
+            val flush = inMemoryRetentionQueue.flush().toList()
+            assertTrue(flush.isEmpty())
+        }
 }
