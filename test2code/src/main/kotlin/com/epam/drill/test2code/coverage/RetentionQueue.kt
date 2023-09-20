@@ -28,16 +28,19 @@ interface RetentionQueue {
 
 class InMemoryRetentionQueue(
     private var queue: Queue<ByteArray> = ConcurrentLinkedQueue(),
-    private val totalSizeByteLimit: BigInteger
+    private val totalSizeByteLimit: BigInteger,
+    private val logger: KLogger = KotlinLogging.logger("com.epam.drill.test2code.coverage.InMemoryRetentionQueue")
 ) : RetentionQueue {
 
     init {
+        if (totalSizeByteLimit == BigInteger.ZERO) {
+            logger.warn("agent parameter \"coverageRetentionLimit\" is set to 0 (zero). Coverage won't be retained in case Drill4J Admin Backend is unavailable.")
+        }
         require(totalSizeByteLimit >= BigInteger.ZERO) {
             "Total size byte limit must be a positive value"
         }
     }
 
-    private val logger = KotlinLogging.logger("com.epam.drill.test2code.coverage.InMemoryRetentionQueue")
     private var totalBytes: BigInteger = BigInteger.ZERO
 
     override fun addAll(data: Sequence<ByteArray>) {
