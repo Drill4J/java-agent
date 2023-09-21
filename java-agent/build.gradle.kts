@@ -133,6 +133,7 @@ kotlin {
             "javax.websocket",
             "javassist",
             "ch.qos.logback",
+            "com.alibaba",
             "org.slf4j",
             "org.jacoco",
             "org.objectweb.asm",

@@ -28,7 +28,6 @@ import com.epam.drill.common.classloading.ClassSource
 private const val PREFIX_SPRING_BOOT = "BOOT-INF/classes/"
 private const val PREFIX_WEB_APP = "WEB-INF/classes/"
 private const val PACKAGE_DRILL = "com/epam/drill"
-private const val PACKAGE_TTL = "com/alibaba/ttl"
 private const val JAR_BUFFER_SIZE = 256 * 1024
 
 class ClassPathScanner(
@@ -123,7 +122,6 @@ class ClassPathScanner(
     private val isClassAccepted: (ClassSource) -> Boolean = {
         !it.entityName().contains('$') &&
                 !it.entityName().startsWith(PACKAGE_DRILL) &&
-                !it.entityName().startsWith(PACKAGE_TTL) &&
                 it.prefixMatches(packagePrefixes) &&
                 !scannedClasses.contains(it.entityName())
     }
