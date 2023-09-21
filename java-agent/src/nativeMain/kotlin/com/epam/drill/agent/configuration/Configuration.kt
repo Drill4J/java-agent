@@ -39,18 +39,17 @@ import com.epam.drill.logging.LoggingConfiguration
 private val logger = KotlinLogging.logger("com.epam.drill.agent.configuration.Configuration")
 
 fun performInitialConfiguration(initialParams: Map<String, String>) {
-    val agentArguments = initialParams.parseAs<AgentArguments>()
-    agentArguments.let { aa ->
-        drillInstallationDir = aa.drillInstallationDir
-        adminAddress = URL(aa.adminAddress)
+    parseAsAgentArguments(initialParams).let {
+        drillInstallationDir = it.drillInstallationDir
+        adminAddress = URL(it.adminAddress)
         agentConfig = AgentConfig(
-            id = aa.agentId,
-            instanceId = aa.instanceId,
+            id = it.agentId,
+            instanceId = it.instanceId,
             agentVersion = agentVersion,
-            buildVersion = aa.buildVersion ?: calculateBuildVersion() ?: "unspecified",
-            serviceGroupId = aa.groupId,
+            buildVersion = it.buildVersion ?: calculateBuildVersion(),
+            serviceGroupId = it.groupId,
             agentType = AgentType.JAVA,
-            parameters = aa.defaultParameters()
+            parameters = it.defaultParameters()
         )
         updateAgentParameters(agentConfig.parameters, true)
     }
@@ -112,31 +111,22 @@ fun updatePackagePrefixesConfiguration() {
     agentConfig = agentConfig.copy(packagesPrefixes = PackagesPrefixes(agentParameters.packagePrefixes.split(";")))
 }
 
-fun idHeaderPairFromConfig(): Pair<String, String> =
-    when (val groupId = agentConfig.serviceGroupId) {
-        "" -> "drill-agent-id" to agentConfig.id
-        else -> "drill-group-id" to groupId
-    }
-
-fun retrieveAdminUrl(): String =
-    adminAddress?.toUrlString(false).toString()
-
-private inline fun <reified T : Any> Map<String, String>.parseAs(): T = run {
-    val serializer = T::class.serializer()
-    val module = serializersModuleOf(serializer)
-    serializer.deserialize(SimpleMapDecoder(module, this))
+fun idHeaderPairFromConfig(): Pair<String, String> = when (agentConfig.serviceGroupId) {
+    "" -> "drill-agent-id" to agentConfig.id
+    else -> "drill-group-id" to agentConfig.serviceGroupId
 }
 
-private fun calculateBuildVersion(): String? = runCatching {
-    getenv(SYSTEM_JAVA_APP_JAR)?.toKString()?.let {
-        "(.*)/(.*).jar".toRegex().matchEntire(it)?.let { matchResult ->
-            if (matchResult.groupValues.size == 3) {
-                val buildVersion = matchResult.groupValues[2]
-                logger.debug { "calculated build version = '$buildVersion'" }
-                buildVersion
-            } else {
-                null
-            }
-        }
+fun retrieveAdminUrl() = adminAddress?.toUrlString(false).toString()
+
+private fun parseAsAgentArguments(map: Map<String, String>) = AgentArguments::class.serializer().run {
+    val module = serializersModuleOf(this)
+    this.deserialize(SimpleMapDecoder(module, map))
+}
+
+private fun calculateBuildVersion() = getenv(SYSTEM_JAVA_APP_JAR).run {
+    val parseVersion: (String) -> String? = {
+        val match = Regex("(.*)/(.*).jar").matchEntire(it)?.takeIf { it.groupValues.size == 3 }
+        match?.groupValues?.get(2)
     }
-}.getOrNull()
+    this?.toKString()?.runCatching(parseVersion)?.getOrNull() ?: "unspecified"
+}
