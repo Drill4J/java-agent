@@ -19,7 +19,6 @@ import kotlinx.serialization.json.Json
 import kotlinx.serialization.protobuf.ProtoBuf
 import java.util.Base64
 import java.util.concurrent.ConcurrentHashMap
-import com.github.luben.zstd.Zstd
 import mu.KotlinLogging
 import com.epam.drill.common.classloading.ClassScanner
 import com.epam.drill.common.classloading.EntitySource
@@ -160,8 +159,7 @@ class Test2Code(
             .forEach { message ->
                 logger.debug { "Send compressed message $message" }
                 val encoded = ProtoBuf.encodeToByteArray(CoverMessage.serializer(), message)
-                val compressed = Zstd.compress(encoded)
-                send(Base64.getEncoder().encodeToString(compressed))
+                send(Base64.getEncoder().encodeToString(encoded))
             }
     }
 
