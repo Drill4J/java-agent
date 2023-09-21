@@ -129,6 +129,19 @@ kotlin {
             it.compilations["main"].compileKotlinTask.dependsOn(copyNativeClasses)
         }
         val jvmMainCompilation = kotlin.targets.withType<KotlinJvmTarget>()["jvm"].compilations["main"]
+        val relocatePackages = setOf(
+            "javax.websocket",
+            "javassist",
+            "ch.qos.logback",
+            "org.slf4j",
+            "org.jacoco",
+            "org.objectweb.asm",
+            "org.apache.bcel",
+            "org.apache.commons",
+            "org.eclipse.jetty",
+            "org.intellij.lang.annotations",
+            "org.jetbrains.annotations"
+        )
         val runtimeJar by registering(ShadowJar::class) {
             mergeServiceFiles()
             isZip64 = true
@@ -136,10 +149,9 @@ kotlin {
             from(jvmMainCompilation.output, jvmMainCompilation.runtimeDependencyFiles)
             relocate("kotlin", "kruntime")
             relocate("kotlinx", "kruntimex")
-            relocate("ch.qos.logback", "${project.group}.shadow.ch.qos.logback")
-            relocate("org.slf4j", "${project.group}.shadow.org.slf4j")
-            relocate("org.jacoco.core", "${project.group}.shadow.org.jacoco.core")
-            relocate("org.objectweb.asm", "${project.group}.shadow.org.objectweb.asm")
+            relocatePackages.forEach {
+                relocate(it, "${project.group}.shadow.$it")
+            }
             dependencies {
                 exclude("/META-INF/services/javax.servlet.ServletContainerInitializer")
                 exclude("/module-info.class", "/about.html")

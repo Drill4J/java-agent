@@ -26,7 +26,6 @@ import com.epam.drill.common.agent.AgentModule
 import com.epam.drill.common.agent.AgentContext
 import com.epam.drill.common.agent.Instrumenter
 import com.epam.drill.common.agent.Sender
-import com.epam.drill.common.util.JavaZip
 import com.epam.drill.test2code.classloading.ClassLoadersScanner
 import com.epam.drill.test2code.classparsing.parseAstClass
 import com.epam.drill.plugins.test2code.common.api.*
@@ -160,8 +159,7 @@ class Test2Code(
             .forEach { message ->
                 logger.debug { "Send compressed message $message" }
                 val encoded = ProtoBuf.encodeToByteArray(CoverMessage.serializer(), message)
-                val compressed = JavaZip.compress(encoded)
-                send(Base64.getEncoder().encodeToString(compressed))
+                send(Base64.getEncoder().encodeToString(encoded))
             }
     }
 
