@@ -142,7 +142,7 @@ object Agent {
         try {
             URL(adminAddress)
         } catch (parseException: RuntimeException) {
-            fail("Please check 'adminAddress' parameter. It should be a valid address to the admin service any additional paths, e.g. ws://localhost:8090")
+            fail("Please check 'adminAddress' parameter. It should be a valid address to the admin service without any additional paths, e.g. ws://localhost:8090")
         }
     }
 
