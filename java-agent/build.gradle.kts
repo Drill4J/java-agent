@@ -192,6 +192,7 @@ distributions {
                 from(nativeAgentLinkTask) {
                     duplicatesStrategy = DuplicatesStrategy.EXCLUDE
                 }
+                from("drill.properties")
                 from("temporary.jks")
             }
         }

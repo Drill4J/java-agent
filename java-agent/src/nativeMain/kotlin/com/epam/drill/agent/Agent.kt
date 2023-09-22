@@ -85,43 +85,53 @@ object Agent {
         logger.info { "Agent_OnUnload" }
     }
 
+    private val pathSeparator = Platform.osFamily.takeIf(OsFamily.WINDOWS::equals)?.let { "\\" } ?: "/"
+
     private fun agentParams(options: String): Map<String, String> {
-        logger.debug { "agent options:$options" }
-        val agentParameters = options.asAgentParams()
-        val configPath = agentParameters["configPath"] ?: getenv(SYSTEM_CONFIG_PATH)?.toKString()
-        logger.debug { "configFile=$configPath, agent parameters:$agentParameters" }
-        val agentParams = if (!configPath.isNullOrEmpty()) {
-            val properties = readFile(configPath)
-            logger.debug { "properties file:$properties" }
-            properties.asAgentParams("\n", "#")
-        } else {
-            logger.warn { "Deprecated. You should use a config file instead of options. It will be removed in the next release" }
-            agentParameters
-        }
-        logger.debug { "result of agent parameters:$agentParams" }
-        return agentParams.validate()
+        logger.info { "agent options: $options" }
+        val agentParams = asAgentParams(options)
+        logger.info { "agent parameters: $agentParams" }
+        val drillPath = agentParams["drillInstallationDir"]
+            ?.removeSuffix(pathSeparator)
+            ?.takeIf(String::isNotEmpty)
+            ?: "."
+        val configPath = agentParams["configPath"]
+            ?: getenv(SYSTEM_CONFIG_PATH)?.toKString()
+            ?: "${drillPath}${pathSeparator}drill.properties"
+        logger.info { "config path: $configPath" }
+        val configParams = configPath.takeIf(String::isNotEmpty)
+            ?.let(drillPath::to)
+            ?.runCatching(::readFile)
+            ?.getOrNull()
+            ?.let { asAgentParams(it, "\n", "#") }
+        logger.info { "config parameters: $configParams" }
+        val resultParams = configParams?.toMutableMap()?.also { it.putAll(agentParams) } ?: agentParams
+        logger.info { "result parameters: $resultParams" }
+        return resultParams.validate()
     }
 
-    private fun String?.asAgentParams(
+    private fun asAgentParams(
+        string: String?,
         lineDelimiter: String = ",",
         filterPrefix: String = "",
         mapDelimiter: String = "="
     ): Map<String, String> {
-        if (this.isNullOrEmpty()) return emptyMap()
-        return try {
-            this.split(lineDelimiter)
+        if (string.isNullOrEmpty()) return emptyMap()
+        try {
+            return string.split(lineDelimiter)
                 .filter { it.isNotEmpty() && (filterPrefix.isEmpty() || !it.startsWith(filterPrefix)) }
-                .associate {
-                    it.substringBefore(mapDelimiter) to it.substringAfter(mapDelimiter, "")
-                }
+                .associate { it.substringBefore(mapDelimiter) to it.substringAfter(mapDelimiter, "") }
         } catch (parseException: Exception) {
-            throw IllegalArgumentException("wrong agent parameters: $this")
+            throw IllegalArgumentException("wrong agent parameters: $string")
         }
     }
 
-    private fun readFile(filePath: String): String {
-        val fileDescriptor = open(filePath, EROFS)
-        if (fileDescriptor == -1) throw IllegalArgumentException("Cannot open the config file with filePath='$filePath'")
+    private fun readFile(filePath: Pair<String, String>): String {
+        var fileDescriptor = open(filePath.second, EROFS)
+        if (fileDescriptor == -1 && Regex("[\\w\\-.]+").matches(filePath.second))
+            fileDescriptor = open(filePath.first + pathSeparator + filePath.second, EROFS)
+        if (fileDescriptor == -1)
+            throw IllegalArgumentException("Cannot open the config file with filePath='$filePath'")
         val bytes = Input(fileDescriptor).readBytes()
         return bytes.decodeToString()
     }

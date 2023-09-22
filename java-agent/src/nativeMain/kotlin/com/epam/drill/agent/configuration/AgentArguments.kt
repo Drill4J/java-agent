@@ -28,7 +28,7 @@ data class AgentArguments(
     val buildVersion: String? = null,
     val instanceId: String = "",
     val groupId: String = "",
-    val logLevel: String = KotlinLoggingLevel.ERROR.name,
+    val logLevel: String = KotlinLoggingLevel.INFO.name,
     val logFile: String? = null,
     val logLimit: Int = 512,
     val isWebApp: Boolean = false,
