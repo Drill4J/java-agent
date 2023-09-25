@@ -85,7 +85,7 @@ object Agent {
         logger.info { "Agent_OnUnload" }
     }
 
-    private val pathSeparator = Platform.osFamily.takeIf(OsFamily.WINDOWS::equals)?.let { "\\" } ?: "/"
+    private val pathSeparator = if (Platform.osFamily == OsFamily.WINDOWS) "\\" else "/"
 
     private fun agentParams(options: String): Map<String, String> {
         logger.info { "agent options: $options" }
@@ -100,8 +100,7 @@ object Agent {
             ?: "${drillPath}${pathSeparator}drill.properties"
         logger.info { "config path: $configPath" }
         val configParams = configPath.takeIf(String::isNotEmpty)
-            ?.let(drillPath::to)
-            ?.runCatching(::readFile)
+            ?.runCatching { readFile(drillPath, this) }
             ?.getOrNull()
             ?.let { asAgentParams(it, "\n", "#") }
         logger.info { "config parameters: $configParams" }
@@ -111,27 +110,28 @@ object Agent {
     }
 
     private fun asAgentParams(
-        string: String?,
+        input: String?,
         lineDelimiter: String = ",",
         filterPrefix: String = "",
         mapDelimiter: String = "="
     ): Map<String, String> {
-        if (string.isNullOrEmpty()) return emptyMap()
+        if (input.isNullOrEmpty()) return emptyMap()
         try {
-            return string.split(lineDelimiter)
+            return input.split(lineDelimiter)
                 .filter { it.isNotEmpty() && (filterPrefix.isEmpty() || !it.startsWith(filterPrefix)) }
                 .associate { it.substringBefore(mapDelimiter) to it.substringAfter(mapDelimiter, "") }
         } catch (parseException: Exception) {
-            throw IllegalArgumentException("wrong agent parameters: $string")
+            throw IllegalArgumentException("wrong agent parameters: $input")
         }
     }
 
-    private fun readFile(filePath: Pair<String, String>): String {
-        var fileDescriptor = open(filePath.second, EROFS)
-        if (fileDescriptor == -1 && Regex("[\\w\\-.]+").matches(filePath.second))
-            fileDescriptor = open(filePath.first + pathSeparator + filePath.second, EROFS)
+    private fun readFile(path: String, file: String): String {
+        val isFilename: (String) -> Boolean = { Regex("[\\w\\-.]+").matches(it) }
+        var fileDescriptor = open(file, EROFS)
+        if (fileDescriptor == -1 && isFilename(file))
+            fileDescriptor = open(path + pathSeparator + file, EROFS)
         if (fileDescriptor == -1)
-            throw IllegalArgumentException("Cannot open the config file with filePath='$filePath'")
+            throw IllegalArgumentException("Cannot open the config file with path=$path, file=$file")
         val bytes = Input(fileDescriptor).readBytes()
         return bytes.decodeToString()
     }
