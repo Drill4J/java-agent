@@ -1,5 +1,5 @@
 /**
- * Copyright 2020 - 2023 EPAM Systems
+ * Copyright 2020 - 2022 EPAM Systems
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,7 +28,7 @@ data class AgentArguments(
     var buildVersion: String? = null,
     var groupId: String? = null,
     var instanceId: String? = null,
-    var drillInstallationDir: String = javaProcess().firstAgentPath,
+    var drillInstallationDir: String = javaProcess().getDrillAgentPath(),
     var logLevel: String = KotlinLoggingLevel.ERROR.name,
     var logFile: String? = null,
     var logLimit: Int = 512,

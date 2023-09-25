@@ -1,5 +1,5 @@
 /**
- * Copyright 2020 - 2023 EPAM Systems
+ * Copyright 2020 - 2022 EPAM Systems
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -163,8 +163,12 @@ private fun String?.asAgentParams(
 private fun readFile(filePath: String): String {
     val fileDescriptor = open(filePath, EROFS)
     if (fileDescriptor == -1) throw IllegalArgumentException("Cannot open the config file with filePath='$filePath'")
-    val bytes = Input(fileDescriptor).readBytes()
-    return bytes.decodeToString()
+    try {
+        val bytes = Input(fileDescriptor).readBytes()
+        return bytes.decodeToString()
+    } catch (e: Exception) {
+        throw IllegalStateException("Cannot read the config file '$filePath'", e)
+    }
 }
 
 private inline fun <reified T : Any> Map<String, String>.parseAs(): T = run {

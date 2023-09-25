@@ -1,5 +1,5 @@
 /**
- * Copyright 2020 - 2023 EPAM Systems
+ * Copyright 2020 - 2022 EPAM Systems
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,7 +15,7 @@
  */
 package com.epam.drill.agent.configuration
 
-import com.epam.drill.agent.configuration.exceptions.AgentValidationException
+import com.epam.drill.agent.configuration.exceptions.AgentParameterValidationException
 import com.epam.drill.konform.validation.Invalid
 import com.epam.drill.konform.validation.Validation
 import com.epam.drill.konform.validation.ValidationErrors
@@ -75,7 +75,7 @@ object AgentArgumentsValidator {
             val message = "Can’t load the agent because some agent parameters are set incorrectly. " +
                     convertToMessage(result.errors)
             logger.error { message }
-            throw AgentValidationException(
+            throw AgentParameterValidationException(
                 message
             )
         }

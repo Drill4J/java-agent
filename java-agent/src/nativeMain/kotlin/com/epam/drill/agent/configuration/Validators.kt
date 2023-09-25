@@ -1,5 +1,5 @@
 /**
- * Copyright 2020 - 2023 EPAM Systems
+ * Copyright 2020 - 2022 EPAM Systems
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -35,16 +35,16 @@ fun ValidationBuilder<String>.hostAndPort(): Constraint<String> {
 }
 
 fun ValidationBuilder<String>.identifier(): Constraint<String> = addConstraint(
-    "must contain only lowercase characters, dashes, and underscores",
+    "must contain only lowercase latin characters",
 ) { it.matches("^[a-z0-9_-]+\$".toRegex()) }
 
 
 fun ValidationBuilder<String>.pathExists(): Constraint<String> = addConstraint(
-    "must have an existing file path, but was {value}",
+    "must be an existing filepath, but was {value}",
 ) { pathExists(it) }
 
 fun ValidationBuilder<String>.isValidPackage(): Constraint<String> = addConstraint(
-    "must have a valid Java package delimited by a right slash, e.g. 'com/example', but was '{value}'"
+    "must have a valid Java package delimited by a forward slash, e.g. 'com/example', but was '{value}'"
 ) { it.matches("^(?:[a-zA-Z_]\\w*(?:/[a-zA-Z_]\\w*)*)?$".toRegex()) }
 
 
