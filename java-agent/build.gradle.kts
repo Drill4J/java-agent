@@ -57,6 +57,10 @@ kotlin {
             kotlin.srcDir("src/nativeMain/kotlin")
             resources.srcDir("src/nativeMain/resources")
         }
+        currentPlatformTarget().compilations["test"].defaultSourceSet {
+            kotlin.srcDir("src/nativeTest/kotlin")
+            resources.srcDir("src/nativeTest/resources")
+        }
     }
     @Suppress("UNUSED_VARIABLE")
     sourceSets {
@@ -73,7 +77,12 @@ kotlin {
             kotlin.srcDir("src/commonGenerated/kotlin")
             file("src/commonGenerated/kotlin/com/epam/drill/agent").apply {
                 mkdirs()
-                resolve("Version.kt").writeText("package com.epam.drill.agent\n\ninternal val agentVersion = \"${project.version}\"")
+                resolve("Version.kt").writeText("""
+                    package com.epam.drill.agent
+                    
+                    internal val agentVersion = "${project.version}"
+                    internal val nativeAgentLibName = "$nativeAgentLibName"
+                """.trimIndent())
             }
             dependencies {
                 implementation("org.jetbrains.kotlinx:kotlinx-serialization-core:$kotlinxSerializationVersion")
@@ -105,9 +114,17 @@ kotlin {
                 implementation(project(":konform"))
             }
         }
+        val configureNativeTestDependencies: KotlinSourceSet.() -> Unit = {
+            dependencies {
+                implementation(kotlin("test"))
+            }
+        }
         val linuxX64Main by getting(configuration = configureNativeDependencies)
         val mingwX64Main by getting(configuration = configureNativeDependencies)
         val macosX64Main by getting(configuration = configureNativeDependencies)
+        val linuxX64Test by getting(configuration = configureNativeTestDependencies)
+        val mingwX64Test by getting(configuration = configureNativeTestDependencies)
+        val macosX64Test by getting(configuration = configureNativeTestDependencies)
         mingwX64Main.dependencies {
             implementation(project(":logging-native"))
         }
@@ -123,13 +140,23 @@ kotlin {
         }
         copyNativeClasses.get()
     }
+    val copyNativeTestClassesForTarget: TaskContainer.(KotlinNativeTarget) -> Task = {
+        val copyNativeTestClasses:TaskProvider<Copy> = register("copyNativeTestClasses${it.targetName.capitalize()}", Copy::class) {
+            group = "build"
+            from("src/nativeTest/kotlin")
+            into("src/${it.targetName}Test/kotlin/gen")
+        }
+        copyNativeTestClasses.get()
+    }
     val filterOutCurrentPlatform: (KotlinNativeTarget) -> Boolean = {
         it.targetName != HostManager.host.presetName
     }
     tasks {
         targets.withType<KotlinNativeTarget>().filter(filterOutCurrentPlatform).forEach {
             val copyNativeClasses = copyNativeClassesForTarget(it)
+            val copyNativeTestClasses = copyNativeTestClassesForTarget(it)
             it.compilations["main"].compileKotlinTask.dependsOn(copyNativeClasses)
+            it.compilations["test"].compileKotlinTask.dependsOn(copyNativeTestClasses)
         }
         val jvmMainCompilation = kotlin.targets.withType<KotlinJvmTarget>()["jvm"].compilations["main"]
         val runtimeJar by registering(ShadowJar::class) {
