@@ -17,7 +17,6 @@ package com.epam.drill.agent.configuration
 
 import com.epam.drill.konform.validation.Constraint
 import com.epam.drill.konform.validation.ValidationBuilder
-import com.epam.drill.transport.URL
 import platform.posix.access
 import platform.posix.F_OK
 

@@ -80,57 +80,6 @@ object Agent {
         logger.info { "Agent_OnUnload" }
     }
 
-    private val pathSeparator = if (Platform.osFamily == OsFamily.WINDOWS) "\\" else "/"
-
-    private fun agentParams(options: String): Map<String, String> {
-        logger.info { "agent options: $options" }
-        val agentParams = asAgentParams(options)
-        logger.info { "agent parameters: $agentParams" }
-        val drillPath = agentParams["drillInstallationDir"]
-            ?.removeSuffix(pathSeparator)
-            ?.takeIf(String::isNotEmpty)
-            ?: "."
-        val configPath = agentParams["configPath"]
-            ?: getenv(SYSTEM_CONFIG_PATH)?.toKString()
-            ?: "${drillPath}${pathSeparator}drill.properties"
-        logger.info { "config path: $configPath" }
-        val configParams = configPath.takeIf(String::isNotEmpty)
-            ?.runCatching { readFile(drillPath, this) }
-            ?.getOrNull()
-            ?.let { asAgentParams(it, "\n", "#") }
-        logger.info { "config parameters: $configParams" }
-        val resultParams = configParams?.toMutableMap()?.also { it.putAll(agentParams) } ?: agentParams
-        logger.info { "result parameters: $resultParams" }
-        return resultParams.validate()
-    }
-
-    private fun asAgentParams(
-        input: String?,
-        lineDelimiter: String = ",",
-        filterPrefix: String = "",
-        mapDelimiter: String = "="
-    ): Map<String, String> {
-        if (input.isNullOrEmpty()) return emptyMap()
-        try {
-            return input.split(lineDelimiter)
-                .filter { it.isNotEmpty() && (filterPrefix.isEmpty() || !it.startsWith(filterPrefix)) }
-                .associate { it.substringBefore(mapDelimiter) to it.substringAfter(mapDelimiter, "") }
-        } catch (parseException: Exception) {
-            throw IllegalArgumentException("wrong agent parameters: $input")
-        }
-    }
-
-    private fun readFile(path: String, file: String): String {
-        val isFilename: (String) -> Boolean = { Regex("[\\w\\-.]+").matches(it) }
-        var fileDescriptor = open(file, EROFS)
-        if (fileDescriptor == -1 && isFilename(file))
-            fileDescriptor = open(path + pathSeparator + file, EROFS)
-        if (fileDescriptor == -1)
-            throw IllegalArgumentException("Cannot open the config file with path=$path, file=$file")
-        val bytes = Input(fileDescriptor).readBytes()
-        return bytes.decodeToString()
-    }
-
     private fun callbackRegister() = memScoped {
         val alloc = alloc<jvmtiEventCallbacks>()
         alloc.VMInit = staticCFunction(::vmInitEvent)
