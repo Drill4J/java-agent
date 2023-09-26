@@ -40,7 +40,6 @@ private val logger = KotlinLogging.logger("com.epam.drill.agent.configuration.Co
 
 fun performInitialConfiguration(initialParams: Map<String, String>) {
     parseAsAgentArguments(initialParams).let {
-        drillInstallationDir = it.drillInstallationDir
         adminAddress = URL(it.adminAddress)
         agentConfig = AgentConfig(
             id = it.agentId,

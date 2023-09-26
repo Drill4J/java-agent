@@ -57,6 +57,7 @@ object Agent {
         println(LOGO)
         try {
             defaultNativeLoggingConfiguration()
+            drillInstallationDir = getDrillInstallationDir()
             val initialParams = agentParams(options)
             performInitialConfiguration(initialParams)
             setUnhandledExceptionHook({ error: Throwable ->
@@ -87,11 +88,18 @@ object Agent {
 
     private val pathSeparator = if (Platform.osFamily == OsFamily.WINDOWS) "\\" else "/"
 
+    private fun getDrillInstallationDir() = open("/proc/self/cmdline", O_RDONLY).let(::Input).readText().run {
+        val isContainsAgetPath: (String) -> Boolean = { it.contains("-agentpath:") }
+        val agentLine = this.takeIf(isContainsAgetPath) ?: getenv("JAVA_TOOL_OPTIONS")!!.toKString()
+        val agentPath = Regex("-agentpath:(.+?)=.+").matchEntire(agentLine)!!.groups[1]!!.value
+        agentPath.substringBeforeLast(pathSeparator)
+    }
+
     private fun agentParams(options: String): Map<String, String> {
         logger.info { "agent options: $options" }
         val agentParams = asAgentParams(options)
         logger.info { "agent parameters: $agentParams" }
-        val drillPath = agentParams["drillInstallationDir"]
+        val drillPath = drillInstallationDir
             ?.removeSuffix(pathSeparator)
             ?.takeIf(String::isNotEmpty)
             ?: "."
@@ -127,7 +135,7 @@ object Agent {
 
     private fun readFile(path: String, file: String): String {
         val isFilename: (String) -> Boolean = { Regex("[\\w\\-.]+").matches(it) }
-        var fileDescriptor = open(file, EROFS)
+        var fileDescriptor = open(file, O_RDONLY)
         if (fileDescriptor == -1 && isFilename(file))
             fileDescriptor = open(path + pathSeparator + file, EROFS)
         if (fileDescriptor == -1)
