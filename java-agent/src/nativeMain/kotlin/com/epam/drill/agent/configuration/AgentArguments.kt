@@ -38,7 +38,9 @@ data class AgentArguments(
     var isTlsApp: Boolean = false,
     var isAsyncApp: Boolean = false,
     var classScanDelay: Long = 0L,
-    var scanClassPath: String? = null
+    var scanClassPath: String? = null,
+    val sslTruststore: String? = null,
+    val sslTruststorePassword: String? = null
 ) {
 
     val packagePrefixesToList: List<String>
@@ -102,6 +104,16 @@ data class AgentArguments(
             type = packagePrefixes.toType(),
             value = packagePrefixes!!,
             description = "Configure package prefixes for scanning and instrumentation",
+        ),
+        AgentArguments::sslTruststore.name to AgentParameter(
+            type = sslTruststore.toType(),
+            value = sslTruststore ?: "",
+            description = "Configure path to SSL truststore for admin connection (leave empty to trust all)",
+        ),
+        AgentArguments::sslTruststorePassword.name to AgentParameter(
+            type = sslTruststorePassword.toType(),
+            value = sslTruststorePassword ?: "",
+            description = "Configure password for SSL truststore for admin connection",
         )
     )
 

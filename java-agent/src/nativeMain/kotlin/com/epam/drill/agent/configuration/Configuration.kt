@@ -38,8 +38,6 @@ import com.epam.drill.logging.LoggingConfiguration
 import com.epam.drill.transport.URL
 import io.ktor.utils.io.core.*
 import io.ktor.utils.io.streams.*
-import platform.posix.EROFS
-import platform.posix.open
 
 private val logger = KotlinLogging.logger("com.epam.drill.agent.configuration.Configuration")
 
@@ -53,13 +51,17 @@ fun performInitialConfiguration(aa: AgentArguments) {
         buildVersion = aa.buildVersion!!,
         serviceGroupId = aa.groupId ?: "",
         agentType = AgentType.JAVA,
-        parameters = aa.defaultParameters(),
+        parameters = aa.defaultParameters()
     )
     updateAgentParameters(agentConfig.parameters, true)
 }
 
 fun updateAgentParameters(parameters: Map<String, AgentParameter>, initialization: Boolean = false) {
     agentParameters = agentParameters.copy(
+        sslTruststore = parameters[AgentArguments::sslTruststore.name]?.value
+            ?: agentParameters.sslTruststore,
+        sslTruststorePassword = parameters[AgentArguments::sslTruststorePassword.name]?.value
+            ?: agentParameters.sslTruststorePassword,
         classScanDelay = parameters[AgentArguments::classScanDelay.name]?.value
             ?.toLong()?.toDuration(DurationUnit.MILLISECONDS) ?: agentParameters.classScanDelay,
         packagePrefixes = parameters[AgentArguments::packagePrefixes.name]?.value ?: agentParameters.packagePrefixes,
@@ -110,17 +112,12 @@ fun updatePackagePrefixesConfiguration() {
     agentConfig = agentConfig.copy(packagesPrefixes = PackagesPrefixes(agentParameters.packagePrefixes.split(";")))
 }
 
-fun idHeaderPairFromConfig(): Pair<String, String> =
-    when (val groupId = agentConfig.serviceGroupId) {
-        "" -> "drill-agent-id" to agentConfig.id
-        else -> "drill-group-id" to groupId
-    }
-
-fun retrieveAdminUrl(): String {
-    return if (secureAdminAddress != null) {
-        secureAdminAddress?.toUrlString(false).toString()
-    } else adminAddress?.toUrlString(false).toString()
+fun idHeaderPairFromConfig(): Pair<String, String> = when (agentConfig.serviceGroupId) {
+    "" -> "drill-agent-id" to agentConfig.id
+    else -> "drill-group-id" to agentConfig.serviceGroupId
 }
+
+fun retrieveAdminUrl() = adminAddress?.toUrlString(false).toString()
 
 fun convertToAgentArguments(options: String): AgentArguments {
     logger.debug { "agent options:$options" }
@@ -136,44 +133,10 @@ fun convertToAgentArguments(options: String): AgentArguments {
         agentParameters
     }
     logger.debug { "result of agent parameters:$agentParams" }
-    return agentParams.parseAs()
+    return parseAsAgentArguments(agentParams)
 }
 
-fun validate(args: AgentArguments) {
-    AgentArgumentsValidator.validate(args)
+private fun parseAsAgentArguments(map: Map<String, String>) = AgentArguments::class.serializer().run {
+    val module = serializersModuleOf(this)
+    this.deserialize(SimpleMapDecoder(module, map))
 }
-
-private fun String?.asAgentParams(
-    lineDelimiter: String = ",",
-    filterPrefix: String = "",
-    mapDelimiter: String = "="
-): Map<String, String> {
-    if (this.isNullOrEmpty()) return emptyMap()
-    return try {
-        this.split(lineDelimiter)
-            .filter { it.isNotEmpty() && (filterPrefix.isEmpty() || !it.startsWith(filterPrefix)) }
-            .associate {
-                it.substringBefore(mapDelimiter) to it.substringAfter(mapDelimiter, "")
-            }
-    } catch (parseException: Exception) {
-        throw IllegalArgumentException("wrong agent parameters: $this")
-    }
-}
-
-private fun readFile(filePath: String): String {
-    val fileDescriptor = open(filePath, EROFS)
-    if (fileDescriptor == -1) throw IllegalArgumentException("Cannot open the config file with filePath='$filePath'")
-    try {
-        val bytes = Input(fileDescriptor).readBytes()
-        return bytes.decodeToString()
-    } catch (e: Exception) {
-        throw IllegalStateException("Cannot read the config file '$filePath'", e)
-    }
-}
-
-private inline fun <reified T : Any> Map<String, String>.parseAs(): T = run {
-    val serializer = T::class.serializer()
-    val module = serializersModuleOf(serializer)
-    serializer.deserialize(SimpleMapDecoder(module, this))
-}
-

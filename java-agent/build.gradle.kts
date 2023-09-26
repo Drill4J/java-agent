@@ -68,7 +68,6 @@ kotlin {
             languageSettings.optIn("kotlin.ExperimentalStdlibApi")
             languageSettings.optIn("kotlin.ExperimentalUnsignedTypes")
             languageSettings.optIn("kotlin.time.ExperimentalTime")
-            languageSettings.optIn("kotlinx.coroutines.ExperimentalCoroutinesApi")
             languageSettings.optIn("kotlinx.serialization.ExperimentalSerializationApi")
             languageSettings.optIn("kotlinx.serialization.InternalSerializationApi")
             languageSettings.optIn("io.ktor.utils.io.core.ExperimentalIoApi")
@@ -94,7 +93,6 @@ kotlin {
         val jvmMain by getting {
             dependencies {
                 implementation(kotlin("reflect"))
-                implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:$kotlinxCoroutinesVersion")
                 implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:$kotlinxSerializationVersion")
                 implementation("org.jetbrains.kotlinx:kotlinx-serialization-protobuf:$kotlinxSerializationVersion")
                 implementation("org.javassist:javassist:$javassistVersion")
@@ -159,6 +157,20 @@ kotlin {
             it.compilations["test"].compileKotlinTask.dependsOn(copyNativeTestClasses)
         }
         val jvmMainCompilation = kotlin.targets.withType<KotlinJvmTarget>()["jvm"].compilations["main"]
+        val relocatePackages = setOf(
+            "javax.websocket",
+            "javassist",
+            "ch.qos.logback",
+            "com.alibaba",
+            "org.slf4j",
+            "org.jacoco",
+            "org.objectweb.asm",
+            "org.apache.bcel",
+            "org.apache.commons",
+            "org.eclipse.jetty",
+            "org.intellij.lang.annotations",
+            "org.jetbrains.annotations"
+        )
         val runtimeJar by registering(ShadowJar::class) {
             mergeServiceFiles()
             isZip64 = true
@@ -166,10 +178,9 @@ kotlin {
             from(jvmMainCompilation.output, jvmMainCompilation.runtimeDependencyFiles)
             relocate("kotlin", "kruntime")
             relocate("kotlinx", "kruntimex")
-            relocate("ch.qos.logback", "${project.group}.shadow.ch.qos.logback")
-            relocate("org.slf4j", "${project.group}.shadow.org.slf4j")
-            relocate("org.jacoco.core", "${project.group}.shadow.org.jacoco.core")
-            relocate("org.objectweb.asm", "${project.group}.shadow.org.objectweb.asm")
+            relocatePackages.forEach {
+                relocate(it, "${project.group}.shadow.$it")
+            }
             dependencies {
                 exclude("/META-INF/services/javax.servlet.ServletContainerInitializer")
                 exclude("/module-info.class", "/about.html")
@@ -210,6 +221,8 @@ distributions {
                 from(nativeAgentLinkTask) {
                     duplicatesStrategy = DuplicatesStrategy.EXCLUDE
                 }
+                from("drill.properties")
+                from("temporary.jks")
             }
         }
     }
