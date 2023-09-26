@@ -38,40 +38,57 @@ class ValidatorsTest {
         }
     }
 
-
     @Test
-    fun `check host and port matcher`() {
-        //valid - there are host and port
+    fun `given correct host and port hostAndPort validator must be valid`() {
         assertTrue { hostAndPort.validate(SomeObject("localhost:8080")) is Valid }
-        //valid - there is domain
-        assertTrue { hostAndPort.validate(SomeObject("example.com")) is Valid }
-        //invalid - no schema needed
-        assertTrue { hostAndPort.validate(SomeObject("http://localhost:8080")) is Invalid }
     }
 
     @Test
-    fun `check identifier matcher`() {
-        //valid - latin letters
+    fun `given correct domain hostAndPort validator must be valid`() {
+        assertTrue { hostAndPort.validate(SomeObject("example.com")) is Valid }
+    }
+
+    @Test
+    fun `given schema hostAndPort validator must be invalid`() {
+        assertTrue { hostAndPort.validate(SomeObject("http://localhost:8080")) is Invalid }
+    }
+    @Test
+    fun `given lowercase latin letters identifier validator must be valid`() {
         assertTrue { identifier.validate(SomeObject("myproject")) is Valid }
-        //valid - latin letters and numbers
+    }
+    @Test
+    fun `given lowercase latin letters and numbers identifier validator must be valid`() {
         assertTrue { identifier.validate(SomeObject("project123")) is Valid }
-        //valid - latin letters and dashes
+    }
+    @Test
+    fun `given lowercase latin letters and dashes identifier validator must be valid`() {
         assertTrue { identifier.validate(SomeObject("my-project")) is Valid }
-        //valid - latin letters and underscores
+    }
+    @Test
+    fun `given lowercase latin letters and underscores identifier validator must be valid`() {
         assertTrue { identifier.validate(SomeObject("my_project")) is Valid }
-        //invalid - upper cases
+    }
+    @Test
+    fun `given upper case letters identifier validator must be invalid`() {
         assertTrue { identifier.validate(SomeObject("myProject")) is Invalid }
-        //invalid - extra symbols
+    }
+    @Test
+    fun `given extra symbols identifier validator must be invalid`() {
         assertTrue { identifier.validate(SomeObject("myProject@")) is Invalid }
     }
 
     @Test
-    fun `check valid package matcher`() {
-        //valid - forward slash separator
+    fun `given directories are separated by a forward slash package validator must be valid`() {
         assertTrue { validPackage.validate(SomeObject("com/example")) is Valid }
-        //invalid - dot separator
+    }
+
+    @Test
+    fun `given directories are separated by a dot package validator must be invalid`() {
         assertTrue { validPackage.validate(SomeObject("com.example")) is Invalid }
-        //invalid - numbers first
+    }
+
+    @Test
+    fun `given the first numbers package validator must be invalid`() {
         assertTrue { validPackage.validate(SomeObject("123com/example")) is Invalid }
     }
 }
