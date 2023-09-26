@@ -182,6 +182,7 @@ kotlin {
             group = "build"
             targets.withType<KotlinNativeTarget> {
                 delete("src/${name}Main/kotlin/gen")
+                delete("src/${name}Test/kotlin/gen")
             }
         }
         clean.dependsOn(cleanGeneratedClasses)
