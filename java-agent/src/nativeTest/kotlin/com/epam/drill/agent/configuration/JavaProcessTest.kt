@@ -21,26 +21,48 @@ import kotlin.test.assertEquals
 
 class JavaProcessTest {
     @Test
-    fun `check getting drill agent path on windows`() {
+    fun `given in any order native agent getDrillAgentPath must find the agent path by drillLibName`() {
         val command = JavaProcess(
             nativeAgents = mutableListOf(
-                "some/native/agent",
-                "/some/folder/drill_agent.dll,key1=value1,key2=value2"
+                "/first/native/agent1.so",
+                "/second/native/agent2.so",
+                "/third/native/agent3.so",
             )
         )
 
-        assertEquals("/some/folder", command.getDrillAgentPath("drill-agent"))
+        assertEquals("/second/native", command.getDrillAgentPath("agent2"))
     }
 
     @Test
-    fun `check getting drill agent path on linux`() {
+    fun `given a native agent with an underscore in the name getDrillAgentPath must find the agent path by drillLibName with dashes`() {
         val command = JavaProcess(
             nativeAgents = mutableListOf(
-                "some/native/agent",
-                "/some/folder/libdrill_agent.so,key1=value1,key2=value2"
+                "/some/native/libdrill_agent.so"
             )
         )
 
-        assertEquals("/some/folder", command.getDrillAgentPath("drill-agent"))
+        assertEquals("/some/native", command.getDrillAgentPath("drill-agent"))
+    }
+
+    @Test
+    fun `given a native agent with arguments getDrillAgentPath must find the agent path`() {
+        val command = JavaProcess(
+            nativeAgents = mutableListOf(
+                "/some/native/agent.so=key1=value1,key2=value2"
+            )
+        )
+
+        assertEquals("/some/native", command.getDrillAgentPath("agent"))
+    }
+
+    @Test
+    fun `given a native agent in quotes getDrillAgentPath must find the agent path`() {
+        val command = JavaProcess(
+            nativeAgents = mutableListOf(
+                "\"/some/native/agent.so\""
+            )
+        )
+
+        assertEquals("/some/native", command.getDrillAgentPath("agent"))
     }
 }
