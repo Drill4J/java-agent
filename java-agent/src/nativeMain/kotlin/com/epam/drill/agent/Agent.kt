@@ -57,7 +57,6 @@ object Agent {
         println(LOGO)
         try {
             defaultNativeLoggingConfiguration()
-            drillInstallationDir = getDrillInstallationDir()
             val initialParams = agentParams(options)
             performInitialConfiguration(initialParams)
             setUnhandledExceptionHook({ error: Throwable ->
@@ -88,27 +87,16 @@ object Agent {
 
     private val pathSeparator = if (Platform.osFamily == OsFamily.WINDOWS) "\\" else "/"
 
-    private fun getDrillInstallationDir() = open("/proc/self/cmdline", O_RDONLY).let(::Input).readText().run {
-        val isContainsAgetPath: (String) -> Boolean = { it.contains("-agentpath:") }
-        val agentLine = this.takeIf(isContainsAgetPath) ?: getenv("JAVA_TOOL_OPTIONS")!!.toKString()
-        val agentPath = Regex("-agentpath:(.+?)=.+").matchEntire(agentLine)!!.groups[1]!!.value
-        agentPath.substringBeforeLast(pathSeparator)
-    }
-
     private fun agentParams(options: String): Map<String, String> {
         logger.info { "agent options: $options" }
         val agentParams = asAgentParams(options)
         logger.info { "agent parameters: $agentParams" }
-        val drillPath = drillInstallationDir
-            ?.removeSuffix(pathSeparator)
-            ?.takeIf(String::isNotEmpty)
-            ?: "."
         val configPath = agentParams["configPath"]
             ?: getenv(SYSTEM_CONFIG_PATH)?.toKString()
-            ?: "${drillPath}${pathSeparator}drill.properties"
+            ?: "${drillInstallationDir}${pathSeparator}drill.properties"
         logger.info { "config path: $configPath" }
         val configParams = configPath.takeIf(String::isNotEmpty)
-            ?.runCatching { readFile(drillPath, this) }
+            ?.runCatching(::readFile)
             ?.getOrNull()
             ?.let { asAgentParams(it, "\n", "#") }
         logger.info { "config parameters: $configParams" }
@@ -133,15 +121,14 @@ object Agent {
         }
     }
 
-    private fun readFile(path: String, file: String): String {
+    private fun readFile(filepath: String): String {
         val isFilename: (String) -> Boolean = { Regex("[\\w\\-.]+").matches(it) }
-        var fileDescriptor = open(file, O_RDONLY)
-        if (fileDescriptor == -1 && isFilename(file))
-            fileDescriptor = open(path + pathSeparator + file, EROFS)
+        var fileDescriptor = open(filepath, O_RDONLY)
+        if (fileDescriptor == -1 && isFilename(filepath))
+            fileDescriptor = open(drillInstallationDir + pathSeparator + filepath, EROFS)
         if (fileDescriptor == -1)
-            throw IllegalArgumentException("Cannot open the config file with path=$path, file=$file")
-        val bytes = Input(fileDescriptor).readBytes()
-        return bytes.decodeToString()
+            throw IllegalArgumentException("Cannot open the config file with path=$drillInstallationDir, file=$filepath")
+        return Input(fileDescriptor).readText().also { close(fileDescriptor) }
     }
 
     private fun callbackRegister() = memScoped {
