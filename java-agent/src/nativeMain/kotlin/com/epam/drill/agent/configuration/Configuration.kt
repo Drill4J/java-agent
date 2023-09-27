@@ -15,6 +15,8 @@
  */
 package com.epam.drill.agent.configuration
 
+import com.epam.drill.agent.Agent
+import com.epam.drill.agent.SYSTEM_CONFIG_PATH
 import kotlin.time.DurationUnit
 import kotlin.time.toDuration
 import kotlinx.cinterop.toKString
@@ -22,7 +24,6 @@ import kotlinx.serialization.modules.serializersModuleOf
 import kotlinx.serialization.serializer
 import platform.posix.getenv
 import mu.KotlinLogging
-import com.epam.drill.agent.SYSTEM_JAVA_APP_JAR
 import com.epam.drill.agent.agentVersion
 import com.epam.drill.agent.configuration.serialization.SimpleMapDecoder
 import com.epam.drill.common.agent.configuration.AgentConfig
@@ -35,24 +36,26 @@ import com.epam.drill.jvmapi.callObjectVoidMethod
 import com.epam.drill.jvmapi.callObjectVoidMethodWithInt
 import com.epam.drill.jvmapi.callObjectVoidMethodWithString
 import com.epam.drill.logging.LoggingConfiguration
+import io.ktor.utils.io.core.*
+import io.ktor.utils.io.streams.*
+import platform.posix.EROFS
+import platform.posix.open
 
 private val logger = KotlinLogging.logger("com.epam.drill.agent.configuration.Configuration")
 
-fun performInitialConfiguration(initialParams: Map<String, String>) {
-    parseAsAgentArguments(initialParams).let {
-        drillInstallationDir = it.drillInstallationDir
-        adminAddress = URL(it.adminAddress)
-        agentConfig = AgentConfig(
-            id = it.agentId,
-            instanceId = it.instanceId,
-            agentVersion = agentVersion,
-            buildVersion = it.buildVersion ?: calculateBuildVersion(),
-            serviceGroupId = it.groupId,
-            agentType = AgentType.JAVA,
-            parameters = it.defaultParameters()
-        )
-        updateAgentParameters(agentConfig.parameters, true)
-    }
+fun performInitialConfiguration(aa: AgentArguments) {
+    drillInstallationDir = aa.drillInstallationDir
+    adminAddress = URL("ws://${aa.adminAddress}")
+    agentConfig = AgentConfig(
+        id = aa.agentId!!,
+        instanceId = aa.instanceId,
+        agentVersion = agentVersion,
+        buildVersion = aa.buildVersion!!,
+        serviceGroupId = aa.groupId,
+        agentType = AgentType.JAVA,
+        parameters = aa.defaultParameters()
+    )
+    updateAgentParameters(agentConfig.parameters, true)
 }
 
 fun updateAgentParameters(parameters: Map<String, AgentParameter>, initialization: Boolean = false) {
@@ -76,7 +79,7 @@ fun updateAgentParameters(parameters: Map<String, AgentParameter>, initializatio
     )
     updateNativeLoggingConfiguration()
     if (!initialization) updateJvmLoggingConfiguration()
-    logger.debug { "after update configs by params: config '$agentParameters'" }
+    logger.info { "Agent parameters '$agentParameters' is initialized." }
 }
 
 fun defaultNativeLoggingConfiguration() {
@@ -118,15 +121,64 @@ fun idHeaderPairFromConfig(): Pair<String, String> = when (agentConfig.serviceGr
 
 fun retrieveAdminUrl() = adminAddress?.toUrlString(false).toString()
 
+fun convertToAgentArguments(options: String) = parseAsAgentArguments(agentParams(options))
+
+fun validate(args: AgentArguments) {
+    AgentArgumentsValidator.validate(args)
+}
+
+private val pathSeparator = if (Platform.osFamily == OsFamily.WINDOWS) "\\" else "/"
+
+private fun agentParams(options: String): Map<String, String> {
+    logger.info { "agent options: $options" }
+    val agentParams = asAgentParams(options)
+    logger.info { "agent parameters: $agentParams" }
+    val drillPath = agentParams["drillInstallationDir"]
+        ?.removeSuffix(pathSeparator)
+        ?.takeIf(String::isNotEmpty)
+        ?: "."
+    val configPath = agentParams["configPath"]
+        ?: getenv(SYSTEM_CONFIG_PATH)?.toKString()
+        ?: "${drillPath}${pathSeparator}drill.properties"
+    logger.info { "config path: $configPath" }
+    val configParams = configPath.takeIf(String::isNotEmpty)
+        ?.runCatching { readFile(drillPath, this) }
+        ?.getOrNull()
+        ?.let { asAgentParams(it, "\n", "#") }
+    logger.info { "config parameters: $configParams" }
+    val resultParams = configParams?.toMutableMap()?.also { it.putAll(agentParams) } ?: agentParams
+    logger.info { "result parameters: $resultParams" }
+    return resultParams
+}
+
+private fun readFile(path: String, file: String): String {
+    val isFilename: (String) -> Boolean = { Regex("[\\w\\-.]+").matches(it) }
+    var fileDescriptor = open(file, EROFS)
+    if (fileDescriptor == -1 && isFilename(file))
+        fileDescriptor = open(path + pathSeparator + file, EROFS)
+    if (fileDescriptor == -1)
+        throw IllegalArgumentException("Cannot open the config file with path=$path, file=$file")
+    val bytes = Input(fileDescriptor).readBytes()
+    return bytes.decodeToString()
+}
+
+private fun asAgentParams(
+    input: String?,
+    lineDelimiter: String = ",",
+    filterPrefix: String = "",
+    mapDelimiter: String = "="
+): Map<String, String> {
+    if (input.isNullOrEmpty()) return emptyMap()
+    try {
+        return input.split(lineDelimiter)
+            .filter { it.isNotEmpty() && (filterPrefix.isEmpty() || !it.startsWith(filterPrefix)) }
+            .associate { it.substringBefore(mapDelimiter) to it.substringAfter(mapDelimiter, "") }
+    } catch (parseException: Exception) {
+        throw IllegalArgumentException("wrong agent parameters: $input")
+    }
+}
+
 private fun parseAsAgentArguments(map: Map<String, String>) = AgentArguments::class.serializer().run {
     val module = serializersModuleOf(this)
     this.deserialize(SimpleMapDecoder(module, map))
-}
-
-private fun calculateBuildVersion() = getenv(SYSTEM_JAVA_APP_JAR).run {
-    val parseVersion: (String) -> String? = {
-        val match = Regex("(.*)/(.*).jar").matchEntire(it)?.takeIf { it.groupValues.size == 3 }
-        match?.groupValues?.get(2)
-    }
-    this?.toKString()?.runCatching(parseVersion)?.getOrNull() ?: "unspecified"
 }

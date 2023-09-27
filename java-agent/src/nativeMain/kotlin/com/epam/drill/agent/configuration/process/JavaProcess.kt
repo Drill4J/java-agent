@@ -15,6 +15,8 @@
  */
 package com.epam.drill.agent.configuration.process
 
+import com.epam.drill.agent.nativeAgentLibName
+
 data class JavaProcess(
     val javaAgents: MutableList<String> = mutableListOf(),
     val nativeAgents: MutableList<String> = mutableListOf(),
@@ -23,6 +25,12 @@ data class JavaProcess(
     var jar: String = "",
     var javaParams: List<String>? = null
 ) {
-    val firstAgentPath
-        get() = nativeAgents.first().split("=").first().replace('/', '\\').substringBeforeLast('\\')
+    fun getDrillAgentPath(drillLibName: String = nativeAgentLibName) =
+        nativeAgents
+            .find { it.contains(drillLibName.replace("-", "_")) }
+            ?.split("=")
+            ?.first()
+            ?.substringBeforeLast('/')
+            ?.removePrefix("\"")
+            ?: ""
 }
