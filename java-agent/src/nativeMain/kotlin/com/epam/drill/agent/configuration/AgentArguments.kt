@@ -26,11 +26,11 @@ data class AgentArguments(
     var packagePrefixes: String? = null,
     var agentId: String? = null,
     var buildVersion: String? = null,
-    var groupId: String? = null,
-    var instanceId: String? = null,
+    var groupId: String = "",
+    var instanceId: String = "",
     var drillInstallationDir: String = javaProcess().getDrillAgentPath(),
     var logLevel: String = KotlinLoggingLevel.ERROR.name,
-    var logFile: String? = null,
+    var logFile: String = "",
     var logLimit: Int = 512,
     var isWebApp: Boolean = false,
     var isKafka: Boolean = false,
@@ -38,16 +38,16 @@ data class AgentArguments(
     var isTlsApp: Boolean = false,
     var isAsyncApp: Boolean = false,
     var classScanDelay: Long = 0L,
-    var scanClassPath: String? = null,
-    val sslTruststore: String? = null,
-    val sslTruststorePassword: String? = null
+    var scanClassPath: String = "",
+    var sslTruststore: String = "",
+    var sslTruststorePassword: String = ""
 ) {
 
     val packagePrefixesToList: List<String>
         get() = packagePrefixes?.split(", ")?.toList() ?: emptyList()
 
     val scanClassPathToList: List<String>
-        get() = scanClassPath?.split(";")?.toList() ?: emptyList()
+        get() = scanClassPath.split(";").toList() ?: emptyList()
 
     fun defaultParameters(): Map<String, AgentParameter> = mapOf(
         AgentArguments::logLevel.name to AgentParameter(
@@ -57,7 +57,7 @@ data class AgentArguments(
         ),
         AgentArguments::logFile.name to AgentParameter(
             type = logFile.toType(),
-            value = logFile ?: "",
+            value = logFile,
             description = "the location where the logs will be stored",
         ),
         AgentArguments::logLimit.name to AgentParameter(
@@ -97,7 +97,7 @@ data class AgentArguments(
         ),
         AgentArguments::scanClassPath.name to AgentParameter(
             type = scanClassPath.toType(),
-            value = scanClassPath ?: "",
+            value = scanClassPath,
             description = "Add additional class path to scan",
         ),
         AgentArguments::packagePrefixes.name to AgentParameter(
@@ -107,12 +107,12 @@ data class AgentArguments(
         ),
         AgentArguments::sslTruststore.name to AgentParameter(
             type = sslTruststore.toType(),
-            value = sslTruststore ?: "",
+            value = sslTruststore,
             description = "Configure path to SSL truststore for admin connection (leave empty to trust all)",
         ),
         AgentArguments::sslTruststorePassword.name to AgentParameter(
             type = sslTruststorePassword.toType(),
-            value = sslTruststorePassword ?: "",
+            value = sslTruststorePassword,
             description = "Configure password for SSL truststore for admin connection",
         )
     )

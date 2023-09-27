@@ -48,10 +48,10 @@ fun performInitialConfiguration(aa: AgentArguments) {
     adminAddress = URL("ws://${aa.adminAddress}")
     agentConfig = AgentConfig(
         id = aa.agentId!!,
-        instanceId = aa.instanceId ?: "",
+        instanceId = aa.instanceId,
         agentVersion = agentVersion,
         buildVersion = aa.buildVersion!!,
-        serviceGroupId = aa.groupId ?: "",
+        serviceGroupId = aa.groupId,
         agentType = AgentType.JAVA,
         parameters = aa.defaultParameters()
     )
