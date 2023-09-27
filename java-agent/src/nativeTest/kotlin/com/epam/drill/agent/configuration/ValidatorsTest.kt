@@ -21,20 +21,10 @@ import com.epam.drill.konform.validation.Validation
 import kotlin.test.Test
 import kotlin.test.assertTrue
 
-class ValidatorsTest {
+class HostAndPortTest {
     private val hostAndPort = Validation<SomeObject> {
         SomeObject::str required {
             hostAndPort()
-        }
-    }
-    private val identifier = Validation<SomeObject> {
-        SomeObject::str required {
-            identifier()
-        }
-    }
-    private val validPackage = Validation<SomeObject> {
-        SomeObject::str required {
-            isValidPackage()
         }
     }
 
@@ -52,29 +42,52 @@ class ValidatorsTest {
     fun `given schema hostAndPort validator must be invalid`() {
         assertTrue { hostAndPort.validate(SomeObject("http://localhost:8080")) is Invalid }
     }
+
+}
+
+class IdentifierValidatorTest {
+    private val identifier = Validation<SomeObject> {
+        SomeObject::str required {
+            identifier()
+        }
+    }
+
     @Test
     fun `given lowercase latin letters identifier validator must be valid`() {
         assertTrue { identifier.validate(SomeObject("myproject")) is Valid }
     }
+
     @Test
     fun `given lowercase latin letters and numbers identifier validator must be valid`() {
         assertTrue { identifier.validate(SomeObject("project123")) is Valid }
     }
+
     @Test
     fun `given lowercase latin letters and dashes identifier validator must be valid`() {
         assertTrue { identifier.validate(SomeObject("my-project")) is Valid }
     }
+
     @Test
     fun `given lowercase latin letters and underscores identifier validator must be valid`() {
         assertTrue { identifier.validate(SomeObject("my_project")) is Valid }
     }
+
     @Test
     fun `given upper case letters identifier validator must be invalid`() {
         assertTrue { identifier.validate(SomeObject("myProject")) is Invalid }
     }
+
     @Test
     fun `given extra symbols identifier validator must be invalid`() {
         assertTrue { identifier.validate(SomeObject("myProject@")) is Invalid }
+    }
+}
+
+class PackageValidator {
+    private val validPackage = Validation<SomeObject> {
+        SomeObject::str required {
+            isValidPackage()
+        }
     }
 
     @Test
