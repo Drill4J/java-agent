@@ -21,25 +21,31 @@ import com.epam.drill.common.agent.configuration.AgentParameter
 
 @Serializable
 data class AgentArguments(
-    val agentId: String,
-    val adminAddress: String,
-    val buildVersion: String? = null,
-    val instanceId: String = "",
-    val groupId: String = "",
-    val logLevel: String = KotlinLoggingLevel.INFO.name,
-    val logFile: String? = null,
-    val logLimit: Int = 512,
-    val isWebApp: Boolean = false,
-    val isKafka: Boolean = false,
-    val isCadence: Boolean = false,
-    val isTlsApp: Boolean = false,
-    val isAsyncApp: Boolean = false,
-    val classScanDelay: Long = 0L,
-    val scanClassPath: String = "",
-    val packagePrefixes: String = "",
-    val sslTruststore: String = "",
-    val sslTruststorePassword: String = ""
+    var adminAddress: String? = null,
+    var packagePrefixes: String? = null,
+    var agentId: String? = null,
+    var buildVersion: String? = null,
+    var groupId: String = "",
+    var instanceId: String = "",
+    var logLevel: String = KotlinLoggingLevel.INFO.name,
+    var logFile: String = "",
+    var logLimit: Int = 512,
+    var isWebApp: Boolean = false,
+    var isKafka: Boolean = false,
+    var isCadence: Boolean = false,
+    var isTlsApp: Boolean = false,
+    var isAsyncApp: Boolean = false,
+    var classScanDelay: Long = 0L,
+    var scanClassPath: String = "",
+    var sslTruststore: String = "",
+    var sslTruststorePassword: String = ""
 ) {
+
+    val packagePrefixesToList: List<String>
+        get() = packagePrefixes?.split(";")?.toList() ?: emptyList()
+
+    val scanClassPathToList: List<String>
+        get() = scanClassPath.split(";").toList()
 
     fun defaultParameters(): Map<String, AgentParameter> = mapOf(
         AgentArguments::logLevel.name to AgentParameter(
@@ -49,7 +55,7 @@ data class AgentArguments(
         ),
         AgentArguments::logFile.name to AgentParameter(
             type = logFile.toType(),
-            value = logFile ?: "",
+            value = logFile,
             description = "the location where the logs will be stored",
         ),
         AgentArguments::logLimit.name to AgentParameter(
@@ -94,7 +100,7 @@ data class AgentArguments(
         ),
         AgentArguments::packagePrefixes.name to AgentParameter(
             type = packagePrefixes.toType(),
-            value = packagePrefixes,
+            value = packagePrefixes!!,
             description = "Configure package prefixes for scanning and instrumentation",
         ),
         AgentArguments::sslTruststore.name to AgentParameter(
