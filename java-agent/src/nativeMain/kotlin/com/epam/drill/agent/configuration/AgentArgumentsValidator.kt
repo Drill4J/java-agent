@@ -42,7 +42,7 @@ object AgentArgumentsValidator {
             pattern("^\\S*$") hint "must not contain whitespaces"
         }
         AgentArguments::adminAddress required {
-            hostAndPort()
+            validWsUrl()
         }
         AgentArguments::packagePrefixesToList {
             minItems(1)
@@ -72,12 +72,10 @@ object AgentArgumentsValidator {
 
     fun validate(args: AgentArguments) {
         strictValidators(args).takeIf { it is Invalid }?.let { result ->
-            val message = "Can’t load the agent because some agent parameters are set incorrectly. " +
+            val message = "Cannot load the agent because some agent parameters are set incorrectly. " +
                     convertToMessage(result.errors)
             logger.error { message }
-            throw AgentParameterValidationException(
-                message
-            )
+            throw AgentParameterValidationException(message)
         }
         softValidators(args).takeIf { it is Invalid }?.let { result ->
             logger.error {
