@@ -21,26 +21,36 @@ import com.epam.drill.konform.validation.Validation
 import kotlin.test.Test
 import kotlin.test.assertTrue
 
-class HostAndPortTest {
-    private val hostAndPort = Validation<SomeObject> {
+class UrlValidatorTest {
+    private val wsUrl = Validation<SomeObject> {
         SomeObject::str required {
-            hostAndPort()
+            validWsUrl()
         }
     }
 
     @Test
-    fun `given correct host and port hostAndPort validator must be valid`() {
-        assertTrue { hostAndPort.validate(SomeObject("localhost:8080")) is Valid }
+    fun `given ws schema and correct host and port wsUrl validator must be valid`() {
+        assertTrue { wsUrl.validate(SomeObject("ws://localhost:8080")) is Valid }
     }
 
     @Test
-    fun `given correct domain hostAndPort validator must be valid`() {
-        assertTrue { hostAndPort.validate(SomeObject("example.com")) is Valid }
+    fun `given ws schema and correct domain wsUrl validator must be valid`() {
+        assertTrue { wsUrl.validate(SomeObject("ws://example.com")) is Valid }
     }
 
     @Test
-    fun `given schema hostAndPort validator must be invalid`() {
-        assertTrue { hostAndPort.validate(SomeObject("http://localhost:8080")) is Invalid }
+    fun `given wss schema wsUrl validator must be valid`() {
+        assertTrue { wsUrl.validate(SomeObject("wss://example.com")) is Valid }
+    }
+
+    @Test
+    fun `given http schema wsUrl validator must be invalid`() {
+        assertTrue { wsUrl.validate(SomeObject("http://example.com")) is Invalid }
+    }
+
+    @Test
+    fun `given without schema wsUrl validator must be invalid`() {
+        assertTrue { wsUrl.validate(SomeObject("example.com")) is Invalid }
     }
 
 }

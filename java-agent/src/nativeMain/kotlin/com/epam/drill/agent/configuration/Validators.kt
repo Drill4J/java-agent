@@ -20,13 +20,15 @@ import com.epam.drill.konform.validation.ValidationBuilder
 import platform.posix.access
 import platform.posix.F_OK
 
-fun ValidationBuilder<String>.hostAndPort(): Constraint<String> {
+val WS_SCHEMES = setOf("ws", "wss")
+
+fun ValidationBuilder<String>.validWsUrl(): Constraint<String> {
     return addConstraint(
-        "must have a valid URL address without schema and any additional paths, e.g. 'localhost:8090', but was '{value}'"
+        "must have a valid WebSocket URL address, e.g. 'wss://localhost:8090', but was '{value}'"
     ) {
         try {
-            URL("ws://$it")
-            true
+            val url = URL(it)
+            WS_SCHEMES.contains(url.scheme)
         } catch (parseException: RuntimeException) {
             false
         }
