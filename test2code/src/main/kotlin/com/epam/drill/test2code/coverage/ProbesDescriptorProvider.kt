@@ -25,7 +25,7 @@ import java.util.concurrent.ConcurrentHashMap
  */
 data class ProbesDescriptor(
     val id: ClassId,
-    val name: String,
+    val classNameId: Long,
     val probeCount: Int,
 )
 
