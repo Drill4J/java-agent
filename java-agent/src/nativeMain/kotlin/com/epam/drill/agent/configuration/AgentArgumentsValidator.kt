@@ -21,7 +21,6 @@ import com.epam.drill.konform.validation.Validation
 import com.epam.drill.konform.validation.ValidationErrors
 import com.epam.drill.konform.validation.jsonschema.*
 import mu.KotlinLogging
-import mu.KotlinLoggingLevel
 import kotlin.native.concurrent.SharedImmutable
 
 
@@ -59,8 +58,8 @@ object AgentArgumentsValidator {
         AgentArguments::scanClassPathToList onEach {
             pathExists()
         }
-        AgentArguments::logLevel ifPresent {
-            enum<KotlinLoggingLevel>()
+        AgentArguments::logLevelToList onEach {
+            isValidLogLevel()
         }
         AgentArguments::logLimit ifPresent {
             minimum(0)

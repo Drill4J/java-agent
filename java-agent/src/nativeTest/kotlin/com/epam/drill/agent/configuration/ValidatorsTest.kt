@@ -116,4 +116,79 @@ class PackageValidator {
     }
 }
 
-data class SomeObject(var str: String?)
+class LogLevelValidator {
+    private val logLevel = Validation<SomeObject> {
+        SomeObject::strToList onEach {
+            isValidLogLevel()
+        }
+    }
+
+    @Test
+    fun `given valid logging level logLevel validator must be valid`() {
+        assertTrue { logLevel.validate(SomeObject("INFO")) is Valid }
+    }
+
+    @Test
+    fun `given invalid logging level logLevel validator must be invalid`() {
+        assertTrue { logLevel.validate(SomeObject("CUSTOM")) is Invalid }
+    }
+
+    @Test
+    fun `given package and valid logging level logLevel validator must be valid`() {
+        assertTrue { logLevel.validate(SomeObject("com.example=INFO")) is Valid }
+    }
+
+    @Test
+    fun `given package and invalid logging level logLevel validator must be invalid`() {
+        assertTrue { logLevel.validate(SomeObject("com.example=CUSTOM")) is Invalid }
+    }
+
+    @Test
+    fun `given root package and valid logging level logLevel validator must be valid`() {
+        assertTrue { logLevel.validate(SomeObject("=DEBUG")) is Valid }
+    }
+
+    @Test
+    fun `given invalid package separator logLevel validator must be invalid`() {
+        assertTrue { logLevel.validate(SomeObject("com/example=INFO")) is Invalid }
+    }
+
+    @Test
+    fun `given the dot in at the beginning of the package logLevel validator must be invalid`() {
+        assertTrue { logLevel.validate(SomeObject(".com.example=INFO")) is Invalid }
+    }
+
+    @Test
+    fun `given the dot in the end of the package logLevel validator must be invalid`() {
+        assertTrue { logLevel.validate(SomeObject("com.example.=INFO")) is Invalid }
+    }
+    @Test
+    fun `given double dot in the middle of the package logLevel validator must be invalid`() {
+        assertTrue { logLevel.validate(SomeObject("com..example=INFO")) is Invalid }
+    }
+
+    @Test
+    fun `given numbers at the beginning of the package logLevel validator must be invalid`() {
+        assertTrue { logLevel.validate(SomeObject("123com.example=INFO")) is Invalid }
+    }
+
+    @Test
+    fun `given several valid packages logLevel validator must be valid`() {
+        assertTrue { logLevel.validate(SomeObject("com.example=DEBUG;other.domain=INFO")) is Valid }
+    }
+
+    @Test
+    fun `given several invalid packages with logging levels logLevel validator must be invalid`() {
+        assertTrue { logLevel.validate(SomeObject("com.example=CUSTOM;other.domain=INFO")) is Invalid }
+    }
+
+    @Test
+    fun `given combination of logging level and packages logLevel validator must be valid`() {
+        assertTrue { logLevel.validate(SomeObject("INFO;com.example=DEBUG;other.domain=ERROR")) is Valid }
+    }
+}
+
+data class SomeObject(var str: String?) {
+    val strToList: List<String>
+        get() = if (str.isNullOrEmpty()) emptyList() else str?.split(";")?.toList() ?: emptyList()
+}

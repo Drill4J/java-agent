@@ -117,7 +117,7 @@ class Test2Code(
 
     override fun scanClasses(consumer: (Set<EntitySource>) -> Unit) {
         JvmModuleConfiguration.waitClassScanning()
-        val packagePrefixes = JvmModuleConfiguration.getPackagePrefixes().split(", ")
+        val packagePrefixes = JvmModuleConfiguration.getPackagePrefixes().split(";")
         val additionalPaths = JvmModuleConfiguration.getScanClassPath().split(";")
         logger.info { "Scanning classes, package prefixes: $packagePrefixes... " }
         ClassLoadersScanner(packagePrefixes, 50, consumer, additionalPaths).scanClasses()
