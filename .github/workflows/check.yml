@@ -23,6 +23,7 @@ on:
 jobs:
   check:
     strategy:
+      fail-fast: false
       matrix:
         config:
           - {os: ubuntu-latest, preset: linuxX64}

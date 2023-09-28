@@ -45,7 +45,7 @@ import platform.posix.open
 private val logger = KotlinLogging.logger("com.epam.drill.agent.configuration.Configuration")
 
 fun performInitialConfiguration(aa: AgentArguments) {
-    adminAddress = URL("ws://${aa.adminAddress}")
+    adminAddress = URL(aa.adminAddress!!)
     agentConfig = AgentConfig(
         id = aa.agentId!!,
         instanceId = aa.instanceId,
@@ -102,11 +102,27 @@ fun defaultJvmLoggingConfiguration() {
 
 fun updateJvmLoggingConfiguration() {
     callObjectVoidMethodWithString(LoggingConfiguration::class, "setLoggingLevels", agentParameters.logLevel)
-    if (callObjectStringMethod(LoggingConfiguration::class, LoggingConfiguration::getLoggingFilename) != agentParameters.logFile) {
-        callObjectVoidMethodWithString(LoggingConfiguration::class, LoggingConfiguration::setLoggingFilename, agentParameters.logFile)
+    if (callObjectStringMethod(
+            LoggingConfiguration::class,
+            LoggingConfiguration::getLoggingFilename
+        ) != agentParameters.logFile
+    ) {
+        callObjectVoidMethodWithString(
+            LoggingConfiguration::class,
+            LoggingConfiguration::setLoggingFilename,
+            agentParameters.logFile
+        )
     }
-    if (callObjectIntMethod(LoggingConfiguration::class, LoggingConfiguration::getLogMessageLimit) != agentParameters.logLimit) {
-        callObjectVoidMethodWithInt(LoggingConfiguration::class, LoggingConfiguration::setLogMessageLimit, agentParameters.logLimit)
+    if (callObjectIntMethod(
+            LoggingConfiguration::class,
+            LoggingConfiguration::getLogMessageLimit
+        ) != agentParameters.logLimit
+    ) {
+        callObjectVoidMethodWithInt(
+            LoggingConfiguration::class,
+            LoggingConfiguration::setLogMessageLimit,
+            agentParameters.logLimit
+        )
     }
 }
 
@@ -124,7 +140,21 @@ fun retrieveAdminUrl() = adminAddress?.toUrlString(false).toString()
 fun convertToAgentArguments(options: String) = parseAsAgentArguments(agentParams(options))
 
 fun validate(args: AgentArguments) {
+    args.adminAddress = addWsSchema(args.adminAddress)
     AgentArgumentsValidator.validate(args)
+}
+
+private fun addWsSchema(address: String?): String? {
+    if (address == null) return null
+    return try {
+        val url = URL(address)
+        if (url.scheme == null)
+            "wss://${address}"
+        else
+            address
+    } catch (ignore: RuntimeException) {
+        address
+    }
 }
 
 private val pathSeparator = if (Platform.osFamily == OsFamily.WINDOWS) "\\" else "/"

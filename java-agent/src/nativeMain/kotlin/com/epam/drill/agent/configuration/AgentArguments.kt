@@ -45,7 +45,7 @@ data class AgentArguments(
         get() = packagePrefixes?.split(";")?.toList() ?: emptyList()
 
     val scanClassPathToList: List<String>
-        get() = scanClassPath.split(";").toList()
+        get() = if (scanClassPath.isEmpty()) emptyList() else scanClassPath.split(";").toList()
 
     fun defaultParameters(): Map<String, AgentParameter> = mapOf(
         AgentArguments::logLevel.name to AgentParameter(
