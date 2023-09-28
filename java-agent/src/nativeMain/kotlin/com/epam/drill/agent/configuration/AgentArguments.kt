@@ -17,7 +17,6 @@ package com.epam.drill.agent.configuration
 
 import kotlinx.serialization.Serializable
 import mu.KotlinLoggingLevel
-import com.epam.drill.agent.configuration.process.javaProcess
 import com.epam.drill.common.agent.configuration.AgentParameter
 
 @Serializable
@@ -28,8 +27,7 @@ data class AgentArguments(
     var buildVersion: String? = null,
     var groupId: String = "",
     var instanceId: String = "",
-    var drillInstallationDir: String = javaProcess().getDrillAgentPath(),
-    var logLevel: String = KotlinLoggingLevel.ERROR.name,
+    var logLevel: String = KotlinLoggingLevel.INFO.name,
     var logFile: String = "",
     var logLimit: Int = 512,
     var isWebApp: Boolean = false,

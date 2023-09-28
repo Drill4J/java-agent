@@ -15,7 +15,6 @@
  */
 package com.epam.drill.agent.configuration
 
-import com.epam.drill.agent.SYSTEM_CONFIG_PATH
 import kotlin.time.DurationUnit
 import kotlin.time.toDuration
 import kotlinx.cinterop.toKString
@@ -23,6 +22,7 @@ import kotlinx.serialization.modules.serializersModuleOf
 import kotlinx.serialization.serializer
 import platform.posix.getenv
 import mu.KotlinLogging
+import com.epam.drill.agent.SYSTEM_CONFIG_PATH
 import com.epam.drill.agent.agentVersion
 import com.epam.drill.agent.configuration.serialization.SimpleMapDecoder
 import com.epam.drill.common.agent.configuration.AgentConfig
@@ -38,12 +38,13 @@ import com.epam.drill.logging.LoggingConfiguration
 import io.ktor.utils.io.core.*
 import io.ktor.utils.io.streams.*
 import platform.posix.EROFS
+import platform.posix.O_RDONLY
+import platform.posix.close
 import platform.posix.open
 
 private val logger = KotlinLogging.logger("com.epam.drill.agent.configuration.Configuration")
 
 fun performInitialConfiguration(aa: AgentArguments) {
-    drillInstallationDir = aa.drillInstallationDir
     adminAddress = URL(aa.adminAddress!!)
     agentConfig = AgentConfig(
         id = aa.agentId!!,
@@ -78,7 +79,7 @@ fun updateAgentParameters(parameters: Map<String, AgentParameter>, initializatio
     )
     updateNativeLoggingConfiguration()
     if (!initialization) updateJvmLoggingConfiguration()
-    logger.info { "Agent parameters '$agentParameters' is initialized." }
+    logger.debug { "Agent parameters '$agentParameters' is initialized." }
 }
 
 fun defaultNativeLoggingConfiguration() {
@@ -162,16 +163,12 @@ private fun agentParams(options: String): Map<String, String> {
     logger.info { "agent options: $options" }
     val agentParams = asAgentParams(options)
     logger.info { "agent parameters: $agentParams" }
-    val drillPath = agentParams["drillInstallationDir"]
-        ?.removeSuffix(pathSeparator)
-        ?.takeIf(String::isNotEmpty)
-        ?: "."
     val configPath = agentParams["configPath"]
         ?: getenv(SYSTEM_CONFIG_PATH)?.toKString()
-        ?: "${drillPath}${pathSeparator}drill.properties"
+        ?: "${drillInstallationDir}${pathSeparator}drill.properties"
     logger.info { "config path: $configPath" }
     val configParams = configPath.takeIf(String::isNotEmpty)
-        ?.runCatching { readFile(drillPath, this) }
+        ?.runCatching(::readFile)
         ?.getOrNull()
         ?.let { asAgentParams(it, "\n", "#") }
     logger.info { "config parameters: $configParams" }
@@ -180,15 +177,14 @@ private fun agentParams(options: String): Map<String, String> {
     return resultParams
 }
 
-private fun readFile(path: String, file: String): String {
+private fun readFile(filepath: String): String {
     val isFilename: (String) -> Boolean = { Regex("[\\w\\-.]+").matches(it) }
-    var fileDescriptor = open(file, EROFS)
-    if (fileDescriptor == -1 && isFilename(file))
-        fileDescriptor = open(path + pathSeparator + file, EROFS)
+    var fileDescriptor = open(filepath, O_RDONLY)
+    if (fileDescriptor == -1 && isFilename(filepath))
+        fileDescriptor = open(drillInstallationDir + pathSeparator + filepath, EROFS)
     if (fileDescriptor == -1)
-        throw IllegalArgumentException("Cannot open the config file with path=$path, file=$file")
-    val bytes = Input(fileDescriptor).readBytes()
-    return bytes.decodeToString()
+        throw IllegalArgumentException("Cannot open the config file with path=$drillInstallationDir, file=$filepath")
+    return Input(fileDescriptor).readText().also { close(fileDescriptor) }
 }
 
 private fun asAgentParams(

@@ -30,9 +30,6 @@ private val logger = KotlinLogging.logger("com.epam.drill.agent.configuration")
 object AgentArgumentsValidator {
 
     val strictValidators = Validation<AgentArguments> {
-        AgentArguments::drillInstallationDir required {
-            pathExists()
-        }
         AgentArguments::agentId required {
             identifier()
             minLength(3)
