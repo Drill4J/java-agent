@@ -19,7 +19,6 @@ val kotlinxCoroutinesVersion: String by parent!!.extra
 val kotlinxSerializationVersion: String by parent!!.extra
 val jacocoVersion: String by parent!!.extra
 val atomicfuVersion: String by parent!!.extra
-val lubenZstdVersion: String by parent!!.extra
 val bcelVersion: String by parent!!.extra
 val microutilsLoggingVersion: String by parent!!.extra
 val logbackVersion: String by parent!!.extra
@@ -54,7 +53,6 @@ dependencies {
     implementation("org.jacoco:org.jacoco.core:$jacocoVersion")
     implementation("org.apache.bcel:bcel:$bcelVersion")
     implementation("io.github.microutils:kotlin-logging-jvm:$microutilsLoggingVersion")
-    implementation("com.github.luben:zstd-jni:$lubenZstdVersion")
 
     implementation(project(":jacoco"))
     implementation(project(":common"))

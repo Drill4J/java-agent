@@ -115,7 +115,7 @@ class Test2Code(
 
     override fun scanClasses(consumer: (Set<EntitySource>) -> Unit) {
         JvmModuleConfiguration.waitClassScanning()
-        val packagePrefixes = JvmModuleConfiguration.getPackagePrefixes().split(", ")
+        val packagePrefixes = JvmModuleConfiguration.getPackagePrefixes().split(";")
         val additionalPaths = JvmModuleConfiguration.getScanClassPath().split(";")
         logger.info { "Scanning classes, package prefixes: $packagePrefixes... " }
         ClassLoadersScanner(packagePrefixes, 50, consumer, additionalPaths).scanClasses()
@@ -134,6 +134,31 @@ class Test2Code(
                 .also { classCount += it.astEntities.size }
         }
         logger.info { "Scanned $classCount classes" }
+    }
+
+    /**
+     * Create a function which sends chunks of test coverage to the admin part of the plugin
+     * @return the function of sending test coverage
+     * @features Coverage data sending
+     */
+    private fun sendProbes(data: Sequence<ExecDatum>) {
+        data
+            .map {
+                ExecClassData(
+                    id = it.id,
+                    className = it.name,
+                    probes = it.probes.values.toBitSet(),
+                    sessionId = it.sessionId,
+                    testId = it.testId,
+                )
+            }
+            .chunked(0xffff)
+            .map { chunk -> CoverDataPart(data = chunk) }
+            .forEach { message ->
+                logger.debug { "Send compressed message $message" }
+                val encoded = ProtoBuf.encodeToByteArray(CoverMessage.serializer(), message)
+                send(Base64.getEncoder().encodeToString(encoded))
+            }
     }
 
     private fun sendMessage(message: CoverMessage) {

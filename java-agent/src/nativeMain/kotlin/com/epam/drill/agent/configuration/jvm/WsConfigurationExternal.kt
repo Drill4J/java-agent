@@ -47,3 +47,8 @@ fun getSslTruststore(env: JNIEnv, thiz: jobject) =
 @CName("Java_com_epam_drill_agent_configuration_WsConfiguration_getSslTruststorePassword")
 fun getSslTruststorePassword(env: JNIEnv, thiz: jobject) =
     callNativeStringMethod(env, thiz, WsConfiguration::getSslTruststorePassword)
+
+@Suppress("UNUSED")
+@CName("Java_com_epam_drill_agent_configuration_WsConfiguration_getDrillInstallationDir")
+fun getDrillInstallationDir(env: JNIEnv, thiz: jobject) =
+    callNativeStringMethod(env, thiz, WsConfiguration::getDrillInstallationDir)
