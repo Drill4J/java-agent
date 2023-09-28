@@ -149,8 +149,27 @@ class LogLevelValidator {
     }
 
     @Test
-    fun `given invalid package and valid logging level logLevel validator must be invalid`() {
+    fun `given invalid package separator logLevel validator must be invalid`() {
         assertTrue { logLevel.validate(SomeObject("com/example=INFO")) is Invalid }
+    }
+
+    @Test
+    fun `given the dot in at the beginning of the package logLevel validator must be invalid`() {
+        assertTrue { logLevel.validate(SomeObject(".com.example=INFO")) is Invalid }
+    }
+
+    @Test
+    fun `given the dot in the end of the package logLevel validator must be invalid`() {
+        assertTrue { logLevel.validate(SomeObject("com.example.=INFO")) is Invalid }
+    }
+    @Test
+    fun `given double dot in the middle of the package logLevel validator must be invalid`() {
+        assertTrue { logLevel.validate(SomeObject("com..example=INFO")) is Invalid }
+    }
+
+    @Test
+    fun `given numbers at the beginning of the package logLevel validator must be invalid`() {
+        assertTrue { logLevel.validate(SomeObject("123com.example=INFO")) is Invalid }
     }
 
     @Test
