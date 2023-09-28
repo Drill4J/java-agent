@@ -17,7 +17,6 @@ package com.epam.drill.test2code.coverage
 
 import com.epam.drill.plugins.test2code.common.api.*
 import com.epam.drill.test2code.*
-import com.github.luben.zstd.*
 import io.aesy.datasize.*
 import kotlinx.coroutines.*
 import kotlinx.serialization.protobuf.*
@@ -91,8 +90,7 @@ class IntervalCoverageSender(
             .chunked(0xffff)
             .map { chunk -> CoverDataPart(data = chunk) }
             .map { message ->
-                val encoded = ProtoBuf.encodeToByteArray(CoverMessage.serializer(), message)
-                Zstd.compress(encoded)
+                ProtoBuf.encodeToByteArray(CoverMessage.serializer(), message)
             }
 
         if (coverageTransport.isAvailable()) {
