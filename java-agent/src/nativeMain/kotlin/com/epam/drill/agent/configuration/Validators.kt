@@ -50,7 +50,7 @@ fun ValidationBuilder<String>.isValidPackage(): Constraint<String> = addConstrai
 
 fun ValidationBuilder<String>.isValidLogLevel(): Constraint<String> = addConstraint(
     "must have a valid logging level for a java package, e.g. 'com.example=INFO', but was '{value}'"
-) { it.matches("([\\w.]+=)?(TRACE|DEBUG|INFO|WARN|ERROR)".toRegex()) }
+) { it.matches("([\\w.]*=)?(TRACE|DEBUG|INFO|WARN|ERROR)".toRegex()) }
 
 private fun pathExists(filePath: String): Boolean {
     return access(filePath, F_OK) == 0

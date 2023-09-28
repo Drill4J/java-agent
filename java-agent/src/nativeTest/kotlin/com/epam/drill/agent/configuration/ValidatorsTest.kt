@@ -144,6 +144,11 @@ class LogLevelValidator {
     }
 
     @Test
+    fun `given root package and valid logging level logLevel validator must be valid`() {
+        assertTrue { logLevel.validate(SomeObject("=DEBUG")) is Valid }
+    }
+
+    @Test
     fun `given invalid package and valid logging level logLevel validator must be invalid`() {
         assertTrue { logLevel.validate(SomeObject("com/example=INFO")) is Invalid }
     }
