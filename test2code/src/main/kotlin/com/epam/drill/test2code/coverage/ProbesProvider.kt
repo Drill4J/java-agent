@@ -67,34 +67,50 @@ class ThreadExecDataProvider(
 ): IExecDataProvider {
 
     // Context management
-    private var threadLocalContext: ThreadLocal<ContextKey> = ThreadLocal() // TODO maybe assign that in setContext call (I'm not sure if this really gona be thread-local)
+    private val context: ThreadLocal<ContextKey> = ThreadLocal()
+    private val execData: ThreadLocal<ExecData> = ThreadLocal()
+    private lateinit var globalExecData: ExecData
+
+    init {
+        addGlobalExecDataToPool()
+    }
+
+    private fun addGlobalExecDataToPool(): ExecData {
+        globalExecData = execDataPool.getOrPut(
+            CONTEXT_AMBIENT,
+            default = { ExecData() }
+        )
+        return globalExecData
+    }
+
+    private fun releaseGlobalExecDataFromPool() {
+        execDataPool.release(CONTEXT_AMBIENT, globalExecData)
+        // TODO cannot set this.globalExecData = null, since it still can be used by instrumented code
+        //      it also means some coverage might be lost when coverage polling happens before instrumented method returns
+    }
 
     override fun setContext(sessionId: String?, testId: String?) {
-        this.threadLocalContext.set(ContextKey(sessionId, testId))
+        val ctx = ContextKey(sessionId, testId)
+        this.context.set(ctx)
+        this.execData.set(execDataPool.getOrPut(
+            ctx,
+            default = { ExecData() }
+        ))
     }
 
     override fun releaseContext(sessionId: String?, testId: String?) {
-        execDataPool.release(ContextKey(sessionId, testId))
-        this.threadLocalContext.remove()
+        execDataPool.release(ContextKey(sessionId, testId), this.execData.get())
+        this.execData.remove()
+        this.context.remove()
     }
 
     // Coverage polling
     override fun poll(): Sequence<ExecDatum> {
-        execDataPool.release(CONTEXT_AMBIENT)
+        releaseGlobalExecDataFromPool()
         return execDataPool
             .pollReleased()
             .flatMap { it.values }
             .filter { it.probes.containCovered() }
-            // TODO this looks redundant, since we already create fresh sequence in pollReleased impl
-            .map { datum ->
-                datum.copy(
-                    probes = AgentProbes(
-                        values = datum.probes.values.copyOf()
-                    )
-                ).also {
-                    datum.probes.values.fill(false)
-                }
-            }
     }
 
     // IExecDataProvider
@@ -106,18 +122,26 @@ class ThreadExecDataProvider(
     ): AgentProbes = this.getProbesForClass(id)
 
     private fun getProbesForClass(classId: ClassId): AgentProbes {
-        val context = threadLocalContext.get() ?: CONTEXT_AMBIENT;
-        val execData = execDataPool.getOrPut(context) {
-            ExecData()
+        val currentContext: ContextKey
+        val currentExecData: ExecData
+
+        val requestContext = this.context.get()
+        if (requestContext != null) {
+            currentContext = requestContext
+            currentExecData = execDataPool.get(currentContext)!!
+        } else {
+            currentContext = CONTEXT_AMBIENT
+            currentExecData = addGlobalExecDataToPool()
         }
+
         val classDescriptor = classDescriptorsProvider.get(classId)!! // TODO this will crash AUT, I don't like this
-        val execDatum = execData.getOrPut(classId) {
+        val execDatum = currentExecData.getOrPut(classId) {
             ExecDatum(
                 id = classDescriptor.id,
                 name = classDescriptor.name,
                 probes = AgentProbes(classDescriptor.probeCount),
-                sessionId = context.sessionId,
-                testId = context.testId
+                sessionId = currentContext.sessionId,
+                testId = currentContext.testId
             )
         }
         return  execDatum.probes

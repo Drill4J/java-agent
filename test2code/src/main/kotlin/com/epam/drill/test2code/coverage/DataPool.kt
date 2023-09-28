@@ -44,7 +44,7 @@ interface DataPool<K: Any, V> {
      * @param key a key
      * @param value a used object
      */
-    fun release(key: K)
+    fun release(key: K, value: V)
 
     /**
      * Poll objects from the released queue
@@ -65,10 +65,9 @@ class ConcurrentDataPool<K : Any, V> : DataPool<K, V> {
         return dataMap.getOrPut(key, default)
     }
 
-    override fun release(key: K) {
-        val value = dataMap[key]
+    override fun release(key: K, value: V) {
         dataMap.remove(key)
-        value?.apply { released.add(value) }
+        released.add(value)
     }
 
     override fun get(key: K): V? {
