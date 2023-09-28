@@ -48,6 +48,9 @@ fun ValidationBuilder<String>.isValidPackage(): Constraint<String> = addConstrai
     "must have a valid Java package delimited by a forward slash, e.g. 'com/example', but was '{value}'"
 ) { it.matches("^(?:[a-zA-Z_]\\w*(?:/[a-zA-Z_]\\w*)*)?$".toRegex()) }
 
+fun ValidationBuilder<String>.isValidLogLevel(): Constraint<String> = addConstraint(
+    "must have a valid logging level for a java package, e.g. 'com.example=INFO', but was '{value}'"
+) { it.matches("([\\w.]+=)?(TRACE|DEBUG|INFO|WARN|ERROR)".toRegex()) }
 
 private fun pathExists(filePath: String): Boolean {
     return access(filePath, F_OK) == 0
