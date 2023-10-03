@@ -134,7 +134,7 @@ class ThreadExecDataProvider(
             currentExecData = addGlobalExecDataToPool()
         }
 
-        val classDescriptor = classDescriptorsProvider.get(classId)!! // TODO this will crash AUT, I don't like this
+        val classDescriptor = classDescriptorsProvider.get(classId)
         val execDatum = currentExecData.getOrPut(classId) {
             ExecDatum(
                 id = classDescriptor.id,

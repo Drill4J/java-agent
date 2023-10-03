@@ -31,7 +31,7 @@ data class ClassDescriptor(
 )
 
 interface IClassDescriptorsProvider {
-    fun get(classId: ClassId): ClassDescriptor?
+    fun get(classId: ClassId): ClassDescriptor
 }
 
 interface IClassDescriptorStorage {
@@ -49,10 +49,10 @@ class ConcurrentClassDescriptorsManager: IClassDescriptorsManager {
         classDescriptors[descriptor.id] = descriptor
     }
 
-    override fun get(classId: ClassId): ClassDescriptor? {
+    override fun get(classId: ClassId): ClassDescriptor {
         val descriptor = classDescriptors[classId]
-        if (descriptor == null) logger.warn { "descriptor for class not found. classId: $$classId" }
-        return descriptor
+        if (descriptor == null) logger.error { "Descriptor for class not found. classId: $$classId" }
+        return descriptor!!
     }
 
 }
