@@ -128,7 +128,7 @@ class ThreadExecDataProvider(
         val requestContext = this.context.get()
         if (requestContext != null) {
             currentContext = requestContext
-            currentExecData = execDataPool.get(currentContext)!!
+            currentExecData = this.execData.get()
         } else {
             currentContext = CONTEXT_AMBIENT
             currentExecData = addGlobalExecDataToPool()
