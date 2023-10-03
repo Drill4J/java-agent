@@ -21,7 +21,7 @@ open class CoverageManager(
     private val classDescriptorsManager: IClassDescriptorsManager = ConcurrentClassDescriptorsManager(),
     private val execDataProvider: IExecDataProvider = ThreadExecDataProvider(classDescriptorsManager),
     private val coverageRecorder: ICoverageRecorder = CoverageRecorder(execDataProvider),
-    private val coverageSender: CoverageSender = IntervalCoverageSender(intervalMs = JvmModuleConfiguration.getSendCoverageInterval(), execDataProvider::poll)
+    private val coverageSender: CoverageSender = IntervalCoverageSender(intervalMs = JvmModuleConfiguration.getSendCoverageInterval(), collectProbes = execDataProvider::poll)
 ) : IProbesProxy by execDataProvider,
     IClassDescriptorStorage by classDescriptorsManager,
     ICoverageRecorder by coverageRecorder,
