@@ -15,8 +15,9 @@
  */
 package com.epam.drill.agent
 
+import com.epam.drill.agent.websocket.WsClient
 import com.epam.drill.common.agent.Sender
 
-actual object JvmModuleMessageSender : Sender {
-    actual external override fun send(pluginId: String, message: String)
+object JvmModuleMessageSender : Sender {
+    override fun send(pluginId: String, message: String) = WsClient.sendMessage(pluginId, message)
 }

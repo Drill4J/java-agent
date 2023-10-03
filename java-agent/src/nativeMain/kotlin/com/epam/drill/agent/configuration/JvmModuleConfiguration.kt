@@ -24,9 +24,13 @@ object JvmModuleConfiguration {
 
     private val logger = KotlinLogging.logger("com.epam.drill.agent.configuration.JvmModuleConfiguration")
 
-    fun getPackagePrefixes(): String = agentConfig.packagesPrefixes.packagesPrefixes.joinToString(", ")
+    fun getPackagePrefixes(): String = agentConfig.packagesPrefixes.packagesPrefixes.joinToString(";")
 
     fun getScanClassPath(): String = agentParameters.scanClassPath
+
+    fun getCoverageRetentionLimit(): String = agentParameters.coverageRetentionLimit
+
+    fun getSendCoverageInterval(): Long = agentParameters.sendCoverageInterval
 
     fun waitClassScanning() = runBlocking {
         val classScanDelay = agentParameters.classScanDelay - Agent.startTimeMark.elapsedNow()

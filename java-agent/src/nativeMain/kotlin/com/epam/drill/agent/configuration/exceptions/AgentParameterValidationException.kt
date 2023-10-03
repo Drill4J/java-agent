@@ -13,20 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.epam.drill.agent.configuration
+package com.epam.drill.agent.configuration.exceptions
 
-import kotlin.time.Duration
-
-data class AgentParameters(
-    val classScanDelay: Duration = Duration.ZERO,
-    val packagePrefixes: String = "",
-    val scanClassPath: String = "",
-    val logLevel: String = "ERROR",
-    val logFile: String? = null,
-    val logLimit: Int = 512,
-    val isAsyncApp: Boolean = false,
-    val isWebApp: Boolean = false,
-    val isKafka: Boolean = false,
-    val isCadence: Boolean = false,
-    val isTlsApp: Boolean = false
-)
+class AgentParameterValidationException(message: String): RuntimeException(message) {
+}
