@@ -15,8 +15,9 @@
  */
 package com.epam.drill.test2code.coverage
 
-import com.epam.drill.jacoco.AgentProbes
+import com.epam.drill.jacoco.*
 import com.epam.drill.plugins.test2code.common.api.*
+import com.epam.drill.test2code.*
 
 /**
  * Simple probe provider that employs a lock-free map for runtime data storage.
@@ -55,8 +56,10 @@ open class CoverageManager(
             execData
         }
     },
-
-    private val coverageSender: CoverageSender = IntervalCoverageSender(2000L) {
+    private val coverageSender: CoverageSender = IntervalCoverageSender(
+        intervalMs = JvmModuleConfiguration.getSendCoverageInterval()
+    ) {
+        //TODO return globalExecData from collectProbes()
         coverageRecorder.collectProbes() + globalExecData.values.filter { datum ->
             datum.probes.containCovered()
         }.map { datum ->

@@ -15,49 +15,101 @@
  */
 package com.epam.drill.test2code.coverage
 
+import com.epam.drill.plugins.test2code.common.api.*
+import com.epam.drill.test2code.*
+import io.aesy.datasize.*
 import kotlinx.coroutines.*
-import mu.KotlinLogging
-import java.util.concurrent.Executors
-import kotlin.coroutines.CoroutineContext
+import kotlinx.serialization.protobuf.*
+import mu.*
+import java.math.*
+import java.text.*
+import java.util.*
+import java.util.concurrent.*
 
 interface CoverageSender {
-    fun setSendingHandler(handler: SendingHandler)
+    fun setCoverageTransport(transport: CoverageTransport)
     fun startSendingCoverage()
     fun stopSendingCoverage()
 }
 
 class IntervalCoverageSender(
-    intervalMs: Long,
-    collectProbes: () -> Sequence<ExecDatum> = { emptySequence() }
-) : CoverageSender {
-    private val logger = KotlinLogging.logger {}
-    private var sendingHandler: SendingHandler = {}
-
-    private val job = ProbeWorker.launch(start = CoroutineStart.LAZY) {
-        while (isActive) {
-            delay(intervalMs)
-            sendingHandler(collectProbes())
+    private val logger: KLogger = KotlinLogging.logger("com.epam.drill.test2code.coverage.IntervalCoverageSender"),
+    private val intervalMs: Long,
+    private var coverageTransport: CoverageTransport = StubTransport(),
+    private val inMemoryRetentionQueue: RetentionQueue = InMemoryRetentionQueue(
+        totalSizeByteLimit = try {
+            DataSize.parse(JvmModuleConfiguration.getCoverageRetentionLimit())
+                .toUnit(ByteUnit.BYTE)
+                .value
+                .toBigInteger()
+        } catch (e: ParseException) {
+            logger.warn { "Catch exception while parsing CoverageRetentionLimit. Exception: ${e.message}" }
+            BigInteger.valueOf(1024 * 1024 * 512)
         }
+    ),
+    private val collectProbes: () -> Sequence<ExecDatum> = { emptySequence() }
+) : CoverageSender {
+    private val scheduledThreadPool = Executors.newSingleThreadScheduledExecutor()
+
+    override fun setCoverageTransport(transport: CoverageTransport) {
+        coverageTransport = transport
     }
 
-    override fun setSendingHandler(handler: SendingHandler) {
-        sendingHandler = handler
-    }
 
     override fun startSendingCoverage() {
-        job.start()
+        scheduledThreadPool.scheduleAtFixedRate(
+            Runnable { sendProbes(collectProbes()) },
+            0,
+            intervalMs,
+            TimeUnit.MILLISECONDS
+        )
         logger.debug { "Coverage sending job is started." }
     }
 
     override fun stopSendingCoverage() {
-        job.cancel()
+        scheduledThreadPool.shutdown()
         logger.debug { "Coverage sending job is stopped." }
     }
-}
 
-internal object ProbeWorker : CoroutineScope {
-    override val coroutineContext: CoroutineContext = run {
-        // TODO ProbeWorker thread count configure via env.variable?
-        Executors.newFixedThreadPool(2).asCoroutineDispatcher() + SupervisorJob()
+    /**
+     * Create a function which sends chunks of test coverage to the admin part of the plugin
+     * @return the function of sending test coverage
+     * @features Coverage data sending
+     */
+    private fun sendProbes(data: Sequence<ExecDatum>) {
+        val dataToSend = data
+            .map {
+                ExecClassData(
+                    id = it.id,
+                    className = it.name,
+                    probes = it.probes.values.toBitSet(),
+                    sessionId = it.sessionId,
+                    testId = it.testId,
+                )
+            }
+            .chunked(0xffff)
+            .map { chunk -> CoverDataPart(data = chunk) }
+            .map { message ->
+                ProtoBuf.encodeToByteArray(CoverMessage.serializer(), message)
+            }
+
+        if (coverageTransport.isAvailable()) {
+            val failedToSend = mutableListOf<ByteArray>()
+
+            val send = { message: ByteArray ->
+                val encoded = Base64.getEncoder().encodeToString(message)
+                try {
+                    coverageTransport.send(encoded)
+                } catch (e: Exception) {
+                    failedToSend.add(message)
+                }
+            }
+
+            dataToSend.forEach { send(it) }
+            inMemoryRetentionQueue.flush().forEach { send(it) }
+            if (failedToSend.size > 0) inMemoryRetentionQueue.addAll(failedToSend.asSequence())
+        } else {
+            inMemoryRetentionQueue.addAll(dataToSend)
+        }
     }
 }

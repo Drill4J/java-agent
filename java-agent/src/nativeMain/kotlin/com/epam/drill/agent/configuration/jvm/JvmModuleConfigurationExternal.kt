@@ -17,10 +17,12 @@ package com.epam.drill.agent.configuration.jvm
 
 import com.epam.drill.agent.configuration.JvmModuleConfiguration
 import com.epam.drill.jvmapi.callNativeStringMethod
+import com.epam.drill.jvmapi.callNativeLongMethod
 import com.epam.drill.jvmapi.callNativeVoidMethod
 import com.epam.drill.jvmapi.gen.JNIEnv
 import com.epam.drill.jvmapi.gen.jobject
 import com.epam.drill.jvmapi.gen.jstring
+import com.epam.drill.jvmapi.gen.jlong
 
 @Suppress("UNUSED")
 @CName("Java_com_epam_drill_test2code_JvmModuleConfiguration_getPackagePrefixes")
@@ -36,3 +38,13 @@ fun getScanClassPath(env: JNIEnv, thiz: jobject): jstring? =
 @CName("Java_com_epam_drill_test2code_JvmModuleConfiguration_waitClassScanning")
 fun waitClassScanning(env: JNIEnv, thiz: jobject) =
     callNativeVoidMethod(env, thiz, JvmModuleConfiguration::waitClassScanning)
+
+@Suppress("UNUSED")
+@CName("Java_com_epam_drill_test2code_JvmModuleConfiguration_getCoverageRetentionLimit")
+fun getCoverageRetentionLimit(env: JNIEnv, thiz: jobject): jstring? =
+    callNativeStringMethod(env, thiz, JvmModuleConfiguration::getCoverageRetentionLimit)
+
+@Suppress("UNUSED")
+@CName("Java_com_epam_drill_test2code_JvmModuleConfiguration_getSendCoverageInterval")
+fun getSendCoverageInterval(env: JNIEnv, thiz: jobject): Long =
+    callNativeLongMethod(env, thiz, JvmModuleConfiguration::getSendCoverageInterval)

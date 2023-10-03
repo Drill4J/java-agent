@@ -21,6 +21,7 @@ val jacocoVersion: String by parent!!.extra
 val atomicfuVersion: String by parent!!.extra
 val bcelVersion: String by parent!!.extra
 val microutilsLoggingVersion: String by parent!!.extra
+val logbackVersion: String by parent!!.extra
 
 repositories {
     mavenLocal()
@@ -33,7 +34,17 @@ java {
 }
 
 dependencies {
+    testImplementation("junit:junit:4.13.1")
+    testImplementation("org.junit.jupiter:junit-jupiter:5.7.1")
+    testImplementation("org.mockito:mockito-core:3.12.4")
+    testImplementation("com.nhaarman.mockitokotlin2:mockito-kotlin:2.2.0")
+    testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.5.2")
+    testImplementation("ch.qos.logback:logback-classic:$logbackVersion")
     compileOnly("org.jetbrains.kotlinx:atomicfu:$atomicfuVersion")
+
+    implementation("io.aesy:datasize:1.0.0")
+    implementation(project(mapOf("path" to ":agent")))
+    implementation("org.eclipse.jetty.websocket:javax-websocket-client-impl:9.4.51.v20230217")
 
     implementation("org.jetbrains.kotlinx:kotlinx-collections-immutable-jvm:$kotlinxCollectionsVersion")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:$kotlinxCoroutinesVersion")

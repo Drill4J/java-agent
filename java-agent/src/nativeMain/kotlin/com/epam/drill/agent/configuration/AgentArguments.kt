@@ -38,7 +38,9 @@ data class AgentArguments(
     var classScanDelay: Long = 0L,
     var scanClassPath: String = "",
     var sslTruststore: String = "",
-    var sslTruststorePassword: String = ""
+    var sslTruststorePassword: String = "",
+    val coverageRetentionLimit: String = "512Mb",
+    val sendCoverageIntervalMs: Long = 2000L
 ) {
 
     val packagePrefixesToList: List<String>
@@ -115,6 +117,16 @@ data class AgentArguments(
             type = sslTruststorePassword.toType(),
             value = sslTruststorePassword,
             description = "Configure password for SSL truststore for admin connection",
+        ),
+        AgentArguments::coverageRetentionLimit.name to AgentParameter(
+            type = coverageRetentionLimit.toType(),
+            value = coverageRetentionLimit,
+            description = "Coverage retention queue size limit. Defaults to default value. Accepts human-readable data size format, e.g.: \"512Mb\",\"0.5 Gb\", \"1Gb\""
+        ),
+        AgentArguments::sendCoverageIntervalMs.name to AgentParameter(
+            type = sendCoverageIntervalMs.toType(),
+            value = sendCoverageIntervalMs.toString(),
+            description = "Coverage sending interval in milliseconds"
         )
     )
 
