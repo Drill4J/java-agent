@@ -29,7 +29,7 @@ import mu.KotlinLogging
 private val classCounter = atomic(0)
 
 class DrillInstrumenter(
-    private val IProbesProxy: IProbesProxy,
+    private val probesProxy: IProbesProxy,
     private val classDescriptorsStorage: IClassDescriptorStorage
 ) : Instrumenter {
 
@@ -47,7 +47,7 @@ class DrillInstrumenter(
         val genId = classCounter.incrementAndGet()
         val probeCount = counter.count
         val strategy = DrillProbeStrategy(
-            IProbesProxy,
+            probesProxy,
             className,
             classId,
             genId,
