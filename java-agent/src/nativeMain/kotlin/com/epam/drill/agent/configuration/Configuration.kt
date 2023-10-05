@@ -162,11 +162,13 @@ private fun addWsSchema(address: String?): String? {
 }
 
 private val pathSeparator = if (Platform.osFamily == OsFamily.WINDOWS) "\\" else "/"
+var drillInstallationDir: String? = null
 
 private fun agentParams(options: String): Map<String, String> {
     logger.info { "agent options: $options" }
     val agentParams = asAgentParams(options)
     logger.info { "agent parameters: $agentParams" }
+    drillInstallationDir = agentParams["drillInstallationDir"] ?: drillInstallationDir()
     val configPath = agentParams["configPath"]
         ?: getenv(SYSTEM_CONFIG_PATH)?.toKString()
         ?: "${drillInstallationDir}${pathSeparator}drill.properties"
