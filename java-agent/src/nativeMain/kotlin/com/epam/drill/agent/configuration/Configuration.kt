@@ -201,7 +201,7 @@ private fun asAgentParams(
     try {
         return input.split(lineDelimiter)
             .filter { it.isNotEmpty() && (filterPrefix.isEmpty() || !it.startsWith(filterPrefix)) }
-            .associate { it.substringBefore(mapDelimiter) to it.substringAfter(mapDelimiter, "") }
+            .associate { it.substringBefore(mapDelimiter) to it.substringAfter(mapDelimiter, "").trim() }
     } catch (parseException: Exception) {
         throw IllegalArgumentException("wrong agent parameters: $input")
     }
