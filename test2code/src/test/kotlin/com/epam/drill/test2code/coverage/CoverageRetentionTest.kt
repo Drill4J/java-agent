@@ -43,6 +43,7 @@ class CoverageRetentionTest {
                     id = Random.nextLong(),
                     sessionId = "1",
                     probes = AgentProbes(initialSize = 3, values = booleanArrayOf(true, true, true)),
+                    testId = "fizbuz",
                     name = "foo/bar"
                 )
             )
