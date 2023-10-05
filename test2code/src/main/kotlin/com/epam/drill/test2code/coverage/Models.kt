@@ -16,16 +16,12 @@
 package com.epam.drill.test2code.coverage
 
 import com.epam.drill.jacoco.AgentProbes
-import com.epam.drill.plugins.test2code.common.api.*
 import java.util.concurrent.ConcurrentHashMap
 
 typealias ClassId = Long
 typealias SessionId = String
 typealias TestId = String
-typealias SessionTestKey = Pair<SessionId, TestId>
 typealias ExecData = ConcurrentHashMap<ClassId, ExecDatum>
-
-
 
 /**
  * A class containing probes obtained from a specific test
@@ -35,5 +31,5 @@ data class ExecDatum(
     val name: String,
     val probes: AgentProbes,
     val sessionId: String,
-    val testId: String = DEFAULT_TEST_ID,
+    val testId: String,
 )
