@@ -37,12 +37,13 @@ import com.epam.drill.jvmapi.callObjectVoidMethodWithString
 import com.epam.drill.logging.LoggingConfiguration
 import io.ktor.utils.io.core.*
 import io.ktor.utils.io.streams.*
-import platform.posix.EROFS
 import platform.posix.O_RDONLY
 import platform.posix.close
 import platform.posix.open
 
 private val logger = KotlinLogging.logger("com.epam.drill.agent.configuration.Configuration")
+private const val DRILL_INSTALLATION_DIR_PARAM = "drillInstallationDir"
+private val pathSeparator = if (Platform.osFamily == OsFamily.WINDOWS) "\\" else "/"
 
 fun performInitialConfiguration(aa: AgentArguments) {
     adminAddress = URL(aa.adminAddress!!)
@@ -79,7 +80,8 @@ fun updateAgentParameters(parameters: Map<String, AgentParameter>, initializatio
         coverageRetentionLimit = parameters[AgentArguments::coverageRetentionLimit.name]?.value
             ?: agentParameters.coverageRetentionLimit,
         sendCoverageInterval = parameters[AgentArguments::sendCoverageIntervalMs.name]?.value?.toLong()
-            ?: agentParameters.sendCoverageInterval
+            ?: agentParameters.sendCoverageInterval,
+        drillInstallationDir = parameters[AgentArguments::drillInstallationDir.name]?.value ?: agentParameters.drillInstallationDir,
     )
     updateNativeLoggingConfiguration()
     if (!initialization) updateJvmLoggingConfiguration()
@@ -161,36 +163,36 @@ private fun addWsSchema(address: String?): String? {
     }
 }
 
-private val pathSeparator = if (Platform.osFamily == OsFamily.WINDOWS) "\\" else "/"
-var drillInstallationDir: String? = null
 
 private fun agentParams(options: String): Map<String, String> {
-    logger.info { "agent options: $options" }
+    logger.debug { "agent options: $options" }
     val agentParams = asAgentParams(options)
-    logger.info { "agent parameters: $agentParams" }
-    drillInstallationDir = agentParams["drillInstallationDir"] ?: drillInstallationDir()
+    logger.debug { "agent parameters: $agentParams" }
+    val drillInstallationDir = agentParams[DRILL_INSTALLATION_DIR_PARAM] ?: drillInstallationDir() ?: "."
+    logger.debug { "drillInstallationDir: $drillInstallationDir" }
     val configPath = agentParams["configPath"]
         ?: getenv(SYSTEM_CONFIG_PATH)?.toKString()
         ?: "${drillInstallationDir}${pathSeparator}drill.properties"
-    logger.info { "config path: $configPath" }
-    val configParams = configPath.takeIf(String::isNotEmpty)
-        ?.runCatching(::readFile)
-        ?.getOrNull()
-        ?.let { asAgentParams(it, "\n", "#") }
-    logger.info { "config parameters: $configParams" }
-    val resultParams = configParams?.toMutableMap()?.also { it.putAll(agentParams) } ?: agentParams
+    logger.debug { "config path: $configPath" }
+    val configParams = configPath
+        .runCatching(::readFile)
+        .getOrNull()
+        .let { asAgentParams(it, "\n", "#") }
+    logger.debug { "config parameters: $configParams" }
+    val resultParams = configParams.toMutableMap()
+        .also { it.putAll(agentParams) }
+        .also { it[DRILL_INSTALLATION_DIR_PARAM] = drillInstallationDir }
     logger.info { "result parameters: $resultParams" }
     return resultParams
 }
 
 private fun readFile(filepath: String): String {
-    val isFilename: (String) -> Boolean = { Regex("[\\w\\-.]+").matches(it) }
-    var fileDescriptor = open(filepath, O_RDONLY)
-    if (fileDescriptor == -1 && isFilename(filepath))
-        fileDescriptor = open(drillInstallationDir + pathSeparator + filepath, EROFS)
-    if (fileDescriptor == -1)
-        throw IllegalArgumentException("Cannot open the config file with path=$drillInstallationDir, file=$filepath")
-    return Input(fileDescriptor).readText().also { close(fileDescriptor) }
+    val fileDescriptor = open(filepath, O_RDONLY)
+    return if (fileDescriptor == -1) {
+        logger.error { "Cannot open the config file with path=$filepath" }
+        ""
+    } else
+        Input(fileDescriptor).readText().also { close(fileDescriptor) }
 }
 
 private fun asAgentParams(

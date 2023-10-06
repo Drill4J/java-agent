@@ -21,6 +21,7 @@ import com.epam.drill.common.agent.configuration.AgentParameter
 
 @Serializable
 data class AgentArguments(
+    val drillInstallationDir: String? = null,
     var adminAddress: String? = null,
     var packagePrefixes: String? = null,
     var agentId: String? = null,
