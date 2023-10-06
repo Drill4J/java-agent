@@ -29,8 +29,8 @@ import mu.KotlinLogging
 private val classCounter = atomic(0)
 
 class DrillInstrumenter(
-    private val probesProvider: ProbesProvider,
-    private val probesDescriptorProvider: ProbesDescriptorProvider
+    private val probesProxy: IProbesProxy,
+    private val classDescriptorsStorage: IClassDescriptorStorage
 ) : Instrumenter {
 
     private val logger = KotlinLogging.logger {}
@@ -47,7 +47,7 @@ class DrillInstrumenter(
         val genId = classCounter.incrementAndGet()
         val probeCount = counter.count
         val strategy = DrillProbeStrategy(
-            probesProvider,
+            probesProxy,
             className,
             classId,
             genId,
@@ -62,8 +62,8 @@ class DrillInstrumenter(
         )
         reader.accept(visitor, ClassReader.EXPAND_FRAMES)
 
-        probesDescriptorProvider.addDescriptor(
-            ProbesDescriptor(
+        classDescriptorsStorage.add(
+            ClassDescriptor(
                 id = classId,
                 name = className,
                 probeCount = probeCount
@@ -79,14 +79,14 @@ class DrillInstrumenter(
 
 
 private class DrillProbeStrategy(
-    private val probesProvider: ProbesProvider,
+    private val probesProxy: IProbesProxy,
     private val className: String,
     private val classId: Long,
     private val number: Int,
     private val probeCount: Int
 ) : IProbeArrayStrategy {
     override fun storeInstance(mv: MethodVisitor?, clinit: Boolean, variable: Int): Int = mv!!.run {
-        val drillClassName = probesProvider.javaClass.name.replace('.', '/')
+        val drillClassName = probesProxy.javaClass.name.replace('.', '/')
         visitFieldInsn(Opcodes.GETSTATIC, drillClassName, "INSTANCE", "L$drillClassName;")
         // Stack[0]: Lcom/epam/drill/jacoco/Stuff;
 

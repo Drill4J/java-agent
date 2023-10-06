@@ -17,37 +17,25 @@ package com.epam.drill.test2code.coverage
 
 import mu.KotlinLogging
 
-interface CoverageRecorder {
+interface ICoverageRecorder {
     fun startRecording(sessionId: String, testId: String)
     fun stopRecording(sessionId: String, testId: String)
-    fun collectProbes(): Sequence<ExecDatum>
 }
 
-class ThreadCoverageRecorder(
-    private val execDataPool: DataPool<SessionTestKey, ExecData>,
-    private val requestThreadLocal: ThreadLocal<ExecData?>,
-    private val execDataCreator: (SessionId, TestId) -> ExecData = { _, _ -> ExecData() },
-) : CoverageRecorder {
+class CoverageRecorder(
+    private val execDataProvider: IExecDataProvider,
+) : ICoverageRecorder {
     private val logger = KotlinLogging.logger {}
 
     override fun startRecording(sessionId: String, testId: String) {
-        val data = execDataPool.getOrPut(SessionTestKey(sessionId, testId)) {
-            execDataCreator(sessionId, testId)
-        }
-        requestThreadLocal.set(data)
+        execDataProvider.setContext(sessionId, testId)
         logger.trace { "Test recording started (sessionId = $sessionId, testId=$testId, threadId=${Thread.currentThread().id})." }
     }
 
     override fun stopRecording(sessionId: String, testId: String) {
-        val data = requestThreadLocal.get()
-        if (data != null) {
-            execDataPool.release(SessionTestKey(sessionId, testId), data)
-            requestThreadLocal.remove()
-        }
+        // TODO there might be a _large_ time gap between request - response
+        // hence - lots of coverage data piling up
+        execDataProvider.releaseContext(sessionId, testId)
         logger.trace { "Test recording stopped (sessionId = $sessionId, testId=$testId, threadId=${Thread.currentThread().id})." }
-    }
-
-    override fun collectProbes(): Sequence<ExecDatum> {
-        return execDataPool.pollReleased().flatMap { it.values }.filter { it.probes.containCovered() }
     }
 }

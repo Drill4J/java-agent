@@ -15,69 +15,19 @@
  */
 package com.epam.drill.test2code.coverage
 
-import com.epam.drill.jacoco.*
-import com.epam.drill.plugins.test2code.common.api.*
-import com.epam.drill.test2code.*
+import com.epam.drill.test2code.JvmModuleConfiguration
 
-/**
- * Simple probe provider that employs a lock-free map for runtime data storage.
- * This class is intended to be an ancestor for a concrete probe array provider object.
- * The provider must be a Kotlin singleton object, otherwise the instrumented probe calls will fail.
- */
 open class CoverageManager(
-    // TODO EPMDJ-8256 When application is async we must use this implementation «com.alibaba.ttl.TransmittableThreadLocal»
-    private val requestThreadLocal: ThreadLocal<ExecData?> = ThreadLocal(),
-    private val globalExecData: ExecData = ExecData(),
-    private val execDataPool: DataPool<SessionTestKey, ExecData> = ConcurrentDataPool(),
-    private val probesProvider: ProbesProvider = SimpleProbesProvider(requestThreadLocal, globalExecData),
-
-    private val probesDescriptorProvider: ProbesDescriptorProvider = ConcurrentProbesDescriptorProvider { descriptor ->
-        globalExecData[descriptor.id] = ExecDatum(
-            id = descriptor.id,
-            name = descriptor.name,
-            probes = AgentProbes(descriptor.probeCount),
-            sessionId = GLOBAL_SESSION_ID,
-            testId = GLOBAL_SESSION_ID
-        )
-    },
-
-    private val coverageRecorder: CoverageRecorder = ThreadCoverageRecorder(
-        execDataPool,
-        requestThreadLocal
-    ) { sessionId, testId ->
-        probesDescriptorProvider.fold(ExecData()) { execData, descriptor ->
-            execData[descriptor.id] = ExecDatum(
-                id = descriptor.id,
-                name = descriptor.name,
-                probes = AgentProbes(descriptor.probeCount),
-                sessionId = sessionId,
-                testId = testId
-            )
-            execData
-        }
-    },
-    private val coverageSender: CoverageSender = IntervalCoverageSender(
-        intervalMs = JvmModuleConfiguration.getSendCoverageInterval()
-    ) {
-        //TODO return globalExecData from collectProbes()
-        coverageRecorder.collectProbes() + globalExecData.values.filter { datum ->
-            datum.probes.containCovered()
-        }.map { datum ->
-            datum.copy(
-                probes = AgentProbes(
-                    values = datum.probes.values.copyOf()
-                )
-            ).also {
-                datum.probes.values.fill(false)
-            }
-        }
-    }
-) : ProbesProvider by probesProvider,
-    ProbesDescriptorProvider by probesDescriptorProvider,
-    CoverageRecorder by coverageRecorder,
+    private val classDescriptorsManager: IClassDescriptorsManager = ConcurrentClassDescriptorsManager(),
+    private val execDataProvider: IExecDataProvider = ThreadExecDataProvider(classDescriptorsManager),
+    private val coverageRecorder: ICoverageRecorder = CoverageRecorder(execDataProvider),
+    private val coverageSender: CoverageSender = IntervalCoverageSender(intervalMs = JvmModuleConfiguration.getSendCoverageInterval(), collectProbes = execDataProvider::poll)
+) : IProbesProxy by execDataProvider,
+    IClassDescriptorStorage by classDescriptorsManager,
+    ICoverageRecorder by coverageRecorder,
     CoverageSender by coverageSender
 
 /**
- * The probe provider MUST be a Kotlin singleton object
+ * The probes proxy MUST be a Kotlin singleton object
  */
 internal object DrillCoverageManager : CoverageManager()

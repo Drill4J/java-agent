@@ -37,9 +37,3 @@ open class AgentProbes(
 
     fun containCovered() = values.any { it }
 }
-
-class StubAgentProbes(size: Int = 0) : AgentProbes(size) {
-    override fun set(index: Int) {
-    }
-
-}
