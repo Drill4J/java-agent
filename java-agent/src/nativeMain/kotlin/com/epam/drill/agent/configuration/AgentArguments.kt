@@ -128,6 +128,11 @@ data class AgentArguments(
             type = sendCoverageIntervalMs.toType(),
             value = sendCoverageIntervalMs.toString(),
             description = "Coverage sending interval in milliseconds"
+        ),
+        AgentArguments::drillInstallationDir.name to AgentParameter(
+            type = drillInstallationDir.toType(),
+            value = drillInstallationDir.toString(),
+            description = "Drill4J java agent installation directory"
         )
     )
 

@@ -165,20 +165,20 @@ private fun addWsSchema(address: String?): String? {
 
 
 private fun agentParams(options: String): Map<String, String> {
-    logger.debug { "agent options: $options" }
+    logger.info { "agent options: $options" }
     val agentParams = asAgentParams(options)
-    logger.debug { "agent parameters: $agentParams" }
+    logger.info { "agent parameters: $agentParams" }
     val drillInstallationDir = agentParams[DRILL_INSTALLATION_DIR_PARAM] ?: drillInstallationDir() ?: "."
-    logger.debug { "drillInstallationDir: $drillInstallationDir" }
+    logger.info { "drillInstallationDir: $drillInstallationDir" }
     val configPath = agentParams["configPath"]
         ?: getenv(SYSTEM_CONFIG_PATH)?.toKString()
         ?: "${drillInstallationDir}${pathSeparator}drill.properties"
-    logger.debug { "config path: $configPath" }
+    logger.info { "config path: $configPath" }
     val configParams = configPath
         .runCatching(::readFile)
         .getOrNull()
-        .let { asAgentParams(it, "\n", "#") }
-    logger.debug { "config parameters: $configParams" }
+        .let { asAgentParams(it, filterPrefix = "#", lineDelimiters = arrayOf("\n\r", "\r\n", "\n", "\r")) }
+    logger.info { "config parameters: $configParams" }
     val resultParams = configParams.toMutableMap()
         .also { it.putAll(agentParams) }
         .also { it[DRILL_INSTALLATION_DIR_PARAM] = drillInstallationDir }
@@ -197,13 +197,13 @@ private fun readFile(filepath: String): String {
 
 private fun asAgentParams(
     input: String?,
-    lineDelimiter: String = ",",
     filterPrefix: String = "",
-    mapDelimiter: String = "="
+    mapDelimiter: String = "=",
+    lineDelimiters: Array<String> = arrayOf(",")
 ): Map<String, String> {
     if (input.isNullOrEmpty()) return emptyMap()
     try {
-        return input.split(lineDelimiter)
+        return input.split(*lineDelimiters)
             .filter { it.isNotEmpty() && (filterPrefix.isEmpty() || !it.startsWith(filterPrefix)) }
             .associate { it.substringBefore(mapDelimiter) to it.substringAfter(mapDelimiter, "").trim() }
     } catch (parseException: Exception) {
