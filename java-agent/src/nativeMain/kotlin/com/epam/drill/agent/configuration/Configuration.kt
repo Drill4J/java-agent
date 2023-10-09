@@ -188,11 +188,10 @@ private fun agentParams(options: String): Map<String, String> {
 
 private fun readFile(filepath: String): String {
     val fileDescriptor = open(filepath, O_RDONLY)
-    return if (fileDescriptor == -1) {
-        logger.error { "Cannot open the config file with path=$filepath" }
-        ""
-    } else
-        Input(fileDescriptor).readText().also { close(fileDescriptor) }
+    return fileDescriptor
+        .takeIf { it != -1 }
+        ?.let { Input(it).readText().also { close(fileDescriptor) } }
+        ?: "".also { logger.error { "Cannot open the config file with path=$filepath" } }
 }
 
 private fun asAgentParams(
