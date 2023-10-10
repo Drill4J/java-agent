@@ -19,7 +19,6 @@ import kotlin.time.DurationUnit
 import kotlin.time.toDuration
 import kotlinx.cinterop.toKString
 import kotlinx.serialization.modules.serializersModuleOf
-import kotlinx.serialization.serializer
 import platform.posix.getenv
 import mu.KotlinLogging
 import com.epam.drill.agent.SYSTEM_CONFIG_PATH
@@ -43,6 +42,7 @@ import platform.posix.open
 
 private val logger = KotlinLogging.logger("com.epam.drill.agent.configuration.Configuration")
 private const val DRILL_INSTALLATION_DIR_PARAM = "drillInstallationDir"
+private const val CONFIG_PATH_PARAM = "configPath"
 private val pathSeparator = if (Platform.osFamily == OsFamily.WINDOWS) "\\" else "/"
 
 fun performInitialConfiguration(aa: AgentArguments) {
@@ -143,7 +143,33 @@ fun idHeaderPairFromConfig(): Pair<String, String> = when (agentConfig.serviceGr
 
 fun retrieveAdminUrl() = adminAddress?.toUrlString(false).toString()
 
-fun convertToAgentArguments(options: String) = parseAsAgentArguments(agentParams(options))
+fun convertToAgentArguments(args: String): AgentArguments {
+    val commandLineParams = parseArguments(args)
+    logger.info { "command line parameters: $commandLineParams" }
+
+    val drillInstallationDir = getDrillInstallationDir(commandLineParams)
+    logger.info { "drillInstallationDir: $drillInstallationDir" }
+
+    val configFilePath = getConfigFilePath(commandLineParams, drillInstallationDir)
+    logger.info { "config path: $configFilePath" }
+
+    val configFileParams = getConfigFileParams(configFilePath)
+    logger.info { "config file parameters: $configFileParams" }
+
+    val resultParams = mutableMapOf<String, String>()
+        .apply { putAll(configFileParams) }
+        .apply { putAll(commandLineParams) }
+        .apply { put(DRILL_INSTALLATION_DIR_PARAM, drillInstallationDir) }
+    logger.info { "result parameters: $resultParams" }
+
+    return resultParams.toAgentArguments()
+}
+
+fun Map<String, String>.toAgentArguments(): AgentArguments {
+    val serializer = AgentArguments.serializer()
+    val module = serializersModuleOf(serializer)
+    return serializer.deserialize(SimpleMapDecoder(module, this))
+}
 
 fun validate(args: AgentArguments) {
     args.adminAddress = addWsSchema(args.adminAddress)
@@ -164,28 +190,6 @@ private fun addWsSchema(address: String?): String? {
 }
 
 
-private fun agentParams(options: String): Map<String, String> {
-    logger.info { "agent options: $options" }
-    val agentParams = asAgentParams(options)
-    logger.info { "agent parameters: $agentParams" }
-    val drillInstallationDir = agentParams[DRILL_INSTALLATION_DIR_PARAM] ?: drillInstallationDir() ?: "."
-    logger.info { "drillInstallationDir: $drillInstallationDir" }
-    val configPath = agentParams["configPath"]
-        ?: getenv(SYSTEM_CONFIG_PATH)?.toKString()
-        ?: "${drillInstallationDir}${pathSeparator}drill.properties"
-    logger.info { "config path: $configPath" }
-    val configParams = configPath
-        .runCatching(::readFile)
-        .getOrNull()
-        .let { asAgentParams(it, filterPrefix = "#", lineDelimiters = arrayOf("\n\r", "\r\n", "\n", "\r")) }
-    logger.info { "config parameters: $configParams" }
-    val resultParams = configParams.toMutableMap()
-        .also { it.putAll(agentParams) }
-        .also { it[DRILL_INSTALLATION_DIR_PARAM] = drillInstallationDir }
-    logger.info { "result parameters: $resultParams" }
-    return resultParams
-}
-
 private fun readFile(filepath: String): String {
     val fileDescriptor = open(filepath, O_RDONLY)
     return fileDescriptor
@@ -194,7 +198,7 @@ private fun readFile(filepath: String): String {
         ?: "".also { logger.error { "Cannot open the config file with path=$filepath" } }
 }
 
-private fun asAgentParams(
+private fun parseArguments(
     input: String?,
     filterPrefix: String = "",
     mapDelimiter: String = "=",
@@ -210,7 +214,32 @@ private fun asAgentParams(
     }
 }
 
-private fun parseAsAgentArguments(map: Map<String, String>) = AgentArguments::class.serializer().run {
-    val module = serializersModuleOf(this)
-    this.deserialize(SimpleMapDecoder(module, map))
+private fun getConfigFileParams(configFilePath: String): Map<String, String> {
+    return configFilePath
+        .runCatching(::readFile)
+        .getOrNull()
+        .let { parseArguments(it, filterPrefix = "#", lineDelimiters = arrayOf("\n\r", "\r\n", "\n", "\r")) }
+}
+
+private fun getConfigFilePath(
+    commandLineParams: Map<String, String>,
+    drillInstallationDir: String
+) = (commandLineParams[CONFIG_PATH_PARAM]
+    ?: getenv(SYSTEM_CONFIG_PATH)?.toKString()
+    ?: "${drillInstallationDir}${pathSeparator}drill.properties")
+
+private fun getDrillInstallationDir(commandLineParams: Map<String, String>): String {
+    return commandLineParams[DRILL_INSTALLATION_DIR_PARAM]
+        ?: getAgentPathCommand()?.let { parseAgentDirFromAgentPathCommand(it) }
+        ?: "."
+}
+
+private fun getAgentPathCommand(): String? {
+    return getenv("JAVA_TOOL_OPTIONS")?.toKString() ?: getAgentPathCommandFromProcess()
+}
+
+private fun parseAgentDirFromAgentPathCommand(agentPathCommand: String): String? {
+    val agentPath = Regex("-agentpath:(.+?)($|=.+)").matchEntire(agentPathCommand)!!.groups[1]?.value
+    val agentDir = agentPath?.substringBeforeLast(pathSeparator)
+    return agentDir?.trimStart { it == '"' }
 }
