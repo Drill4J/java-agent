@@ -239,8 +239,13 @@ private fun getAgentPathCommand(): String? {
 }
 
 internal fun parseAgentDirFromAgentPathCommand(agentPathCommand: String, pathSeparator: String = "/"): String? {
-    return agentPathCommand.split("-agentpath:").find { it.contains("drill_agent") }?.let { agentPath ->
-        val agentDir = Regex("\\s*\"?(.+)(\\.so|\\.dll)").matchAt(agentPath, 0)?.groups?.get(1)?.value
-        agentDir?.takeIf { it.contains(pathSeparator) }?.substringBeforeLast(pathSeparator)
-    }
+    val getPathSansExtension = { input: String? -> input?.run {
+        Regex("\\s*\"?(.+)(\\.so|\\.dll)").matchAt(this, 0)?.groups?.get(1)?.value
+    }}
+    return agentPathCommand
+        .split("-agentpath:")
+        .find { it.contains("drill_agent") }
+        ?.let { getPathSansExtension(it) }
+        ?.takeIf { it.contains(pathSeparator) }
+        ?.substringBeforeLast(pathSeparator)
 }
