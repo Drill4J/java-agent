@@ -2,93 +2,94 @@ package com.epam.drill.agent.configuration
 
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertNull
 
 class AgentDirParsingTest {
 
     @Test
     fun `platform specific style path`() =
         if (Platform.osFamily == OsFamily.WINDOWS) {
-            val agentDir = parseAgentDirFromAgentPathCommand("-agentpath:C:\\data\\agent\\drill_agent.dll=param1=1,param2=2")
+            val agentDir = parseAgentDirFromAgentPathCommand(
+                "-agentpath:C:\\data\\agent\\drill_agent.dll=param1=1,param2=2",
+                pathSeparator
+            )
             assertEquals("C:\\data\\agent", agentDir)
         } else {
-            val agentDir = parseAgentDirFromAgentPathCommand("-agentpath:/data/agent/libdrill_agent.so=param1=1,param2=2")
+            val agentDir = parseAgentDirFromAgentPathCommand(
+                "-agentpath:/data/agent/libdrill_agent.so=param1=1,param2=2",
+                pathSeparator
+            )
             assertEquals("/data/agent", agentDir)
         }
 
     @Test
     fun `without options`() {
-        given("-agentpath:/data/agent/libdrill_agent.so")
-            .agentDirShouldBe("/data/agent")
+        val agentDir = parseAgentDirFromAgentPathCommand("-agentpath:/data/agent/libdrill_agent.so")
+        assertEquals("/data/agent", agentDir)
     }
 
     @Test
     fun `with equal separator without options`() {
-        given("-agentpath:/data/agent/libdrill_agent.so=")
-            .agentDirShouldBe("/data/agent")
+        val agentDir = parseAgentDirFromAgentPathCommand("-agentpath:/data/agent/libdrill_agent.so=")
+        assertEquals("/data/agent", agentDir)
     }
 
     @Test
     fun `with space separator without options`() {
-        given("-agentpath:/data/agent/libdrill_agent.so -Dparam=foo/bar")
-            .agentDirShouldBe("/data/agent")
+        val agentDir = parseAgentDirFromAgentPathCommand("-agentpath:/data/agent/libdrill_agent.so -Dparam=foo/bar")
+        assertEquals("/data/agent", agentDir)
     }
 
     @Test
     fun `with options`() {
-        given("-agentpath:/data/agent/libdrill_agent.so=opt1,opt2")
-            .agentDirShouldBe("/data/agent")
+        val agentDir = parseAgentDirFromAgentPathCommand("-agentpath:/data/agent/libdrill_agent.so=opt1,opt2")
+        assertEquals("/data/agent", agentDir)
     }
 
     @Test
     fun `without leading directory separator`() {
-        given("-agentpath:libdrill_agent.so")
-            .agentDirShouldBe(null)
+        val agentDir = parseAgentDirFromAgentPathCommand("-agentpath:libdrill_agent.so")
+        assertNull(agentDir)
     }
 
     @Test
     fun `with other arguments`() {
-        given("-Dparam=foo/bar -agentpath:/data/agent/libdrill_agent.so /other/path")
-            .agentDirShouldBe("/data/agent")
+        val agentDir = parseAgentDirFromAgentPathCommand("-Dparam=foo/bar -agentpath:/data/agent/libdrill_agent.so /other/path")
+        assertEquals("/data/agent", agentDir)
     }
 
     @Test
     fun `with quotes`() {
-        given("-agentpath:\"/data/agent/libdrill_agent.so=opt1,opt2\"")
-            .agentDirShouldBe("/data/agent")
+        val agentDir = parseAgentDirFromAgentPathCommand("-agentpath:\"/data/agent/libdrill_agent.so=opt1,opt2\"")
+        assertEquals("/data/agent", agentDir)
     }
 
     @Test
     fun `with quotes and spaces`() {
-        given("-agentpath: \"/data space/agent/libdrill_agent.so\" /other/path")
-            .agentDirShouldBe("/data space/agent")
+        val agentDir = parseAgentDirFromAgentPathCommand("-agentpath: \"/data space/agent/libdrill_agent.so\" /other/path")
+        assertEquals("/data space/agent", agentDir)
     }
 
     @Test
     fun `with multi lines`() {
-        given("""java -jar some.jar
+        val agentDir = parseAgentDirFromAgentPathCommand(
+            """java -jar some.jar
                         
             -agentpath:/data/agent/libdrill_agent.so
-        """)
-            .agentDirShouldBe("/data/agent")
+        """
+        )
+        assertEquals("/data/agent", agentDir)
     }
 
     @Test
     fun `with multi agents`() {
-        given("""            
+        val agentDir = parseAgentDirFromAgentPathCommand(
+            """            
             -agentpath:/other/path/other_agent.dll
             -agentpath:/data/agent/libdrill_agent.so
             -agentpath:/another/path/libanother_agent.so
-        """.trimIndent())
-            .agentDirShouldBe("/data/agent")
+        """.trimIndent()
+        )
+        assertEquals("/data/agent", agentDir)
     }
-
-    private fun given(agentPathCommand: String): String? {
-        return parseAgentDirFromAgentPathCommand(agentPathCommand.adaptToPlatformPathSeparator())
-    }
-
-    private fun String?.agentDirShouldBe(expected: String?) {
-        assertEquals(expected?.adaptToPlatformPathSeparator(), this)
-    }
-
-    private fun String.adaptToPlatformPathSeparator() = this.replace("/", pathSeparator)
 }

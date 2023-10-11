@@ -230,7 +230,7 @@ private fun getConfigFilePath(
 
 private fun getDrillInstallationDir(commandLineParams: Map<String, String>): String {
     return commandLineParams[DRILL_INSTALLATION_DIR_PARAM]
-        ?: getAgentPathCommand()?.let { parseAgentDirFromAgentPathCommand(it) }
+        ?: getAgentPathCommand()?.let { parseAgentDirFromAgentPathCommand(it, pathSeparator) }
         ?: "."
 }
 
@@ -238,7 +238,7 @@ private fun getAgentPathCommand(): String? {
     return getenv("JAVA_TOOL_OPTIONS")?.toKString() ?: runCatching { getAgentPathCommandFromProcess() }.getOrNull()
 }
 
-internal fun parseAgentDirFromAgentPathCommand(agentPathCommand: String): String? {
+internal fun parseAgentDirFromAgentPathCommand(agentPathCommand: String, pathSeparator: String = "/"): String? {
     for (agentPath in agentPathCommand.split("-agentpath:")) {
         val agentDir = Regex("\\s*\"?(.+)drill_agent(\\.so|\\.dll)").matchAt(agentPath, 0)?.groups?.get(1)?.value
         if (agentDir != null)
