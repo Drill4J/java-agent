@@ -81,7 +81,8 @@ fun updateAgentParameters(parameters: Map<String, AgentParameter>, initializatio
             ?: agentParameters.coverageRetentionLimit,
         sendCoverageInterval = parameters[AgentArguments::sendCoverageIntervalMs.name]?.value?.toLong()
             ?: agentParameters.sendCoverageInterval,
-        drillInstallationDir = parameters[AgentArguments::drillInstallationDir.name]?.value ?: agentParameters.drillInstallationDir,
+        drillInstallationDir = parameters[AgentArguments::drillInstallationDir.name]?.value
+            ?: agentParameters.drillInstallationDir,
     )
     updateNativeLoggingConfiguration()
     if (!initialization) updateJvmLoggingConfiguration()
