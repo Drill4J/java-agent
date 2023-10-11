@@ -67,7 +67,7 @@ object Agent {
             jvmtiCapabilities.can_maintain_original_method_order = 1.toUInt()
             AddCapabilities(jvmtiCapabilities.ptr)
         }
-        AddToBootstrapClassLoaderSearch("$drillInstallationDir/drillRuntime.jar")
+        AddToBootstrapClassLoaderSearch("${agentParameters.drillInstallationDir}/drillRuntime.jar")
         callbackRegister()
 
         logger.info { "The native agent was loaded" }
