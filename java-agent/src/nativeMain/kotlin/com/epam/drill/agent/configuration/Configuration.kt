@@ -43,7 +43,7 @@ import platform.posix.open
 private val logger = KotlinLogging.logger("com.epam.drill.agent.configuration.Configuration")
 private const val DRILL_INSTALLATION_DIR_PARAM = "drillInstallationDir"
 private const val CONFIG_PATH_PARAM = "configPath"
-private val pathSeparator = if (Platform.osFamily == OsFamily.WINDOWS) "\\" else "/"
+internal val pathSeparator = if (Platform.osFamily == OsFamily.WINDOWS) "\\" else "/"
 
 fun performInitialConfiguration(aa: AgentArguments) {
     adminAddress = URL(aa.adminAddress!!)
@@ -235,11 +235,35 @@ private fun getDrillInstallationDir(commandLineParams: Map<String, String>): Str
 }
 
 private fun getAgentPathCommand(): String? {
-    return getenv("JAVA_TOOL_OPTIONS")?.toKString() ?: getAgentPathCommandFromProcess()
+    return getenv("JAVA_TOOL_OPTIONS")?.toKString() ?: runCatching { getAgentPathCommandFromProcess() }.getOrNull()
 }
 
-private fun parseAgentDirFromAgentPathCommand(agentPathCommand: String): String? {
-    val agentPath = Regex("-agentpath:(.+?)($|=.+)").matchEntire(agentPathCommand)!!.groups[1]?.value
-    val agentDir = agentPath?.substringBeforeLast(pathSeparator)
-    return agentDir?.trimStart { it == '"' }
+internal fun parseAgentDirFromAgentPathCommand(agentPathCommand: String): String? {
+    val agentPathKeyword = "-agentpath:"
+    if (!agentPathCommand.contains(agentPathKeyword)) return null
+    var agentPath = agentPathCommand
+
+    //remove all before agentpath argument
+    val indexOfBegin = agentPath.indexOf(agentPathKeyword) + agentPathKeyword.length
+    agentPath = agentPath.substring(indexOfBegin).trim()
+
+    if (agentPath.startsWith("\"")) {
+        //remove beginning of quote
+        agentPath = agentPath.substring(1, agentPath.length)
+
+        //remove ending of quote
+        val indexOfQuoteEnd = agentPath.indexOfFirst { it == '"' }
+        agentPath = agentPath.substring(0, indexOfQuoteEnd)
+    } else {
+        //remove all after end of agentpath argument
+        val indexOfEnd = agentPath.indexOfFirst { it == ' ' || it == '\n' }.takeIf { it >= 0 } ?: agentPath.length
+        agentPath = agentPath.substring(0, indexOfEnd)
+    }
+
+    //remove options
+    val indexOfOptions = agentPath.indexOfFirst { it == '=' }.takeIf { it >= 0 } ?: agentPath.length
+    agentPath = agentPath.substring(0, indexOfOptions)
+
+    //remove agent filename
+    return agentPath.takeIf { it.contains(pathSeparator) }?.substringBeforeLast(pathSeparator)
 }
