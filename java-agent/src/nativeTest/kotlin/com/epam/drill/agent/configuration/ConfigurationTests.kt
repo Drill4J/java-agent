@@ -72,6 +72,16 @@ class AgentDirParsingTest {
             .agentDirShouldBe("/data/agent")
     }
 
+    @Test
+    fun `with multi agents`() {
+        given("""            
+            -agentpath:/other/path/other_agent.dll
+            -agentpath:/data/agent/libdrill_agent.so
+            -agentpath:/another/path/libanother_agent.so
+        """.trimIndent())
+            .agentDirShouldBe("/data/agent")
+    }
+
     private fun given(agentPathCommand: String): String? {
         return parseAgentDirFromAgentPathCommand(agentPathCommand.adaptToPlatformPathSeparator())
     }

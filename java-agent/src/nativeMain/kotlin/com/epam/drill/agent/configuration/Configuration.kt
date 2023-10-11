@@ -239,31 +239,10 @@ private fun getAgentPathCommand(): String? {
 }
 
 internal fun parseAgentDirFromAgentPathCommand(agentPathCommand: String): String? {
-    val agentPathKeyword = "-agentpath:"
-    if (!agentPathCommand.contains(agentPathKeyword)) return null
-    var agentPath = agentPathCommand
-
-    //remove all before agentpath argument
-    val indexOfBegin = agentPath.indexOf(agentPathKeyword) + agentPathKeyword.length
-    agentPath = agentPath.substring(indexOfBegin).trim()
-
-    if (agentPath.startsWith("\"")) {
-        //remove beginning of quote
-        agentPath = agentPath.substring(1, agentPath.length)
-
-        //remove ending of quote
-        val indexOfQuoteEnd = agentPath.indexOfFirst { it == '"' }
-        agentPath = agentPath.substring(0, indexOfQuoteEnd)
-    } else {
-        //remove all after end of agentpath argument
-        val indexOfEnd = agentPath.indexOfFirst { it == ' ' || it == '\n' }.takeIf { it >= 0 } ?: agentPath.length
-        agentPath = agentPath.substring(0, indexOfEnd)
+    for (agentPath in agentPathCommand.split("-agentpath:")) {
+        val agentDir = Regex("\\s*\"?(.+)drill_agent(\\.so|\\.dll)").matchAt(agentPath, 0)?.groups?.get(1)?.value
+        if (agentDir != null)
+            return agentDir.takeIf { it.contains(pathSeparator) }?.substringBeforeLast(pathSeparator)
     }
-
-    //remove options
-    val indexOfOptions = agentPath.indexOfFirst { it == '=' }.takeIf { it >= 0 } ?: agentPath.length
-    agentPath = agentPath.substring(0, indexOfOptions)
-
-    //remove agent filename
-    return agentPath.takeIf { it.contains(pathSeparator) }?.substringBeforeLast(pathSeparator)
+    return null
 }
