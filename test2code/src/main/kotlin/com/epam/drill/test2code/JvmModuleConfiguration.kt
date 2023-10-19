@@ -20,6 +20,6 @@ object JvmModuleConfiguration {
     external fun getScanClassPath(): String
     external fun waitClassScanning()
     external fun getSendCoverageInterval(): Long
-    external fun getInitialDelayCoverageSendingJob(): Long
+    external fun getInitialDelayCoverageSendingJobMs(): Long
     external fun getCoverageRetentionLimit(): String
 }

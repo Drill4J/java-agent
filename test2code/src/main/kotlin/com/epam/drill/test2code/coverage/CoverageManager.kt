@@ -22,7 +22,7 @@ open class CoverageManager(
     private val execDataProvider: IExecDataProvider = ThreadExecDataProvider(classDescriptorsManager),
     private val coverageRecorder: ICoverageRecorder = CoverageRecorder(execDataProvider),
     private val coverageSender: CoverageSender = IntervalCoverageSender(
-        initialDelayMs = JvmModuleConfiguration.getInitialDelayCoverageSendingJob(),
+        initialDelayMs = JvmModuleConfiguration.getInitialDelayCoverageSendingJobMs(),
         intervalMs = JvmModuleConfiguration.getSendCoverageInterval(),
         collectProbes = execDataProvider::poll,
     )
