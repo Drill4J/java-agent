@@ -34,6 +34,7 @@ interface CoverageSender {
 
 class IntervalCoverageSender(
     private val logger: KLogger = KotlinLogging.logger("com.epam.drill.test2code.coverage.IntervalCoverageSender"),
+    private val initialDelayMs: Long,
     private val intervalMs: Long,
     private var coverageTransport: CoverageTransport = StubTransport(),
     private val inMemoryRetentionQueue: RetentionQueue = InMemoryRetentionQueue(
@@ -50,19 +51,20 @@ class IntervalCoverageSender(
     private val collectProbes: () -> Sequence<ExecDatum> = { emptySequence() }
 ) : CoverageSender {
     private val scheduledThreadPool = Executors.newSingleThreadScheduledExecutor()
-
+    private var future: ScheduledFuture<*>? = null
     override fun setCoverageTransport(transport: CoverageTransport) {
         coverageTransport = transport
     }
 
-
     override fun startSendingCoverage() {
-        scheduledThreadPool.scheduleAtFixedRate(
-            Runnable { sendProbes(collectProbes()) },
-            0,
-            intervalMs,
-            TimeUnit.MILLISECONDS
-        )
+        if (future == null) {
+            future = scheduledThreadPool.scheduleAtFixedRate(
+                Runnable { sendProbes(collectProbes()) },
+                initialDelayMs,
+                intervalMs,
+                TimeUnit.MILLISECONDS
+            )
+        }
         logger.debug { "Coverage sending job is started." }
     }
 
