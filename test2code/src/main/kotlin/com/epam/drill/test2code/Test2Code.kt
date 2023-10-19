@@ -66,6 +66,7 @@ class Test2Code(
 
         scanAndSendMetadataClasses()
         sendMessage(Initialized(msg = "Initialized"))
+        coverageManager.startSendingCoverage()
         logger.info { "Plugin $id initialized!" }
     }
 
@@ -75,9 +76,6 @@ class Test2Code(
     ): ByteArray? = instrumenter.instrument(className, initialBytes)
 
     override fun load() {
-        logger.info { "Plugin $id: initializing..." }
-        coverageManager.startSendingCoverage()
-        logger.info { "Plugin $id initialized!" }
     }
 
     // TODO remove after merging to java-agent repo
