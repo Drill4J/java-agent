@@ -32,6 +32,8 @@ object JvmModuleConfiguration {
 
     fun getSendCoverageInterval(): Long = agentParameters.sendCoverageInterval
 
+    fun getInitialDelayCoverageSendingJobMs(): Long = agentParameters.initialDelayCoverageSendingJobMs
+
     fun waitClassScanning() = runBlocking {
         val classScanDelay = agentParameters.classScanDelay - Agent.startTimeMark.elapsedNow()
         if (classScanDelay.isPositive()) {

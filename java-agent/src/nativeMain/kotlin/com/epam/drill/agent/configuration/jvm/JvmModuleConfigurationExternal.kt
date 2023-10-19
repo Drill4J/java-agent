@@ -22,7 +22,6 @@ import com.epam.drill.jvmapi.callNativeVoidMethod
 import com.epam.drill.jvmapi.gen.JNIEnv
 import com.epam.drill.jvmapi.gen.jobject
 import com.epam.drill.jvmapi.gen.jstring
-import com.epam.drill.jvmapi.gen.jlong
 
 @Suppress("UNUSED")
 @CName("Java_com_epam_drill_test2code_JvmModuleConfiguration_getPackagePrefixes")
@@ -48,3 +47,7 @@ fun getCoverageRetentionLimit(env: JNIEnv, thiz: jobject): jstring? =
 @CName("Java_com_epam_drill_test2code_JvmModuleConfiguration_getSendCoverageInterval")
 fun getSendCoverageInterval(env: JNIEnv, thiz: jobject): Long =
     callNativeLongMethod(env, thiz, JvmModuleConfiguration::getSendCoverageInterval)
+@Suppress("UNUSED")
+@CName("Java_com_epam_drill_test2code_JvmModuleConfiguration_getInitialDelayCoverageSendingJobMs")
+fun getInitialDelayCoverageSendingJob(env: JNIEnv, thiz: jobject): Long =
+    callNativeLongMethod(env, thiz, JvmModuleConfiguration::getInitialDelayCoverageSendingJobMs)

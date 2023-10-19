@@ -41,7 +41,8 @@ data class AgentArguments(
     var sslTruststore: String = "",
     var sslTruststorePassword: String = "",
     val coverageRetentionLimit: String = "512Mb",
-    val sendCoverageIntervalMs: Long = 2000L
+    val sendCoverageIntervalMs: Long = 2000L,
+    val initialDelayCoverageSendingJobMs: Long = 30000L
 ) {
 
     val packagePrefixesToList: List<String>
@@ -128,6 +129,11 @@ data class AgentArguments(
             type = sendCoverageIntervalMs.toType(),
             value = sendCoverageIntervalMs.toString(),
             description = "Coverage sending interval in milliseconds"
+        ),
+        AgentArguments::initialDelayCoverageSendingJobMs.name to AgentParameter(
+            type = initialDelayCoverageSendingJobMs.toType(),
+            value = initialDelayCoverageSendingJobMs.toString(),
+            description = "Initial delay param for coverage sending job in milliseconds"
         ),
         AgentArguments::drillInstallationDir.name to AgentParameter(
             type = drillInstallationDir.toType(),
