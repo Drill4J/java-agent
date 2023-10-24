@@ -51,7 +51,7 @@ class ClassProbeCounter(val name: String) : ProbeCounter() {
         path = getPackageName(name),
         name = getShortClassName(name),
         methods = ArrayList(),
-        annotations = mapOf()
+        annotations = mutableMapOf()
     )
 
     override fun visitMethod(
@@ -68,7 +68,7 @@ class ClassProbeCounter(val name: String) : ProbeCounter() {
                 annotationValues.add(value.toString())
             }
         }
-        (astClass.annotations as MutableMap)[Type.getType(desc).className] = annotationValues
+        astClass.annotations[Type.getType(desc).className] = annotationValues
         return annotationVisitor
     }
 }
