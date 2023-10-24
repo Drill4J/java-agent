@@ -165,6 +165,8 @@ private fun getParams(methodNode: MethodNode): List<String> = Type
     .map { it.className }
 
 private fun getAnnotations(methodNode: MethodNode): Map<String, List<String>> {
+    // visibleAnnotations - set in code
+    // invisibleAnnotations - produced during build (e.g. Lombok-generated methods)
     return (methodNode.visibleAnnotations.orEmpty() + methodNode.invisibleAnnotations.orEmpty())
         .associateBy({ it.desc }, { getValuesOfAnnotation(it) })
 }
