@@ -47,17 +47,20 @@ open class ProbeCounter : ClassProbesVisitor() {
 }
 
 class ClassProbeCounter(val name: String) : ProbeCounter() {
-    val astClass = AstEntity(
+    private val methods: List<AstMethod> = ArrayList()
+    private val annotations: MutableMap<String, List<String>> = mutableMapOf()
+
+    fun getAstClass() = AstEntity(
         path = getPackageName(name),
         name = getShortClassName(name),
-        methods = ArrayList(),
-        annotations = mutableMapOf()
+        methods = methods,
+        annotations = annotations
     )
 
     override fun visitMethod(
         access: Int, name: String?, desc: String?, signature: String?, exceptions: Array<out String>?
     ): MethodProbesVisitor {
-        return MethodProbeCounter(astClass.methods as MutableList)
+        return MethodProbeCounter(methods as MutableList)
     }
 
     override fun visitAnnotation(desc: String?, visible: Boolean): AnnotationVisitor? {
@@ -68,7 +71,7 @@ class ClassProbeCounter(val name: String) : ProbeCounter() {
                 annotationValues.add(value.toString())
             }
         }
-        astClass.annotations[Type.getType(desc).className] = annotationValues
+        annotations[Type.getType(desc).className] = annotationValues
         return annotationVisitor
     }
 }
@@ -121,7 +124,7 @@ fun parseAstClass(className: String, classBytes: ByteArray): AstEntity {
     val counter = ClassProbeCounter(className)
     classReader.accept(DrillClassProbesAdapter(counter, false), 0)
 
-    val astClass = counter.astClass
+    val astClass = counter.getAstClass()
     val astMethodsWithChecksum = calculateMethodsChecksums(classBytes, className)
 
     astClass.methods = astClass.methods.map {
