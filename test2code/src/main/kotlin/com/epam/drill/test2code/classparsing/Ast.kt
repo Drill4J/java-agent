@@ -18,13 +18,16 @@ package com.epam.drill.test2code.classparsing
 import com.epam.drill.jacoco.DrillClassProbesAdapter
 import com.epam.drill.plugins.test2code.common.api.AstEntity
 import com.epam.drill.plugins.test2code.common.api.AstMethod
+import com.sun.xml.internal.fastinfoset.util.StringArray
 import org.jacoco.core.internal.flow.ClassProbesVisitor
 import org.jacoco.core.internal.flow.IFrame
 import org.jacoco.core.internal.flow.MethodProbesVisitor
 import org.jacoco.core.internal.instr.InstrSupport
+import org.objectweb.asm.AnnotationVisitor
 import org.objectweb.asm.Label
 import org.objectweb.asm.MethodVisitor
 import org.objectweb.asm.Type
+import org.objectweb.asm.tree.AnnotationNode
 import org.objectweb.asm.tree.MethodNode
 
 
@@ -51,6 +54,18 @@ class ClassProbeCounter(val name: String) : ProbeCounter() {
     ): MethodProbesVisitor {
         return MethodProbeCounter(astClass.methods as MutableList)
     }
+
+    override fun visitAnnotation(desc: String?, visible: Boolean): AnnotationVisitor? {
+        val annotationValues = mutableListOf<String>()
+
+        val annotationVisitor = object : AnnotationVisitor(api) {
+            override fun visit(name: String?, value: Any?) {
+                annotationValues.add(value.toString())
+            }
+        }
+        (astClass.annotations as MutableMap)[Type.getType(desc).className] = annotationValues
+        return annotationVisitor
+    }
 }
 
 
@@ -69,7 +84,8 @@ class MethodProbeCounter(
             params = getParams(methodNode),
             returnType = getReturnType(methodNode),
             checksum = "",
-            probes = probes
+            probes = probes,
+            annotations = getAnnotations(methodNode)
         )
         methods.add(method)
     }
@@ -117,7 +133,8 @@ fun newAstClass(
 ) = AstEntity(
     path = getPackageName(className),
     name = getShortClassName(className),
-    methods
+    methods = methods,
+    annotations = mapOf()
 )
 
 private fun AstMethod.classSignature() =
@@ -151,3 +168,23 @@ private fun getReturnType(methodNode: MethodNode): String {
 private fun getParams(methodNode: MethodNode): List<String> = Type
     .getArgumentTypes(methodNode.desc)
     .map { it.className }
+
+private fun getAnnotations(methodNode: MethodNode): Map<String, List<String>> {
+    return (methodNode.visibleAnnotations.orEmpty() + methodNode.invisibleAnnotations.orEmpty())
+        .associateBy({ it.desc }, { getValuesOfAnnotation(it) })
+}
+
+private fun getValuesOfAnnotation(annotationNode: AnnotationNode): List<String> {
+    return annotationNode.values
+        .orEmpty()
+        .flatMap { annotationValue -> parseAnnotationValueToString(annotationValue) }
+}
+
+private fun parseAnnotationValueToString(annotationValue: Any?): List<String> {
+    return when (annotationValue) {
+        is StringArray -> annotationValue._array.map { it.toString() }
+        is List<*> -> annotationValue.flatMap { parseAnnotationValueToString(it) }
+        is AnnotationNode -> getValuesOfAnnotation(annotationValue)
+        else -> listOf(annotationValue.toString())
+    }
+}
