@@ -47,7 +47,12 @@ open class ProbeCounter : ClassProbesVisitor() {
 }
 
 class ClassProbeCounter(val name: String) : ProbeCounter() {
-    val astClass = newAstClass(name, ArrayList())
+    val astClass = AstEntity(
+        path = getPackageName(name),
+        name = getShortClassName(name),
+        methods = ArrayList(),
+        annotations = mapOf()
+    )
 
     override fun visitMethod(
         access: Int, name: String?, desc: String?, signature: String?, exceptions: Array<out String>?
@@ -126,16 +131,6 @@ fun parseAstClass(className: String, classBytes: ByteArray): AstEntity {
     }
     return astClass
 }
-
-fun newAstClass(
-    className: String,
-    methods: MutableList<AstMethod> = ArrayList()
-) = AstEntity(
-    path = getPackageName(className),
-    name = getShortClassName(className),
-    methods = methods,
-    annotations = mapOf()
-)
 
 private fun AstMethod.classSignature() =
     "${name}/${params.joinToString()}/${returnType}"
