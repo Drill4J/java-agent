@@ -40,3 +40,38 @@ Refs: EPMDJ-10603
 ```
 Modified: java-agent/src/nativeMain/kotlin/com/epam/drill/core/CallbackRegister.kt
 ```
+
+## PT-runner and bootstrap modules
+
+* Revision: 25b5b0f19388986da6794ff3c6f52b81a72f74f5
+* Author: epamrsa <epamrsa@gmail.com>
+  Date: Thursday, 9 November, 2023 16:05:41
+* Message:
+```
+feat: Remove obsolete modules in lib-jvm-shared and java-agent
+
+Removed pt-runner and bootstrap modules.
+Adjusted build.gradle.kts for test2code.
+
+Refs: EPMDJ-10708
+```
+* Changes:
+```
+Deleted: bootstrap/LICENSE
+Deleted: bootstrap/build.gradle.kts
+Deleted: bootstrap/src/commonMain/kotlin/com/epam/drill/bootstrap/nativeloader.kt
+Deleted: bootstrap/src/linuxX64Main/kotlin/com/epam/drill/bootstrap/nativeloader.kt
+Deleted: bootstrap/src/macosX64Main/kotlin/com/epam/drill/bootstrap/nativeloader.kt
+Deleted: bootstrap/src/mingwX64Main/kotlin/com/epam/drill/bootstrap/nativeloader.kt
+Deleted: bootstrap/src/nativeMain/kotlin/com/epam/drill/bootstrap/starter.kt
+Modified: build.gradle.kts
+Deleted: buildSrc/build.gradle.kts
+Deleted: buildSrc/gradle.properties
+Deleted: buildSrc/settings.gradle.kts
+Modified: gradle.properties
+Deleted: pt-runner/LICENSE
+Deleted: pt-runner/build.gradle.kts
+Deleted: pt-runner/src/main/java/org/springframework/samples/petclinic/system/DrillExtension.java
+Modified: settings.gradle.kts
+Modified: test2code/build.gradle.kts
+```

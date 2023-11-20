@@ -30,7 +30,7 @@ fun getAgentConfigHexString(env: JNIEnv, thiz: jobject): jstring? =
 
 @Suppress("UNUSED")
 @CName("Java_com_epam_drill_agent_configuration_WsConfiguration_setRequestPattern")
-fun setRequestPattern(env: JNIEnv, thiz: jobject, pattern: String) =
+fun setRequestPattern(env: JNIEnv, thiz: jobject, pattern: jstring) =
     callNativeVoidMethodWithString(env, thiz, WsConfiguration::setRequestPattern, pattern)
 
 @Suppress("UNUSED")
