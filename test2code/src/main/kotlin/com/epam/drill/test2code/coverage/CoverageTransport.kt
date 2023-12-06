@@ -15,42 +15,50 @@
  */
 package com.epam.drill.test2code.coverage
 
-import com.epam.drill.agent.websocket.*
-import com.epam.drill.common.agent.*
+import kotlin.concurrent.*
 import java.util.concurrent.atomic.*
+import com.epam.drill.common.agent.transport.*
+import com.epam.drill.plugins.test2code.common.api.*
+import com.epam.drill.plugins.test2code.common.transport.*
 
 interface CoverageTransport {
-    fun send(message: String)
-
+    fun send(message: List<ExecClassData>)
     fun isAvailable(): Boolean
-
 }
 
 class StubTransport : CoverageTransport {
-    override fun send(message: String) = Unit
+    override fun send(message: List<ExecClassData>) = Unit
     override fun isAvailable(): Boolean = false
 }
 
-open class WebsocketCoverageTransport(
-    private val id: String,
-    private val sender: Sender,
+open class HttpCoverageTransport(
+    private val sender: AgentMessageSender,
 ) : CoverageTransport {
-    private var isTransportAvailable: AtomicBoolean = AtomicBoolean(false)
+
+    private val destination = AgentMessageDestination("POST", "coverage-data")
+    private var available: AtomicBoolean = AtomicBoolean(false)
 
     init {
-        WsClient.setOnAvailable {
-            isTransportAvailable.set(true)
-        }
-        WsClient.setOnUnavailable {
-            isTransportAvailable.set(false)
-        }
+        waitTransportAvailable()
     }
 
-    override fun isAvailable(): Boolean {
-        return isTransportAvailable.get()
+    override fun isAvailable() = available.get()
+
+    override fun send(message: List<ExecClassData>) {
+        val sendMessage: (List<ExecClassData>) -> Unit = {
+            sender.send(destination, CoverageData(message))
+        }
+        val markUnavailable: (Throwable) -> Unit = {
+            available.takeIf(AtomicBoolean::get)?.set(false)?.also { waitTransportAvailable() }
+        }
+        message.runCatching(sendMessage).onFailure(markUnavailable).getOrThrow()
     }
 
-    override fun send(message: String) {
-        sender.send(id, message)
+    private fun waitTransportAvailable() = thread {
+        while(!sender.isTransportAvailable() || emptyList<ExecClassData>().runCatching(::send).isFailure) {
+            Thread.sleep(500)
+        }
+        available.set(true)
     }
+
 }

@@ -105,6 +105,7 @@ kotlin {
         val configureNativeDependencies: KotlinSourceSet.() -> Unit = {
             dependencies {
                 implementation("org.jetbrains.kotlinx:kotlinx-serialization-protobuf:$kotlinxSerializationVersion")
+                implementation("com.benasher44:uuid:$uuidVersion")
                 implementation("io.ktor:ktor-utils:$ktorVersion")
                 implementation(project(":agent"))
                 implementation(project(":jvmapi"))

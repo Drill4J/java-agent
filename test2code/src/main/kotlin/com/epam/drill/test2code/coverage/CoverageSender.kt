@@ -19,11 +19,9 @@ import com.epam.drill.plugins.test2code.common.api.*
 import com.epam.drill.test2code.*
 import io.aesy.datasize.*
 import kotlinx.coroutines.*
-import kotlinx.serialization.protobuf.*
 import mu.*
 import java.math.*
 import java.text.*
-import java.util.*
 import java.util.concurrent.*
 
 interface CoverageSender {
@@ -88,18 +86,13 @@ class IntervalCoverageSender(
                 )
             }
             .chunked(0xffff)
-            .map { chunk -> CoverDataPart(data = chunk) }
-            .map { message ->
-                ProtoBuf.encodeToByteArray(CoverMessage.serializer(), message)
-            }
 
         if (coverageTransport.isAvailable()) {
-            val failedToSend = mutableListOf<ByteArray>()
+            val failedToSend = mutableListOf<List<ExecClassData>>()
 
-            val send = { message: ByteArray ->
-                val encoded = Base64.getEncoder().encodeToString(message)
+            val send = { message: List<ExecClassData> ->
                 try {
-                    coverageTransport.send(encoded)
+                    coverageTransport.send(message)
                 } catch (e: Exception) {
                     failedToSend.add(message)
                 }

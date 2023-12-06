@@ -17,8 +17,6 @@ package com.epam.drill.agent.configuration.jvm
 
 import com.epam.drill.agent.configuration.WsConfiguration
 import com.epam.drill.jvmapi.callNativeStringMethod
-import com.epam.drill.jvmapi.callNativeVoidMethod
-import com.epam.drill.jvmapi.callNativeVoidMethodWithString
 import com.epam.drill.jvmapi.gen.JNIEnv
 import com.epam.drill.jvmapi.gen.jobject
 import com.epam.drill.jvmapi.gen.jstring
@@ -27,16 +25,6 @@ import com.epam.drill.jvmapi.gen.jstring
 @CName("Java_com_epam_drill_agent_configuration_WsConfiguration_getAgentConfigHexString")
 fun getAgentConfigHexString(env: JNIEnv, thiz: jobject): jstring? =
     callNativeStringMethod(env, thiz, WsConfiguration::getAgentConfigHexString)
-
-@Suppress("UNUSED")
-@CName("Java_com_epam_drill_agent_configuration_WsConfiguration_setRequestPattern")
-fun setRequestPattern(env: JNIEnv, thiz: jobject, pattern: jstring) =
-    callNativeVoidMethodWithString(env, thiz, WsConfiguration::setRequestPattern, pattern)
-
-@Suppress("UNUSED")
-@CName("Java_com_epam_drill_agent_configuration_WsConfiguration_generateAgentConfigInstanceId")
-fun generateAgentConfigInstanceId(env: JNIEnv, thiz: jobject) =
-    callNativeVoidMethod(env, thiz, WsConfiguration::generateAgentConfigInstanceId)
 
 @Suppress("UNUSED")
 @CName("Java_com_epam_drill_agent_configuration_WsConfiguration_getSslTruststore")
@@ -52,3 +40,13 @@ fun getSslTruststorePassword(env: JNIEnv, thiz: jobject) =
 @CName("Java_com_epam_drill_agent_configuration_WsConfiguration_getDrillInstallationDir")
 fun getDrillInstallationDir(env: JNIEnv, thiz: jobject) =
     callNativeStringMethod(env, thiz, WsConfiguration::getDrillInstallationDir)
+
+@Suppress("UNUSED")
+@CName("Java_com_epam_drill_agent_configuration_WsConfiguration_getAdminAddress")
+fun getAdminAddress(env: JNIEnv, thiz: jobject) =
+    callNativeStringMethod(env, thiz, WsConfiguration::getAdminAddress)
+
+@Suppress("UNUSED")
+@CName("Java_com_epam_drill_agent_configuration_WsConfiguration_getInstanceId")
+fun getInstanceId(env: JNIEnv, thiz: jobject) =
+    callNativeStringMethod(env, thiz, WsConfiguration::getInstanceId)

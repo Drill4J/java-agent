@@ -19,15 +19,16 @@ import mu.*
 import java.math.*
 import java.util.*
 import java.util.concurrent.*
+import com.epam.drill.plugins.test2code.common.api.*
 
 
 interface RetentionQueue {
-    fun addAll(data: Sequence<ByteArray>)
-    fun flush(): Sequence<ByteArray>
+    fun addAll(data: Sequence<List<ExecClassData>>)
+    fun flush(): Sequence<List<ExecClassData>>
 }
 
 class InMemoryRetentionQueue(
-    private var queue: Queue<ByteArray> = ConcurrentLinkedQueue(),
+    private var queue: Queue<List<ExecClassData>> = ConcurrentLinkedQueue(),
     private val totalSizeByteLimit: BigInteger,
     private val logger: KLogger = KotlinLogging.logger("com.epam.drill.test2code.coverage.InMemoryRetentionQueue")
 ) : RetentionQueue {
@@ -43,7 +44,7 @@ class InMemoryRetentionQueue(
 
     private var totalBytes: BigInteger = BigInteger.ZERO
 
-    override fun addAll(data: Sequence<ByteArray>) {
+    override fun addAll(data: Sequence<List<ExecClassData>>) {
         data.forEach { bytes ->
             if (totalBytes.plus(BigInteger.valueOf(bytes.size.toLong())) > totalSizeByteLimit) {
                 logger.info { "Cannot add element of size ${bytes.size}. Current usage ${totalBytes}/${totalSizeByteLimit} bytes" }
@@ -58,7 +59,7 @@ class InMemoryRetentionQueue(
         }
     }
 
-    override fun flush(): Sequence<ByteArray> {
+    override fun flush(): Sequence<List<ExecClassData>> {
         val bytes = queue.toList().asSequence()
         queue.clear()
         totalBytes = BigInteger.ZERO

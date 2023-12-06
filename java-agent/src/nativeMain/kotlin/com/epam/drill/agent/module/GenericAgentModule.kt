@@ -19,10 +19,10 @@ import com.epam.drill.*
 import com.epam.drill.agent.*
 import com.epam.drill.common.*
 import com.epam.drill.common.agent.*
+import com.epam.drill.common.agent.transport.*
 import com.epam.drill.jvmapi.*
 import com.epam.drill.jvmapi.gen.*
 import kotlinx.cinterop.*
-import mu.KotlinLogging
 
 open class GenericAgentModule(
     pluginId: String,
@@ -33,28 +33,6 @@ open class GenericAgentModule(
     NopAgentContext,
     NopPluginSender
 ) {
-
-    private val logger = KotlinLogging.logger(GenericAgentModule::class.qualifiedName!!)
-    private val pluginApiClassName = pluginApiClass.signature()
-        .removePrefix("L").removeSuffix(";").replace("<L", "<").replace(";>", ">").replace("/", ".")
-
-    override fun doRawAction(rawAction: String): Any {
-        logger.debug { "doRawAction: $rawAction" }
-        return CallObjectMethodA(
-            userPlugin,
-            GetMethodID(pluginApiClass, AgentModule<*>::doRawAction.name, "(Ljava/lang/String;)Ljava/lang/Object;"),
-            nativeHeap.allocArray(1L) {
-                l = NewStringUTF(rawAction)
-            }
-        )!!
-    }
-
-    override fun on() {
-        logger.debug { "on(), pluginApiClass=$pluginApiClassName" }
-        CallVoidMethodA(
-            userPlugin, GetMethodID(pluginApiClass, AgentModule<*>::on.name, "()V"), null
-        )
-    }
 
     override fun load() {
         CallVoidMethodA(
@@ -85,8 +63,6 @@ open class GenericAgentModule(
         }
     }
 
-    override fun doAction(action: Any) = TODO()
-    override fun parseAction(rawAction: String) = TODO()
 }
 
 private object NopAgentContext : AgentContext {
@@ -94,6 +70,12 @@ private object NopAgentContext : AgentContext {
     override fun invoke(): String? = null
 }
 
-private object NopPluginSender : Sender {
-    override fun send(pluginId: String, message: String) = Unit
+private object NopPluginSender : AgentMessageSender {
+    override fun <T : AgentMessage> send(destination: AgentMessageDestination, message: T) = NopResponseStatus()
+    override fun isTransportAvailable() = false
+}
+
+private class NopResponseStatus: ResponseStatus {
+    override fun isSuccess() = false
+    override fun getStatusObject() = null
 }

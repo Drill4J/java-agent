@@ -15,6 +15,7 @@
  */
 package com.epam.drill.test2code
 
+import kotlin.concurrent.thread
 import kotlinx.serialization.json.Json
 import java.util.concurrent.ConcurrentHashMap
 import mu.KotlinLogging
@@ -23,13 +24,17 @@ import com.epam.drill.common.classloading.EntitySource
 import com.epam.drill.common.agent.AgentModule
 import com.epam.drill.common.agent.AgentContext
 import com.epam.drill.common.agent.Instrumenter
-import com.epam.drill.common.agent.Sender
+import com.epam.drill.common.agent.transport.AgentMessage
+import com.epam.drill.common.agent.transport.AgentMessageDestination
+import com.epam.drill.common.agent.transport.AgentMessageSender
+import com.epam.drill.plugins.test2code.common.api.AgentAction
+import com.epam.drill.plugins.test2code.common.api.AstEntity
 import com.epam.drill.test2code.classloading.ClassLoadersScanner
 import com.epam.drill.test2code.classparsing.parseAstClass
-import com.epam.drill.plugins.test2code.common.api.*
+import com.epam.drill.plugins.test2code.common.transport.ClassMetadata
 import com.epam.drill.test2code.coverage.*
 
-const val DRILL_TEST_ID_HEADER = "drill-test-id"
+private const val DRILL_TEST_ID_HEADER = "drill-test-id"
 
 /**
  * Service for managing the plugin on the agent side
@@ -38,7 +43,7 @@ const val DRILL_TEST_ID_HEADER = "drill-test-id"
 class Test2Code(
     id: String,
     agentContext: AgentContext,
-    sender: Sender
+    sender: AgentMessageSender
 ) : AgentModule<AgentAction>(id, agentContext, sender), Instrumenter, ClassScanner {
 
     internal val logger = KotlinLogging.logger {}
@@ -46,7 +51,7 @@ class Test2Code(
     internal val json = Json { encodeDefaults = true }
 
     private val coverageManager =
-        DrillCoverageManager.apply { setCoverageTransport(WebsocketCoverageTransport(id, sender)) }
+        DrillCoverageManager.apply { setCoverageTransport(HttpCoverageTransport(sender)) }
 
     private val instrumenter = DrillInstrumenter(coverageManager, coverageManager)
 
@@ -55,18 +60,12 @@ class Test2Code(
 
     override fun onConnect() {}
 
-    /**
-     * Switch on the plugin
-     * @features Agent registration
-     */
-    override fun on() {
-        val initInfo = InitInfo(message = "Initializing plugin $id...")
-        sendMessage(initInfo)
-        logger.info { "Initializing plugin $id..." }
-
-        scanAndSendMetadataClasses()
-        sendMessage(Initialized(msg = "Initialized"))
-        logger.info { "Plugin $id initialized!" }
+    init {
+        logger.info { "init: Waiting for transport availability for class metadata scanning" }
+        thread {
+            while(!sender.isTransportAvailable()) Thread.sleep(500)
+            scanAndSendMetadataClasses()
+        }
     }
 
     override fun instrument(
@@ -79,10 +78,6 @@ class Test2Code(
         coverageManager.startSendingCoverage()
         logger.info { "Plugin $id initialized!" }
     }
-
-    // TODO remove after merging to java-agent repo
-    override fun doAction(action: AgentAction) {}
-
 
     /**
      * When the application under test receive a request from the caller
@@ -109,10 +104,6 @@ class Test2Code(
         coverageManager.stopRecording(sessionId, testId)
     }
 
-    override fun parseAction(
-        rawAction: String,
-    ): AgentAction = json.decodeFromString(AgentAction.serializer(), rawAction)
-
     override fun scanClasses(consumer: (Set<EntitySource>) -> Unit) {
         JvmModuleConfiguration.waitClassScanning()
         val packagePrefixes = JvmModuleConfiguration.getPackagePrefixes().split(";")
@@ -129,17 +120,25 @@ class Test2Code(
         scanClasses { classes ->
             classes
                 .map { parseAstClass(it.entityName(), it.bytes()) }
-                .let(::InitDataPart)
-                .also(::sendMessage)
-                .also { classCount += it.astEntities.size }
+                .also(::sendClassMetadata)
+                .also { classCount += it.size }
         }
+        sendClassMetadataComplete()
         logger.info { "Scanned $classCount classes" }
     }
 
-    private fun sendMessage(message: CoverMessage) {
-        val messageStr = json.encodeToString(CoverMessage.serializer(), message)
-        logger.debug { "Send message $messageStr" }
-        send(messageStr)
+    private val classMetadataDestination = AgentMessageDestination("POST", "class-metadata")
+    private val classMetadataCompleteDestination = AgentMessageDestination("POST", "class-metadata/complete")
+
+    private fun sendClassMetadata(astEntities: List<AstEntity>) {
+        val message = ClassMetadata(astEntities = astEntities)
+        logger.debug { "sendClassMetadata: Sending class metadata: $message" }
+        sender.send(classMetadataDestination, message)
+    }
+
+    private fun sendClassMetadataComplete() {
+        logger.debug { "sendClassMetadataComplete: Sending class metadata complete message" }
+        sender.send(classMetadataDestination, AgentMessage())
     }
 
 }
