@@ -16,6 +16,7 @@
 package com.epam.drill.test2code.coverage
 
 import com.epam.drill.common.agent.*
+import com.epam.drill.common.agent.transport.AgentMessageSender
 import com.epam.drill.jacoco.*
 import com.nhaarman.mockitokotlin2.*
 import kotlinx.coroutines.*
@@ -27,7 +28,7 @@ import kotlin.random.Random
 
 class CoverageRetentionTest {
 
-    private lateinit var sender: Sender
+    private lateinit var sender: AgentMessageSender
     private lateinit var coverageSender: CoverageSender
     private lateinit var inMemoryRetentionQueue: InMemoryRetentionQueue
     private lateinit var coverageTransport: CoverageTransport
@@ -36,7 +37,7 @@ class CoverageRetentionTest {
     fun setUp() {
         sender = mock()
         inMemoryRetentionQueue = InMemoryRetentionQueue(totalSizeByteLimit = BigInteger.valueOf(375))
-        coverageTransport = spy(WebsocketCoverageTransport(UUID.randomUUID().toString(), sender))
+        coverageTransport = spy(HttpCoverageTransport(sender))
         coverageSender = IntervalCoverageSender(intervalMs = 2500, inMemoryRetentionQueue = inMemoryRetentionQueue) {
             sequenceOf(
                 ExecDatum(
