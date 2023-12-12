@@ -21,6 +21,11 @@ import org.apache.bcel.util.*
 import java.io.*
 import java.util.concurrent.*
 
+class CodeToStringException(
+    val opcode: Short = -1,
+    val error: java.lang.Exception
+) : Exception()
+
 private val ldcInstructions = listOf(
     Const.LDC_W,
     Const.LDC2_W,
@@ -97,211 +102,215 @@ private fun codeToString(
         // Both cases have a field default_offset in common
         default_offset = bytes.readInt()
     }
-    when (opcode) {
-        Const.TABLESWITCH -> {
-            low = bytes.readInt()
-            high = bytes.readInt()
-            offset = bytes.index - 12 - no_pad_bytes - 1
-            default_offset += offset
-            buf.append("\tdefault = ").append(default_offset).append(", low = ").append(low)
-                .append(", high = ").append(high).append("(")
-            jump_table = IntArray(high - low + 1)
-            var i = 0
-            while (i < jump_table.size) {
-                jump_table[i] = offset + bytes.readInt()
-                buf.append(jump_table[i])
-                if (i < jump_table.size - 1) {
-                    buf.append(", ")
+    try {
+        when (opcode) {
+            Const.TABLESWITCH -> {
+                low = bytes.readInt()
+                high = bytes.readInt()
+                offset = bytes.index - 12 - no_pad_bytes - 1
+                default_offset += offset
+                buf.append("\tdefault = ").append(default_offset).append(", low = ").append(low)
+                    .append(", high = ").append(high).append("(")
+                jump_table = IntArray(high - low + 1)
+                var i = 0
+                while (i < jump_table.size) {
+                    jump_table[i] = offset + bytes.readInt()
+                    buf.append(jump_table[i])
+                    if (i < jump_table.size - 1) {
+                        buf.append(", ")
+                    }
+                    i++
                 }
-                i++
+                buf.append(")")
             }
-            buf.append(")")
-        }
 
-        Const.LOOKUPSWITCH -> {
-            npairs = bytes.readInt()
-            offset = bytes.index - 8 - no_pad_bytes - 1
-            match = IntArray(npairs)
-            jump_table = IntArray(npairs)
-            default_offset += offset
-            buf.append("\tdefault = ").append(default_offset).append(", npairs = ").append(
-                npairs
-            ).append(" (")
-            var i = 0
-            while (i < npairs) {
-                match[i] = bytes.readInt()
-                jump_table[i] = offset + bytes.readInt()
-                buf.append("(").append(match[i]).append(", ").append(jump_table[i]).append(")")
-                if (i < npairs - 1) {
-                    buf.append(", ")
+            Const.LOOKUPSWITCH -> {
+                npairs = bytes.readInt()
+                offset = bytes.index - 8 - no_pad_bytes - 1
+                match = IntArray(npairs)
+                jump_table = IntArray(npairs)
+                default_offset += offset
+                buf.append("\tdefault = ").append(default_offset).append(", npairs = ").append(
+                    npairs
+                ).append(" (")
+                var i = 0
+                while (i < npairs) {
+                    match[i] = bytes.readInt()
+                    jump_table[i] = offset + bytes.readInt()
+                    buf.append("(").append(match[i]).append(", ").append(jump_table[i]).append(")")
+                    if (i < npairs - 1) {
+                        buf.append(", ")
+                    }
+                    i++
                 }
-                i++
+                buf.append(")")
             }
-            buf.append(")")
-        }
 
-        Const.GOTO, Const.IFEQ, Const.IFGE, Const.IFGT,
-        Const.IFLE, Const.IFLT, Const.JSR, Const.IFNE,
-        Const.IFNONNULL, Const.IFNULL, Const.IF_ACMPEQ,
-        Const.IF_ACMPNE, Const.IF_ICMPEQ, Const.IF_ICMPGE,
-        Const.IF_ICMPGT, Const.IF_ICMPLE, Const.IF_ICMPLT,
-        Const.IF_ICMPNE -> bytes.readShort()
+            Const.GOTO, Const.IFEQ, Const.IFGE, Const.IFGT,
+            Const.IFLE, Const.IFLT, Const.JSR, Const.IFNE,
+            Const.IFNONNULL, Const.IFNULL, Const.IF_ACMPEQ,
+            Const.IF_ACMPNE, Const.IF_ICMPEQ, Const.IF_ICMPGE,
+            Const.IF_ICMPGT, Const.IF_ICMPLE, Const.IF_ICMPLT,
+            Const.IF_ICMPNE -> bytes.readShort()
 
-        Const.GOTO_W, Const.JSR_W -> bytes.readInt()
-        Const.ALOAD, Const.ASTORE, Const.DLOAD, Const.DSTORE, Const.FLOAD, Const.FSTORE, Const.ILOAD, Const.ISTORE, Const.LLOAD, Const.LSTORE, Const.RET -> {
-            if (wide) {
-                vindex = bytes.readUnsignedShort()
-                wide = false // Clear flag
-            } else {
-                vindex = bytes.readUnsignedByte()
-            }
-            buf.append("\t\t%").append(vindex)
-        }
-
-        Const.WIDE -> {
-            wide = true
-            buf.append("\t(wide)")
-        }
-
-        Const.NEWARRAY -> buf.append("\t\t<").append(Const.getTypeName(bytes.readByte().toInt())).append(">")
-        Const.GETFIELD, Const.GETSTATIC, Const.PUTFIELD, Const.PUTSTATIC -> {
-            index = bytes.readUnsignedShort()
-            buf.append("\t\t").append(
-                constant_pool.constantToString(index, Const.CONSTANT_Fieldref)
-            ).append(
-                if (verbose) " ($index)" else ""
-            )
-        }
-
-        Const.NEW, Const.CHECKCAST -> {
-            buf.append("\t")
-            index = bytes.readUnsignedShort()
-            buf.append("\t<").append(
-                constant_pool.constantToString(index, Const.CONSTANT_Class)
-            )
-                .append(">").append(if (verbose) " ($index)" else "")
-        }
-
-        Const.INSTANCEOF -> {
-            index = bytes.readUnsignedShort()
-            buf.append("\t<").append(
-                constant_pool.constantToString(index, Const.CONSTANT_Class)
-            )
-                .append(">").append(if (verbose) " ($index)" else "")
-        }
-
-        Const.INVOKESPECIAL, Const.INVOKESTATIC -> {
-            index = bytes.readUnsignedShort()
-            val c = constant_pool.getConstant(index, Constant::class.java)
-            // With Java8 operand may be either a CONSTANT_Methodref
-            // or a CONSTANT_InterfaceMethodref.   (markro)
-            buf.append("\t").append(
-                constant_pool.constantToString(index, c.tag)
-            )
-                .append(if (verbose) " ($index)" else "")
-        }
-
-        Const.INVOKEVIRTUAL -> {
-            index = bytes.readUnsignedShort()
-            buf.append("\t").append(
-                constant_pool.constantToString(index, Const.CONSTANT_Methodref)
-            )
-                .append(if (verbose) " ($index)" else "")
-        }
-
-        Const.INVOKEINTERFACE -> {
-            index = bytes.readUnsignedShort()
-            val nargs = bytes.readUnsignedByte() // historical, redundant
-            buf.append("\t").append(
-                constant_pool
-                    .constantToString(index, Const.CONSTANT_InterfaceMethodref)
-            )
-                .append(if (verbose) " ($index)\t" else "").append(nargs).append("\t")
-                .append(bytes.readUnsignedByte()) // Last byte is a reserved space
-        }
-        /*
-        * Const.INVOKEDYNAMIC indicates lambda function call
-        * Lambda function bodies do not contribute to method hash;
-        * Thus it is skipped
-        */
-        Const.INVOKEDYNAMIC -> {
-            bytes.readUnsignedShort() // read required to allow further stream processing
-        }
-
-        Const.LDC_W, Const.LDC2_W -> {
-            index = bytes.readUnsignedShort()
-
-            buf.append("\t\t").append(
-                constant_pool.constantToString(
-                    index, constant_pool.getConstant(index, Constant::class.java)
-                        .tag
-                )
-            ).append(if (verbose) " ($index)" else "")
-        }
-
-        Const.LDC -> {
-            index = bytes.readUnsignedByte()
-            buf.append("\t\t").append(
-                constant_pool.constantToString(
-                    index, constant_pool.getConstant(index, Constant::class.java)
-                        .tag
-                )
-            ).append(if (verbose) " ($index)" else "")
-        }
-
-        Const.ANEWARRAY -> {
-            index = bytes.readUnsignedShort()
-            buf.append("\t\t<").append(
-                Utility.compactClassName(
-                    constant_pool.getConstantString(
-                        index,
-                        Const.CONSTANT_Class
-                    ), false
-                )
-            ).append(">").append(
-                if (verbose) " ($index)" else ""
-            )
-        }
-
-        Const.MULTIANEWARRAY -> {
-            index = bytes.readUnsignedShort()
-            val dimensions = bytes.readUnsignedByte()
-            buf.append("\t<").append(
-                Utility.compactClassName(
-                    constant_pool.getConstantString(
-                        index,
-                        Const.CONSTANT_Class
-                    ), false
-                )
-            ).append(">\t").append(dimensions)
-                .append(if (verbose) " ($index)" else "")
-        }
-
-        Const.IINC -> {
-            if (wide) {
-                vindex = bytes.readUnsignedShort()
-                constant = bytes.readShort().toInt()
-                wide = false
-            } else {
-                vindex = bytes.readUnsignedByte()
-                constant = bytes.readByte().toInt()
-            }
-            buf.append("\t\t%").append(vindex).append("\t").append(constant)
-        }
-
-        else -> if (Const.getNoOfOperands(opcode.toInt()) > 0) {
-            var i = 0
-            while (i < Const.getOperandTypeCount(opcode.toInt())) {
-                buf.append("\t\t")
-                when (Const.getOperandType(opcode.toInt(), i)) {
-                    Const.T_BYTE.toShort() -> buf.append(bytes.readByte().toInt())
-                    Const.T_SHORT.toShort() -> buf.append(bytes.readShort().toInt())
-                    Const.T_INT.toShort() -> buf.append(bytes.readInt())
-                    else -> throw IllegalStateException("Unreachable default case reached!")
+            Const.GOTO_W, Const.JSR_W -> bytes.readInt()
+            Const.ALOAD, Const.ASTORE, Const.DLOAD, Const.DSTORE, Const.FLOAD, Const.FSTORE, Const.ILOAD, Const.ISTORE, Const.LLOAD, Const.LSTORE, Const.RET -> {
+                if (wide) {
+                    vindex = bytes.readUnsignedShort()
+                    wide = false // Clear flag
+                } else {
+                    vindex = bytes.readUnsignedByte()
                 }
-                i++
+                buf.append("\t\t%").append(vindex)
+            }
+
+            Const.WIDE -> {
+                wide = true
+                buf.append("\t(wide)")
+            }
+
+            Const.NEWARRAY -> buf.append("\t\t<").append(Const.getTypeName(bytes.readByte().toInt())).append(">")
+            Const.GETFIELD, Const.GETSTATIC, Const.PUTFIELD, Const.PUTSTATIC -> {
+                index = bytes.readUnsignedShort()
+                buf.append("\t\t").append(
+                    constant_pool.constantToString(index, Const.CONSTANT_Fieldref)
+                ).append(
+                    if (verbose) " ($index)" else ""
+                )
+            }
+
+            Const.NEW, Const.CHECKCAST -> {
+                buf.append("\t")
+                index = bytes.readUnsignedShort()
+                buf.append("\t<").append(
+                    constant_pool.constantToString(index, Const.CONSTANT_Class)
+                )
+                    .append(">").append(if (verbose) " ($index)" else "")
+            }
+
+            Const.INSTANCEOF -> {
+                index = bytes.readUnsignedShort()
+                buf.append("\t<").append(
+                    constant_pool.constantToString(index, Const.CONSTANT_Class)
+                )
+                    .append(">").append(if (verbose) " ($index)" else "")
+            }
+
+            Const.INVOKESPECIAL, Const.INVOKESTATIC -> {
+                index = bytes.readUnsignedShort()
+                val c = constant_pool.getConstant(index, Constant::class.java)
+                // With Java8 operand may be either a CONSTANT_Methodref
+                // or a CONSTANT_InterfaceMethodref.   (markro)
+                buf.append("\t").append(
+                    constant_pool.constantToString(index, c.tag)
+                )
+                    .append(if (verbose) " ($index)" else "")
+            }
+
+            Const.INVOKEVIRTUAL -> {
+                index = bytes.readUnsignedShort()
+                buf.append("\t").append(
+                    constant_pool.constantToString(index, Const.CONSTANT_Methodref)
+                )
+                    .append(if (verbose) " ($index)" else "")
+            }
+
+            Const.INVOKEINTERFACE -> {
+                index = bytes.readUnsignedShort()
+                val nargs = bytes.readUnsignedByte() // historical, redundant
+                buf.append("\t").append(
+                    constant_pool
+                        .constantToString(index, Const.CONSTANT_InterfaceMethodref)
+                )
+                    .append(if (verbose) " ($index)\t" else "").append(nargs).append("\t")
+                    .append(bytes.readUnsignedByte()) // Last byte is a reserved space
+            }
+            /*
+            * Const.INVOKEDYNAMIC indicates lambda function call
+            * Lambda function bodies do not contribute to method hash;
+            * Thus it is skipped
+            */
+            Const.INVOKEDYNAMIC -> {
+                bytes.readUnsignedShort() // read required to allow further stream processing
+            }
+
+            Const.LDC_W, Const.LDC2_W -> {
+                index = bytes.readUnsignedShort()
+
+                buf.append("\t\t").append(
+                    constant_pool.constantToString(
+                        index, constant_pool.getConstant(index, Constant::class.java)
+                            .tag
+                    )
+                ).append(if (verbose) " ($index)" else "")
+            }
+
+            Const.LDC -> {
+                index = bytes.readUnsignedByte()
+                buf.append("\t\t").append(
+                    constant_pool.constantToString(
+                        index, constant_pool.getConstant(index, Constant::class.java)
+                            .tag
+                    )
+                ).append(if (verbose) " ($index)" else "")
+            }
+
+            Const.ANEWARRAY -> {
+                index = bytes.readUnsignedShort()
+                buf.append("\t\t<").append(
+                    Utility.compactClassName(
+                        constant_pool.getConstantString(
+                            index,
+                            Const.CONSTANT_Class
+                        ), false
+                    )
+                ).append(">").append(
+                    if (verbose) " ($index)" else ""
+                )
+            }
+
+            Const.MULTIANEWARRAY -> {
+                index = bytes.readUnsignedShort()
+                val dimensions = bytes.readUnsignedByte()
+                buf.append("\t<").append(
+                    Utility.compactClassName(
+                        constant_pool.getConstantString(
+                            index,
+                            Const.CONSTANT_Class
+                        ), false
+                    )
+                ).append(">\t").append(dimensions)
+                    .append(if (verbose) " ($index)" else "")
+            }
+
+            Const.IINC -> {
+                if (wide) {
+                    vindex = bytes.readUnsignedShort()
+                    constant = bytes.readShort().toInt()
+                    wide = false
+                } else {
+                    vindex = bytes.readUnsignedByte()
+                    constant = bytes.readByte().toInt()
+                }
+                buf.append("\t\t%").append(vindex).append("\t").append(constant)
+            }
+
+            else -> if (Const.getNoOfOperands(opcode.toInt()) > 0) {
+                var i = 0
+                while (i < Const.getOperandTypeCount(opcode.toInt())) {
+                    buf.append("\t\t")
+                    when (Const.getOperandType(opcode.toInt(), i)) {
+                        Const.T_BYTE.toShort() -> buf.append(bytes.readByte().toInt())
+                        Const.T_SHORT.toShort() -> buf.append(bytes.readShort().toInt())
+                        Const.T_INT.toShort() -> buf.append(bytes.readInt())
+                        else -> throw IllegalStateException("Unreachable default case reached!")
+                    }
+                    i++
+                }
             }
         }
+    } catch (ex: Exception) {
+        throw CodeToStringException(opcode = opcode, error = ex)
     }
     return buf.toString()
 }
