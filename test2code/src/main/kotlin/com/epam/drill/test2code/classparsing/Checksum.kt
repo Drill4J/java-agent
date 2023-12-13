@@ -45,7 +45,7 @@ private fun calculateChecksum(
 ): String {
     try {
         val codeText = method.code.run {
-            codeToString(code, constantPool, 0, length, false)
+            codeToString(code, constantPool, length, false)
         }
         return CRC64.classId(codeText.toByteArray()).toString(Character.MAX_RADIX)
     } catch (ex: CodeToStringException) {

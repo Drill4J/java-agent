@@ -39,16 +39,12 @@ var wide = false
 internal fun codeToString(
     code: ByteArray,
     constant_pool: ConstantPool,
-    index: Int,
     length: Int,
     verbose: Boolean
 ): String {
     val buf = StringBuilder(code.size * 20) // Should be sufficient // CHECKSTYLE IGNORE MagicNumber
     try {
         ByteSequence(code).use { byteStream ->
-            for (i in 0 until index) {
-                codeToString(byteStream, constant_pool, verbose)
-            }
             var i = 0
             while (byteStream.available() > 0) {
                 if (length < 0 || i < length) {
