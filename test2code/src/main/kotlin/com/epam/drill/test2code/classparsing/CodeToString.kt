@@ -19,7 +19,6 @@ import org.apache.bcel.*
 import org.apache.bcel.classfile.*
 import org.apache.bcel.util.*
 import java.io.*
-import java.util.concurrent.*
 
 class CodeToStringException(
     val opcode: Short = -1,
