@@ -16,10 +16,13 @@
 
 package com.epam.drill.test2code.classparsing
 
+import mu.KotlinLogging
 import org.apache.bcel.classfile.ClassParser
 import org.apache.bcel.classfile.Method
 import org.jacoco.core.internal.data.CRC64
 import java.io.ByteArrayInputStream
+
+val logger = KotlinLogging.logger { }
 
 internal fun calculateMethodsChecksums(
     classBytes: ByteArray,
@@ -29,16 +32,24 @@ internal fun calculateMethodsChecksums(
     .methods
 //    Filter needed for skipping interfaces, which have no opcodes for calculating checksum
     .filter { it.code != null }
-    .associate { method -> method.classSignature() to calculateChecksum(method) }
+    .map { method -> method.classSignature() to calculateChecksum(method, className) }
+    .filter { it.second != "" }
+    .associate { it.first to it.second }
 
 private fun Method.classSignature() =
     "${name}/${argumentTypes.asSequence().map { type -> type.toString() }.joinToString()}/${returnType}"
 
 private fun calculateChecksum(
     method: Method,
+    className: String
 ): String {
-    val codeText = method.code.run {
-        codeToString(code, constantPool, 0, length, false)
+    try {
+        val codeText = method.code.run {
+            codeToString(code, constantPool, length, false)
+        }
+        return CRC64.classId(codeText.toByteArray()).toString(Character.MAX_RADIX)
+    } catch (ex: CodeToStringException) {
+        logger.error { "Failed to calculate method checksum. Class: $className. Method: ${method.name}. Opcode: ${ex.opcode}. Error: ${ex.error}. Stacktrace: ${ex.stackTraceToString()}" }
+        return ""
     }
-    return CRC64.classId(codeText.toByteArray()).toString(Character.MAX_RADIX)
 }
