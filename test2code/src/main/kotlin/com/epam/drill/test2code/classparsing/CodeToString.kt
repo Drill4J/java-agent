@@ -34,6 +34,7 @@ private val ldcInstructions = listOf(
     Const.LDC2_W_QUICK
 )
 
+var wide = false
 
 internal fun codeToString(
     code: ByteArray,
@@ -82,7 +83,6 @@ private fun codeToString(
     val jump_table: IntArray
     var no_pad_bytes = 0
     val offset: Int
-    var wide = false
     val instruction = opcode.takeIf { it !in ldcInstructions } ?: Const.LDC
     val buf = java.lang.StringBuilder(Const.getOpcodeName(instruction.toInt()))
     /* Special case: Skip (0-3) padding bytes, i.e., the
