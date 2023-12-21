@@ -44,18 +44,10 @@ dependencies {
     implementation("org.jacoco:org.jacoco.core:$jacocoVersion")
     implementation("org.apache.bcel:bcel:$bcelVersion")
     implementation("io.github.microutils:kotlin-logging-jvm:$microutilsLoggingVersion")
-    implementation("io.aesy:datasize:1.0.0")
 
     implementation(project(":jacoco"))
     implementation(project(":common"))
     implementation(project(":test2code-common"))
-
-    testImplementation("junit:junit:4.13.1")
-    testImplementation("org.junit.jupiter:junit-jupiter:5.7.1")
-    testImplementation("org.mockito:mockito-core:3.12.4")
-    testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.5.2")
-    testImplementation("com.nhaarman.mockitokotlin2:mockito-kotlin:2.2.0")
-
 }
 
 kotlin.sourceSets.all {

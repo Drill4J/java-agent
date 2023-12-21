@@ -71,11 +71,11 @@ private object NopAgentContext : AgentContext {
 }
 
 private object NopPluginSender : AgentMessageSender {
-    override fun <T : AgentMessage> send(destination: AgentMessageDestination, message: T) = NopResponseStatus()
-    override fun isTransportAvailable() = false
+    override val available: Boolean = false
+    override fun send(destination: AgentMessageDestination, message: AgentMessage) = NopResponseStatus()
 }
 
 private class NopResponseStatus: ResponseStatus {
-    override fun isSuccess() = false
-    override fun getStatusObject() = null
+    override val success = false
+    override val statusObject = null
 }

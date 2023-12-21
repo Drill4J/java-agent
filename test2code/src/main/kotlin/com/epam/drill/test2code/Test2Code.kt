@@ -47,26 +47,14 @@ class Test2Code(
 ) : AgentModule<AgentAction>(id, agentContext, sender), Instrumenter, ClassScanner {
 
     internal val logger = KotlinLogging.logger {}
-
     internal val json = Json { encodeDefaults = true }
 
-    private val coverageManager =
-        DrillCoverageManager.apply { setCoverageTransport(HttpCoverageTransport(sender)) }
-
+    private val coverageManager = DrillCoverageManager.apply { setAgentMessageSender(sender) }
     private val instrumenter = DrillInstrumenter(coverageManager, coverageManager)
-
     //TODO remove after admin refactoring
     private val sessions = ConcurrentHashMap<String, Boolean>()
 
     override fun onConnect() {}
-
-    init {
-        logger.info { "init: Waiting for transport availability for class metadata scanning" }
-        thread {
-            while(!sender.isTransportAvailable()) Thread.sleep(500)
-            scanAndSendMetadataClasses()
-        }
-    }
 
     override fun instrument(
         className: String,
@@ -74,9 +62,12 @@ class Test2Code(
     ): ByteArray? = instrumenter.instrument(className, initialBytes)
 
     override fun load() {
-        logger.info { "Plugin $id: initializing..." }
-        coverageManager.startSendingCoverage()
-        logger.info { "Plugin $id initialized!" }
+        logger.info { "load: Waiting for transport availability for class metadata scanning" }
+        thread {
+            while(!sender.available) Thread.sleep(500)
+            scanAndSendMetadataClasses()
+            coverageManager.startSendingCoverage()
+        }
     }
 
     /**
@@ -138,7 +129,7 @@ class Test2Code(
 
     private fun sendClassMetadataComplete() {
         logger.debug { "sendClassMetadataComplete: Sending class metadata complete message" }
-        sender.send(classMetadataDestination, AgentMessage())
+        sender.send(classMetadataCompleteDestination, AgentMessage())
     }
 
 }

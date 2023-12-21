@@ -13,13 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.epam.drill.agent.transport
+package com.epam.drill.agent
 
 import com.epam.drill.jvmapi.callObjectVoidMethod
 
-object HttpAgentMessageSender {
+actual object JvmModuleMessageSender {
 
-    fun sendAgentInstance(): Unit =
-        callObjectVoidMethod(HttpAgentMessageSender::class, HttpAgentMessageSender::sendAgentInstance)
+    actual fun sendAgentConfig(): Unit =
+        callObjectVoidMethod(JvmModuleMessageSender::class, JvmModuleMessageSender::sendAgentConfig)
 
 }
