@@ -34,7 +34,7 @@ class IntervalCoverageSender(
     private val collectProbes: () -> Sequence<ExecDatum> = { emptySequence() }
 ) : CoverageSender {
     private val scheduledThreadPool = Executors.newSingleThreadScheduledExecutor()
-    private val destination = AgentMessageDestination("POST", "coverage-data")
+    private val destination = AgentMessageDestination("POST", "coverage")
     private val logger = KotlinLogging.logger {}
 
     override fun setAgentMessageSender(sender: AgentMessageSender) {

@@ -24,7 +24,7 @@ import com.epam.drill.jvmapi.gen.jobject
 import com.epam.drill.jvmapi.gen.jstring
 
 @Suppress("UNUSED")
-@CName("Java_com_epam_drill_agent_configuration_TransportConfiguration_getAgentConfigHexString")
+@CName("Java_com_epam_drill_agent_configuration_TransportConfiguration_getAgentConfigBytes")
 fun getAgentConfigBytes(env: JNIEnv, thiz: jobject): jbyteArray? =
     callNativeByteArrayMethod(env, thiz, TransportConfiguration::getAgentConfigBytes)
 
