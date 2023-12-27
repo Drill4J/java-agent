@@ -34,6 +34,6 @@ actual object TransportConfiguration {
 
     actual fun getCoverageRetentionLimit() = agentParameters.coverageRetentionLimit
 
-    actual fun getAdminAddress() = adminAddress.toString()
+    actual fun getAdminAddress() = adminAddress
 
 }

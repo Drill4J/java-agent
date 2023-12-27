@@ -19,11 +19,9 @@ import kotlin.native.concurrent.*
 import com.epam.drill.common.agent.configuration.*
 
 private val _requestPattern = AtomicReference<String?>(null).freeze()
-private val _adminAddress = AtomicReference<URL?>(null).freeze()
+private val _adminAddress = AtomicReference<String?>(null).freeze()
 private val _agentConfig = AtomicReference<AgentConfig?>(null).freeze()
 private val _agentParameters = AtomicReference(AgentParameters().freeze()).freeze()
-
-//val drillInstallationDir: String = drillInstallationDir()
 
 var requestPattern: String?
     get() = _requestPattern.value
@@ -31,8 +29,8 @@ var requestPattern: String?
         _requestPattern.value = value.freeze()
     }
 
-var adminAddress: URL?
-    get() = _adminAddress.value
+var adminAddress: String
+    get() = _adminAddress.value!!
     set(value) {
         _adminAddress.value = value.freeze()
     }

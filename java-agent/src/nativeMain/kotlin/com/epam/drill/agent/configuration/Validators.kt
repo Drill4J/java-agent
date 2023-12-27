@@ -27,8 +27,9 @@ fun ValidationBuilder<String>.validWsUrl(): Constraint<String> {
         "must have a valid WebSocket URL address, e.g. 'wss://localhost:8090', but was '{value}'"
     ) {
         try {
-            val url = URL(it)
-            WS_SCHEMES.contains(url.scheme)
+            WS_SCHEMES
+                .map { "$it://" }
+                .any(it::startsWith)
         } catch (parseException: RuntimeException) {
             false
         }

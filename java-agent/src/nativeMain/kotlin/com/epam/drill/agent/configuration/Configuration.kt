@@ -38,13 +38,15 @@ import platform.posix.O_RDONLY
 import platform.posix.close
 import platform.posix.open
 
-private val logger = KotlinLogging.logger("com.epam.drill.agent.configuration.Configuration")
 private const val DRILL_INSTALLATION_DIR_PARAM = "drillInstallationDir"
 private const val CONFIG_PATH_PARAM = "configPath"
+
+private val logger = KotlinLogging.logger("com.epam.drill.agent.configuration.Configuration")
+private val urlSchemeRegex = Regex("\\w+://(.*)")
 internal val pathSeparator = if (Platform.osFamily == OsFamily.WINDOWS) "\\" else "/"
 
 fun performInitialConfiguration(aa: AgentArguments) {
-    adminAddress = URL(aa.adminAddress!!)
+    adminAddress = aa.adminAddress!!
     agentConfig = AgentConfig(
         id = aa.agentId!!,
         instanceId = aa.instanceId,
@@ -139,7 +141,7 @@ fun idHeaderPairFromConfig(): Pair<String, String> = when (agentConfig.serviceGr
     else -> "drill-group-id" to agentConfig.serviceGroupId
 }
 
-fun retrieveAdminUrl() = adminAddress?.toUrlString(false).toString()
+fun retrieveAdminUrl() = urlSchemeRegex.matchEntire(adminAddress)!!.groupValues[1]
 
 fun convertToAgentArguments(args: String): AgentArguments {
     val commandLineParams = parseArguments(args)
@@ -177,9 +179,8 @@ fun validate(args: AgentArguments) {
 private fun addWsSchema(address: String?): String? {
     if (address == null) return null
     return try {
-        val url = URL(address)
-        if (url.scheme == null)
-            "wss://${address}"
+        if (!address.matches(urlSchemeRegex))
+            "https://${address}"
         else
             address
     } catch (ignore: RuntimeException) {
@@ -238,7 +239,7 @@ private fun getAgentPathCommand(): String? {
 
 internal fun parseAgentDirFromAgentPathCommand(agentPathCommand: String, pathSeparator: String = "/"): String? {
     val getPathSansExtension = { input: String? -> input?.run {
-        Regex("\\s*\"?(.+)(\\.so|\\.dll)").matchAt(this, 0)?.groups?.get(1)?.value
+        Regex("\\s*\"?(.+)(\\.so|\\.dll)").matchAt(this, 0)?.groupValues?.get(1)
     }}
     return agentPathCommand
         .split("-agentpath:")
