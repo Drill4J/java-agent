@@ -101,8 +101,8 @@ fun classFileLoadHook(
             }
         }
         val classSource = ClassSource(kClassName, classReader.superName ?: "", classBytes)
-        if ('$' !in kClassName && classSource.prefixMatches(agentConfig.packagesPrefixes.packagesPrefixes)) {
-            PluginStorage.values().filterIsInstance<InstrumentationAgentModule>().forEach { plugin ->
+        if ('$' !in kClassName && classSource.prefixMatches(agentConfig.packagesPrefixes)) {
+            JvmModuleStorage.values().filterIsInstance<InstrumentationAgentModule>().forEach { plugin ->
                 transformers += { bytes -> plugin.instrument(kClassName, bytes) }
             }
         }

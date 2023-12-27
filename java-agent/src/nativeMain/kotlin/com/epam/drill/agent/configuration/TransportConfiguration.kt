@@ -20,9 +20,7 @@ import com.epam.drill.common.agent.configuration.AgentConfig
 
 actual object TransportConfiguration {
 
-    actual fun getAgentConfigBytes() = agentConfig.copy(parameters = emptyMap()).run {
-        ProtoBuf.encodeToByteArray(AgentConfig.serializer(), this)
-    }
+    actual fun getAgentConfigBytes() = ProtoBuf.encodeToByteArray(AgentConfig.serializer(), agentConfig)
 
     actual fun getAgentId() = agentConfig.id
 

@@ -31,7 +31,7 @@ actual object JvmModuleLoader {
         callObjectAgentModuleMethodWithString(JvmModuleLoader::class, JvmModuleLoader::loadJvmModule, id).run {
             val moduleClass = NewGlobalRef(GetObjectClass(this))!!
             val moduleRef = NewGlobalRef(this)!!
-            InstrumentationAgentModule(id, moduleClass, moduleRef).also { PluginStorage.add(it) }
+            InstrumentationAgentModule(id, moduleClass, moduleRef).also { JvmModuleStorage.add(it) }
         }
 
 }

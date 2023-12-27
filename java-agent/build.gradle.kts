@@ -24,6 +24,7 @@ group = "com.epam.drill"
 version = rootProject.version
 
 val kotlinxSerializationVersion: String by parent!!.extra
+val kotlinxCollectionsVersion: String by parent!!.extra
 val kotlinxCoroutinesVersion: String by parent!!.extra
 val ktorVersion: String by parent!!.extra
 val javassistVersion: String by parent!!.extra
@@ -106,9 +107,11 @@ kotlin {
         }
         val configureNativeDependencies: KotlinSourceSet.() -> Unit = {
             dependencies {
+                implementation("org.jetbrains.kotlinx:kotlinx-collections-immutable:$kotlinxCollectionsVersion")
                 implementation("org.jetbrains.kotlinx:kotlinx-serialization-protobuf:$kotlinxSerializationVersion")
                 implementation("com.benasher44:uuid:$uuidVersion")
                 implementation("io.ktor:ktor-utils:$ktorVersion")
+                implementation(project(":interceptor-http"))
                 implementation(project(":agent"))
                 implementation(project(":jvmapi"))
                 implementation(project(":knasm"))

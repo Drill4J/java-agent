@@ -25,9 +25,7 @@ import com.epam.drill.agent.SYSTEM_CONFIG_PATH
 import com.epam.drill.agent.agentVersion
 import com.epam.drill.agent.configuration.serialization.SimpleMapDecoder
 import com.epam.drill.common.agent.configuration.AgentConfig
-import com.epam.drill.common.agent.configuration.AgentParameter
 import com.epam.drill.common.agent.configuration.AgentType
-import com.epam.drill.common.agent.configuration.PackagesPrefixes
 import com.epam.drill.jvmapi.callObjectIntMethod
 import com.epam.drill.jvmapi.callObjectStringMethod
 import com.epam.drill.jvmapi.callObjectVoidMethod
@@ -53,10 +51,9 @@ fun performInitialConfiguration(aa: AgentArguments) {
         agentVersion = agentVersion,
         buildVersion = aa.buildVersion!!,
         serviceGroupId = aa.groupId,
-        agentType = AgentType.JAVA,
-        parameters = aa.defaultParameters()
+        agentType = AgentType.JAVA
     )
-    updateAgentParameters(agentConfig.parameters, true)
+    updateAgentParameters(aa.defaultParameters(), true)
 }
 
 fun updateAgentParameters(parameters: Map<String, AgentParameter>, initialization: Boolean = false) {
@@ -134,7 +131,7 @@ fun updateJvmLoggingConfiguration() {
 }
 
 fun updatePackagePrefixesConfiguration() {
-    agentConfig = agentConfig.copy(packagesPrefixes = PackagesPrefixes(agentParameters.packagePrefixes.split(";")))
+    agentConfig = agentConfig.copy(packagesPrefixes = agentParameters.packagePrefixes.split(";"))
 }
 
 fun idHeaderPairFromConfig(): Pair<String, String> = when (agentConfig.serviceGroupId) {

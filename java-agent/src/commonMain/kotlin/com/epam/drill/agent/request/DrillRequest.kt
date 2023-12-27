@@ -15,19 +15,10 @@
  */
 package com.epam.drill.agent.request
 
-import com.epam.drill.agent.JvmModuleStorage
-import com.epam.drill.agent.module.GenericAgentModule
+import kotlinx.serialization.Serializable
 
-actual object RequestProcessor {
-
-    actual fun processServerRequest() {
-        plugins().forEach { it.processServerRequest() }
-    }
-
-    actual fun processServerResponse() {
-        plugins().forEach { it.processServerResponse() }
-    }
-
-    private fun plugins() = JvmModuleStorage.values().filterIsInstance<GenericAgentModule>()
-
-}
+@Serializable
+class DrillRequest(
+    val drillSessionId: String,
+    val headers: Map<String, String> = emptyMap()
+)

@@ -24,7 +24,7 @@ object JvmModuleConfiguration {
 
     private val logger = KotlinLogging.logger("com.epam.drill.agent.configuration.JvmModuleConfiguration")
 
-    fun getPackagePrefixes(): String = agentConfig.packagesPrefixes.packagesPrefixes.joinToString(";")
+    fun getPackagePrefixes(): String = agentConfig.packagesPrefixes.joinToString(";")
 
     fun getScanClassPath(): String = agentParameters.scanClassPath
 

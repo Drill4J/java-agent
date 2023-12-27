@@ -17,7 +17,6 @@ package com.epam.drill.agent.configuration
 
 import kotlinx.serialization.Serializable
 import mu.KotlinLoggingLevel
-import com.epam.drill.common.agent.configuration.AgentParameter
 
 @Serializable
 data class AgentArguments(

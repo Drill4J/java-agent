@@ -13,21 +13,21 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.epam.drill.agent.request
+package com.epam.drill.agent
 
-import com.epam.drill.agent.JvmModuleStorage
-import com.epam.drill.agent.module.GenericAgentModule
+import kotlinx.atomicfu.atomic
+import kotlinx.atomicfu.update
+import kotlinx.collections.immutable.persistentHashMapOf
+import com.epam.drill.common.agent.AgentModule
 
-actual object RequestProcessor {
+actual object JvmModuleStorage {
 
-    actual fun processServerRequest() {
-        plugins().forEach { it.processServerRequest() }
-    }
+    private val storage = atomic(persistentHashMapOf<String, AgentModule<*>>())
 
-    actual fun processServerResponse() {
-        plugins().forEach { it.processServerResponse() }
-    }
+    actual operator fun get(id: String) = storage.value.get(id)
 
-    private fun plugins() = JvmModuleStorage.values().filterIsInstance<GenericAgentModule>()
+    actual fun values(): Collection<AgentModule<*>> = storage.value.values
+
+    actual fun add(module: AgentModule<*>) = storage.update { it.put(module.id, module) }
 
 }
