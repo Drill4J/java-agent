@@ -68,11 +68,7 @@ kotlin {
     sourceSets {
         all {
             languageSettings.optIn("kotlin.ExperimentalStdlibApi")
-            languageSettings.optIn("kotlin.ExperimentalUnsignedTypes")
             languageSettings.optIn("kotlin.time.ExperimentalTime")
-            languageSettings.optIn("kotlinx.serialization.ExperimentalSerializationApi")
-            languageSettings.optIn("kotlinx.serialization.InternalSerializationApi")
-            languageSettings.optIn("io.ktor.utils.io.core.ExperimentalIoApi")
         }
         val commonMain by getting {
             kotlin.srcDir("src/commonGenerated/kotlin")
@@ -112,7 +108,7 @@ kotlin {
                 implementation("com.benasher44:uuid:$uuidVersion")
                 implementation("io.ktor:ktor-utils:$ktorVersion")
                 implementation(project(":interceptor-http"))
-                implementation(project(":agent-transport"))
+                implementation(project(":agent-config"))
                 implementation(project(":jvmapi"))
                 implementation(project(":knasm"))
                 implementation(project(":konform"))
