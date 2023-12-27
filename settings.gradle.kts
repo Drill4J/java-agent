@@ -37,7 +37,7 @@ val includeSharedLib: Settings.(String) -> Unit = {
 includeSharedLib("logging-native")
 includeSharedLib("logging")
 includeSharedLib("common")
-includeSharedLib("agent")
+includeSharedLib("agent-transport")
 includeSharedLib("jvmapi")
 includeSharedLib("knasm")
 includeSharedLib("drill-hook")

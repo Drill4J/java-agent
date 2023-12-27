@@ -100,7 +100,7 @@ kotlin {
                 implementation("org.javassist:javassist:$javassistVersion")
                 implementation("com.alibaba:transmittable-thread-local:$transmittableThreadLocalVersion")
                 implementation("io.aesy:datasize:$aesyDatasizeVersion")
-                implementation(project(":agent"))
+                implementation(project(":agent-transport"))
                 implementation(project(":http-clients-instrumentation"))
                 implementation(project(":test2code"))
             }
@@ -112,7 +112,7 @@ kotlin {
                 implementation("com.benasher44:uuid:$uuidVersion")
                 implementation("io.ktor:ktor-utils:$ktorVersion")
                 implementation(project(":interceptor-http"))
-                implementation(project(":agent"))
+                implementation(project(":agent-transport"))
                 implementation(project(":jvmapi"))
                 implementation(project(":knasm"))
                 implementation(project(":konform"))
