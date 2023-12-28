@@ -19,7 +19,7 @@ import com.epam.drill.agent.configuration.TransportConfiguration
 import com.epam.drill.agent.transport.InMemoryAgentMessageQueue
 import com.epam.drill.agent.transport.ProtoBufAgentMessageSerializer
 import com.epam.drill.agent.transport.QueuedAgentMessageSender
-import com.epam.drill.agent.transport.RetryingAgentConfigSender
+import com.epam.drill.agent.transport.RetryingAgentMetadataSender
 import com.epam.drill.agent.transport.RetryingTransportStateNotifier
 import com.epam.drill.agent.transport.http.HttpAgentMessageDestinationMapper
 import com.epam.drill.agent.transport.http.HttpAgentMessageTransport
@@ -33,7 +33,7 @@ actual object JvmModuleMessageSender : QueuedAgentMessageSender<ByteArray>(
     stateNotifier,
     queue
 ) {
-    actual fun sendAgentConfig() = send(TransportConfiguration.getAgentConfigBytes()).let {}
+    actual fun sendAgentMetadata() = send(TransportConfiguration.getAgentConfigBytes()).let {}
 }
 
 private val transport = HttpAgentMessageTransport(
@@ -49,7 +49,7 @@ private val mapper = HttpAgentMessageDestinationMapper(
     TransportConfiguration.getBuildVersion()
 )
 
-private val configSender = RetryingAgentConfigSender(transport, serializer, mapper)
+private val configSender = RetryingAgentMetadataSender(transport, serializer, mapper)
 
 private val queue = InMemoryAgentMessageQueue(serializer, TransportConfiguration.getCoverageRetentionLimitBytes())
 

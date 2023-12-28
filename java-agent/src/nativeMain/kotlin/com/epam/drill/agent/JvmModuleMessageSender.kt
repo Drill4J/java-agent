@@ -19,7 +19,7 @@ import com.epam.drill.jvmapi.callObjectVoidMethod
 
 actual object JvmModuleMessageSender {
 
-    actual fun sendAgentConfig(): Unit =
-        callObjectVoidMethod(JvmModuleMessageSender::class, JvmModuleMessageSender::sendAgentConfig)
+    actual fun sendAgentMetadata(): Unit =
+        callObjectVoidMethod(JvmModuleMessageSender::class, JvmModuleMessageSender::sendAgentMetadata)
 
 }

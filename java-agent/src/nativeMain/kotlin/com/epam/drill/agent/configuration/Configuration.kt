@@ -24,7 +24,7 @@ import mu.KotlinLogging
 import com.epam.drill.agent.SYSTEM_CONFIG_PATH
 import com.epam.drill.agent.agentVersion
 import com.epam.drill.agent.configuration.serialization.SimpleMapDecoder
-import com.epam.drill.common.agent.configuration.AgentConfig
+import com.epam.drill.common.agent.configuration.AgentMetadata
 import com.epam.drill.common.agent.configuration.AgentType
 import com.epam.drill.jvmapi.callObjectIntMethod
 import com.epam.drill.jvmapi.callObjectStringMethod
@@ -47,7 +47,7 @@ internal val pathSeparator = if (Platform.osFamily == OsFamily.WINDOWS) "\\" els
 
 fun performInitialConfiguration(aa: AgentArguments) {
     adminAddress = aa.adminAddress!!
-    agentConfig = AgentConfig(
+    agentConfig = AgentMetadata(
         id = aa.agentId!!,
         instanceId = aa.instanceId,
         agentVersion = agentVersion,

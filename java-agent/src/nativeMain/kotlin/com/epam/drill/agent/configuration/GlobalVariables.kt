@@ -20,7 +20,7 @@ import com.epam.drill.common.agent.configuration.*
 
 private val _requestPattern = AtomicReference<String?>(null).freeze()
 private val _adminAddress = AtomicReference<String?>(null).freeze()
-private val _agentConfig = AtomicReference<AgentConfig?>(null).freeze()
+private val _agentConfig = AtomicReference<AgentMetadata?>(null).freeze()
 private val _agentParameters = AtomicReference(AgentParameters().freeze()).freeze()
 
 var requestPattern: String?
@@ -35,7 +35,7 @@ var adminAddress: String
         _adminAddress.value = value.freeze()
     }
 
-var agentConfig: AgentConfig
+var agentConfig: AgentMetadata
     get() = _agentConfig.value!!
     set(value) {
         _agentConfig.value = value.freeze()

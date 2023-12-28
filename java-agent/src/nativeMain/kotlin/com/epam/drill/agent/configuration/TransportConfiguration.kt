@@ -16,11 +16,11 @@
 package com.epam.drill.agent.configuration
 
 import kotlinx.serialization.protobuf.ProtoBuf
-import com.epam.drill.common.agent.configuration.AgentConfig
+import com.epam.drill.common.agent.configuration.AgentMetadata
 
 actual object TransportConfiguration {
 
-    actual fun getAgentConfigBytes() = ProtoBuf.encodeToByteArray(AgentConfig.serializer(), agentConfig)
+    actual fun getAgentConfigBytes() = ProtoBuf.encodeToByteArray(AgentMetadata.serializer(), agentConfig)
 
     actual fun getAgentId() = agentConfig.id
 

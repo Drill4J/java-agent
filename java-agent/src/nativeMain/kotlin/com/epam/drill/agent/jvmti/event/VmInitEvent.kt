@@ -58,7 +58,7 @@ fun vmInitEvent(env: CPointer<jvmtiEnvVar>?, jniEnv: CPointer<JNIEnvVar>?, threa
     loadJvmModule("test2code")
     RequestHolder.init(isAsync = agentParameters.isAsyncApp)
     generateAgentConfigInstanceId()
-    JvmModuleMessageSender.sendAgentConfig()
+    JvmModuleMessageSender.sendAgentMetadata()
 }
 
 @Suppress("UNCHECKED_CAST")

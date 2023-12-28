@@ -16,5 +16,5 @@
 package com.epam.drill.agent
 
 expect object JvmModuleMessageSender {
-    fun sendAgentConfig()
+    fun sendAgentMetadata()
 }
