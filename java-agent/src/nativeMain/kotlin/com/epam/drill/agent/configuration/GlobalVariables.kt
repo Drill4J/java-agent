@@ -16,30 +16,8 @@
 package com.epam.drill.agent.configuration
 
 import kotlin.native.concurrent.*
-import com.epam.drill.common.agent.configuration.*
 
-private val _requestPattern = AtomicReference<String?>(null).freeze()
-private val _adminAddress = AtomicReference<String?>(null).freeze()
-private val _agentConfig = AtomicReference<AgentMetadata?>(null).freeze()
 private val _agentParameters = AtomicReference(AgentParameters().freeze()).freeze()
-
-var requestPattern: String?
-    get() = _requestPattern.value
-    set(value) {
-        _requestPattern.value = value.freeze()
-    }
-
-var adminAddress: String
-    get() = _adminAddress.value!!
-    set(value) {
-        _adminAddress.value = value.freeze()
-    }
-
-var agentConfig: AgentMetadata
-    get() = _agentConfig.value!!
-    set(value) {
-        _agentConfig.value = value.freeze()
-    }
 
 var agentParameters: AgentParameters
     get() = _agentParameters.value

@@ -15,8 +15,9 @@
  */
 package com.epam.drill.agent.request
 
+import com.epam.drill.agent.configuration.JavaAgentConfiguration
+import com.epam.drill.agent.configuration.ParameterDefinitions
 import com.epam.drill.agent.configuration.idHeaderPairFromConfig
-import com.epam.drill.agent.configuration.requestPattern
 import com.epam.drill.agent.configuration.retrieveAdminUrl
 
 actual object HeadersRetriever {
@@ -27,7 +28,7 @@ actual object HeadersRetriever {
 
     actual fun retrieveAdminAddress(): String? = retrieveAdminUrl()
 
-    actual fun sessionHeaderPattern(): String? = requestPattern
+    actual fun sessionHeaderPattern(): String? = JavaAgentConfiguration.parameters[ParameterDefinitions.REQUEST_PATTERN]
 
     actual fun idHeaderConfigKey(): String? = idHeaderPair.first
 

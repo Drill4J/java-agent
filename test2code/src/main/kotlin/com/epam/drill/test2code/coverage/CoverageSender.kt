@@ -17,25 +17,30 @@ package com.epam.drill.test2code.coverage
 
 import com.epam.drill.common.agent.transport.*
 import com.epam.drill.plugins.test2code.common.api.*
+import com.epam.drill.plugins.test2code.common.transport.*
 import kotlinx.coroutines.*
 import mu.*
 import java.util.concurrent.*
-import com.epam.drill.plugins.test2code.common.transport.CoverageData
 
 interface CoverageSender {
+    fun setCoverageSendInterval(intervalMs: Long)
     fun setAgentMessageSender(sender: AgentMessageSender)
     fun startSendingCoverage()
     fun stopSendingCoverage()
 }
 
 class IntervalCoverageSender(
-    private val intervalMs: Long,
+    private var intervalMs: Long,
     private var sender: AgentMessageSender = StubSender(),
     private val collectProbes: () -> Sequence<ExecDatum> = { emptySequence() }
 ) : CoverageSender {
     private val scheduledThreadPool = Executors.newSingleThreadScheduledExecutor()
     private val destination = AgentMessageDestination("POST", "coverage")
     private val logger = KotlinLogging.logger {}
+
+    override fun setCoverageSendInterval(intervalMs: Long) {
+        this.intervalMs = intervalMs
+    }
 
     override fun setAgentMessageSender(sender: AgentMessageSender) {
         this.sender = sender

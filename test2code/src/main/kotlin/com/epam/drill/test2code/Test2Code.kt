@@ -16,6 +16,8 @@
 package com.epam.drill.test2code
 
 import kotlin.concurrent.thread
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.json.Json
 import java.util.concurrent.ConcurrentHashMap
 import mu.KotlinLogging
@@ -24,6 +26,7 @@ import com.epam.drill.common.classloading.EntitySource
 import com.epam.drill.common.agent.AgentModule
 import com.epam.drill.common.agent.AgentContext
 import com.epam.drill.common.agent.Instrumenter
+import com.epam.drill.common.agent.configuration.AgentConfiguration
 import com.epam.drill.common.agent.transport.AgentMessage
 import com.epam.drill.common.agent.transport.AgentMessageDestination
 import com.epam.drill.common.agent.transport.AgentMessageSender
@@ -43,13 +46,17 @@ private const val DRILL_TEST_ID_HEADER = "drill-test-id"
 class Test2Code(
     id: String,
     agentContext: AgentContext,
-    sender: AgentMessageSender
-) : AgentModule<AgentAction>(id, agentContext, sender), Instrumenter, ClassScanner {
+    sender: AgentMessageSender,
+    configuration: AgentConfiguration
+) : AgentModule<AgentAction>(id, agentContext, sender, configuration), Instrumenter, ClassScanner {
 
     internal val logger = KotlinLogging.logger {}
     internal val json = Json { encodeDefaults = true }
 
-    private val coverageManager = DrillCoverageManager.apply { setAgentMessageSender(sender) }
+    private val coverageManager = DrillCoverageManager.apply {
+        setCoverageSendInterval(configuration.parameters[ParameterDefinitions.COVERAGE_SEND_INTERVAL])
+        setAgentMessageSender(sender)
+    }
     private val instrumenter = DrillInstrumenter(coverageManager, coverageManager)
     //TODO remove after admin refactoring
     private val sessions = ConcurrentHashMap<String, Boolean>()
@@ -96,9 +103,13 @@ class Test2Code(
     }
 
     override fun scanClasses(consumer: (Set<EntitySource>) -> Unit) {
-        JvmModuleConfiguration.waitClassScanning()
-        val packagePrefixes = JvmModuleConfiguration.getPackagePrefixes().split(";")
-        val additionalPaths = JvmModuleConfiguration.getScanClassPath().split(";")
+        val packagePrefixes = configuration.agentMetadata.packagesPrefixes
+        val additionalPaths = configuration.parameters[ParameterDefinitions.SCAN_CLASS_PATH]
+        val classScanDelay = configuration.parameters[ParameterDefinitions.CLASS_SCAN_DELAY]
+        if (classScanDelay.isPositive()) {
+            logger.debug { "Waiting class scan delay ${classScanDelay.inWholeMilliseconds} ms..." }
+            runBlocking { delay(classScanDelay) }
+        }
         logger.info { "Scanning classes, package prefixes: $packagePrefixes... " }
         ClassLoadersScanner(packagePrefixes, 50, consumer, additionalPaths).scanClasses()
     }

@@ -13,12 +13,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.epam.drill.test2code
+package com.epam.drill.agent.transport
 
-object JvmModuleConfiguration {
-    external fun getPackagePrefixes(): String
-    external fun getScanClassPath(): String
-    external fun waitClassScanning()
-    external fun getSendCoverageInterval(): Long
-    external fun getCoverageRetentionLimit(): String
+expect object JvmModuleMessageSender {
+    fun sendAgentMetadata()
 }

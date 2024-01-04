@@ -49,7 +49,7 @@ fun configureHttp() {
                 logger.debug { "Drill headers: $drillHeaders" }
             }
         }
-        val sessionId = headers[requestPattern] ?: headers["drill-session-id"]
+        val sessionId = headers[JavaAgentConfiguration.parameters[ParameterDefinitions.REQUEST_PATTERN]]
         sessionId?.let { DrillRequest(it, headers) }?.also {
             drillRequest = it
             sessionStorage(it)

@@ -15,9 +15,12 @@
  */
 package com.epam.drill.agent
 
+import com.epam.drill.agent.configuration.JavaAgentConfiguration
 import com.epam.drill.agent.request.RequestHolder
+import com.epam.drill.agent.transport.JvmModuleMessageSender
 import com.epam.drill.common.agent.AgentModule
 import com.epam.drill.common.agent.AgentContext
+import com.epam.drill.common.agent.configuration.AgentConfiguration
 import com.epam.drill.common.agent.transport.AgentMessageSender
 import com.epam.drill.test2code.Test2Code
 
@@ -25,8 +28,14 @@ actual object JvmModuleLoader {
 
     actual fun loadJvmModule(id: String): AgentModule<*> = run {
         val jvmModuleClass = getJvmModuleClass(id)!!
-        val constructor = jvmModuleClass.getConstructor(String::class.java, AgentContext::class.java, AgentMessageSender::class.java)
-        constructor.newInstance(id, RequestHolder.agentContext, JvmModuleMessageSender).also { JvmModuleStorage.add(it) }
+        val constructor = jvmModuleClass.getConstructor(
+            String::class.java,
+            AgentContext::class.java,
+            AgentMessageSender::class.java,
+            AgentConfiguration::class.java
+        )
+        constructor.newInstance(id, RequestHolder.agentContext, JvmModuleMessageSender, JavaAgentConfiguration)
+            .also { JvmModuleStorage.add(it) }
     }
 
     @Suppress("UNCHECKED_CAST")

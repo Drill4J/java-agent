@@ -15,21 +15,18 @@
  */
 package com.epam.drill.agent.jvmti.event
 
-import com.benasher44.uuid.uuid4
 import kotlinx.cinterop.CPointer
 import mu.KotlinLogging
 import com.epam.drill.agent.Agent
 import com.epam.drill.agent.configuration.JavaAgentConfiguration
 import com.epam.drill.agent.JvmModuleLoader
-import com.epam.drill.agent.JvmModuleMessageSender
-import com.epam.drill.agent.configuration.agentConfig
 import com.epam.drill.agent.globalCallbacks
 import com.epam.drill.agent.configuration.agentParameters
 import com.epam.drill.agent.configuration.configureHttp
 import com.epam.drill.agent.configuration.defaultJvmLoggingConfiguration
 import com.epam.drill.agent.configuration.updateJvmLoggingConfiguration
-import com.epam.drill.agent.configuration.updatePackagePrefixesConfiguration
 import com.epam.drill.agent.request.RequestHolder
+import com.epam.drill.agent.transport.JvmModuleMessageSender
 import com.epam.drill.jvmapi.gen.JNIEnvVar
 import com.epam.drill.jvmapi.gen.JVMTI_ENABLE
 import com.epam.drill.jvmapi.gen.JVMTI_EVENT_CLASS_FILE_LOAD_HOOK
@@ -56,10 +53,8 @@ fun vmInitEvent(env: CPointer<jvmtiEnvVar>?, jniEnv: CPointer<JNIEnvVar>?, threa
     }
 
     globalCallbacks()
-    updatePackagePrefixesConfiguration()
     loadJvmModule("test2code")
     RequestHolder.init(isAsync = agentParameters.isAsyncApp)
-    generateAgentConfigInstanceId()
     JvmModuleMessageSender.sendAgentMetadata()
 }
 
@@ -70,8 +65,4 @@ private fun loadJvmModule(id: String) {
     } catch (ex: Exception) {
         logger.error(ex) { "Fatal error processing plugin: id=${id}" }
     }
-}
-
-private fun generateAgentConfigInstanceId() = run {
-    if(agentConfig.instanceId.isEmpty()) agentConfig = agentConfig.copy(instanceId = uuid4().toString())
 }

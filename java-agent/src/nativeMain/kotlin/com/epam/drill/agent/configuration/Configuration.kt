@@ -22,10 +22,7 @@ import kotlinx.serialization.modules.serializersModuleOf
 import platform.posix.getenv
 import mu.KotlinLogging
 import com.epam.drill.agent.SYSTEM_CONFIG_PATH
-import com.epam.drill.agent.agentVersion
 import com.epam.drill.agent.configuration.serialization.SimpleMapDecoder
-import com.epam.drill.common.agent.configuration.AgentMetadata
-import com.epam.drill.common.agent.configuration.AgentType
 import com.epam.drill.jvmapi.callObjectIntMethod
 import com.epam.drill.jvmapi.callObjectStringMethod
 import com.epam.drill.jvmapi.callObjectVoidMethod
@@ -46,15 +43,6 @@ private val urlSchemeRegex = Regex("\\w+://(.*)")
 internal val pathSeparator = if (Platform.osFamily == OsFamily.WINDOWS) "\\" else "/"
 
 fun performInitialConfiguration(aa: AgentArguments) {
-    adminAddress = aa.adminAddress!!
-    agentConfig = AgentMetadata(
-        id = aa.agentId!!,
-        instanceId = aa.instanceId,
-        agentVersion = agentVersion,
-        buildVersion = aa.buildVersion!!,
-        serviceGroupId = aa.groupId,
-        agentType = AgentType.JAVA
-    )
     updateAgentParameters(aa.defaultParameters(), true)
 }
 
@@ -132,16 +120,13 @@ fun updateJvmLoggingConfiguration() {
     }
 }
 
-fun updatePackagePrefixesConfiguration() {
-    agentConfig = agentConfig.copy(packagesPrefixes = agentParameters.packagePrefixes.split(";"))
+fun idHeaderPairFromConfig(): Pair<String, String> = when (JavaAgentConfiguration.agentMetadata.serviceGroupId) {
+    "" -> "drill-agent-id" to JavaAgentConfiguration.agentMetadata.id
+    else -> "drill-group-id" to JavaAgentConfiguration.agentMetadata.serviceGroupId
 }
 
-fun idHeaderPairFromConfig(): Pair<String, String> = when (agentConfig.serviceGroupId) {
-    "" -> "drill-agent-id" to agentConfig.id
-    else -> "drill-group-id" to agentConfig.serviceGroupId
-}
-
-fun retrieveAdminUrl() = urlSchemeRegex.matchEntire(adminAddress)!!.groupValues[1]
+fun retrieveAdminUrl() = urlSchemeRegex
+    .matchEntire(JavaAgentConfiguration.parameters[ParameterDefinitions.ADMIN_ADDRESS])!!.groupValues[1]
 
 fun convertToAgentArguments(args: String): AgentArguments {
     val commandLineParams = parseArguments(args)

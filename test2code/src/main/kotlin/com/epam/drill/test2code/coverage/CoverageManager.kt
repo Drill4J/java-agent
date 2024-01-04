@@ -15,13 +15,11 @@
  */
 package com.epam.drill.test2code.coverage
 
-import com.epam.drill.test2code.JvmModuleConfiguration
-
 open class CoverageManager(
     private val classDescriptorsManager: IClassDescriptorsManager = ConcurrentClassDescriptorsManager(),
     private val execDataProvider: IExecDataProvider = ThreadExecDataProvider(classDescriptorsManager),
     private val coverageRecorder: ICoverageRecorder = CoverageRecorder(execDataProvider),
-    private val coverageSender: CoverageSender = IntervalCoverageSender(intervalMs = JvmModuleConfiguration.getSendCoverageInterval(), collectProbes = execDataProvider::poll)
+    private val coverageSender: CoverageSender = IntervalCoverageSender(intervalMs = 2000L, collectProbes = execDataProvider::poll)
 ) : IProbesProxy by execDataProvider,
     IClassDescriptorStorage by classDescriptorsManager,
     ICoverageRecorder by coverageRecorder,

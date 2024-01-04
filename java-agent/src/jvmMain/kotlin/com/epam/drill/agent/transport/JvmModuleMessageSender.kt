@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.epam.drill.agent
+package com.epam.drill.agent.transport
 
 import java.io.File
 import com.epam.drill.agent.configuration.DefaultParameterDefinitions
@@ -22,11 +22,6 @@ import io.aesy.datasize.DataSize
 import mu.KotlinLogging
 import com.epam.drill.agent.configuration.JavaAgentConfiguration
 import com.epam.drill.agent.configuration.ParameterDefinitions
-import com.epam.drill.agent.transport.InMemoryAgentMessageQueue
-import com.epam.drill.agent.transport.ProtoBufAgentMessageSerializer
-import com.epam.drill.agent.transport.QueuedAgentMessageSender
-import com.epam.drill.agent.transport.RetryingAgentMetadataSender
-import com.epam.drill.agent.transport.RetryingTransportStateNotifier
 import com.epam.drill.agent.transport.http.HttpAgentMessageDestinationMapper
 import com.epam.drill.agent.transport.http.HttpAgentMessageTransport
 import com.epam.drill.common.agent.transport.AgentMessage
