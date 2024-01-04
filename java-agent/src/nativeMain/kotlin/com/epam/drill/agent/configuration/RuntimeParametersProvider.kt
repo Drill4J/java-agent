@@ -15,22 +15,18 @@
  */
 package com.epam.drill.agent.configuration
 
-expect object TransportConfiguration {
+import com.benasher44.uuid.uuid4
+import com.epam.drill.agent.agentVersion
 
-    fun getAgentConfigBytes(): ByteArray
+class RuntimeParametersProvider(
+    override val priority: Int = 100
+) : AgentConfigurationProvider {
 
-    fun getAgentId(): String
+    override val configuration = configuration()
 
-    fun getBuildVersion(): String
-
-    fun getSslTruststore(): String
-
-    fun getSslTruststorePassword(): String
-
-    fun getDrillInstallationDir(): String
-
-    fun getCoverageRetentionLimit(): String
-
-    fun getAdminAddress(): String
+    private fun configuration() = mapOf(
+        Pair(DefaultParameterDefinitions.INSTANCE_ID.name, uuid4().toString()),
+        Pair(DefaultParameterDefinitions.AGENT_VERSION.name, agentVersion)
+    )
 
 }

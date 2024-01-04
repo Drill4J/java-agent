@@ -15,7 +15,13 @@
  */
 package com.epam.drill.agent
 
-import com.epam.drill.agent.configuration.TransportConfiguration
+import java.io.File
+import com.epam.drill.agent.configuration.DefaultParameterDefinitions
+import io.aesy.datasize.ByteUnit
+import io.aesy.datasize.DataSize
+import mu.KotlinLogging
+import com.epam.drill.agent.configuration.JavaAgentConfiguration
+import com.epam.drill.agent.configuration.ParameterDefinitions
 import com.epam.drill.agent.transport.InMemoryAgentMessageQueue
 import com.epam.drill.agent.transport.ProtoBufAgentMessageSerializer
 import com.epam.drill.agent.transport.QueuedAgentMessageSender
@@ -23,34 +29,61 @@ import com.epam.drill.agent.transport.RetryingAgentMetadataSender
 import com.epam.drill.agent.transport.RetryingTransportStateNotifier
 import com.epam.drill.agent.transport.http.HttpAgentMessageDestinationMapper
 import com.epam.drill.agent.transport.http.HttpAgentMessageTransport
+import com.epam.drill.common.agent.transport.AgentMessage
+import com.epam.drill.common.agent.transport.AgentMessageDestination
+import com.epam.drill.common.agent.transport.AgentMessageSender
 
-actual object JvmModuleMessageSender : QueuedAgentMessageSender<ByteArray>(
-    transport,
-    serializer,
-    mapper,
-    configSender,
-    stateNotifier,
-    stateNotifier,
-    queue
-) {
-    actual fun sendAgentMetadata() = send(TransportConfiguration.getAgentConfigBytes()).let {}
+actual object JvmModuleMessageSender : AgentMessageSender {
+
+    private const val QUEUE_DEFAULT_SIZE: Long = 512 * 1024 * 1024
+
+    private val logger = KotlinLogging.logger {}
+    private val messageSender = messageSender()
+
+    override val available: Boolean
+        get() = messageSender.available
+
+    override fun send(destination: AgentMessageDestination, message: AgentMessage) =
+        messageSender.send(destination, message)
+
+    actual fun sendAgentMetadata() {
+        messageSender.send(JavaAgentConfiguration.agentMetadata)
+    }
+
+    private fun messageSender(): QueuedAgentMessageSender<ByteArray> {
+        val transport = HttpAgentMessageTransport(
+            JavaAgentConfiguration.parameters[ParameterDefinitions.ADMIN_ADDRESS],
+            JavaAgentConfiguration.parameters[ParameterDefinitions.SSL_TRUSTSTORE].let(::resolvePath),
+            JavaAgentConfiguration.parameters[ParameterDefinitions.SSL_TRUSTSTORE_PASSWORD]
+        )
+        val serializer = ProtoBufAgentMessageSerializer()
+        val mapper = HttpAgentMessageDestinationMapper(
+            JavaAgentConfiguration.agentMetadata.id,
+            JavaAgentConfiguration.agentMetadata.buildVersion
+        )
+        val metadataSender = RetryingAgentMetadataSender(transport, serializer, mapper)
+        val queue = InMemoryAgentMessageQueue(
+            serializer,
+            JavaAgentConfiguration.parameters[ParameterDefinitions.MESSAGE_QUEUE_LIMIT].let(::parseBytes)
+        )
+        val notifier = RetryingTransportStateNotifier(transport, serializer, queue)
+        return QueuedAgentMessageSender(transport, serializer, mapper, metadataSender, notifier, notifier, queue)
+    }
+
+    private fun resolvePath(path: String) = File(path).run {
+        val installationDir = File(JavaAgentConfiguration.parameters[DefaultParameterDefinitions.INSTALLATION_DIR])
+        val resolved = this.takeIf(File::exists)
+            ?: this.takeUnless(File::isAbsolute)?.let(installationDir::resolve)
+        logger.trace { "resolvePath: Resolved $path to ${resolved?.absolutePath}" }
+        resolved?.absolutePath ?: path
+    }
+
+    private fun parseBytes(value: String): Long = value.run {
+        val logError: (Throwable) -> Unit = { logger.warn(it) { "parseBytes: Exception while parsing value: $this" } }
+        this.runCatching(DataSize::parse)
+            .onFailure(logError)
+            .getOrDefault(DataSize.of(QUEUE_DEFAULT_SIZE, ByteUnit.BYTE))
+            .toUnit(ByteUnit.BYTE).value.toLong()
+    }
+
 }
-
-private val transport = HttpAgentMessageTransport(
-    TransportConfiguration.getAdminAddress(),
-    TransportConfiguration.getSslTruststoreResolved(),
-    TransportConfiguration.getSslTruststorePassword()
-)
-
-private val serializer = ProtoBufAgentMessageSerializer()
-
-private val mapper = HttpAgentMessageDestinationMapper(
-    TransportConfiguration.getAgentId(),
-    TransportConfiguration.getBuildVersion()
-)
-
-private val configSender = RetryingAgentMetadataSender(transport, serializer, mapper)
-
-private val queue = InMemoryAgentMessageQueue(serializer, TransportConfiguration.getCoverageRetentionLimitBytes())
-
-private val stateNotifier = RetryingTransportStateNotifier(transport, serializer, queue)

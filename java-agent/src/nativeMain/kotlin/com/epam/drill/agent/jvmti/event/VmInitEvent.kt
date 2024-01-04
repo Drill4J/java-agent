@@ -19,6 +19,7 @@ import com.benasher44.uuid.uuid4
 import kotlinx.cinterop.CPointer
 import mu.KotlinLogging
 import com.epam.drill.agent.Agent
+import com.epam.drill.agent.configuration.JavaAgentConfiguration
 import com.epam.drill.agent.JvmModuleLoader
 import com.epam.drill.agent.JvmModuleMessageSender
 import com.epam.drill.agent.configuration.agentConfig
@@ -45,6 +46,7 @@ fun vmInitEvent(env: CPointer<jvmtiEnvVar>?, jniEnv: CPointer<JNIEnvVar>?, threa
 
     defaultJvmLoggingConfiguration()
     updateJvmLoggingConfiguration()
+    JavaAgentConfiguration.initializeJvm()
 
     if (Agent.isHttpHookEnabled) {
         logger.info { "run with http hook" }

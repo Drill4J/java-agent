@@ -54,6 +54,7 @@ object Agent {
         println(LOGO)
 
         defaultNativeLoggingConfiguration()
+        JavaAgentConfiguration.initializeNative(options)
         val agentArguments = convertToAgentArguments(options)
         validate(agentArguments)
         performInitialConfiguration(agentArguments)

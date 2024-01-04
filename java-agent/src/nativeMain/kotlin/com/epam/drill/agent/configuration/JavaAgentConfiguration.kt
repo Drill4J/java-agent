@@ -54,11 +54,13 @@ actual object JavaAgentConfiguration : AgentConfiguration {
             installationDirProvider
         ))
         logger.info { "initializeNative: Found from properties file: ${propertiesFileProvider.configuration}" }
+        val runtimeParametersProvider = RuntimeParametersProvider()
         configuration.value = DefaultAgentConfiguration(setOf(
             environmentVariablesProvider,
             agentOptionsProvider,
             installationDirProvider,
-            propertiesFileProvider
+            propertiesFileProvider,
+            runtimeParametersProvider
         )).freeze()
     }
 
