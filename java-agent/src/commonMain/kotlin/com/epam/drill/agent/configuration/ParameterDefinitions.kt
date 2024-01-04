@@ -30,6 +30,7 @@ object ParameterDefinitions {
     val LOG_FILE = AgentParameterDefinition.forString(name = "logLevel")
     val LOG_LIMIT = AgentParameterDefinition.forInt(name = "logLimit", defaultValue = 512)
     val REQUEST_PATTERN = AgentParameterDefinition.forString(name = "requestPattern", defaultValue = "drill-session-id")
+    val HTTP_HOOK_ENABLED = AgentParameterDefinition.forBoolean(name = "httpHookEnabled", defaultValue = true)
     val IS_WEB_APP = AgentParameterDefinition.forBoolean(name = "isWebApp")
     val IS_KAFKA = AgentParameterDefinition.forBoolean(name = "isKafka")
     val IS_CADENCE = AgentParameterDefinition.forBoolean(name = "isCadence")

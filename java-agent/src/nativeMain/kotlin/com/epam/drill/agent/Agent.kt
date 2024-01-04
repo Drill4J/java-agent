@@ -16,12 +16,11 @@
 package com.epam.drill.agent
 
 import kotlin.native.concurrent.*
-import kotlin.time.TimeMark
-import kotlin.time.TimeSource
 import kotlinx.cinterop.*
 import platform.posix.*
 import mu.*
 import com.epam.drill.agent.configuration.*
+import com.epam.drill.agent.configuration.DefaultParameterDefinitions.INSTALLATION_DIR
 import com.epam.drill.agent.jvmti.event.*
 import com.epam.drill.jvmapi.gen.*
 
@@ -40,24 +39,15 @@ U| |_| |\|  _ <       | |    \| |/__ \| |/__     |__   _|        | |_| |_,-.
 
 object Agent {
 
-    val startTimeMark: TimeMark = TimeSource.Monotonic.markNow().freeze()
-
-    val isHttpHookEnabled: Boolean by lazy {
-        getenv(SYSTEM_HTTP_HOOK_ENABLED)?.toKString()?.toBoolean() ?: memScoped {
-            alloc<CPointerVar<ByteVar>>().apply {
-                GetSystemProperty(HTTP_HOOK_ENABLED, this.ptr)
-            }.value?.toKString()?.toBoolean() ?: true
-        }
-    }
-
     fun agentOnLoad(options: String): Int {
         println(LOGO)
 
-        defaultNativeLoggingConfiguration()
+        AgentLoggingConfiguration.defaultNativeLoggingConfiguration()
         JavaAgentConfiguration.initializeNative(options)
+        AgentLoggingConfiguration.updateNativeLoggingConfiguration()
+
         val agentArguments = convertToAgentArguments(options)
         validate(agentArguments)
-        performInitialConfiguration(agentArguments)
         setUnhandledExceptionHook({ error: Throwable ->
             logger.error(error) { "unhandled event $error" }
         }.freeze())
@@ -68,7 +58,7 @@ object Agent {
             jvmtiCapabilities.can_maintain_original_method_order = 1.toUInt()
             AddCapabilities(jvmtiCapabilities.ptr)
         }
-        AddToBootstrapClassLoaderSearch("${agentParameters.drillInstallationDir}/drillRuntime.jar")
+        AddToBootstrapClassLoaderSearch("${JavaAgentConfiguration.parameters[INSTALLATION_DIR]}/drillRuntime.jar")
         callbackRegister()
 
         logger.info { "The native agent was loaded" }

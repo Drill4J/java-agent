@@ -15,20 +15,12 @@
  */
 package com.epam.drill.agent.configuration
 
-import kotlin.time.DurationUnit
-import kotlin.time.toDuration
 import kotlinx.cinterop.toKString
 import kotlinx.serialization.modules.serializersModuleOf
 import platform.posix.getenv
 import mu.KotlinLogging
 import com.epam.drill.agent.SYSTEM_CONFIG_PATH
 import com.epam.drill.agent.configuration.serialization.SimpleMapDecoder
-import com.epam.drill.jvmapi.callObjectIntMethod
-import com.epam.drill.jvmapi.callObjectStringMethod
-import com.epam.drill.jvmapi.callObjectVoidMethod
-import com.epam.drill.jvmapi.callObjectVoidMethodWithInt
-import com.epam.drill.jvmapi.callObjectVoidMethodWithString
-import com.epam.drill.logging.LoggingConfiguration
 import io.ktor.utils.io.core.*
 import io.ktor.utils.io.streams.*
 import platform.posix.O_RDONLY
@@ -41,84 +33,6 @@ private const val CONFIG_PATH_PARAM = "configPath"
 private val logger = KotlinLogging.logger("com.epam.drill.agent.configuration.Configuration")
 private val urlSchemeRegex = Regex("\\w+://(.*)")
 internal val pathSeparator = if (Platform.osFamily == OsFamily.WINDOWS) "\\" else "/"
-
-fun performInitialConfiguration(aa: AgentArguments) {
-    updateAgentParameters(aa.defaultParameters(), true)
-}
-
-fun updateAgentParameters(parameters: Map<String, AgentParameter>, initialization: Boolean = false) {
-    agentParameters = agentParameters.copy(
-        sslTruststore = parameters[AgentArguments::sslTruststore.name]?.value
-            ?: agentParameters.sslTruststore,
-        sslTruststorePassword = parameters[AgentArguments::sslTruststorePassword.name]?.value
-            ?: agentParameters.sslTruststorePassword,
-        classScanDelay = parameters[AgentArguments::classScanDelay.name]?.value
-            ?.toLong()?.toDuration(DurationUnit.MILLISECONDS) ?: agentParameters.classScanDelay,
-        packagePrefixes = parameters[AgentArguments::packagePrefixes.name]?.value ?: agentParameters.packagePrefixes,
-        scanClassPath = parameters[AgentArguments::scanClassPath.name]?.value ?: agentParameters.scanClassPath,
-        logLevel = parameters[AgentArguments::logLevel.name]?.value ?: agentParameters.logLevel,
-        logFile = parameters[AgentArguments::logFile.name]?.value?.takeIf(String::isNotEmpty),
-        logLimit = parameters[AgentArguments::logLimit.name]?.value?.toIntOrNull() ?: agentParameters.logLimit,
-        isAsyncApp = parameters[AgentArguments::isAsyncApp.name]?.value.toBoolean(),
-        isWebApp = parameters[AgentArguments::isWebApp.name]?.value.toBoolean(),
-        isKafka = parameters[AgentArguments::isKafka.name]?.value.toBoolean(),
-        isCadence = parameters[AgentArguments::isCadence.name]?.value.toBoolean(),
-        isTlsApp = parameters[AgentArguments::isTlsApp.name]?.value.toBoolean(),
-        coverageRetentionLimit = parameters[AgentArguments::coverageRetentionLimit.name]?.value
-            ?: agentParameters.coverageRetentionLimit,
-        sendCoverageInterval = parameters[AgentArguments::sendCoverageIntervalMs.name]?.value?.toLong()
-            ?: agentParameters.sendCoverageInterval,
-        drillInstallationDir = parameters[AgentArguments::drillInstallationDir.name]?.value
-            ?: agentParameters.drillInstallationDir,
-    )
-    updateNativeLoggingConfiguration()
-    if (!initialization) updateJvmLoggingConfiguration()
-    logger.debug { "Agent parameters '$agentParameters' is initialized." }
-}
-
-fun defaultNativeLoggingConfiguration() {
-    LoggingConfiguration.readDefaultConfiguration()
-}
-
-fun updateNativeLoggingConfiguration() {
-    LoggingConfiguration.setLoggingLevels(agentParameters.logLevel)
-    if (LoggingConfiguration.getLoggingFilename() != agentParameters.logFile) {
-        LoggingConfiguration.setLoggingFilename(agentParameters.logFile)
-    }
-    if (LoggingConfiguration.getLogMessageLimit() != agentParameters.logLimit) {
-        LoggingConfiguration.setLogMessageLimit(agentParameters.logLimit)
-    }
-}
-
-fun defaultJvmLoggingConfiguration() {
-    callObjectVoidMethod(LoggingConfiguration::class, LoggingConfiguration::readDefaultConfiguration)
-}
-
-fun updateJvmLoggingConfiguration() {
-    callObjectVoidMethodWithString(LoggingConfiguration::class, "setLoggingLevels", agentParameters.logLevel)
-    if (callObjectStringMethod(
-            LoggingConfiguration::class,
-            LoggingConfiguration::getLoggingFilename
-        ) != agentParameters.logFile
-    ) {
-        callObjectVoidMethodWithString(
-            LoggingConfiguration::class,
-            LoggingConfiguration::setLoggingFilename,
-            agentParameters.logFile
-        )
-    }
-    if (callObjectIntMethod(
-            LoggingConfiguration::class,
-            LoggingConfiguration::getLogMessageLimit
-        ) != agentParameters.logLimit
-    ) {
-        callObjectVoidMethodWithInt(
-            LoggingConfiguration::class,
-            LoggingConfiguration::setLogMessageLimit,
-            agentParameters.logLimit
-        )
-    }
-}
 
 fun idHeaderPairFromConfig(): Pair<String, String> = when (JavaAgentConfiguration.agentMetadata.serviceGroupId) {
     "" -> "drill-agent-id" to JavaAgentConfiguration.agentMetadata.id

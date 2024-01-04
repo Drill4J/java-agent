@@ -17,14 +17,12 @@ package com.epam.drill.agent.jvmti.event
 
 import kotlinx.cinterop.CPointer
 import mu.KotlinLogging
-import com.epam.drill.agent.Agent
 import com.epam.drill.agent.configuration.JavaAgentConfiguration
 import com.epam.drill.agent.JvmModuleLoader
+import com.epam.drill.agent.configuration.AgentLoggingConfiguration
+import com.epam.drill.agent.configuration.ParameterDefinitions
 import com.epam.drill.agent.globalCallbacks
-import com.epam.drill.agent.configuration.agentParameters
 import com.epam.drill.agent.configuration.configureHttp
-import com.epam.drill.agent.configuration.defaultJvmLoggingConfiguration
-import com.epam.drill.agent.configuration.updateJvmLoggingConfiguration
 import com.epam.drill.agent.request.RequestHolder
 import com.epam.drill.agent.transport.JvmModuleMessageSender
 import com.epam.drill.jvmapi.gen.JNIEnvVar
@@ -41,28 +39,25 @@ fun vmInitEvent(env: CPointer<jvmtiEnvVar>?, jniEnv: CPointer<JNIEnvVar>?, threa
     initRuntimeIfNeeded()
     SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_CLASS_FILE_LOAD_HOOK, null)
 
-    defaultJvmLoggingConfiguration()
-    updateJvmLoggingConfiguration()
+    AgentLoggingConfiguration.defaultJvmLoggingConfiguration()
+    AgentLoggingConfiguration.updateJvmLoggingConfiguration()
     JavaAgentConfiguration.initializeJvm()
 
-    if (Agent.isHttpHookEnabled) {
-        logger.info { "run with http hook" }
+    if (JavaAgentConfiguration.parameters[ParameterDefinitions.HTTP_HOOK_ENABLED]) {
+        logger.info { "vmInitEvent: Run with http hook" }
         configureHttp()
     } else {
-        logger.warn { "run without http hook" }
+        logger.warn { "vmInitEvent: Run without http hook" }
     }
 
     globalCallbacks()
     loadJvmModule("test2code")
-    RequestHolder.init(isAsync = agentParameters.isAsyncApp)
+    RequestHolder.init(JavaAgentConfiguration.parameters[ParameterDefinitions.IS_ASYNC_APP])
     JvmModuleMessageSender.sendAgentMetadata()
 }
 
-@Suppress("UNCHECKED_CAST")
-private fun loadJvmModule(id: String) {
-    try {
-        JvmModuleLoader.loadJvmModule(id).load()
-    } catch (ex: Exception) {
-        logger.error(ex) { "Fatal error processing plugin: id=${id}" }
-    }
+private fun loadJvmModule(id: String) = try {
+    JvmModuleLoader.loadJvmModule(id).load()
+} catch (ex: Exception) {
+    logger.error(ex) { "Fatal error processing plugin: id=${id}" }
 }

@@ -37,9 +37,22 @@ private val logger = KotlinLogging.logger("com.epam.drill.agent.jvmti.event.Clas
 @SharedImmutable
 private val strategys = listOf(JavaHttpUrlConnection, ApacheClient, OkHttpClient)
 
+@SharedImmutable
+private val isAsyncApp = JavaAgentConfiguration.parameters[ParameterDefinitions.IS_ASYNC_APP]
+@SharedImmutable
+private val isTlsApp = JavaAgentConfiguration.parameters[ParameterDefinitions.IS_TLS_APP]
+@SharedImmutable
+private val isWebApp = JavaAgentConfiguration.parameters[ParameterDefinitions.IS_WEB_APP]
+@SharedImmutable
+private val isKafka = JavaAgentConfiguration.parameters[ParameterDefinitions.IS_KAFKA]
+@SharedImmutable
+private val isCadence = JavaAgentConfiguration.parameters[ParameterDefinitions.IS_CADENCE]
+@SharedImmutable
+private val isHttpHookEnabled = JavaAgentConfiguration.parameters[ParameterDefinitions.HTTP_HOOK_ENABLED]
+
 internal val totalTransformClass = AtomicInt(0)
 
-@Suppress("unused", "UNUSED_PARAMETER")
+@Suppress("UNUSED_PARAMETER")
 fun classFileLoadHook(
     jvmtiEnv: CPointer<jvmtiEnvVar>?,
     jniEnv: CPointer<JNIEnvVar>?,
@@ -54,7 +67,7 @@ fun classFileLoadHook(
 ) {
     initRuntimeIfNeeded()
     val kClassName = clsName?.toKString() ?: return
-    if (isBootstrapClassLoading(loader, protection_domain) && !agentParameters.isTlsApp && !agentParameters.isAsyncApp
+    if (isBootstrapClassLoading(loader, protection_domain) && !isTlsApp && !isAsyncApp
         && !kClassName.contains("Http") // raw hack for http(s) classes
     ) return
     if (classData == null || kClassName.startsWith(DRILL_PACKAGE)) return
@@ -67,8 +80,8 @@ fun classFileLoadHook(
         val superName = classReader.superName ?: ""
         val interfaces = classReader.interfaces.filterNotNull()
         //TODO needs refactoring EPMDJ-8528
-        if (agentParameters.isAsyncApp || agentParameters.isWebApp) {
-            if (agentParameters.isAsyncApp && isTTLCandidate(kClassName, superName, interfaces)) {
+        if (isAsyncApp || isWebApp) {
+            if (isAsyncApp && isTTLCandidate(kClassName, superName, interfaces)) {
                 transformers += { bytes ->
                     TTLTransformer.transform(
                         loader,
@@ -83,7 +96,7 @@ fun classFileLoadHook(
             }
         }
 
-        if (agentParameters.isKafka) {
+        if (isKafka) {
             if (KAFKA_PRODUCER_INTERFACE in interfaces) {
                 transformers += { bytes ->
                     KafkaTransformer.transform(KAFKA_PRODUCER_INTERFACE, bytes, loader, protection_domain)
@@ -95,7 +108,7 @@ fun classFileLoadHook(
                 }
             }
         }
-        if (agentParameters.isCadence) {
+        if (isCadence) {
             if (CADENCE_PRODUCER == kClassName || CADENCE_CONSUMER == kClassName) {
                 transformers += { bytes -> CadenceTransformer.transform(kClassName, bytes, loader, protection_domain) }
             }
@@ -106,7 +119,7 @@ fun classFileLoadHook(
                 transformers += { bytes -> plugin.instrument(kClassName, bytes) }
             }
         }
-        if (!Agent.isHttpHookEnabled) {
+        if (!isHttpHookEnabled) {
             if (kClassName.startsWith("org/apache/catalina/core/ApplicationFilterChain")) {
                 logger.info { "Http hook is off, starting transform tomcat class kClassName $kClassName..." }
                 transformers += { bytes ->
