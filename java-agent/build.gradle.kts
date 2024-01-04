@@ -80,7 +80,6 @@ kotlin {
                     package com.epam.drill.agent
                     
                     internal val agentVersion = "${project.version}"
-                    internal val nativeAgentLibName = "$nativeAgentLibName"
                 """.trimIndent())
             }
             dependencies {
@@ -88,12 +87,11 @@ kotlin {
                 implementation(project(":http-clients-instrumentation"))
                 implementation(project(":logging"))
                 implementation(project(":common"))
+                implementation(project(":agent-config"))
             }
         }
         val jvmMain by getting {
             dependencies {
-                implementation(kotlin("reflect"))
-                implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:$kotlinxSerializationVersion")
                 implementation("org.jetbrains.kotlinx:kotlinx-serialization-protobuf:$kotlinxSerializationVersion")
                 implementation("org.javassist:javassist:$javassistVersion")
                 implementation("com.alibaba:transmittable-thread-local:$transmittableThreadLocalVersion")
@@ -110,7 +108,6 @@ kotlin {
                 implementation("com.benasher44:uuid:$uuidVersion")
                 implementation("io.ktor:ktor-utils:$ktorVersion")
                 implementation(project(":interceptor-http"))
-                implementation(project(":agent-config"))
                 implementation(project(":jvmapi"))
                 implementation(project(":knasm"))
                 implementation(project(":konform"))

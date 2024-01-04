@@ -234,7 +234,7 @@ private fun getDrillInstallationDir(commandLineParams: Map<String, String>): Str
 }
 
 private fun getAgentPathCommand(): String? {
-    return getenv("JAVA_TOOL_OPTIONS")?.toKString() ?: runCatching { getAgentPathCommandFromProcess() }.getOrNull()
+    return getenv("JAVA_TOOL_OPTIONS")?.toKString() ?: runCatching { AgentProcessMetadata.commandLine }.getOrNull()
 }
 
 internal fun parseAgentDirFromAgentPathCommand(agentPathCommand: String, pathSeparator: String = "/"): String? {
