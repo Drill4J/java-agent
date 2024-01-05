@@ -17,18 +17,23 @@ package com.epam.drill.agent.request
 
 import com.epam.drill.agent.configuration.JavaAgentConfiguration
 import com.epam.drill.agent.configuration.ParameterDefinitions
-import com.epam.drill.agent.configuration.idHeaderPairFromConfig
-import com.epam.drill.agent.configuration.retrieveAdminUrl
 
 actual object HeadersRetriever {
 
-    private val idHeaderPair = idHeaderPairFromConfig()
+    internal val requestPattern = JavaAgentConfiguration.parameters[ParameterDefinitions.REQUEST_PATTERN]
+
+    internal val adminAddress = JavaAgentConfiguration.parameters[ParameterDefinitions.ADMIN_ADDRESS]
+        .let { Regex("\\w+://(.+)").matchEntire(it)!!.groupValues[1] }
+
+    internal val idHeaderPair = JavaAgentConfiguration.agentMetadata.serviceGroupId.takeIf(String::isNotEmpty)
+        ?.let { "drill-group-id" to JavaAgentConfiguration.agentMetadata.serviceGroupId }
+        ?: let { "drill-agent-id" to JavaAgentConfiguration.agentMetadata.id }
 
     actual fun adminAddressHeader(): String? = "drill-admin-url"
 
-    actual fun retrieveAdminAddress(): String? = retrieveAdminUrl()
+    actual fun retrieveAdminAddress(): String? = adminAddress
 
-    actual fun sessionHeaderPattern(): String? = JavaAgentConfiguration.parameters[ParameterDefinitions.REQUEST_PATTERN]
+    actual fun sessionHeaderPattern(): String? = requestPattern
 
     actual fun idHeaderConfigKey(): String? = idHeaderPair.first
 

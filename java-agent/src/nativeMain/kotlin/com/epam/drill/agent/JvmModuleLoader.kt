@@ -15,7 +15,6 @@
  */
 package com.epam.drill.agent
 
-import kotlin.reflect.KCallable
 import kotlin.reflect.KClass
 import com.epam.drill.agent.module.InstrumentationAgentModule
 import com.epam.drill.common.agent.AgentModule
@@ -27,19 +26,20 @@ import com.epam.drill.jvmapi.getObjectMethod
 
 actual object JvmModuleLoader {
 
-    actual fun loadJvmModule(id: String): AgentModule<*> =
-        callObjectAgentModuleMethodWithString(JvmModuleLoader::class, JvmModuleLoader::loadJvmModule, id).run {
+    actual fun loadJvmModule(classname: String): AgentModule<*> =
+        callObjectAgentModuleMethodWithString(
+            JvmModuleLoader::class,
+            JvmModuleLoader::loadJvmModule.name,
+            classname
+        ).run {
             val moduleClass = NewGlobalRef(GetObjectClass(this))!!
             val moduleRef = NewGlobalRef(this)!!
-            InstrumentationAgentModule(id, moduleClass, moduleRef).also { JvmModuleStorage.add(it) }
+            InstrumentationAgentModule(classname, moduleClass, moduleRef).also { JvmModuleStorage.add(it) }
+        }
+
+    private fun callObjectAgentModuleMethodWithString(clazz: KClass<out Any>, method: String, string: String?) =
+        getObjectMethod(clazz, method, "(Ljava/lang/String;)Lcom/epam/drill/common/agent/AgentModule;").run {
+            CallObjectMethod(this.first, this.second, string?.let(::NewStringUTF))
         }
 
 }
-
-private fun callObjectAgentModuleMethodWithString(clazz: KClass<out Any>, method: String, string: String?) =
-    getObjectMethod(clazz, method, "(Ljava/lang/String;)Lcom/epam/drill/common/agent/AgentModule;").run {
-        CallObjectMethod(this.first, this.second, string?.let(::NewStringUTF))
-    }
-
-private fun callObjectAgentModuleMethodWithString(clazz: KClass<out Any>, method: KCallable<Any?>, string: String?) =
-    callObjectAgentModuleMethodWithString(clazz, method.name, string)

@@ -16,14 +16,19 @@
 package com.epam.drill.agent.jvmti.event
 
 import kotlinx.cinterop.CPointer
+import kotlinx.serialization.protobuf.ProtoBuf
 import mu.KotlinLogging
-import com.epam.drill.agent.configuration.JavaAgentConfiguration
 import com.epam.drill.agent.JvmModuleLoader
+import com.epam.drill.agent.closeSession
 import com.epam.drill.agent.configuration.AgentLoggingConfiguration
+import com.epam.drill.agent.configuration.JavaAgentConfiguration
 import com.epam.drill.agent.configuration.ParameterDefinitions
-import com.epam.drill.agent.globalCallbacks
 import com.epam.drill.agent.configuration.configureHttp
+import com.epam.drill.agent.drillRequest
+import com.epam.drill.agent.request.DrillRequest
 import com.epam.drill.agent.request.RequestHolder
+import com.epam.drill.agent.request.RequestProcessor
+import com.epam.drill.agent.sessionStorage
 import com.epam.drill.agent.transport.JvmModuleMessageSender
 import com.epam.drill.jvmapi.gen.JNIEnvVar
 import com.epam.drill.jvmapi.gen.JVMTI_ENABLE
@@ -50,14 +55,24 @@ fun vmInitEvent(env: CPointer<jvmtiEnvVar>?, jniEnv: CPointer<JNIEnvVar>?, threa
         logger.warn { "vmInitEvent: Run without http hook" }
     }
 
-    globalCallbacks()
-    loadJvmModule("test2code")
-    RequestHolder.init(JavaAgentConfiguration.parameters[ParameterDefinitions.IS_ASYNC_APP])
+    registerGlobalCallbacks()
+    loadJvmModule("com.epam.drill.test2code.Test2Code")
     JvmModuleMessageSender.sendAgentMetadata()
 }
 
-private fun loadJvmModule(id: String) = try {
-    JvmModuleLoader.loadJvmModule(id).load()
-} catch (ex: Exception) {
-    logger.error(ex) { "Fatal error processing plugin: id=${id}" }
+private fun registerGlobalCallbacks() {
+    sessionStorage = {
+        RequestHolder.store(ProtoBuf.encodeToByteArray(DrillRequest.serializer(), it))
+    }
+    closeSession = {
+        RequestProcessor.processServerResponse()
+        RequestHolder.closeSession()
+    }
+    drillRequest = {
+        RequestHolder.dump()?.let { ProtoBuf.decodeFromByteArray(DrillRequest.serializer(), it) }
+    }
+    RequestHolder.init(JavaAgentConfiguration.parameters[ParameterDefinitions.IS_ASYNC_APP])
 }
+
+private fun loadJvmModule(id: String) = runCatching { JvmModuleLoader.loadJvmModule(id).load() }
+    .onFailure { logger.error(it) { "Fatal error processing plugin: id=${id}" } }

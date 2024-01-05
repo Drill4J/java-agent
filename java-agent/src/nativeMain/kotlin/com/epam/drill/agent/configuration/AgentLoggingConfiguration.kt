@@ -68,5 +68,4 @@ object AgentLoggingConfiguration {
         }
     }
 
-
 }

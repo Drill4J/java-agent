@@ -17,15 +17,15 @@ package com.epam.drill.agent.configuration
 
 import kotlinx.cinterop.toKString
 import kotlinx.serialization.modules.serializersModuleOf
+import platform.posix.O_RDONLY
+import platform.posix.close
 import platform.posix.getenv
+import platform.posix.open
+import io.ktor.utils.io.core.readText
+import io.ktor.utils.io.streams.Input
 import mu.KotlinLogging
 import com.epam.drill.agent.SYSTEM_CONFIG_PATH
 import com.epam.drill.agent.configuration.serialization.SimpleMapDecoder
-import io.ktor.utils.io.core.*
-import io.ktor.utils.io.streams.*
-import platform.posix.O_RDONLY
-import platform.posix.close
-import platform.posix.open
 
 private const val DRILL_INSTALLATION_DIR_PARAM = "drillInstallationDir"
 private const val CONFIG_PATH_PARAM = "configPath"
@@ -33,14 +33,6 @@ private const val CONFIG_PATH_PARAM = "configPath"
 private val logger = KotlinLogging.logger("com.epam.drill.agent.configuration.Configuration")
 private val urlSchemeRegex = Regex("\\w+://(.*)")
 internal val pathSeparator = if (Platform.osFamily == OsFamily.WINDOWS) "\\" else "/"
-
-fun idHeaderPairFromConfig(): Pair<String, String> = when (JavaAgentConfiguration.agentMetadata.serviceGroupId) {
-    "" -> "drill-agent-id" to JavaAgentConfiguration.agentMetadata.id
-    else -> "drill-group-id" to JavaAgentConfiguration.agentMetadata.serviceGroupId
-}
-
-fun retrieveAdminUrl() = urlSchemeRegex
-    .matchEntire(JavaAgentConfiguration.parameters[ParameterDefinitions.ADMIN_ADDRESS])!!.groupValues[1]
 
 fun convertToAgentArguments(args: String): AgentArguments {
     val commandLineParams = parseArguments(args)

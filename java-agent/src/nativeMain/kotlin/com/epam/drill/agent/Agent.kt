@@ -48,21 +48,14 @@ object Agent {
 
         val agentArguments = convertToAgentArguments(options)
         validate(agentArguments)
-        setUnhandledExceptionHook({ error: Throwable ->
-            logger.error(error) { "unhandled event $error" }
-        }.freeze())
 
-        memScoped {
-            val jvmtiCapabilities = alloc<jvmtiCapabilities>()
-            jvmtiCapabilities.can_retransform_classes = 1.toUInt()
-            jvmtiCapabilities.can_maintain_original_method_order = 1.toUInt()
-            AddCapabilities(jvmtiCapabilities.ptr)
-        }
+        addCapabilities()
+        setEventCallbacks()
+        setUnhandledExceptionHook({ error: Throwable -> logger.error(error) { "Unhandled event: $error" }}.freeze())
         AddToBootstrapClassLoaderSearch("${JavaAgentConfiguration.parameters[INSTALLATION_DIR]}/drillRuntime.jar")
-        callbackRegister()
 
-        logger.info { "The native agent was loaded" }
-        logger.info { "Pid is: " + getpid() }
+        logger.info { "agentOnLoad: The native agent has been loaded" }
+        logger.info { "agentOnLoad: Pid is: " + getpid() }
 
         return JNI_OK
     }
@@ -71,7 +64,14 @@ object Agent {
         logger.info { "Agent_OnUnload" }
     }
 
-    private fun callbackRegister() = memScoped {
+    private fun addCapabilities() = memScoped {
+        val jvmtiCapabilities = alloc<jvmtiCapabilities>()
+        jvmtiCapabilities.can_retransform_classes = 1.toUInt()
+        jvmtiCapabilities.can_maintain_original_method_order = 1.toUInt()
+        AddCapabilities(jvmtiCapabilities.ptr)
+    }
+
+    private fun setEventCallbacks() = memScoped {
         val alloc = alloc<jvmtiEventCallbacks>()
         alloc.VMInit = staticCFunction(::vmInitEvent)
         alloc.VMDeath = staticCFunction(::vmDeathEvent)
@@ -79,6 +79,5 @@ object Agent {
         SetEventCallbacks(alloc.ptr, sizeOf<jvmtiEventCallbacks>().toInt())
         SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_VM_INIT, null)
     }
-
 
 }

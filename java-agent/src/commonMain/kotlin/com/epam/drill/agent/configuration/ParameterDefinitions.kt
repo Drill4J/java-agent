@@ -27,7 +27,7 @@ object ParameterDefinitions {
     val SSL_TRUSTSTORE = AgentParameterDefinition.forString(name = "sslTruststore")
     val SSL_TRUSTSTORE_PASSWORD = AgentParameterDefinition.forString(name = "sslTruststorePassword")
     val LOG_LEVEL = AgentParameterDefinition.forString(name = "logLevel", defaultValue = "INFO")
-    val LOG_FILE = AgentParameterDefinition.forString(name = "logLevel")
+    val LOG_FILE = AgentParameterDefinition.forString(name = "logFile")
     val LOG_LIMIT = AgentParameterDefinition.forInt(name = "logLimit", defaultValue = 512)
     val REQUEST_PATTERN = AgentParameterDefinition.forString(name = "requestPattern", defaultValue = "drill-session-id")
     val HTTP_HOOK_ENABLED = AgentParameterDefinition.forBoolean(name = "httpHookEnabled", defaultValue = true)

@@ -19,6 +19,6 @@ import com.epam.drill.common.agent.AgentModule
 
 expect object JvmModuleLoader {
 
-    fun loadJvmModule(id: String): AgentModule<*>
+    fun loadJvmModule(classname: String): AgentModule<*>
 
 }

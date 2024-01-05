@@ -16,10 +16,10 @@
 package com.epam.drill.agent.transport
 
 import java.io.File
-import com.epam.drill.agent.configuration.DefaultParameterDefinitions
 import io.aesy.datasize.ByteUnit
 import io.aesy.datasize.DataSize
 import mu.KotlinLogging
+import com.epam.drill.agent.configuration.DefaultParameterDefinitions
 import com.epam.drill.agent.configuration.JavaAgentConfiguration
 import com.epam.drill.agent.configuration.ParameterDefinitions
 import com.epam.drill.agent.transport.http.HttpAgentMessageDestinationMapper
@@ -30,7 +30,7 @@ import com.epam.drill.common.agent.transport.AgentMessageSender
 
 actual object JvmModuleMessageSender : AgentMessageSender {
 
-    private const val QUEUE_DEFAULT_SIZE: Long = 512 * 1024 * 1024
+    private const val QUEUE_DEFAULT_SIZE: Long = 512L * 1024 * 1024
 
     private val logger = KotlinLogging.logger {}
     private val messageSender = messageSender()

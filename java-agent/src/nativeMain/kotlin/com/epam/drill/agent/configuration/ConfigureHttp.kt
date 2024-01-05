@@ -31,8 +31,8 @@ internal var drillRequest: DrillRequest? = null
 fun configureHttp() {
     configureHttpInterceptor()
     injectedHeaders.value = {
-        val idHeaderPair = idHeaderPairFromConfig()
-        val adminUrl = retrieveAdminUrl()
+        val idHeaderPair = HeadersRetriever.idHeaderPair
+        val adminUrl = HeadersRetriever.adminAddress
         mapOf(
             idHeaderPair,
             "drill-admin-url" to adminUrl
@@ -49,7 +49,7 @@ fun configureHttp() {
                 logger.debug { "Drill headers: $drillHeaders" }
             }
         }
-        val sessionId = headers[JavaAgentConfiguration.parameters[ParameterDefinitions.REQUEST_PATTERN]]
+        val sessionId = headers[HeadersRetriever.requestPattern]
         sessionId?.let { DrillRequest(it, headers) }?.also {
             drillRequest = it
             sessionStorage(it)
