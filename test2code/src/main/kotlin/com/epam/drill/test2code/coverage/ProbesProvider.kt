@@ -70,6 +70,7 @@ class ThreadExecDataProvider(
     private val context: ThreadLocal<ContextKey> = ThreadLocal()
     private val execData: ThreadLocal<ExecData> = ThreadLocal()
     private lateinit var globalExecData: ExecData
+    private lateinit var sentGlobalExecData: ExecData
 
     init {
         addGlobalExecDataToPool()
@@ -84,9 +85,9 @@ class ThreadExecDataProvider(
     }
 
     private fun releaseGlobalExecDataFromPool() {
-        execDataPool.release(CONTEXT_AMBIENT, globalExecData)
-        // TODO cannot set this.globalExecData = null, since it still can be used by instrumented code
-        //      it also means some coverage might be lost when coverage polling happens before instrumented method returns
+        val newGlobalExecData = sentGlobalExecData.subtract(globalExecData)
+        sentGlobalExecData.mergeWith(globalExecData)
+        execDataPool.release(CONTEXT_AMBIENT, newGlobalExecData)
     }
 
     override fun setContext(sessionId: String?, testId: String?) {
@@ -145,5 +146,35 @@ class ThreadExecDataProvider(
             )
         }
         return  execDatum.probes
+    }
+}
+
+private fun AgentProbes.subtract(subtrahend: AgentProbes): AgentProbes {
+    val probes = AgentProbes(this.values.size)
+    (values.indices).forEach { probes.values[it] = !values[it] && subtrahend.values[it] }
+    return probes
+}
+
+private fun ExecData.subtract(subtrahend: ExecData): ExecData {
+    val result = ExecData()
+    for ((key, datum) in subtrahend) {
+        val correspondingDatum = this[key]
+        if (correspondingDatum == null) {
+            val clonedProbes = datum.probes.values.copyOf()
+            result[key] = datum.copy(probes = AgentProbes(clonedProbes.size, clonedProbes))
+        } else if (!correspondingDatum.probes.values.contentEquals(datum.probes.values)) {
+            result[key] = datum.copy(probes = correspondingDatum.probes.subtract(datum.probes))
+        }
+    }
+    return result
+}
+
+private fun ExecData.mergeWith(map: ExecData) {
+    for ((key, data) in map) {
+        val existingData = this[key]
+        if (existingData == null || !existingData.probes.values.contentEquals(data.probes.values)) {
+            val clonedProbes = data.probes.values.copyOf()
+            this[key] = data.copy(probes = AgentProbes(clonedProbes.size, clonedProbes))
+        }
     }
 }
