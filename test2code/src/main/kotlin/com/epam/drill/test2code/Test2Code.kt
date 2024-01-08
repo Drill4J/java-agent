@@ -21,20 +21,22 @@ import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.json.Json
 import java.util.concurrent.ConcurrentHashMap
 import mu.KotlinLogging
-import com.epam.drill.common.classloading.ClassScanner
-import com.epam.drill.common.classloading.EntitySource
-import com.epam.drill.common.agent.AgentModule
 import com.epam.drill.common.agent.AgentContext
+import com.epam.drill.common.agent.AgentModule
 import com.epam.drill.common.agent.Instrumenter
 import com.epam.drill.common.agent.configuration.AgentConfiguration
 import com.epam.drill.common.agent.transport.AgentMessage
 import com.epam.drill.common.agent.transport.AgentMessageDestination
 import com.epam.drill.common.agent.transport.AgentMessageSender
+import com.epam.drill.common.classloading.ClassScanner
+import com.epam.drill.common.classloading.EntitySource
 import com.epam.drill.plugins.test2code.common.api.AgentAction
 import com.epam.drill.plugins.test2code.common.api.AstEntity
+import com.epam.drill.plugins.test2code.common.transport.ClassMetadata
 import com.epam.drill.test2code.classloading.ClassLoadersScanner
 import com.epam.drill.test2code.classparsing.parseAstClass
-import com.epam.drill.plugins.test2code.common.transport.ClassMetadata
+import com.epam.drill.test2code.configuration.ParameterDefinitions
+import com.epam.drill.test2code.configuration.ParametersValidator
 import com.epam.drill.test2code.coverage.*
 
 private const val DRILL_TEST_ID_HEADER = "drill-test-id"
@@ -69,6 +71,7 @@ class Test2Code(
     ): ByteArray? = instrumenter.instrument(className, initialBytes)
 
     override fun load() {
+        ParametersValidator.validate(configuration.parameters)
         logger.info { "load: Waiting for transport availability for class metadata scanning" }
         thread {
             while(!sender.available) Thread.sleep(500)

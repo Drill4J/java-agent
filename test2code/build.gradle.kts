@@ -45,9 +45,10 @@ dependencies {
     implementation("org.apache.bcel:bcel:$bcelVersion")
     implementation("io.github.microutils:kotlin-logging-jvm:$microutilsLoggingVersion")
 
-    implementation(project(":jacoco"))
     implementation(project(":common"))
     implementation(project(":test2code-common"))
+    implementation(project(":jacoco"))
+    implementation(project(":konform"))
 }
 
 kotlin.sourceSets.all {

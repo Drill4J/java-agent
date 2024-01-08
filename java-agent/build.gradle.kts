@@ -98,6 +98,7 @@ kotlin {
                 implementation("io.aesy:datasize:$aesyDatasizeVersion")
                 implementation(project(":agent-transport"))
                 implementation(project(":http-clients-instrumentation"))
+                runtimeOnly(project(":test2code"))
             }
         }
         val configureNativeDependencies: KotlinSourceSet.() -> Unit = {

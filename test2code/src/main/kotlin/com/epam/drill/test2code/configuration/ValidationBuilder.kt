@@ -13,7 +13,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.epam.drill.agent.configuration.exceptions
+package com.epam.drill.test2code.configuration
 
-class AgentParameterValidationException(message: String): RuntimeException(message) {
-}
+import kotlin.time.Duration
+import java.io.File
+import com.epam.drill.konform.validation.Constraint
+import com.epam.drill.konform.validation.ValidationBuilder
+
+fun ValidationBuilder<Duration>.minimum(minimumInclusive: Duration) = addConstraint(
+    "must be at least '{0}' ms", minimumInclusive.inWholeMilliseconds.toString()
+) { it.inWholeMilliseconds >= minimumInclusive.inWholeMilliseconds }
+
+fun ValidationBuilder<String>.pathExists(): Constraint<String> = addConstraint(
+    "must be an existing filepath, but was {value}",
+) { File(it).exists() }

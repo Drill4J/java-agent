@@ -46,9 +46,6 @@ object Agent {
         JavaAgentConfiguration.initializeNative(options)
         AgentLoggingConfiguration.updateNativeLoggingConfiguration()
 
-        val agentArguments = convertToAgentArguments(options)
-        validate(agentArguments)
-
         addCapabilities()
         setEventCallbacks()
         setUnhandledExceptionHook({ error: Throwable -> logger.error(error) { "Unhandled event: $error" }}.freeze())

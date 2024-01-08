@@ -15,35 +15,24 @@
  */
 package com.epam.drill.agent.configuration
 
+import platform.posix.F_OK
+import platform.posix.access
 import com.epam.drill.konform.validation.Constraint
 import com.epam.drill.konform.validation.ValidationBuilder
-import platform.posix.access
-import platform.posix.F_OK
 
-val WS_SCHEMES = setOf("http", "https")
+val TRANSPORT_SCHEMES = setOf("http://", "https://")
 
-fun ValidationBuilder<String>.validWsUrl(): Constraint<String> {
-    return addConstraint(
-        "must have a valid WebSocket URL address, e.g. 'wss://localhost:8090', but was '{value}'"
-    ) {
-        try {
-            WS_SCHEMES
-                .map { "$it://" }
-                .any(it::startsWith)
-        } catch (parseException: RuntimeException) {
-            false
-        }
-    }
-}
+fun ValidationBuilder<String>.validTransportUrl() = addConstraint(
+    "must have a valid URL address, e.g. 'https://localhost:8090', but was '{value}'"
+){ TRANSPORT_SCHEMES.any(it::startsWith) }
 
-fun ValidationBuilder<String>.identifier(): Constraint<String> = addConstraint(
+fun ValidationBuilder<String>.identifier() = addConstraint(
     "must contain only lowercase latin characters",
 ) { it.matches("^[a-z0-9_-]+\$".toRegex()) }
 
-
 fun ValidationBuilder<String>.pathExists(): Constraint<String> = addConstraint(
     "must be an existing filepath, but was {value}",
-) { pathExists(it) }
+) { access(it, F_OK) == 0 }
 
 fun ValidationBuilder<String>.isValidPackage(): Constraint<String> = addConstraint(
     "must have a valid Java package delimited by a forward slash, e.g. 'com/example', but was '{value}'"
@@ -52,7 +41,3 @@ fun ValidationBuilder<String>.isValidPackage(): Constraint<String> = addConstrai
 fun ValidationBuilder<String>.isValidLogLevel(): Constraint<String> = addConstraint(
     "must have a valid logging level for a java package, e.g. 'com.example=INFO', but was '{value}'"
 ) { it.matches("(([a-zA-Z_]\\w*(\\.[a-zA-Z_]\\w*)*)?=)?(TRACE|DEBUG|INFO|WARN|ERROR)".toRegex()) }
-
-private fun pathExists(filePath: String): Boolean {
-    return access(filePath, F_OK) == 0
-}
