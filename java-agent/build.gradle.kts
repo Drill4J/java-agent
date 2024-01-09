@@ -3,7 +3,6 @@ import org.jetbrains.kotlin.gradle.dsl.KotlinMultiplatformExtension
 import org.jetbrains.kotlin.gradle.plugin.KotlinSourceSet
 import org.jetbrains.kotlin.gradle.plugin.mpp.KotlinNativeTarget
 import org.jetbrains.kotlin.gradle.targets.jvm.KotlinJvmTarget
-import org.jetbrains.kotlin.gradle.targets.native.tasks.KotlinNativeTest
 import org.jetbrains.kotlin.konan.target.HostManager
 import org.jetbrains.kotlin.konan.target.presetName
 import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
@@ -40,7 +39,7 @@ repositories {
 
 kotlin {
     val configureNativeTarget: KotlinNativeTarget.() -> Unit = {
-        compilations["test"].cinterops.create("testStubs")
+        compilations["test"].cinterops.create("test_stubs")
         binaries.sharedLib(nativeAgentLibName, setOf(DEBUG))
     }
     val currentPlatformTarget: KotlinMultiplatformExtension.() -> KotlinNativeTarget = {
@@ -90,6 +89,11 @@ kotlin {
                 implementation(project(":agent-config"))
             }
         }
+        val commonTest by getting {
+            dependencies {
+                implementation(kotlin("test"))
+            }
+        }
         val jvmMain by getting {
             dependencies {
                 implementation("org.jetbrains.kotlinx:kotlinx-serialization-protobuf:$kotlinxSerializationVersion")
@@ -113,17 +117,9 @@ kotlin {
                 implementation(project(":konform"))
             }
         }
-        val configureNativeTestDependencies: KotlinSourceSet.() -> Unit = {
-            dependencies {
-                implementation(kotlin("test"))
-            }
-        }
         val linuxX64Main by getting(configuration = configureNativeDependencies)
         val mingwX64Main by getting(configuration = configureNativeDependencies)
         val macosX64Main by getting(configuration = configureNativeDependencies)
-        val linuxX64Test by getting(configuration = configureNativeTestDependencies)
-        val mingwX64Test by getting(configuration = configureNativeTestDependencies)
-        val macosX64Test by getting(configuration = configureNativeTestDependencies)
         mingwX64Main.dependencies {
             implementation(project(":logging-native"))
         }
@@ -202,9 +198,6 @@ kotlin {
             }
         }
         clean.dependsOn(cleanGeneratedClasses)
-        withType<KotlinNativeTest> {
-            testLogging.showStandardStreams = true
-        }
         withType<Copy>().getByName("jvmProcessResources") {
             duplicatesStrategy = DuplicatesStrategy.EXCLUDE
         }

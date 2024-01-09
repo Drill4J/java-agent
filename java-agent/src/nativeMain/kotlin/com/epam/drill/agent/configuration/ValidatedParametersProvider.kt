@@ -88,7 +88,7 @@ class ValidatedParametersProvider(
 
     override val configuration = validateConfiguration()
 
-    private fun validatingConfiguration() = configurationProviders
+    internal fun validatingConfiguration() = configurationProviders
         .sortedBy(AgentConfigurationProvider::priority)
         .map(AgentConfigurationProvider::configuration)
         .reduce { acc, map -> acc + map }
@@ -122,7 +122,7 @@ class ValidatedParametersProvider(
             errors.joinToString("\n") { " - ${convertToField(it)} ${it.message}" }
 
     private fun convertToField(error: ValidationError) = error.dataPath.removePrefix(".")
-        .removeSuffix("AsList")
+        .substringBeforeLast("AsList")
         .removeSuffix("AsInt")
 
     private operator fun getValue(thisRef: Any, property: KProperty<*>) =
