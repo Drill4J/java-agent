@@ -7,7 +7,7 @@ import org.junit.jupiter.api.Assertions.*
 class GlobalCoverageRecorderTest {
 
     @Test
-    fun `given exec data without covered probes, poll must return empty`() {
+    fun `given exec data without covered probes, pollRecorded must return empty`() {
         val recorder = GlobalCoverageRecorder()
         recorder.getContext().putProbes(123L, false, false, false)
 
@@ -17,7 +17,7 @@ class GlobalCoverageRecorderTest {
     }
 
     @Test
-    fun `given exec data with covered probes, poll must return these probes`() {
+    fun `given exec data with covered probes, pollRecorded must return these probes`() {
         val recorder = GlobalCoverageRecorder()
         recorder.getContext().putProbes(100L, true)
         recorder.getContext().putProbes(200L, true, true)
@@ -32,33 +32,41 @@ class GlobalCoverageRecorderTest {
     }
 
     @Test
-    fun `if there have been no new covered probes since last poll, poll must return empty`() {
+    fun `if there have new exec data since last poll, pollRecorded must return all exec data`() {
         val recorder = GlobalCoverageRecorder()
-        recorder.getContext().putProbes(123L, true, true, true)
+        recorder.getContext().putProbes(100L, true)
 
         recorder.pollRecorded()
-        recorder.getContext().putProbes(123L, true, false, false)
+        recorder.getContext().putProbes(200L, true, false)
         val result = recorder.pollRecorded()
 
-        assertTrue(result.toList().isEmpty())
+        assertEquals(2, result.toList().size)
+        assertTrue(result.any { it.probesEquals(100L, true) })
+        assertTrue(result.any { it.probesEquals(200L, true, false) })
     }
 
     @Test
-    fun `poll must return only new probes that covered since last poll`() {
+    fun `if there have been changes in probes since last poll, pollRecorded must return all exec data`() {
         val recorder = GlobalCoverageRecorder()
-        recorder.getContext().putProbes(100L, false)
-        recorder.getContext().putProbes(200L, true, false)
-        recorder.getContext().putProbes(300L, true, false, false)
+        recorder.getContext().putProbes(123L, true, true, false)
 
         recorder.pollRecorded()
-        recorder.getContext().putProbes(100L, true)
-        recorder.getContext().putProbes(200L, false, true)
-        recorder.getContext().putProbes(300L, false, true, true)
+        recorder.getContext().putProbes(123L, true, true, true)
         val result = recorder.pollRecorded()
 
-        assertTrue(result.any { it.probesEquals(100L, true) })
-        assertTrue(result.any { it.probesEquals(200L, false, true) })
-        assertTrue(result.any { it.probesEquals(300L, false, true, true) })
+        assertTrue(result.any { it.probesEquals(123L, true, true, true) })
+    }
+
+    @Test
+    fun `if there have been no changes in probes since last poll, pollRecorded must return empty`() {
+        val recorder = GlobalCoverageRecorder()
+        recorder.getContext().putProbes(123L, true, true, false)
+
+        recorder.pollRecorded()
+        recorder.getContext().putProbes(123L, true, true, false)
+        val result = recorder.pollRecorded()
+
+        assertTrue(result.toList().isEmpty())
     }
 
     private fun ContextCoverage.putProbes(classId: Long, vararg probes: Boolean) {
