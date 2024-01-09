@@ -51,20 +51,6 @@ open class CoverageManager(
             )
         }
         return execDatum.probes
-
-//        val probesProvider = { context: ContextKey ->
-//            val classDescriptor = classDescriptorsManager.get(id)
-//            ExecDatum(
-//                id = classDescriptor.id,
-//                name = classDescriptor.name,
-//                probes = AgentProbes(classDescriptor.probeCount),
-//                sessionId = context.sessionId,
-//                testId = context.testId
-//            )
-//        }
-//        threadCoverageRecorder.write(id) { probesProvider(it) }
-//        globalCoverageRecorder.write(id) { probesProvider(it) }
-//        return execDatum.probes
     }
 }
 
