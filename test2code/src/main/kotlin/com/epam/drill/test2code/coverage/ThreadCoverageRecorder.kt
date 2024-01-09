@@ -48,7 +48,7 @@ class ThreadCoverageRecorder(
             .filter { it.probes.containCovered() }
     }
 
-    override fun getCurrent(): ContextCoverage? {
+    override fun getContext(): ContextCoverage? {
         return context.get()?.let { ctx -> execData.get()?.let { ContextCoverage(ctx, it) } }
     }
 }

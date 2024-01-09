@@ -16,7 +16,7 @@ class GlobalCoverageRecorder(enabled: Boolean = true): ICoverageRecorder {
         enabled.set(false)
     }
 
-    override fun getCurrent(): ContextCoverage? {
+    override fun getContext(): ContextCoverage? {
         return if (enabled.get()) ContextCoverage(CONTEXT_AMBIENT, globalExecData) else null
     }
 

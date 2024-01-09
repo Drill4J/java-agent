@@ -37,8 +37,8 @@ open class CoverageManager(
         name: String,
         probeCount: Int,
     ): AgentProbes {
-        val coverage: ContextCoverage = threadCoverageRecorder.getCurrent()
-            ?: globalCoverageRecorder.getCurrent()
+        val coverage: ContextCoverage = threadCoverageRecorder.getContext()
+            ?: globalCoverageRecorder.getContext()
             ?: return EmptyAgentProbes
         val execDatum = coverage.execData.getOrPut(id) {
             val classDescriptor = classDescriptorsManager.get(id)

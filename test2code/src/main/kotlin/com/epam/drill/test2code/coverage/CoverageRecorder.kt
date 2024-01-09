@@ -4,7 +4,7 @@ package com.epam.drill.test2code.coverage
 interface ICoverageRecorder {
     fun startRecording(sessionId: String, testId: String)
     fun stopRecording(sessionId: String, testId: String)
-    fun getCurrent(): ContextCoverage?
+    fun getContext(): ContextCoverage?
     fun pollRecorded(): Sequence<ExecDatum>
 }
 
