@@ -1,23 +1,21 @@
 package com.epam.drill.test2code.coverage
 
 import com.epam.drill.jacoco.AgentProbes
-import java.util.concurrent.atomic.AtomicBoolean
 
-class GlobalCoverageRecorder(enabled: Boolean = true): ICoverageRecorder {
-    private val enabled = AtomicBoolean(enabled)
+class GlobalCoverageRecorder: ICoverageRecorder {
     private val globalExecData: ExecData = ExecData()
     private val sentGlobalExecData: ExecData = ExecData()
 
     override fun startRecording(sessionId: String, testId: String) {
-        enabled.set(true)
+        // do nothing
     }
 
     override fun stopRecording(sessionId: String, testId: String) {
-        enabled.set(false)
+        // do nothing
     }
 
-    override fun getContext(): ContextCoverage? {
-        return if (enabled.get()) ContextCoverage(CONTEXT_AMBIENT, globalExecData) else null
+    override fun getContext(): ContextCoverage {
+        return ContextCoverage(CONTEXT_AMBIENT, globalExecData)
     }
 
     override fun pollRecorded(): Sequence<ExecDatum> {
