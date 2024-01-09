@@ -19,7 +19,7 @@ import com.epam.drill.common.agent.configuration.AgentConfiguration
 import com.epam.drill.common.agent.configuration.AgentMetadata
 import com.epam.drill.common.agent.configuration.AgentParameters
 
-expect object JavaAgentConfiguration : AgentConfiguration {
+expect object Configuration : AgentConfiguration {
     override val agentMetadata: AgentMetadata
     override val parameters: AgentParameters
     fun initializeNative(agentOptions: String)

@@ -36,17 +36,17 @@ private val logger = KotlinLogging.logger("com.epam.drill.agent.jvmti.event.Clas
 private val strategys = listOf(JavaHttpUrlConnection, ApacheClient, OkHttpClient)
 
 @SharedImmutable
-private val isAsyncApp by lazy { JavaAgentConfiguration.parameters[ParameterDefinitions.IS_ASYNC_APP] }
+private val isAsyncApp by lazy { Configuration.parameters[ParameterDefinitions.IS_ASYNC_APP] }
 @SharedImmutable
-private val isTlsApp by lazy { JavaAgentConfiguration.parameters[ParameterDefinitions.IS_TLS_APP] }
+private val isTlsApp by lazy { Configuration.parameters[ParameterDefinitions.IS_TLS_APP] }
 @SharedImmutable
-private val isWebApp by lazy { JavaAgentConfiguration.parameters[ParameterDefinitions.IS_WEB_APP] }
+private val isWebApp by lazy { Configuration.parameters[ParameterDefinitions.IS_WEB_APP] }
 @SharedImmutable
-private val isKafka by lazy { JavaAgentConfiguration.parameters[ParameterDefinitions.IS_KAFKA] }
+private val isKafka by lazy { Configuration.parameters[ParameterDefinitions.IS_KAFKA] }
 @SharedImmutable
-private val isCadence by lazy { JavaAgentConfiguration.parameters[ParameterDefinitions.IS_CADENCE] }
+private val isCadence by lazy { Configuration.parameters[ParameterDefinitions.IS_CADENCE] }
 @SharedImmutable
-private val isHttpHookEnabled by lazy { JavaAgentConfiguration.parameters[ParameterDefinitions.HTTP_HOOK_ENABLED] }
+private val isHttpHookEnabled by lazy { Configuration.parameters[ParameterDefinitions.HTTP_HOOK_ENABLED] }
 
 internal val totalTransformClass = AtomicInt(0)
 
@@ -112,7 +112,7 @@ fun classFileLoadHook(
             }
         }
         val classSource = ClassSource(kClassName, classReader.superName ?: "", classBytes)
-        if ('$' !in kClassName && classSource.prefixMatches(JavaAgentConfiguration.agentMetadata.packagesPrefixes)) {
+        if ('$' !in kClassName && classSource.prefixMatches(Configuration.agentMetadata.packagesPrefixes)) {
             JvmModuleStorage.values().filterIsInstance<InstrumentationAgentModule>().forEach { plugin ->
                 transformers += { bytes -> plugin.instrument(kClassName, bytes) }
             }

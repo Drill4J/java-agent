@@ -29,9 +29,9 @@ object AgentLoggingConfiguration {
     }
 
     fun updateNativeLoggingConfiguration() {
-        val logLevel = JavaAgentConfiguration.parameters[ParameterDefinitions.LOG_LEVEL]
-        val logFile = JavaAgentConfiguration.parameters[ParameterDefinitions.LOG_FILE].takeIf(String::isNotEmpty)
-        val logLimit = JavaAgentConfiguration.parameters[ParameterDefinitions.LOG_LIMIT]
+        val logLevel = Configuration.parameters[ParameterDefinitions.LOG_LEVEL]
+        val logFile = Configuration.parameters[ParameterDefinitions.LOG_FILE].takeIf(String::isNotEmpty)
+        val logLimit = Configuration.parameters[ParameterDefinitions.LOG_LIMIT]
 
         LoggingConfiguration.setLoggingLevels(logLevel)
         if (LoggingConfiguration.getLoggingFilename() != logFile) {
@@ -47,9 +47,9 @@ object AgentLoggingConfiguration {
     }
 
     fun updateJvmLoggingConfiguration() {
-        val logLevel = JavaAgentConfiguration.parameters[ParameterDefinitions.LOG_LEVEL]
-        val logFile = JavaAgentConfiguration.parameters[ParameterDefinitions.LOG_FILE].takeIf(String::isNotEmpty)
-        val logLimit = JavaAgentConfiguration.parameters[ParameterDefinitions.LOG_LIMIT]
+        val logLevel = Configuration.parameters[ParameterDefinitions.LOG_LEVEL]
+        val logFile = Configuration.parameters[ParameterDefinitions.LOG_FILE].takeIf(String::isNotEmpty)
+        val logLimit = Configuration.parameters[ParameterDefinitions.LOG_LIMIT]
 
         callObjectVoidMethodWithString(LoggingConfiguration::class, "setLoggingLevels", logLevel)
         if (callObjectStringMethod(LoggingConfiguration::class,LoggingConfiguration::getLoggingFilename) != logFile) {

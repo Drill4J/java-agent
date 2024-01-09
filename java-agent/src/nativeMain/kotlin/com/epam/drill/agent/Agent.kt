@@ -43,13 +43,13 @@ object Agent {
         println(LOGO)
 
         AgentLoggingConfiguration.defaultNativeLoggingConfiguration()
-        JavaAgentConfiguration.initializeNative(options)
+        Configuration.initializeNative(options)
         AgentLoggingConfiguration.updateNativeLoggingConfiguration()
 
         addCapabilities()
         setEventCallbacks()
         setUnhandledExceptionHook({ error: Throwable -> logger.error(error) { "Unhandled event: $error" }}.freeze())
-        AddToBootstrapClassLoaderSearch("${JavaAgentConfiguration.parameters[INSTALLATION_DIR]}/drillRuntime.jar")
+        AddToBootstrapClassLoaderSearch("${Configuration.parameters[INSTALLATION_DIR]}/drillRuntime.jar")
 
         logger.info { "agentOnLoad: The native agent has been loaded" }
         logger.info { "agentOnLoad: Pid is: " + getpid() }

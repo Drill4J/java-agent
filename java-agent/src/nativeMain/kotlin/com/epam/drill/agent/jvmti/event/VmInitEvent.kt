@@ -21,7 +21,7 @@ import mu.KotlinLogging
 import com.epam.drill.agent.JvmModuleLoader
 import com.epam.drill.agent.closeSession
 import com.epam.drill.agent.configuration.AgentLoggingConfiguration
-import com.epam.drill.agent.configuration.JavaAgentConfiguration
+import com.epam.drill.agent.configuration.Configuration
 import com.epam.drill.agent.configuration.ParameterDefinitions
 import com.epam.drill.agent.configuration.configureHttp
 import com.epam.drill.agent.drillRequest
@@ -46,9 +46,9 @@ fun vmInitEvent(env: CPointer<jvmtiEnvVar>?, jniEnv: CPointer<JNIEnvVar>?, threa
 
     AgentLoggingConfiguration.defaultJvmLoggingConfiguration()
     AgentLoggingConfiguration.updateJvmLoggingConfiguration()
-    JavaAgentConfiguration.initializeJvm()
+    Configuration.initializeJvm()
 
-    if (JavaAgentConfiguration.parameters[ParameterDefinitions.HTTP_HOOK_ENABLED]) {
+    if (Configuration.parameters[ParameterDefinitions.HTTP_HOOK_ENABLED]) {
         logger.info { "vmInitEvent: Run with http hook" }
         configureHttp()
     } else {
@@ -71,7 +71,7 @@ private fun registerGlobalCallbacks() {
     drillRequest = {
         RequestHolder.dump()?.let { ProtoBuf.decodeFromByteArray(DrillRequest.serializer(), it) }
     }
-    RequestHolder.init(JavaAgentConfiguration.parameters[ParameterDefinitions.IS_ASYNC_APP])
+    RequestHolder.init(Configuration.parameters[ParameterDefinitions.IS_ASYNC_APP])
 }
 
 private fun loadJvmModule(id: String) = runCatching { JvmModuleLoader.loadJvmModule(id).load() }

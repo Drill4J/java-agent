@@ -27,7 +27,7 @@ import com.epam.drill.common.agent.configuration.AgentMetadata
 import com.epam.drill.common.agent.configuration.AgentParameters
 import com.epam.drill.jvmapi.callObjectVoidMethodWithString
 
-actual object JavaAgentConfiguration : AgentConfiguration {
+actual object Configuration : AgentConfiguration {
 
     private val logger = KotlinLogging.logger("com.epam.drill.agent.configuration.JavaAgentConfiguration")
     private val configuration = AtomicReference<DefaultAgentConfiguration?>(null)
@@ -72,7 +72,7 @@ actual object JavaAgentConfiguration : AgentConfiguration {
     }
 
     actual fun initializeJvm(inputParameters: String): Unit =
-        callObjectVoidMethodWithString(JavaAgentConfiguration::class, "initializeJvm", inputParameters)
+        callObjectVoidMethodWithString(Configuration::class, "initializeJvm", inputParameters)
 
     fun initializeJvm(): Unit = configuration.value!!.inputParameters.entries
         .joinToString(",") { "${it.key}=${it.value}" }

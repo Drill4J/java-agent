@@ -20,7 +20,7 @@ import io.aesy.datasize.ByteUnit
 import io.aesy.datasize.DataSize
 import mu.KotlinLogging
 import com.epam.drill.agent.configuration.DefaultParameterDefinitions
-import com.epam.drill.agent.configuration.JavaAgentConfiguration
+import com.epam.drill.agent.configuration.Configuration
 import com.epam.drill.agent.configuration.ParameterDefinitions
 import com.epam.drill.agent.transport.http.HttpAgentMessageDestinationMapper
 import com.epam.drill.agent.transport.http.HttpAgentMessageTransport
@@ -42,31 +42,31 @@ actual object JvmModuleMessageSender : AgentMessageSender {
         messageSender.send(destination, message)
 
     actual fun sendAgentMetadata() {
-        messageSender.send(JavaAgentConfiguration.agentMetadata)
+        messageSender.send(Configuration.agentMetadata)
     }
 
     private fun messageSender(): QueuedAgentMessageSender<ByteArray> {
         val transport = HttpAgentMessageTransport(
-            JavaAgentConfiguration.parameters[ParameterDefinitions.ADMIN_ADDRESS],
-            JavaAgentConfiguration.parameters[ParameterDefinitions.SSL_TRUSTSTORE].let(::resolvePath),
-            JavaAgentConfiguration.parameters[ParameterDefinitions.SSL_TRUSTSTORE_PASSWORD]
+            Configuration.parameters[ParameterDefinitions.ADMIN_ADDRESS],
+            Configuration.parameters[ParameterDefinitions.SSL_TRUSTSTORE].let(::resolvePath),
+            Configuration.parameters[ParameterDefinitions.SSL_TRUSTSTORE_PASSWORD]
         )
         val serializer = ProtoBufAgentMessageSerializer()
         val mapper = HttpAgentMessageDestinationMapper(
-            JavaAgentConfiguration.agentMetadata.id,
-            JavaAgentConfiguration.agentMetadata.buildVersion
+            Configuration.agentMetadata.id,
+            Configuration.agentMetadata.buildVersion
         )
         val metadataSender = RetryingAgentMetadataSender(transport, serializer, mapper)
         val queue = InMemoryAgentMessageQueue(
             serializer,
-            JavaAgentConfiguration.parameters[ParameterDefinitions.MESSAGE_QUEUE_LIMIT].let(::parseBytes)
+            Configuration.parameters[ParameterDefinitions.MESSAGE_QUEUE_LIMIT].let(::parseBytes)
         )
         val notifier = RetryingTransportStateNotifier(transport, serializer, queue)
         return QueuedAgentMessageSender(transport, serializer, mapper, metadataSender, notifier, notifier, queue)
     }
 
     private fun resolvePath(path: String) = File(path).run {
-        val installationDir = File(JavaAgentConfiguration.parameters[DefaultParameterDefinitions.INSTALLATION_DIR])
+        val installationDir = File(Configuration.parameters[DefaultParameterDefinitions.INSTALLATION_DIR])
         val resolved = this.takeIf(File::exists)
             ?: this.takeUnless(File::isAbsolute)?.let(installationDir::resolve)
         logger.trace { "resolvePath: Resolved $path to ${resolved?.absolutePath}" }

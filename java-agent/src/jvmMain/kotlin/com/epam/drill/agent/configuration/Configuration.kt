@@ -20,7 +20,7 @@ import com.epam.drill.common.agent.configuration.AgentConfiguration
 import com.epam.drill.common.agent.configuration.AgentMetadata
 import com.epam.drill.common.agent.configuration.AgentParameters
 
-actual object JavaAgentConfiguration : AgentConfiguration {
+actual object Configuration : AgentConfiguration {
 
     private val logger = KotlinLogging.logger {}
     private lateinit var configuration: DefaultAgentConfiguration
