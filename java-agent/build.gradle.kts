@@ -67,7 +67,6 @@ kotlin {
     sourceSets {
         all {
             languageSettings.optIn("kotlin.ExperimentalStdlibApi")
-            languageSettings.optIn("kotlin.time.ExperimentalTime")
             languageSettings.optIn("kotlinx.serialization.ExperimentalSerializationApi")
             languageSettings.optIn("io.ktor.utils.io.core.ExperimentalIoApi")
         }
@@ -111,7 +110,6 @@ kotlin {
                 implementation("org.jetbrains.kotlinx:kotlinx-serialization-protobuf:$kotlinxSerializationVersion")
                 implementation("com.benasher44:uuid:$uuidVersion")
                 implementation("io.ktor:ktor-utils:$ktorVersion")
-                implementation(project(":interceptor-http"))
                 implementation(project(":jvmapi"))
                 implementation(project(":knasm"))
                 implementation(project(":konform"))

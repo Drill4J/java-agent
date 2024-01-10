@@ -20,12 +20,12 @@ import com.epam.drill.agent.configuration.ParameterDefinitions
 
 actual object HeadersRetriever {
 
-    internal val requestPattern = Configuration.parameters[ParameterDefinitions.REQUEST_PATTERN]
+    private val requestPattern = Configuration.parameters[ParameterDefinitions.REQUEST_PATTERN]
 
-    internal val adminAddress = Configuration.parameters[ParameterDefinitions.ADMIN_ADDRESS]
+    private val adminAddress = Configuration.parameters[ParameterDefinitions.ADMIN_ADDRESS]
         .let { Regex("\\w+://(.+)").matchEntire(it)!!.groupValues[1] }
 
-    internal val idHeaderPair = Configuration.agentMetadata.serviceGroupId.takeIf(String::isNotEmpty)
+    private val idHeaderPair = Configuration.agentMetadata.serviceGroupId.takeIf(String::isNotEmpty)
         ?.let { "drill-group-id" to Configuration.agentMetadata.serviceGroupId }
         ?: let { "drill-agent-id" to Configuration.agentMetadata.id }
 

@@ -17,8 +17,8 @@ package com.epam.drill.agent.jvmti.event
 
 import kotlin.native.concurrent.*
 import kotlinx.cinterop.*
-import io.ktor.utils.io.bits.*
 import org.objectweb.asm.*
+import io.ktor.utils.io.bits.*
 import mu.*
 import com.epam.drill.*
 import com.epam.drill.agent.*
@@ -45,8 +45,6 @@ private val isWebApp by lazy { Configuration.parameters[ParameterDefinitions.IS_
 private val isKafka by lazy { Configuration.parameters[ParameterDefinitions.IS_KAFKA] }
 @SharedImmutable
 private val isCadence by lazy { Configuration.parameters[ParameterDefinitions.IS_CADENCE] }
-@SharedImmutable
-private val isHttpHookEnabled by lazy { Configuration.parameters[ParameterDefinitions.HTTP_HOOK_ENABLED] }
 
 internal val totalTransformClass = AtomicInt(0)
 
@@ -117,18 +115,15 @@ fun classFileLoadHook(
                 transformers += { bytes -> plugin.instrument(kClassName, bytes) }
             }
         }
-        if (!isHttpHookEnabled) {
-            if (kClassName.startsWith("org/apache/catalina/core/ApplicationFilterChain")) {
-                logger.info { "Http hook is off, starting transform tomcat class kClassName $kClassName..." }
-                transformers += { bytes ->
-                    TomcatTransformer.transform(kClassName, bytes, loader, protection_domain)
-                }
+        if (kClassName.startsWith("org/apache/catalina/core/ApplicationFilterChain")) {
+            transformers += { bytes ->
+                TomcatTransformer.transform(kClassName, bytes, loader, protection_domain)
             }
+        }
 
-            strategys.forEach { strategy ->
-                if (strategy.permit(classReader.className, classReader.superName, classReader.interfaces)) {
-                    transformers += { strategy.transform(kClassName, classBytes, loader, protection_domain) }
-                }
+        strategys.forEach { strategy ->
+            if (strategy.permit(classReader.className, classReader.superName, classReader.interfaces)) {
+                transformers += { strategy.transform(kClassName, classBytes, loader, protection_domain) }
             }
         }
         // TODO Http hook does not work for Netty on linux system

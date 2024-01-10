@@ -23,7 +23,6 @@ import com.epam.drill.agent.closeSession
 import com.epam.drill.agent.configuration.AgentLoggingConfiguration
 import com.epam.drill.agent.configuration.Configuration
 import com.epam.drill.agent.configuration.ParameterDefinitions
-import com.epam.drill.agent.configuration.configureHttp
 import com.epam.drill.agent.drillRequest
 import com.epam.drill.agent.request.DrillRequest
 import com.epam.drill.agent.request.RequestHolder
@@ -37,6 +36,7 @@ import com.epam.drill.jvmapi.gen.SetEventNotificationMode
 import com.epam.drill.jvmapi.gen.jthread
 import com.epam.drill.jvmapi.gen.jvmtiEnvVar
 
+@SharedImmutable
 private val logger = KotlinLogging.logger("com.epam.drill.agent.jvmti.event.VmInitEvent")
 
 @Suppress("UNUSED_PARAMETER")
@@ -47,13 +47,6 @@ fun vmInitEvent(env: CPointer<jvmtiEnvVar>?, jniEnv: CPointer<JNIEnvVar>?, threa
     AgentLoggingConfiguration.defaultJvmLoggingConfiguration()
     AgentLoggingConfiguration.updateJvmLoggingConfiguration()
     Configuration.initializeJvm()
-
-    if (Configuration.parameters[ParameterDefinitions.HTTP_HOOK_ENABLED]) {
-        logger.info { "vmInitEvent: Run with http hook" }
-        configureHttp()
-    } else {
-        logger.warn { "vmInitEvent: Run without http hook" }
-    }
 
     registerGlobalCallbacks()
     loadJvmModule("com.epam.drill.test2code.Test2Code")
