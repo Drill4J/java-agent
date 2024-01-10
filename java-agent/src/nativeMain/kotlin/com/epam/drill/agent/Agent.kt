@@ -15,32 +15,44 @@
  */
 package com.epam.drill.agent
 
-import kotlin.native.concurrent.*
-import kotlinx.cinterop.*
-import platform.posix.*
-import mu.*
-import com.epam.drill.agent.configuration.*
+import kotlin.native.concurrent.freeze
+import kotlinx.cinterop.alloc
+import kotlinx.cinterop.memScoped
+import kotlinx.cinterop.ptr
+import kotlinx.cinterop.sizeOf
+import kotlinx.cinterop.staticCFunction
+import kotlinx.serialization.protobuf.ProtoBuf
+import platform.posix.getpid
+import mu.KotlinLogging
+import com.epam.drill.agent.configuration.AgentLoggingConfiguration
+import com.epam.drill.agent.configuration.Configuration
 import com.epam.drill.agent.configuration.DefaultParameterDefinitions.INSTALLATION_DIR
-import com.epam.drill.agent.jvmti.event.*
+import com.epam.drill.agent.configuration.ParameterDefinitions
+import com.epam.drill.agent.jvmti.classFileLoadHook
+import com.epam.drill.agent.jvmti.vmDeathEvent
+import com.epam.drill.agent.jvmti.vmInitEvent
+import com.epam.drill.agent.request.DrillRequest
+import com.epam.drill.agent.request.RequestHolder
+import com.epam.drill.agent.request.RequestProcessor
+import com.epam.drill.agent.transport.JvmModuleMessageSender
 import com.epam.drill.jvmapi.gen.*
-
-@SharedImmutable
-private val logger = KotlinLogging.logger("com.epam.drill.agent.Agent")
-
-private val LOGO = """
-  ____    ____                 _       _          _  _                _      
- |  _"\U |  _"\ u     ___     |"|     |"|        | ||"|            U |"| u   
-/| | | |\| |_) |/    |_"_|  U | | u U | | u      | || |_          _ \| |/    
-U| |_| |\|  _ <       | |    \| |/__ \| |/__     |__   _|        | |_| |_,-. 
- |____/ u|_| \_\    U/| |\u   |_____| |_____|      /|_|\          \___/-(_/  
-  |||_   //   \\_.-,_|___|_,-.//  \\  //  \\      u_|||_u          _//       
- (__)_) (__)  (__)\_)-' '-(_/(_")("_)(_")("_)     (__)__)         (__)  v. ${agentVersion}⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
-        """.trimIndent()
 
 object Agent {
 
+    private val logo = """
+          ____    ____                 _       _          _  _                _      
+         |  _"\U |  _"\ u     ___     |"|     |"|        | ||"|            U |"| u   
+        /| | | |\| |_) |/    |_"_|  U | | u U | | u      | || |_          _ \| |/    
+        U| |_| |\|  _ <       | |    \| |/__ \| |/__     |__   _|        | |_| |_,-. 
+         |____/ u|_| \_\    U/| |\u   |_____| |_____|      /|_|\          \___/-(_/  
+          |||_   //   \\_.-,_|___|_,-.//  \\  //  \\      u_|||_u          _//       
+         (__)_) (__)  (__)\_)-' '-(_/(_")("_)(_")("_)     (__)__)         (__)  v. ${agentVersion}⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+        """.trimIndent()
+
+    private val logger = KotlinLogging.logger("com.epam.drill.agent.Agent")
+
     fun agentOnLoad(options: String): Int {
-        println(LOGO)
+        println(logo)
 
         AgentLoggingConfiguration.defaultNativeLoggingConfiguration()
         Configuration.initializeNative(options)
@@ -61,6 +73,23 @@ object Agent {
         logger.info { "agentOnUnload" }
     }
 
+    fun agentOnVmInit() {
+        initRuntimeIfNeeded()
+        SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_CLASS_FILE_LOAD_HOOK, null)
+
+        AgentLoggingConfiguration.defaultJvmLoggingConfiguration()
+        AgentLoggingConfiguration.updateJvmLoggingConfiguration()
+        Configuration.initializeJvm()
+
+        registerGlobalCallbacks()
+        loadJvmModule("com.epam.drill.test2code.Test2Code")
+        JvmModuleMessageSender.sendAgentMetadata()
+    }
+
+    fun agentOnVmDeath() {
+        logger.info { "agentOnVmDeath" }
+    }
+
     private fun addCapabilities() = memScoped {
         val jvmtiCapabilities = alloc<jvmtiCapabilities>()
         jvmtiCapabilities.can_retransform_classes = 1.toUInt()
@@ -76,5 +105,22 @@ object Agent {
         SetEventCallbacks(alloc.ptr, sizeOf<jvmtiEventCallbacks>().toInt())
         SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_VM_INIT, null)
     }
+
+    private fun registerGlobalCallbacks() {
+        sessionStorage = {
+            RequestHolder.store(ProtoBuf.encodeToByteArray(DrillRequest.serializer(), it))
+        }
+        closeSession = {
+            RequestProcessor.processServerResponse()
+            RequestHolder.closeSession()
+        }
+        drillRequest = {
+            RequestHolder.dump()?.let { ProtoBuf.decodeFromByteArray(DrillRequest.serializer(), it) }
+        }
+        RequestHolder.init(Configuration.parameters[ParameterDefinitions.IS_ASYNC_APP])
+    }
+
+    private fun loadJvmModule(clazz: String) = runCatching { JvmModuleLoader.loadJvmModule(clazz).load() }
+        .onFailure { logger.error(it) { "loadJvmModule: Fatal error: id=${clazz}" } }
 
 }

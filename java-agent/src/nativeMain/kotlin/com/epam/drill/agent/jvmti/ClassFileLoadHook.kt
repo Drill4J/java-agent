@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.epam.drill.agent.jvmti.event
+package com.epam.drill.agent.jvmti
 
 import kotlin.native.concurrent.*
 import kotlinx.cinterop.*
@@ -30,7 +30,7 @@ import com.epam.drill.instrument.http.*
 import com.epam.drill.jvmapi.gen.*
 
 @SharedImmutable
-private val logger = KotlinLogging.logger("com.epam.drill.agent.jvmti.event.ClassFileLoadHook")
+private val logger = KotlinLogging.logger("com.epam.drill.agent.jvmti.ClassFileLoadHook")
 
 @SharedImmutable
 private val strategys = listOf(JavaHttpUrlConnection, ApacheClient, OkHttpClient)
