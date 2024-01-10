@@ -28,11 +28,11 @@ import com.epam.drill.common.agent.configuration.AgentConfiguration
 import com.epam.drill.common.agent.transport.AgentMessage
 import com.epam.drill.common.agent.transport.AgentMessageDestination
 import com.epam.drill.common.agent.transport.AgentMessageSender
-import com.epam.drill.common.classloading.ClassScanner
 import com.epam.drill.common.classloading.EntitySource
 import com.epam.drill.plugins.test2code.common.api.AstEntity
 import com.epam.drill.plugins.test2code.common.transport.ClassMetadata
 import com.epam.drill.test2code.classloading.ClassLoadersScanner
+import com.epam.drill.test2code.classloading.ClassScanner
 import com.epam.drill.test2code.classparsing.parseAstClass
 import com.epam.drill.test2code.configuration.ParameterDefinitions
 import com.epam.drill.test2code.configuration.ParametersValidator
