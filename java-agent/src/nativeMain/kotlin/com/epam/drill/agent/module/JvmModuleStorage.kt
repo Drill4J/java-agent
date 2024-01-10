@@ -13,12 +13,21 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.epam.drill.agent
+package com.epam.drill.agent.module
 
+import kotlinx.atomicfu.atomic
+import kotlinx.atomicfu.update
+import kotlinx.collections.immutable.persistentHashMapOf
 import com.epam.drill.common.agent.AgentModule
 
-expect object JvmModuleLoader {
+actual object JvmModuleStorage {
 
-    fun loadJvmModule(classname: String): AgentModule<*>
+    private val storage = atomic(persistentHashMapOf<String, AgentModule>())
+
+    actual operator fun get(id: String) = storage.value.get(id)
+
+    actual fun values(): Collection<AgentModule> = storage.value.values
+
+    actual fun add(module: AgentModule) = storage.update { it.put(module.id, module) }
 
 }

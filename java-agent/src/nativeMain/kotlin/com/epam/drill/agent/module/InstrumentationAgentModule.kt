@@ -15,41 +15,31 @@
  */
 package com.epam.drill.agent.module
 
-import kotlinx.cinterop.COpaquePointer
-import kotlinx.cinterop.addressOf
-import kotlinx.cinterop.convert
 import kotlinx.cinterop.memScoped
-import kotlinx.cinterop.usePinned
 import com.epam.drill.common.agent.Instrumenter
-import com.epam.drill.jvmapi.gen.*
+import com.epam.drill.jvmapi.gen.CallObjectMethod
+import com.epam.drill.jvmapi.gen.GetMethodID
+import com.epam.drill.jvmapi.gen.NewStringUTF
+import com.epam.drill.jvmapi.gen.jclass
+import com.epam.drill.jvmapi.gen.jobject
+import com.epam.drill.jvmapi.toByteArray
+import com.epam.drill.jvmapi.toJByteArray
 
 class InstrumentationAgentModule(
-    pluginId: String,
-    pluginApiClass: jclass,
-    userPlugin: jobject,
-    private val qs: jmethodID? = GetMethodID(pluginApiClass, "instrument", "(Ljava/lang/String;[B)[B")
-) : GenericAgentModule(pluginId, pluginApiClass, userPlugin), Instrumenter {
+    moduleId: String,
+    moduleClass: jclass,
+    moduleObject: jobject
+) : GenericAgentModule(moduleId, moduleClass, moduleObject), Instrumenter {
 
-    override fun instrument(className: String, initialBytes: ByteArray) = memScoped<ByteArray?> {
-        val classDataLen = initialBytes.size
-        val newByteArray: jbyteArray? = NewByteArray(classDataLen)
-        initialBytes.usePinned {
-            SetByteArrayRegion(newByteArray, 0, classDataLen, it.addressOf(0))
-        }
-        val bytes = CallObjectMethod(userPlugin, qs, NewStringUTF(className), newByteArray) ?: return null
-        val length = GetArrayLength(bytes)
-        val buffer: COpaquePointer? = GetPrimitiveArrayCritical(bytes, null)
-        try {
-            return ByteArray(length).apply {
-                usePinned { destination ->
-                    platform.posix.memcpy(
-                        destination.addressOf(0),
-                        buffer,
-                        length.convert()
-                    )
-                }
-            }
-        } finally { ReleasePrimitiveArrayCritical(bytes, buffer, JNI_ABORT) }
+    private val instrumentMethod = GetMethodID(moduleClass, Instrumenter::instrument.name, "(Ljava/lang/String;[B)[B")
+
+    override fun instrument(className: String, initialBytes: ByteArray) = memScoped {
+        CallObjectMethod(
+            moduleObject,
+            instrumentMethod,
+            NewStringUTF(className),
+            toJByteArray(initialBytes)
+        )?.let(::toByteArray)
     }
 
 }

@@ -15,72 +15,58 @@
  */
 package com.epam.drill.agent.module
 
-import com.epam.drill.*
-import com.epam.drill.agent.*
-import com.epam.drill.common.*
-import com.epam.drill.common.agent.*
-import com.epam.drill.common.agent.configuration.*
-import com.epam.drill.common.agent.transport.*
-import com.epam.drill.jvmapi.*
-import com.epam.drill.jvmapi.gen.*
-import kotlinx.cinterop.*
+import com.epam.drill.agent.request.RequestProcessor
+import com.epam.drill.common.agent.AgentContext
+import com.epam.drill.common.agent.AgentModule
+import com.epam.drill.common.agent.configuration.AgentConfiguration
+import com.epam.drill.common.agent.transport.AgentMessage
+import com.epam.drill.common.agent.transport.AgentMessageDestination
+import com.epam.drill.common.agent.transport.AgentMessageSender
+import com.epam.drill.jvmapi.gen.CallVoidMethod
+import com.epam.drill.jvmapi.gen.GetMethodID
+import com.epam.drill.jvmapi.gen.jclass
+import com.epam.drill.jvmapi.gen.jobject
 
 open class GenericAgentModule(
-    pluginId: String,
-    val pluginApiClass: jclass,
-    val userPlugin: jobject
-) : AgentModule<Any>(
-    pluginId,
-    NopAgentContext,
-    NopMessageSender,
-    NopConfiguration
+    moduleId: String,
+    moduleClass: jclass,
+    protected val moduleObject: jobject
+) : AgentModule(
+    moduleId,
+    NopAgentContext(),
+    NopMessageSender(),
+    NopConfiguration()
 ) {
 
-    override fun load() {
-        CallVoidMethodA(
-            userPlugin, GetMethodID(pluginApiClass, AgentModule<*>::load.name, "()V"), null
-        )
+    private val loadMethod = GetMethodID(moduleClass, AgentModule::load.name, "()V")
+    private val onConnectMethod = GetMethodID(moduleClass, AgentModule::onConnect.name, "()V")
+    private val processServerRequestMethod = GetMethodID(moduleClass, RequestProcessor::processServerRequest.name, "()V")
+    private val processServerResponseMethod = GetMethodID(moduleClass, RequestProcessor::processServerResponse.name, "()V")
 
+    override fun load() = CallVoidMethod(moduleObject, loadMethod)
+
+    override fun onConnect() = CallVoidMethod(moduleObject, onConnectMethod)
+
+    fun processServerRequest() = processServerRequestMethod?.let { CallVoidMethod(moduleObject, it) }
+
+    fun processServerResponse() = processServerResponseMethod?.let { CallVoidMethod(moduleObject, it) }
+
+    private class NopAgentContext : AgentContext {
+        override fun get(key: String) = throw NotImplementedError()
+        override fun invoke() = throw NotImplementedError()
     }
 
-    override fun onConnect() {
-        CallVoidMethodA(
-            userPlugin,
-            GetMethodID(pluginApiClass, GenericAgentModule::onConnect.name, "()V"),
-            null
-        )
+    private class NopMessageSender : AgentMessageSender {
+        override val available
+            get() = throw NotImplementedError()
+        override fun send(destination: AgentMessageDestination, message: AgentMessage) = throw NotImplementedError()
     }
 
-    fun processServerRequest() {
-        val methodID = GetMethodID(pluginApiClass, GenericAgentModule::processServerRequest.name, "()V")
-        methodID?.let {
-            CallVoidMethodA(userPlugin, it, null)
-        }
+    private class NopConfiguration : AgentConfiguration {
+        override val agentMetadata
+            get() = throw NotImplementedError()
+        override val parameters
+            get() = throw NotImplementedError()
     }
 
-    fun processServerResponse() {
-        val methodID = GetMethodID(pluginApiClass, GenericAgentModule::processServerResponse.name, "()V")
-        methodID?.let {
-            CallVoidMethodA(userPlugin, it, null)
-        }
-    }
-
-}
-
-private object NopAgentContext : AgentContext {
-    override fun get(key: String) = throw NotImplementedError()
-    override fun invoke() = throw NotImplementedError()
-}
-
-private object NopMessageSender : AgentMessageSender {
-    override val available
-        get() = throw NotImplementedError()
-    override fun send(destination: AgentMessageDestination, message: AgentMessage) = throw NotImplementedError()
-}
-
-private object NopConfiguration: AgentConfiguration {
-    override val agentMetadata
-        get() = throw NotImplementedError()
-    override val parameters
-        get() = throw NotImplementedError()
 }

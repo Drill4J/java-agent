@@ -13,10 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.epam.drill.agent
+package com.epam.drill.agent.module
 
 import kotlin.reflect.KClass
-import com.epam.drill.agent.module.InstrumentationAgentModule
 import com.epam.drill.common.agent.AgentModule
 import com.epam.drill.jvmapi.gen.CallObjectMethod
 import com.epam.drill.jvmapi.gen.GetObjectClass
@@ -26,7 +25,7 @@ import com.epam.drill.jvmapi.getObjectMethod
 
 actual object JvmModuleLoader {
 
-    actual fun loadJvmModule(classname: String): AgentModule<*> =
+    actual fun loadJvmModule(classname: String): AgentModule =
         callObjectAgentModuleMethodWithString(
             JvmModuleLoader::class,
             JvmModuleLoader::loadJvmModule.name,

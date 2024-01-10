@@ -31,6 +31,7 @@ import com.epam.drill.agent.configuration.ParameterDefinitions
 import com.epam.drill.agent.jvmti.classFileLoadHook
 import com.epam.drill.agent.jvmti.vmDeathEvent
 import com.epam.drill.agent.jvmti.vmInitEvent
+import com.epam.drill.agent.module.JvmModuleLoader
 import com.epam.drill.agent.request.DrillRequest
 import com.epam.drill.agent.request.RequestHolder
 import com.epam.drill.agent.request.RequestProcessor

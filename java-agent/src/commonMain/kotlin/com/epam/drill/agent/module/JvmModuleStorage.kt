@@ -13,18 +13,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.epam.drill.agent
+package com.epam.drill.agent.module
 
 import com.epam.drill.common.agent.AgentModule
 
-actual object JvmModuleStorage {
+expect object JvmModuleStorage {
 
-    private val storage = mutableMapOf<String, AgentModule<*>>()
+    operator fun get(id: String): AgentModule?
 
-    actual operator fun get(id: String) = storage.get(id)
+    fun values(): Collection<AgentModule>
 
-    actual fun values(): Collection<AgentModule<*>> = storage.values
-
-    actual fun add(module: AgentModule<*>) = storage.put(module.id, module).let {}
+    fun add(module: AgentModule)
 
 }

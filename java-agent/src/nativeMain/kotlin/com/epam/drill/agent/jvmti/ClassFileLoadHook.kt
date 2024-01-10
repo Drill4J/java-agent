@@ -24,8 +24,6 @@ import io.ktor.utils.io.bits.of
 import mu.KotlinLogging
 import com.epam.drill.agent.CADENCE_CONSUMER
 import com.epam.drill.agent.CADENCE_PRODUCER
-import com.epam.drill.agent.DRILL_PACKAGE
-import com.epam.drill.agent.JvmModuleStorage
 import com.epam.drill.agent.KAFKA_CONSUMER_SPRING
 import com.epam.drill.agent.KAFKA_PRODUCER_INTERFACE
 import com.epam.drill.agent.configuration.Configuration
@@ -37,6 +35,7 @@ import com.epam.drill.agent.instrument.SSLTransformer
 import com.epam.drill.agent.instrument.TTLTransformer
 import com.epam.drill.agent.instrument.TomcatTransformer
 import com.epam.drill.agent.module.InstrumentationAgentModule
+import com.epam.drill.agent.module.JvmModuleStorage
 import com.epam.drill.common.classloading.ClassSource
 import com.epam.drill.instrument.http.ApacheClient
 import com.epam.drill.instrument.http.JavaHttpUrlConnection
@@ -48,6 +47,8 @@ import com.epam.drill.jvmapi.gen.jintVar
 import com.epam.drill.jvmapi.gen.jobject
 
 object ClassFileLoadHook {
+
+    private const val DRILL_PACKAGE = "com/epam/drill"
 
     private val logger = KotlinLogging.logger("com.epam.drill.agent.jvmti.ClassFileLoadHook")
 

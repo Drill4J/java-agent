@@ -30,7 +30,6 @@ import com.epam.drill.common.agent.transport.AgentMessageDestination
 import com.epam.drill.common.agent.transport.AgentMessageSender
 import com.epam.drill.common.classloading.ClassScanner
 import com.epam.drill.common.classloading.EntitySource
-import com.epam.drill.plugins.test2code.common.api.AgentAction
 import com.epam.drill.plugins.test2code.common.api.AstEntity
 import com.epam.drill.plugins.test2code.common.transport.ClassMetadata
 import com.epam.drill.test2code.classloading.ClassLoadersScanner
@@ -50,7 +49,7 @@ class Test2Code(
     agentContext: AgentContext,
     sender: AgentMessageSender,
     configuration: AgentConfiguration
-) : AgentModule<AgentAction>(id, agentContext, sender, configuration), Instrumenter, ClassScanner {
+) : AgentModule(id, agentContext, sender, configuration), Instrumenter, ClassScanner {
 
     internal val logger = KotlinLogging.logger {}
     internal val json = Json { encodeDefaults = true }
