@@ -58,7 +58,7 @@ object Agent {
     }
 
     fun agentOnUnload() {
-        logger.info { "Agent_OnUnload" }
+        logger.info { "agentOnUnload" }
     }
 
     private fun addCapabilities() = memScoped {

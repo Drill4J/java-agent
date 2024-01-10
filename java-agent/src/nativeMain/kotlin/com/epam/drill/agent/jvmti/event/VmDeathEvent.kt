@@ -20,6 +20,7 @@ import mu.KotlinLogging
 import com.epam.drill.jvmapi.gen.JNIEnvVar
 import com.epam.drill.jvmapi.gen.jvmtiEnvVar
 
+@SharedImmutable
 private val logger = KotlinLogging.logger("com.epam.drill.agent.jvmti.event.VmDeathEvent")
 
 @Suppress("UNUSED_PARAMETER")
