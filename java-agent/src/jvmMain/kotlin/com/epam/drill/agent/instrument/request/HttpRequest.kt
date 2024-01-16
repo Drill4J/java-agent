@@ -56,7 +56,7 @@ object HttpRequest {
                     }
                 //todo add processing of header mapping
                 headers[DRILL_SESSION_ID_HEADER_NAME]?.let { drillSessionId ->
-                    RequestHolder.storeRequest(DrillRequest(drillSessionId, headers))
+                    RequestHolder.store(DrillRequest(drillSessionId, headers))
                 }
             }
         }
@@ -64,10 +64,10 @@ object HttpRequest {
 
     fun storeDrillHeaders(headers: Map<String, String>?) {
         runCatching {
-            headers?.get(HeadersRetriever.sessionHeaderPattern() ?: DRILL_SESSION_ID_HEADER_NAME)?.let { drillSessionId ->
+            headers?.get(HeadersRetriever.sessionHeader() ?: DRILL_SESSION_ID_HEADER_NAME)?.let { drillSessionId ->
                 val drillHeaders = headers.filter { it.key.startsWith(DRILL_HEADER_PREFIX) }
                 logger.trace { "for drillSessionId '$drillSessionId' store drillHeaders '$drillHeaders' to thread storage" }
-                RequestHolder.storeRequest(DrillRequest(drillSessionId, drillHeaders))
+                RequestHolder.store(DrillRequest(drillSessionId, drillHeaders))
             }
         }.onFailure {
             logger.error(it) { "Error while storing headers. Reason: " }

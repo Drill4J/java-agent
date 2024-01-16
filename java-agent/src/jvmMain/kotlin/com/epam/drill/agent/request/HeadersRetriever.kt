@@ -15,10 +15,12 @@
  */
 package com.epam.drill.agent.request
 
-actual object HeadersRetriever {
-    actual external fun adminAddressHeader(): String?
-    actual external fun retrieveAdminAddress(): String?
-    actual external fun sessionHeaderPattern(): String?
-    actual external fun idHeaderConfigKey(): String?
-    actual external fun idHeaderConfigValue(): String?
+import com.epam.drill.common.agent.request.HeadersRetriever
+
+actual object HeadersRetriever : HeadersRetriever {
+    actual external override fun adminAddressHeader(): String
+    actual external override fun adminAddressValue(): String
+    actual external override fun sessionHeader(): String
+    actual external override fun agentIdHeader(): String
+    actual external override fun agentIdHeaderValue(): String
 }

@@ -25,7 +25,7 @@ import com.epam.drill.common.agent.configuration.AgentConfiguration
 import com.epam.drill.common.agent.AgentContext
 import com.epam.drill.common.agent.module.AgentModule
 import com.epam.drill.common.agent.module.Instrumenter
-import com.epam.drill.common.agent.module.RequestProcessor
+import com.epam.drill.common.agent.request.RequestProcessor
 import com.epam.drill.common.agent.transport.AgentMessage
 import com.epam.drill.common.agent.transport.AgentMessageDestination
 import com.epam.drill.common.agent.transport.AgentMessageSender

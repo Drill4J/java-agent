@@ -15,19 +15,17 @@
  */
 package com.epam.drill.agent.interceptor
 
-import com.epam.drill.common.agent.configuration.AgentConfiguration
-import com.epam.drill.common.agent.request.DrillRequest
+import com.epam.drill.common.agent.request.HeadersRetriever
+import com.epam.drill.common.agent.request.RequestHolder
 
 object HttpInterceptorConfigurer {
 
     const val enabled = false;
 
-    @Suppress("UNUSED_PARAMETER")
+    @Suppress("unused_parameter")
     operator fun invoke(
-        configuration: AgentConfiguration,
-        drillRequest: () -> DrillRequest?,
-        sessionStorage: (DrillRequest) -> Unit,
-        closeSession: () -> Unit
+        headersRetriever: HeadersRetriever,
+        requestHolder: RequestHolder
     ) {}
 
 }

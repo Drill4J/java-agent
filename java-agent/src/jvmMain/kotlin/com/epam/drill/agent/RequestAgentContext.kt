@@ -16,12 +16,12 @@
 package com.epam.drill.agent
 
 import java.util.Locale
+import com.epam.drill.agent.request.RequestHolder
 import com.epam.drill.common.agent.AgentContext
-import com.epam.drill.common.agent.request.DrillRequest
 
-class RequestAgentContext(
-    private val requestProvider: () -> DrillRequest?
-) : AgentContext {
-    override operator fun invoke(): String? = requestProvider()?.drillSessionId?.ifEmpty { null }
-    override operator fun get(key: String): String? = requestProvider()?.headers?.get(key.lowercase(Locale.getDefault()))
+object RequestAgentContext : AgentContext {
+    override operator fun invoke(): String? =
+        RequestHolder.retrieve()?.drillSessionId?.ifEmpty { null }
+    override operator fun get(key: String): String? =
+        RequestHolder.retrieve()?.headers?.get(key.lowercase(Locale.getDefault()))
 }

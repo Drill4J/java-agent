@@ -15,12 +15,12 @@
  */
 package com.epam.drill.agent.module
 
+import com.epam.drill.agent.RequestAgentContext
 import com.epam.drill.agent.configuration.Configuration
-import com.epam.drill.agent.request.RequestHolder
 import com.epam.drill.agent.transport.JvmModuleMessageSender
 import com.epam.drill.common.agent.AgentContext
-import com.epam.drill.common.agent.module.AgentModule
 import com.epam.drill.common.agent.configuration.AgentConfiguration
+import com.epam.drill.common.agent.module.AgentModule
 import com.epam.drill.common.agent.transport.AgentMessageSender
 
 actual object JvmModuleLoader {
@@ -34,7 +34,7 @@ actual object JvmModuleLoader {
             AgentMessageSender::class.java,
             AgentConfiguration::class.java
         )
-        constructor.newInstance(classname, RequestHolder.agentContext, JvmModuleMessageSender, Configuration)
+        constructor.newInstance(classname, RequestAgentContext, JvmModuleMessageSender, Configuration)
             .also { JvmModuleStorage.add(it) }
     }
 

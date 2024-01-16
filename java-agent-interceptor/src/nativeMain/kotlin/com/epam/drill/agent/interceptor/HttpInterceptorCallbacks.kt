@@ -16,39 +16,32 @@
 package com.epam.drill.agent.interceptor
 
 import com.epam.drill.common.agent.request.DrillRequest
-
-@ThreadLocal
-private var localRequest: DrillRequest? = null
+import com.epam.drill.common.agent.request.HeadersRetriever
+import com.epam.drill.common.agent.request.RequestHolder
 
 class HttpInterceptorCallbacks(
-    private val idHeaderPair: Pair<String, String>,
-    private val adminAddressPair: Pair<String, String>,
-    private val requestPattern: String,
-    private val drillRequest: () -> DrillRequest?,
-    private val sessionStorage: (DrillRequest) -> Unit,
-    private val closeSession: () -> Unit
+    private val headersRetriever: HeadersRetriever,
+    private val requestHolder: RequestHolder
 ) {
+
+    private val agentIdPair = headersRetriever.agentIdHeader() to headersRetriever.agentIdHeaderValue()
+    private val adminAddressPair = headersRetriever.adminAddressHeader() to headersRetriever.adminAddressValue()
 
     fun readHeaders(headers: Map<ByteArray, ByteArray>) {
         val decoded = headers.entries.associate { (k, v) -> k.decodeToString().lowercase() to v.decodeToString() }
-        decoded[requestPattern]?.also {
-            val request = DrillRequest(it, decoded)
-            localRequest = request
-            sessionStorage(request)
-        }
+        decoded[headersRetriever.sessionHeader()]?.also { requestHolder.store(DrillRequest(it, decoded)) }
     }
 
     @Suppress("unused_parameter")
     fun writeCallback(bytes: ByteArray) {
-        closeSession()
-        localRequest = null
+        requestHolder.remove()
     }
 
     fun injectedHeaders(): Map<String, String> {
-        val existing = drillRequest()?.headers
+        val existing = requestHolder.retrieve()?.headers
             ?.filterKeys { it.startsWith("drill-") }
             ?: emptyMap()
-        return existing + mapOf(idHeaderPair, adminAddressPair)
+        return existing + mapOf(agentIdPair, adminAddressPair)
     }
 
 }

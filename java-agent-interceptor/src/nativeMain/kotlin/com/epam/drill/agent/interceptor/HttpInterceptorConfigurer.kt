@@ -17,8 +17,8 @@ package com.epam.drill.agent.interceptor
 
 import kotlin.native.concurrent.freeze
 import mu.KotlinLogging
-import com.epam.drill.common.agent.configuration.AgentConfiguration
-import com.epam.drill.common.agent.request.DrillRequest
+import com.epam.drill.common.agent.request.HeadersRetriever
+import com.epam.drill.common.agent.request.RequestHolder
 import com.epam.drill.hook.io.addInterceptor
 import com.epam.drill.hook.io.configureTcpHooks
 import com.epam.drill.hook.io.injectedHeaders
@@ -30,42 +30,14 @@ object HttpInterceptorConfigurer {
 
     private val logger = KotlinLogging.logger("com.epam.drill.agent.interceptor.HttpInterceptorConfigurer")
 
-    @Suppress("unused")
     const val enabled = true
 
-    operator fun invoke(
-        configuration: AgentConfiguration,
-        drillRequest: () -> DrillRequest?,
-        sessionStorage: (DrillRequest) -> Unit,
-        closeSession: () -> Unit
-    ) {
-        logger.debug { "invoke: Configuring HTTP interceptor header variables..." }
-
-        logger.trace { "invoke: agentMetadata=${configuration.agentMetadata}" }
-        val idHeaderPair = configuration.agentMetadata.serviceGroupId.takeIf(String::isNotEmpty)
-            ?.let { "drill-group-id" to configuration.agentMetadata.serviceGroupId }
-            ?: let { "drill-agent-id" to configuration.agentMetadata.id }
-
-        logger.trace { "invoke: adminAddress=${configuration.parameters.get<String>("adminAddress")}" }
-        val adminAddressPair = configuration.parameters.get<String>("adminAddress")
-            .let { Regex("\\w+://(.+)").matchEntire(it)!!.groupValues[1] }
-            .let { "drill-admin-url" to it }
-
-        logger.trace { "invoke: requestPattern=${configuration.parameters.get<String>("requestPattern")}" }
-        val requestPattern = configuration.parameters.get<String>("requestPattern")
-
+    operator fun invoke(headersRetriever: HeadersRetriever, requestHolder: RequestHolder) {
         logger.debug { "invoke: Creating HTTP interceptor object..." }
         val interceptor = HttpInterceptor()
 
         logger.debug { "invoke: Creating HTTP interceptor callbacks..." }
-        val callbacks = HttpInterceptorCallbacks(
-            idHeaderPair,
-            adminAddressPair,
-            requestPattern,
-            drillRequest,
-            sessionStorage,
-            closeSession
-        )
+        val callbacks = HttpInterceptorCallbacks(headersRetriever, requestHolder)
 
         logger.debug { "invoke: Configuring TCP hook..." }
         configureTcpHooks()

@@ -21,7 +21,6 @@ import kotlinx.cinterop.memScoped
 import kotlinx.cinterop.ptr
 import kotlinx.cinterop.sizeOf
 import kotlinx.cinterop.staticCFunction
-import kotlinx.serialization.protobuf.ProtoBuf
 import platform.posix.getpid
 import mu.KotlinLogging
 import com.epam.drill.agent.configuration.AgentLoggingConfiguration
@@ -33,10 +32,9 @@ import com.epam.drill.agent.jvmti.classFileLoadHook
 import com.epam.drill.agent.jvmti.vmDeathEvent
 import com.epam.drill.agent.jvmti.vmInitEvent
 import com.epam.drill.agent.module.JvmModuleLoader
+import com.epam.drill.agent.request.HeadersRetriever
 import com.epam.drill.agent.request.RequestHolder
-import com.epam.drill.agent.request.RequestProcessor
 import com.epam.drill.agent.transport.JvmModuleMessageSender
-import com.epam.drill.common.agent.request.DrillRequest
 import com.epam.drill.jvmapi.gen.*
 
 object Agent {
@@ -83,10 +81,8 @@ object Agent {
         AgentLoggingConfiguration.updateJvmLoggingConfiguration()
         Configuration.initializeJvm()
 
-        Configuration.parameters.define(ParameterDefinitions.ADMIN_ADDRESS)
-        Configuration.parameters.define(ParameterDefinitions.REQUEST_PATTERN)
-        HttpInterceptorConfigurer(Configuration, drillRequest, sessionStorage, closeSession)
-        registerGlobalCallbacks()
+        RequestHolder(Configuration.parameters[ParameterDefinitions.IS_ASYNC_APP])
+        HttpInterceptorConfigurer(HeadersRetriever, RequestHolder)
 
         loadJvmModule("com.epam.drill.test2code.Test2Code")
         JvmModuleMessageSender.sendAgentMetadata()
@@ -110,20 +106,6 @@ object Agent {
         alloc.ClassFileLoadHook = staticCFunction(::classFileLoadHook)
         SetEventCallbacks(alloc.ptr, sizeOf<jvmtiEventCallbacks>().toInt())
         SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_VM_INIT, null)
-    }
-
-    private fun registerGlobalCallbacks() {
-        sessionStorage = {
-            RequestHolder.store(ProtoBuf.encodeToByteArray(DrillRequest.serializer(), it))
-        }
-        closeSession = {
-            RequestProcessor.processServerResponse()
-            RequestHolder.closeSession()
-        }
-        drillRequest = {
-            RequestHolder.dump()?.let { ProtoBuf.decodeFromByteArray(DrillRequest.serializer(), it) }
-        }
-        RequestHolder.init(Configuration.parameters[ParameterDefinitions.IS_ASYNC_APP])
     }
 
     private fun loadJvmModule(clazz: String) = runCatching { JvmModuleLoader.loadJvmModule(clazz).load() }
