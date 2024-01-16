@@ -18,7 +18,7 @@ package com.epam.drill.agent.module
 import kotlinx.atomicfu.atomic
 import kotlinx.atomicfu.update
 import kotlinx.collections.immutable.persistentHashMapOf
-import com.epam.drill.common.agent.AgentModule
+import com.epam.drill.common.agent.module.AgentModule
 
 actual object JvmModuleStorage {
 

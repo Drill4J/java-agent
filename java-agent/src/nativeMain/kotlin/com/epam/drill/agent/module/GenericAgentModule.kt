@@ -15,10 +15,10 @@
  */
 package com.epam.drill.agent.module
 
-import com.epam.drill.agent.request.RequestProcessor
-import com.epam.drill.common.agent.AgentContext
-import com.epam.drill.common.agent.AgentModule
 import com.epam.drill.common.agent.configuration.AgentConfiguration
+import com.epam.drill.common.agent.AgentContext
+import com.epam.drill.common.agent.module.AgentModule
+import com.epam.drill.common.agent.module.RequestProcessor
 import com.epam.drill.common.agent.transport.AgentMessage
 import com.epam.drill.common.agent.transport.AgentMessageDestination
 import com.epam.drill.common.agent.transport.AgentMessageSender
@@ -36,7 +36,7 @@ open class GenericAgentModule(
     NopAgentContext(),
     NopMessageSender(),
     NopConfiguration()
-) {
+), RequestProcessor {
 
     private val loadMethod = GetMethodID(moduleClass, AgentModule::load.name, "()V")
     private val onConnectMethod = GetMethodID(moduleClass, AgentModule::onConnect.name, "()V")
@@ -47,9 +47,9 @@ open class GenericAgentModule(
 
     override fun onConnect() = CallVoidMethod(moduleObject, onConnectMethod)
 
-    fun processServerRequest() = processServerRequestMethod?.let { CallVoidMethod(moduleObject, it) }
+    override fun processServerRequest() = processServerRequestMethod?.let { CallVoidMethod(moduleObject, it) } ?: Unit
 
-    fun processServerResponse() = processServerResponseMethod?.let { CallVoidMethod(moduleObject, it) }
+    override fun processServerResponse() = processServerResponseMethod?.let { CallVoidMethod(moduleObject, it) } ?: Unit
 
     private class NopAgentContext : AgentContext {
         override fun get(key: String) = throw NotImplementedError()

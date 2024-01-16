@@ -19,7 +19,7 @@ import com.epam.drill.agent.configuration.Configuration
 import com.epam.drill.agent.request.RequestHolder
 import com.epam.drill.agent.transport.JvmModuleMessageSender
 import com.epam.drill.common.agent.AgentContext
-import com.epam.drill.common.agent.AgentModule
+import com.epam.drill.common.agent.module.AgentModule
 import com.epam.drill.common.agent.configuration.AgentConfiguration
 import com.epam.drill.common.agent.transport.AgentMessageSender
 

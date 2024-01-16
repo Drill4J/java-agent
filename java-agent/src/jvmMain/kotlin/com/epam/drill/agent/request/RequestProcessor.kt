@@ -15,7 +15,9 @@
  */
 package com.epam.drill.agent.request
 
-actual object RequestProcessor {
-    actual external fun processServerRequest()
-    actual external fun processServerResponse()
+import com.epam.drill.common.agent.module.RequestProcessor
+
+actual object RequestProcessor : RequestProcessor {
+    actual external override fun processServerRequest()
+    actual external override fun processServerResponse()
 }

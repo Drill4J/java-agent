@@ -15,7 +15,7 @@
  */
 package com.epam.drill.agent.module
 
-import com.epam.drill.common.agent.AgentModule
+import com.epam.drill.common.agent.module.AgentModule
 
 expect object JvmModuleStorage {
 

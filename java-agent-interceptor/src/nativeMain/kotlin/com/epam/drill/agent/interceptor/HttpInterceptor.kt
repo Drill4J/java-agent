@@ -51,10 +51,17 @@ class HttpInterceptor : Interceptor {
 
     override fun MemScope.interceptRead(fd: DRILL_SOCKET, bytes: CPointer<ByteVarOf<Byte>>, size: Int) = try {
         val prefix = bytes.readBytes(HTTP_DETECTOR_BYTES_COUNT).decodeToString()
-        val readBytes = { bytes.readBytes(size.convert()) }
+        val readBytes by lazy { bytes.readBytes(size.convert()) }
         when {
-            httpVerbs.any(prefix::startsWith) -> readHttpHeaders(fd, readBytes())
-            localRequestBytes[fd] != null -> readHttpHeaders(fd, readBytes())
+            httpVerbs.any(prefix::startsWith) -> {
+                if (containsFullHeadersPart(readBytes)) readHeaders(fd, readBytes)
+                else localRequestBytes[fd] = readBytes
+            }
+            localRequestBytes[fd] != null -> {
+                val total = localRequestBytes[fd]!! + readBytes
+                if (containsFullHeadersPart(readBytes)) readHeaders(fd, total).also { localRequestBytes.remove(fd) }
+                else localRequestBytes[fd] = total
+            }
             else -> Unit
         }
     } catch (e: Exception) {
@@ -62,25 +69,19 @@ class HttpInterceptor : Interceptor {
     }
 
     override fun MemScope.interceptWrite(fd: DRILL_SOCKET, bytes: CPointer<ByteVarOf<Byte>>, size: Int) = try {
-        val readBytes = bytes.readBytes(size.convert())
-        if (readBytes.decodeToString().startsWith("PRI")) {
-            TcpFinalData(bytes, size)
-        } else {
-            val separatorIndex = readBytes.indexOf(CR_LF_BYTES)
-            val writeHeaders = injectedHeaders.value()
-            if (separatorIndex > 0 && notContainsHeaders(readBytes, writeHeaders)) {
-                val responseHead = readBytes.copyOfRange(0, separatorIndex)
-                val injectedHeaders = headersToBytes(writeHeaders)
-                val responseTail = readBytes.copyOfRange(separatorIndex, size.convert())
-                val modified = responseHead + injectedHeaders + responseTail
-                logger.trace {
-                    val headersRange = modified.indexOf(HEADERS_DELIMITER).takeUnless((-1)::equals) ?: readBytes.size
-                    val headersPart = modified.copyOfRange(0, headersRange).decodeToString()
-                    "interceptWrite: Writing HTTP headers to fd=$fd: \n${headersPart.prependIndent("\t")}"
-                }
-                writeCallback.value(modified)
-                TcpFinalData(modified.toCValues().getPointer(this), modified.size, injectedHeaders.size)
-            } else {
+        val prefix = bytes.readBytes(HTTP_DETECTOR_BYTES_COUNT).decodeToString()
+        val readBytes by lazy { bytes.readBytes(size.convert()) }
+        val headersSeparator by lazy { readBytes.indexOf(CR_LF_BYTES) }
+        val writeHeaders by lazy { injectedHeaders.value() }
+        when {
+            prefix.startsWith("PRI") -> {
+                TcpFinalData(bytes, size)
+            }
+            headersSeparator > 0 && !containsHeaders(readBytes, writeHeaders) -> {
+                val modified = writeHeaders(fd, readBytes, headersSeparator, writeHeaders)
+                TcpFinalData(modified.toCValues().getPointer(this), modified.size, modified.size - size)
+            }
+            else -> {
                 TcpFinalData(bytes, size)
             }
         }
@@ -96,41 +97,49 @@ class HttpInterceptor : Interceptor {
     override fun isSuitableByteStream(fd: DRILL_SOCKET, bytes: CPointer<ByteVarOf<Byte>>) =
         bytes.readBytes(HTTP_DETECTOR_BYTES_COUNT).decodeToString().let { httpVerbs.any(it::startsWith) }
 
-    private fun readHttpHeaders(fd: DRILL_SOCKET, readBytes: ByteArray) {
-        val bytes = localRequestBytes.getOrElse(fd, ::byteArrayOf)!! + readBytes
-        if (notContainsFullHeadersPart(readBytes)) {
-            localRequestBytes[fd] = bytes
-        } else {
-            localRequestBytes.remove(fd)
-            val decodedString = bytes.decodeToString()
-            logger.trace { "processHttpRequest: Reading HTTP request from fd=$fd:\n${decodedString.prependIndent("\t")}" }
-            readHeaders.value(
-                decodedString.subSequence(decodedString.indexOf('\r'), decodedString.indexOf(CR_LF + CR_LF))
-                    .split(CR_LF)
-                    .filter(String::isNotBlank)
-                    .map { it.split(":", limit = 2).map(String::trim) }
-                    .onEach { logger.trace { "processHttpRequest: Read HTTP header from fd=$fd: ${it[0]}=${it[1]}" } }
-                    .associate { it[0].encodeToByteArray() to it[1].encodeToByteArray() }
-            )
-            readCallback.value(bytes)
-        }
+    private fun readHeaders(fd: DRILL_SOCKET, bytes: ByteArray) {
+        val decoded = bytes.decodeToString()
+        logger.trace { "readHeaders: Reading HTTP request from fd=$fd:\n${decoded.prependIndent("\t")}" }
+        readHeaders.value(
+            decoded.subSequence(decoded.indexOf('\r'), decoded.indexOf(CR_LF + CR_LF))
+                .split(CR_LF)
+                .filter(String::isNotBlank)
+                .map { it.split(":", limit = 2).map(String::trim) }
+                .onEach { logger.trace { "readHeaders: Read HTTP header from fd=$fd: ${it[0]}=${it[1]}" } }
+                .associate { it[0].encodeToByteArray() to it[1].encodeToByteArray() }
+        )
+        readCallback.value(bytes)
     }
 
-    private fun notContainsFullHeadersPart(readBytes: ByteArray) = readBytes.indexOf(HEADERS_DELIMITER) == -1
+    private fun writeHeaders(fd: DRILL_SOCKET, bytes: ByteArray, index: Int, headers: Map<String, String>): ByteArray {
+        val responseHead = bytes.copyOfRange(0, index)
+        val injectedHeaders = headersToBytes(headers)
+        val responseTail = bytes.copyOfRange(index, bytes.size)
+        val modified = responseHead + injectedHeaders + responseTail
+        logger.trace {
+            val headersRange = modified.indexOf(HEADERS_DELIMITER).takeUnless((-1)::equals) ?: bytes.size
+            val headersPart = modified.copyOfRange(0, headersRange).decodeToString()
+            "writeHeaders: Writing HTTP headers to fd=$fd: \n${headersPart.prependIndent("\t")}"
+        }
+        writeCallback.value(modified)
+        return modified
+    }
 
-    private fun notContainsHeaders(readBytes: ByteArray, writeHeaders: Map<String, String>) =
-        writeHeaders.isNotEmpty() && readBytes.indexOf(writeHeaders.keys.first().encodeToByteArray()) == -1
+    private fun containsFullHeadersPart(bytes: ByteArray) = bytes.indexOf(HEADERS_DELIMITER) != -1
 
-    private fun headersToBytes(writeHeaders: Map<String, String>) = writeHeaders.map { (k, v) -> "$k: $v" }
+    private fun containsHeaders(bytes: ByteArray, headers: Map<String, String>) =
+        headers.isNotEmpty() && bytes.indexOf(headers.keys.first().encodeToByteArray()) != -1
+
+    private fun headersToBytes(headers: Map<String, String>) = headers.map { (k, v) -> "$k: $v" }
         .joinToString(CR_LF, CR_LF)
         .encodeToByteArray()
 
-    private fun ByteArray.indexOf(array: ByteArray) = run {
-        for (thisIndex in IntRange(0, lastIndex - array.size)) {
-            val regionMatches = array.foldIndexed(true) { index, acc, byte -> acc && this[thisIndex + index] == byte }
-            if (regionMatches) return@run thisIndex
+    private fun ByteArray.indexOf(bytes: ByteArray): Int {
+        for (thisIndex in IntRange(0, lastIndex - bytes.size)) {
+            val regionMatches = bytes.foldIndexed(true) { index, acc, byte -> acc && this[thisIndex + index] == byte }
+            if (regionMatches) return thisIndex
         }
-        -1
+        return -1
     }
 
 }
