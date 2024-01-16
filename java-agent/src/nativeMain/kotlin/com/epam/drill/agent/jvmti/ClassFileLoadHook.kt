@@ -34,6 +34,7 @@ import com.epam.drill.agent.instrument.NettyTransformer
 import com.epam.drill.agent.instrument.SSLTransformer
 import com.epam.drill.agent.instrument.TTLTransformer
 import com.epam.drill.agent.instrument.TomcatTransformer
+import com.epam.drill.agent.interceptor.HttpInterceptorConfigurer
 import com.epam.drill.agent.module.InstrumentationAgentModule
 import com.epam.drill.agent.module.JvmModuleStorage
 import com.epam.drill.common.classloading.ClassSource
@@ -126,15 +127,14 @@ object ClassFileLoadHook {
                     transformers += { bytes -> plugin.instrument(kClassName, bytes) }
                 }
             }
-            if (kClassName.startsWith("org/apache/catalina/core/ApplicationFilterChain")) {
-                transformers += { bytes ->
-                    TomcatTransformer.transform(kClassName, bytes, loader, protectionDomain)
+            if (!HttpInterceptorConfigurer.enabled) {
+                if (kClassName.startsWith("org/apache/catalina/core/ApplicationFilterChain")) {
+                    transformers += { bytes -> TomcatTransformer.transform(kClassName, bytes, loader, protectionDomain) }
                 }
-            }
-
-            strategies.forEach { strategy ->
-                if (strategy.permit(classReader.className, classReader.superName, classReader.interfaces)) {
-                    transformers += { strategy.transform(kClassName, classBytes, loader, protectionDomain) }
+                strategies.forEach { strategy ->
+                    if (strategy.permit(classReader.className, classReader.superName, classReader.interfaces)) {
+                        transformers += { strategy.transform(kClassName, classBytes, loader, protectionDomain) }
+                    }
                 }
             }
             // TODO Http hook does not work for Netty on linux system

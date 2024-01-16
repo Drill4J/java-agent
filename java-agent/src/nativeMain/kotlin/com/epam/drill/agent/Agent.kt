@@ -28,14 +28,15 @@ import com.epam.drill.agent.configuration.AgentLoggingConfiguration
 import com.epam.drill.agent.configuration.Configuration
 import com.epam.drill.agent.configuration.DefaultParameterDefinitions.INSTALLATION_DIR
 import com.epam.drill.agent.configuration.ParameterDefinitions
+import com.epam.drill.agent.interceptor.HttpInterceptorConfigurer
 import com.epam.drill.agent.jvmti.classFileLoadHook
 import com.epam.drill.agent.jvmti.vmDeathEvent
 import com.epam.drill.agent.jvmti.vmInitEvent
 import com.epam.drill.agent.module.JvmModuleLoader
-import com.epam.drill.agent.request.DrillRequest
 import com.epam.drill.agent.request.RequestHolder
 import com.epam.drill.agent.request.RequestProcessor
 import com.epam.drill.agent.transport.JvmModuleMessageSender
+import com.epam.drill.common.agent.request.DrillRequest
 import com.epam.drill.jvmapi.gen.*
 
 object Agent {
@@ -82,7 +83,11 @@ object Agent {
         AgentLoggingConfiguration.updateJvmLoggingConfiguration()
         Configuration.initializeJvm()
 
+        Configuration.parameters.define(ParameterDefinitions.ADMIN_ADDRESS)
+        Configuration.parameters.define(ParameterDefinitions.REQUEST_PATTERN)
+        HttpInterceptorConfigurer(Configuration, drillRequest, sessionStorage, closeSession)
         registerGlobalCallbacks()
+
         loadJvmModule("com.epam.drill.test2code.Test2Code")
         JvmModuleMessageSender.sendAgentMetadata()
     }

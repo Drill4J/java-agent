@@ -16,10 +16,11 @@
 package com.epam.drill.agent.request
 
 import kotlinx.serialization.protobuf.ProtoBuf
-import mu.KotlinLogging
 import com.alibaba.ttl.TransmittableThreadLocal
+import mu.KotlinLogging
 import com.epam.drill.agent.RequestAgentContext
 import com.epam.drill.common.agent.AgentContext
+import com.epam.drill.common.agent.request.DrillRequest
 
 actual object RequestHolder {
 

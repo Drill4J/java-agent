@@ -16,8 +16,8 @@
 package com.epam.drill.agent
 
 import java.util.Locale
-import com.epam.drill.agent.request.DrillRequest
 import com.epam.drill.common.agent.AgentContext
+import com.epam.drill.common.agent.request.DrillRequest
 
 class RequestAgentContext(
     private val requestProvider: () -> DrillRequest?

@@ -15,8 +15,9 @@
  */
 package com.epam.drill.agent
 
-import com.epam.drill.agent.request.*
-import kotlin.native.concurrent.*
+import kotlin.native.concurrent.AtomicReference
+import kotlin.native.concurrent.freeze
+import com.epam.drill.common.agent.request.DrillRequest
 
 private val drillRequestCallback = AtomicReference<() -> DrillRequest?>({ null }.freeze()).freeze()
 private val sessionStorageCallback = AtomicReference({ _: DrillRequest -> }.freeze()).freeze()

@@ -1,13 +1,9 @@
 ---
-void* _currentEnvs(){
+void* currentEnvs() {
 }
-void* currentEnvs(){
+void* jvmtii() {
 }
-void* _jvmtii(){
+void* checkEx() {
 }
-void* jvmtii(){
-}
-void* _checkEx(){
-}
-void* checkEx(){
+void* getJvm() {
 }
