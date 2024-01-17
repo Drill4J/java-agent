@@ -54,7 +54,11 @@ kotlin {
                 linkerOpts("-lpsapi", "-lwsock32", "-lws2_32", "-lmswsock")
             }
         }
-        macosX64(configure = configureNativeTarget)
+        macosX64(configure = configureNativeTarget).apply {
+            binaries.all {
+                linkerOpts("-ld64")
+            }
+        }
         currentPlatformTarget().compilations["main"].defaultSourceSet {
             kotlin.srcDir("src/nativeMain/kotlin")
             resources.srcDir("src/nativeMain/resources")
