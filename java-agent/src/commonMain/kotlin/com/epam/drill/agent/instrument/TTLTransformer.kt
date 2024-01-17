@@ -17,9 +17,9 @@ package com.epam.drill.agent.instrument
 
 expect object TTLTransformer {
     fun transform(
+        className: String,
+        classFileBuffer: ByteArray,
         loader: Any?,
-        classFile: String?,
-        classBeingRedefined: Any?,
-        classFileBuffer: ByteArray
+        protectionDomain: Any?
     ): ByteArray?
 }

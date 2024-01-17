@@ -20,15 +20,14 @@ import javassist.CtMethod
 import mu.KotlinLogging
 import com.epam.drill.agent.KAFKA_CONSUMER_SPRING
 import com.epam.drill.agent.KAFKA_PRODUCER_INTERFACE
-import com.epam.drill.agent.instrument.error.wrapCatching
 import com.epam.drill.agent.instrument.request.HttpRequest
 import com.epam.drill.instrument.util.createAndTransform
 
-actual object KafkaTransformer {
+actual object KafkaTransformer : AbstractTransformer() {
 
     private val logger = KotlinLogging.logger {}
 
-    actual fun transform(
+    actual override fun transform(
         className: String,
         classFileBuffer: ByteArray,
         loader: Any?,
@@ -46,9 +45,11 @@ actual object KafkaTransformer {
         }.getOrNull()
     }
 
+    override fun logError(exception: Throwable, message: String) = logger.error(exception) { message }
+
     private fun CtClass.producerInstrument() = run {
         getDeclaredMethods("send").forEach {
-            it.wrapCatching(
+            it.insertCatching(
                 CtMethod::insertBefore,
                 """
                 java.util.Map drillHeaders = ${HttpRequest::class.java.name}.INSTANCE.${HttpRequest::loadDrillHeaders.name}();
@@ -71,7 +72,7 @@ actual object KafkaTransformer {
 
     private fun CtClass.consumerInstrument() = run {
         getDeclaredMethods("doInvokeRecordListener").forEach {
-            it.wrapCatching(
+            it.insertCatching(
                 CtMethod::insertBefore,
                 """
                 java.util.Iterator headers = $1.headers().iterator();

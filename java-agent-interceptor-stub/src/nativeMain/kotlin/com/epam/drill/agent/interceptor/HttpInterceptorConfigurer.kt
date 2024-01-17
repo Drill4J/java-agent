@@ -24,9 +24,6 @@ object HttpInterceptorConfigurer {
     const val enabled = false;
 
     @Suppress("unused_parameter")
-    operator fun invoke(
-        headersRetriever: HeadersRetriever,
-        requestHolder: RequestHolder
-    ) {}
+    operator fun invoke(headersRetriever: HeadersRetriever, requestHolder: RequestHolder) {}
 
 }

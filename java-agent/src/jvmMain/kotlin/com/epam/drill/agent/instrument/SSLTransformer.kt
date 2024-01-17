@@ -17,15 +17,14 @@ package com.epam.drill.agent.instrument
 
 import javassist.CtMethod
 import mu.KotlinLogging
-import com.epam.drill.agent.instrument.error.wrapCatching
 import com.epam.drill.agent.instrument.request.HttpRequest
 import com.epam.drill.instrument.util.createAndTransform
 
-actual object SSLTransformer {
+actual object SSLTransformer : AbstractTransformer() {
 
     private val logger = KotlinLogging.logger {}
 
-    actual fun transform(
+    actual override fun transform(
         className: String,
         classFileBuffer: ByteArray,
         loader: Any?,
@@ -36,7 +35,7 @@ actual object SSLTransformer {
                 getMethod(
                     "unwrap",
                     "(Ljava/nio/ByteBuffer;[Ljava/nio/ByteBuffer;II)Ljavax/net/ssl/SSLEngineResult;"
-                )?.wrapCatching(
+                )?.insertCatching(
                     CtMethod::insertAfter,
                     """
                        ${HttpRequest::class.java.name}.INSTANCE.${HttpRequest::parse.name}($2);
@@ -51,4 +50,7 @@ actual object SSLTransformer {
             null
         }
     }
+
+    override fun logError(exception: Throwable, message: String) = logger.error(exception) { message }
+
 }

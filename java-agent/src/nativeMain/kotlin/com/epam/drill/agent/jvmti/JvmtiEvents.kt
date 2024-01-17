@@ -47,7 +47,6 @@ fun classFileLoadHook(
     newClassDataLen: CPointer<jintVar>?,
     newData: CPointer<CPointerVar<UByteVar>>?,
 ) = ClassFileLoadHook.invoke(
-    classBeingRedefined,
     loader,
     clsName,
     protectionDomain,

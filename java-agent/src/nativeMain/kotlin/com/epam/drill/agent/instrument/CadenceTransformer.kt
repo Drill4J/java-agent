@@ -15,23 +15,4 @@
  */
 package com.epam.drill.agent.instrument
 
-import com.epam.drill.agent.instrument.jvm.callTransformerTransformMethod
-
-actual object CadenceTransformer {
-
-    actual fun transform(
-        className: String,
-        classFileBuffer: ByteArray,
-        loader: Any?,
-        protectionDomain: Any?,
-    ): ByteArray? =
-        callTransformerTransformMethod(
-            CadenceTransformer::class,
-            CadenceTransformer::transform,
-            className,
-            classFileBuffer,
-            loader,
-            protectionDomain
-        )
-
-}
+actual object CadenceTransformer : AbstractTransformer()

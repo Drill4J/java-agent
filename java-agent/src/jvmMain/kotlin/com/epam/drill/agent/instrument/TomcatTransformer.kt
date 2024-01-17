@@ -17,17 +17,16 @@ package com.epam.drill.agent.instrument
 
 import javassist.CtMethod
 import mu.KotlinLogging
-import com.epam.drill.agent.instrument.error.wrapCatching
 import com.epam.drill.agent.instrument.request.HttpRequest
 import com.epam.drill.agent.request.HeadersRetriever
 import com.epam.drill.agent.request.RequestProcessor
 import com.epam.drill.instrument.util.createAndTransform
 
-actual object TomcatTransformer {
+actual object TomcatTransformer : AbstractTransformer() {
 
     private val logger = KotlinLogging.logger {}
 
-    actual fun transform(
+    actual override fun transform(
         className: String,
         classFileBuffer: ByteArray,
         loader: Any?,
@@ -46,7 +45,7 @@ actual object TomcatTransformer {
                 ) ?: run {
                     return null
                 }
-                method.wrapCatching(
+                method.insertCatching(
                     CtMethod::insertBefore,
                     """
                         if ($1 instanceof org.apache.catalina.connector.RequestFacade && $2 instanceof org.apache.catalina.connector.ResponseFacade) {
@@ -71,7 +70,7 @@ actual object TomcatTransformer {
                         }
                     """.trimIndent()
                 )
-                method.wrapCatching(
+                method.insertCatching(
                     CtMethod::insertAfter,
                     """
                        ${RequestProcessor::class.java.name}.INSTANCE.${RequestProcessor::processServerResponse.name}();
@@ -84,4 +83,7 @@ actual object TomcatTransformer {
             null
         }
     }
+
+    override fun logError(exception: Throwable, message: String) = logger.error(exception) { message }
+
 }

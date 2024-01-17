@@ -42,7 +42,6 @@ import com.epam.drill.instrument.http.ApacheClient
 import com.epam.drill.instrument.http.JavaHttpUrlConnection
 import com.epam.drill.instrument.http.OkHttpClient
 import com.epam.drill.jvmapi.gen.Allocate
-import com.epam.drill.jvmapi.gen.jclass
 import com.epam.drill.jvmapi.gen.jint
 import com.epam.drill.jvmapi.gen.jintVar
 import com.epam.drill.jvmapi.gen.jobject
@@ -64,7 +63,6 @@ object ClassFileLoadHook {
     private val totalTransformClass = AtomicInt(0)
 
     operator fun invoke(
-        classBeingRedefined: jclass?,
         loader: jobject?,
         clsName: CPointer<ByteVar>?,
         protectionDomain: jobject?,
@@ -92,10 +90,10 @@ object ClassFileLoadHook {
                 if (isAsyncApp && isTTLCandidate(kClassName, superName, interfaces)) {
                     transformers += { bytes ->
                         TTLTransformer.transform(
-                            loader,
                             kClassName,
-                            classBeingRedefined,
-                            bytes
+                            bytes,
+                            loader,
+                            protectionDomain
                         )
                     }
                 }

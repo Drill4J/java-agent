@@ -24,9 +24,9 @@ import com.epam.drill.common.agent.request.DrillRequest
 import com.epam.drill.instrument.ClientsCallback
 
 object HttpRequest {
+
     const val DRILL_HEADER_PREFIX = "drill-"
 
-    private const val DRILL_SESSION_ID_HEADER_NAME = "${DRILL_HEADER_PREFIX}session-id"
     private const val HTTP_DETECTOR_BYTES_COUNT = 8
 
     private val HTTP_VERBS =
@@ -55,7 +55,7 @@ object HttpRequest {
                         headerKey.trim() to headerValue.trim()
                     }
                 //todo add processing of header mapping
-                headers[DRILL_SESSION_ID_HEADER_NAME]?.let { drillSessionId ->
+                headers[HeadersRetriever.sessionHeader()]?.let { drillSessionId ->
                     RequestHolder.store(DrillRequest(drillSessionId, headers))
                 }
             }
@@ -64,7 +64,7 @@ object HttpRequest {
 
     fun storeDrillHeaders(headers: Map<String, String>?) {
         runCatching {
-            headers?.get(HeadersRetriever.sessionHeader() ?: DRILL_SESSION_ID_HEADER_NAME)?.let { drillSessionId ->
+            headers?.get(HeadersRetriever.sessionHeader())?.let { drillSessionId ->
                 val drillHeaders = headers.filter { it.key.startsWith(DRILL_HEADER_PREFIX) }
                 logger.trace { "for drillSessionId '$drillSessionId' store drillHeaders '$drillHeaders' to thread storage" }
                 RequestHolder.store(DrillRequest(drillSessionId, drillHeaders))
@@ -77,7 +77,7 @@ object HttpRequest {
     fun loadDrillHeaders() = runCatching {
         RequestHolder.dump()?.let { bytes ->
             val drillRequest = ProtoBuf.decodeFromByteArray(DrillRequest.serializer(), bytes)
-            drillRequest.headers.filter { it.key.startsWith(DRILL_HEADER_PREFIX) } + (DRILL_SESSION_ID_HEADER_NAME to drillRequest.drillSessionId)
+            drillRequest.headers.filter { it.key.startsWith(DRILL_HEADER_PREFIX) } + (HeadersRetriever.sessionHeader() to drillRequest.drillSessionId)
         }
     }.onFailure { logger.error(it) { "Error while loading drill headers. Reason: " } }.getOrNull()
 

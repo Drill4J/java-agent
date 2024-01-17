@@ -15,24 +15,6 @@
  */
 package com.epam.drill.agent.instrument
 
-import com.epam.drill.agent.instrument.jvm.callTransformerTransformMethod
-
-actual object NettyTransformer {
+actual object NettyTransformer : AbstractTransformer() {
     const val HANDLER_CONTEXT = "io/netty/channel/AbstractChannelHandlerContext"
-
-    actual fun transform(
-        className: String,
-        classFileBuffer: ByteArray,
-        loader: Any?,
-        protectionDomain: Any?,
-    ): ByteArray? =
-        callTransformerTransformMethod(
-            NettyTransformer::class,
-            NettyTransformer::transform,
-            className,
-            classFileBuffer,
-            loader,
-            protectionDomain
-        )
-
 }

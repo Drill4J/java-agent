@@ -17,20 +17,19 @@ package com.epam.drill.agent.instrument
 
 import javassist.CtMethod
 import mu.KotlinLogging
-import com.epam.drill.agent.instrument.error.wrapCatching
 import com.epam.drill.agent.instrument.request.HttpRequest
 import com.epam.drill.agent.request.HeadersRetriever
 import com.epam.drill.agent.request.RequestProcessor
 import com.epam.drill.instrument.util.createAndTransform
 
-actual object NettyTransformer {
+actual object NettyTransformer : AbstractTransformer() {
 
     private val logger = KotlinLogging.logger {}
 
     private val DefaultHttpRequest = "io.netty.handler.codec.http.DefaultHttpRequest"
     private val DefaultHttpResponse = "io.netty.handler.codec.http.DefaultHttpResponse"
 
-    actual fun transform(
+    actual override fun transform(
         className: String,
         classFileBuffer: ByteArray,
         loader: Any?,
@@ -38,7 +37,7 @@ actual object NettyTransformer {
     ): ByteArray? =  createAndTransform(classFileBuffer, loader, protectionDomain) { ctClass, _, _, _ ->
         return try {
             ctClass.run {
-                getMethod("invokeChannelRead", "(Ljava/lang/Object;)V").wrapCatching(
+                getMethod("invokeChannelRead", "(Ljava/lang/Object;)V").insertCatching(
                     CtMethod::insertBefore,
                     """
                         if ($1 instanceof $DefaultHttpRequest) {
@@ -60,7 +59,7 @@ actual object NettyTransformer {
                 val agentIdHeader = HeadersRetriever.agentIdHeader()
                 val agentIdValue = HeadersRetriever.agentIdHeaderValue()
                 val writeMethod = getMethod("write", "(Ljava/lang/Object;ZLio/netty/channel/ChannelPromise;)V")
-                writeMethod.wrapCatching(
+                writeMethod.insertCatching(
                     CtMethod::insertBefore,
                     """
                         if ($1 instanceof $DefaultHttpResponse) {
@@ -87,7 +86,7 @@ actual object NettyTransformer {
                         }
                     """.trimIndent()
                 )
-                writeMethod.wrapCatching(
+                writeMethod.insertCatching(
                     CtMethod::insertAfter,
                     """
                         if ($1 instanceof $DefaultHttpResponse) {
@@ -102,4 +101,7 @@ actual object NettyTransformer {
             null
         }
     }
+
+    override fun logError(exception: Throwable, message: String) = logger.error(exception) { message }
+
 }

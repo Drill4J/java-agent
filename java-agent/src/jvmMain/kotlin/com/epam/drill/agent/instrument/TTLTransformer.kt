@@ -17,14 +17,16 @@
 
 package com.epam.drill.agent.instrument
 
-import com.alibaba.ttl.threadpool.agent.*
-import com.alibaba.ttl.threadpool.agent.internal.logging.*
-import com.alibaba.ttl.threadpool.agent.internal.transformlet.*
-import com.alibaba.ttl.threadpool.agent.internal.transformlet.impl.*
+import com.alibaba.ttl.threadpool.agent.TtlAgent
+import com.alibaba.ttl.threadpool.agent.internal.logging.Logger
+import com.alibaba.ttl.threadpool.agent.internal.transformlet.ClassInfo
+import com.alibaba.ttl.threadpool.agent.internal.transformlet.JavassistTransformlet
+import com.alibaba.ttl.threadpool.agent.internal.transformlet.impl.TtlExecutorTransformlet
+import com.alibaba.ttl.threadpool.agent.internal.transformlet.impl.TtlForkJoinTransformlet
+import com.alibaba.ttl.threadpool.agent.internal.transformlet.impl.TtlTimerTaskTransformlet
 import mu.KotlinLogging
-import java.util.*
 
-actual object TTLTransformer {
+actual object TTLTransformer : AbstractTransformer() {
     private val transformletList: MutableList<JavassistTransformlet> = ArrayList()
 
     private val logger = KotlinLogging.logger {}
@@ -37,23 +39,20 @@ actual object TTLTransformer {
             transformletList.add(TtlTimerTaskTransformlet())
     }
 
-    actual fun transform(
+    actual override fun transform(
+        className: String,
+        classFileBuffer: ByteArray,
         loader: Any?,
-        classFile: String?,
-        classBeingRedefined: Any?,
-        classFileBuffer: ByteArray
+        protectionDomain: Any?
     ): ByteArray? {
         try {
-            // Lambda has no class file, no need to transform, just return.
-            if (classFile == null) return null
-            val className = toClassName(classFile)
-            val classInfo = ClassInfo(className, classFileBuffer, (loader as? ClassLoader))
+            val classInfo = ClassInfo(toClassName(className), classFileBuffer, (loader as? ClassLoader))
             for (transformlet in transformletList) {
                 transformlet.doTransform(classInfo)
                 if (classInfo.isModified) return classInfo.ctClass.toBytecode()
             }
         } catch (e: Exception) {
-            logger.warn(e) { "Fail to transform class $classFile" }
+            logger.warn(e) { "Fail to transform class $className" }
         }
         return null
     }
@@ -62,5 +61,8 @@ actual object TTLTransformer {
     private fun toClassName(classFile: String): String {
         return classFile.replace('/', '.')
     }
+
+    override fun logError(exception: Throwable, message: String) = logger.error(exception) { message }
+
 }
 

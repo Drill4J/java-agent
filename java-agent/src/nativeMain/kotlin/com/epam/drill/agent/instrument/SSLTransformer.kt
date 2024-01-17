@@ -15,24 +15,6 @@
  */
 package com.epam.drill.agent.instrument
 
-import com.epam.drill.agent.instrument.jvm.callTransformerTransformMethod
-
-actual object SSLTransformer {
+actual object SSLTransformer : AbstractTransformer() {
     const val SSL_ENGINE_CLASS_NAME = "javax/net/ssl/SSLEngine"
-
-    actual fun transform(
-        className: String,
-        classFileBuffer: ByteArray,
-        loader: Any?,
-        protectionDomain: Any?,
-    ): ByteArray? =
-        callTransformerTransformMethod(
-            SSLTransformer::class,
-            SSLTransformer::transform,
-            className,
-            classFileBuffer,
-            loader,
-            protectionDomain
-        )
-
 }
