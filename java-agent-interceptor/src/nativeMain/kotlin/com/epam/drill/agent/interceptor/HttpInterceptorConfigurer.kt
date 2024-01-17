@@ -34,7 +34,7 @@ object HttpInterceptorConfigurer {
 
     operator fun invoke(headersRetriever: HeadersRetriever, requestHolder: RequestHolder) {
         logger.debug { "invoke: Creating HTTP interceptor object..." }
-        val interceptor = HttpInterceptor()
+        val interceptor = HttpInterceptor(headersRetriever.adminAddressValue())
 
         logger.debug { "invoke: Creating HTTP interceptor callbacks..." }
         val callbacks = HttpInterceptorCallbacks(headersRetriever, requestHolder)

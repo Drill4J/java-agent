@@ -27,15 +27,16 @@ actual object RequestHolder : RequestHolder {
     private lateinit var threadStorage: InheritableThreadLocal<DrillRequest>
 
     actual override fun remove() {
+        if (threadStorage.get() == null) return
         RequestProcessor.processServerResponse()
-        logger.trace { "remove: Request ${threadStorage.get()} removed" }
+        logger.trace { "remove: Request ${threadStorage.get().drillSessionId} removed" }
         threadStorage.remove()
     }
 
     actual override fun retrieve(): DrillRequest? =
         threadStorage.get()
 
-    actual override fun store(drillRequest: DrillRequest){
+    actual override fun store(drillRequest: DrillRequest) {
         threadStorage.set(drillRequest)
         logger.trace { "store: Request ${drillRequest.drillSessionId} saved" }
         RequestProcessor.processServerRequest()
@@ -45,9 +46,9 @@ actual object RequestHolder : RequestHolder {
         store(ProtoBuf.decodeFromByteArray(DrillRequest.serializer(), drillRequest))
 
     actual fun dump(): ByteArray? =
-        threadStorage.get()?.let { ProtoBuf.encodeToByteArray(DrillRequest.serializer(), it) }
+        retrieve()?.let { ProtoBuf.encodeToByteArray(DrillRequest.serializer(), it) }
 
-    actual operator fun invoke(isAsync: Boolean) {
+    actual fun init(isAsync: Boolean) {
         threadStorage = if (isAsync) TransmittableThreadLocal() else InheritableThreadLocal()
     }
 

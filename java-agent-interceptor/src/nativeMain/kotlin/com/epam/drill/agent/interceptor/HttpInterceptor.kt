@@ -42,18 +42,19 @@ private const val HTTP_RESPONSE_MARKER = "HTTP"
 @ThreadLocal
 private val localRequestBytes = mutableMapOf<DRILL_SOCKET, ByteArray?>()
 
-class HttpInterceptor : Interceptor {
+class HttpInterceptor(adminAddress: String) : Interceptor {
 
     private val httpVerbs = setOf(
         "OPTIONS", "GET", "HEAD", "POST", "PUT", "PATCH", "DELETE", "TRACE", "CONNECT", "PRI", HTTP_RESPONSE_MARKER
     )
+    private val adminHostHeader = "Host: $adminAddress".encodeToByteArray()
     private val logger = KotlinLogging.logger("com.epam.drill.agent.interceptor.HttpInterceptor")
 
     override fun MemScope.interceptRead(fd: DRILL_SOCKET, bytes: CPointer<ByteVarOf<Byte>>, size: Int) = try {
         val prefix = bytes.readBytes(HTTP_DETECTOR_BYTES_COUNT).decodeToString()
         val readBytes by lazy { bytes.readBytes(size.convert()) }
         when {
-            httpVerbs.any(prefix::startsWith) -> {
+            httpVerbs.any(prefix::startsWith) && !containsAdminHostHeader(readBytes) -> {
                 if (containsFullHeadersPart(readBytes)) readHeaders(fd, readBytes)
                 else localRequestBytes[fd] = readBytes
             }
@@ -75,6 +76,9 @@ class HttpInterceptor : Interceptor {
         val writeHeaders by lazy { injectedHeaders.value() }
         when {
             prefix.startsWith("PRI") -> {
+                TcpFinalData(bytes, size)
+            }
+            headersSeparator > 0 && containsAdminHostHeader(readBytes) -> {
                 TcpFinalData(bytes, size)
             }
             headersSeparator > 0 && !containsHeaders(readBytes, writeHeaders) -> {
@@ -112,6 +116,7 @@ class HttpInterceptor : Interceptor {
     }
 
     private fun writeHeaders(fd: DRILL_SOCKET, bytes: ByteArray, index: Int, headers: Map<String, String>): ByteArray {
+        headers.entries.forEach { logger.trace { "writeHeaders: Writing HTTP header to fd=$fd: ${it.key}=${it.value}" } }
         val responseHead = bytes.copyOfRange(0, index)
         val injectedHeaders = headersToBytes(headers)
         val responseTail = bytes.copyOfRange(index, bytes.size)
@@ -119,11 +124,13 @@ class HttpInterceptor : Interceptor {
         logger.trace {
             val headersRange = modified.indexOf(HEADERS_DELIMITER).takeUnless((-1)::equals) ?: bytes.size
             val headersPart = modified.copyOfRange(0, headersRange).decodeToString()
-            "writeHeaders: Writing HTTP headers to fd=$fd: \n${headersPart.prependIndent("\t")}"
+            "writeHeaders: Written HTTP headers to fd=$fd: \n${headersPart.prependIndent("\t")}"
         }
         writeCallback.value(modified)
         return modified
     }
+
+    private fun containsAdminHostHeader(bytes: ByteArray) = bytes.indexOf(adminHostHeader) != -1
 
     private fun containsFullHeadersPart(bytes: ByteArray) = bytes.indexOf(HEADERS_DELIMITER) != -1
 
@@ -135,7 +142,7 @@ class HttpInterceptor : Interceptor {
         .encodeToByteArray()
 
     private fun ByteArray.indexOf(bytes: ByteArray): Int {
-        for (thisIndex in IntRange(0, lastIndex - bytes.size)) {
+        for (thisIndex in IntRange(0, lastIndex - bytes.lastIndex)) {
             val regionMatches = bytes.foldIndexed(true) { index, acc, byte -> acc && this[thisIndex + index] == byte }
             if (regionMatches) return thisIndex
         }

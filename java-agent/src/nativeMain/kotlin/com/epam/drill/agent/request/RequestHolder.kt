@@ -26,7 +26,7 @@ import com.epam.drill.jvmapi.callObjectVoidMethodWithByteArray
 actual object RequestHolder : RequestHolder {
 
     actual override fun remove() =
-        callObjectVoidMethod(RequestHolder::class, RequestHolder::remove)
+        callObjectVoidMethod(this::class, RequestHolder::remove)
 
     actual override fun retrieve() =
         dump()?.let { ProtoBuf.decodeFromByteArray(DrillRequest.serializer(), it) }
@@ -34,13 +34,13 @@ actual object RequestHolder : RequestHolder {
     actual override fun store(drillRequest: DrillRequest) =
         store(ProtoBuf.encodeToByteArray(DrillRequest.serializer(), drillRequest))
 
-    actual fun store(drillRequest: ByteArray): Unit =
-        callObjectVoidMethodWithByteArray(RequestHolder::class, "store", drillRequest)
+    actual fun store(drillRequest: ByteArray) =
+        callObjectVoidMethodWithByteArray(this::class, RequestHolder::store, drillRequest)
 
     actual fun dump(): ByteArray? =
-        callObjectByteArrayMethod(RequestHolder::class, "dump")
+        callObjectByteArrayMethod(this::class, this::dump)
 
-    actual operator fun invoke(isAsync: Boolean): Unit =
-        callObjectVoidMethodWithBoolean(RequestHolder::class, "init", isAsync)
+    actual fun init(isAsync: Boolean): Unit =
+        callObjectVoidMethodWithBoolean(this::class, this::init, isAsync)
 
 }

@@ -24,5 +24,5 @@ expect object RequestHolder : RequestHolder {
     override fun store(drillRequest: DrillRequest)
     fun store(drillRequest: ByteArray)
     fun dump(): ByteArray?
-    operator fun invoke(isAsync: Boolean)
+    fun init(isAsync: Boolean)
 }

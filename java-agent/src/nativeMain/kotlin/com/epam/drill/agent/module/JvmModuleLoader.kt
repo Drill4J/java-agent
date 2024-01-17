@@ -37,7 +37,7 @@ actual object JvmModuleLoader {
         }
 
     private fun callObjectAgentModuleMethodWithString(clazz: KClass<out Any>, method: String, string: String?) =
-        getObjectMethod(clazz, method, "(Ljava/lang/String;)Lcom/epam/drill/common/agent/AgentModule;").run {
+        getObjectMethod(clazz, method, "(Ljava/lang/String;)Lcom/epam/drill/common/agent/module/AgentModule;").run {
             CallObjectMethod(this.first, this.second, string?.let(::NewStringUTF))
         }
 

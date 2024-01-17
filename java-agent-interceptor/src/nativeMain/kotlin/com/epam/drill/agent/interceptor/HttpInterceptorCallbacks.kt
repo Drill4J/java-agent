@@ -28,7 +28,7 @@ class HttpInterceptorCallbacks(
     private val adminAddressPair = headersRetriever.adminAddressHeader() to headersRetriever.adminAddressValue()
 
     fun readHeaders(headers: Map<ByteArray, ByteArray>) {
-        val decoded = headers.entries.associate { (k, v) -> k.decodeToString().lowercase() to v.decodeToString() }
+        val decoded = headers.entries.associate { (k, v) -> k.decodeToString() to v.decodeToString() }
         decoded[headersRetriever.sessionHeader()]?.also { requestHolder.store(DrillRequest(it, decoded)) }
     }
 
