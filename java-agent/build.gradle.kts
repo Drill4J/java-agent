@@ -31,7 +31,7 @@ val transmittableThreadLocalVersion: String by parent!!.extra
 val uuidVersion: String by parent!!.extra
 val aesyDatasizeVersion: String by parent!!.extra
 val nativeAgentLibName: String by parent!!.extra
-val nativeAgentInterceptorModule: String by parent!!.extra
+val nativeAgentHookEnabled: String by parent!!.extra
 
 repositories {
     mavenLocal()
@@ -114,7 +114,10 @@ kotlin {
                 implementation(project(":jvmapi"))
                 implementation(project(":knasm"))
                 implementation(project(":konform"))
-                implementation(project(":$nativeAgentInterceptorModule"))
+                if (nativeAgentHookEnabled == "true")
+                    implementation(project(":java-agent-interceptor"))
+                else
+                    implementation(project(":java-agent-interceptor-stub"))
             }
         }
         val linuxX64Main by getting(configuration = configureNativeDependencies)
