@@ -115,7 +115,7 @@ kotlin {
                 implementation(project(":knasm"))
                 implementation(project(":konform"))
                 if (nativeAgentHookEnabled == "true")
-                    implementation(project(":java-agent-interceptor"))
+                    implementation(project(":interceptor-http"))
                 else
                     implementation(project(":java-agent-interceptor-stub"))
             }
