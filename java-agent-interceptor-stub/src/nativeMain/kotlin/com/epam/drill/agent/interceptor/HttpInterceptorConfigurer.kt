@@ -18,6 +18,7 @@ package com.epam.drill.agent.interceptor
 import com.epam.drill.common.agent.request.HeadersRetriever
 import com.epam.drill.common.agent.request.RequestHolder
 
+@Suppress("unused")
 object HttpInterceptorConfigurer {
 
     const val enabled = false;

@@ -218,6 +218,8 @@ distributions {
                 from(runtimeJarTask)
                 from(nativeAgentLinkTask) {
                     duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+                    exclude("*.h")
+                    exclude("*.def")
                 }
                 from("drill.properties")
                 from("temporary.jks")

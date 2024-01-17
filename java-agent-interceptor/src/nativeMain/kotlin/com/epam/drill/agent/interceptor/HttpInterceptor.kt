@@ -38,23 +38,24 @@ import com.epam.drill.hook.io.writeCallback
 
 private const val HTTP_DETECTOR_BYTES_COUNT = 8
 private const val HTTP_RESPONSE_MARKER = "HTTP"
+private const val HTTP_HEADER_DRILL_INTERNAL = "drill-internal: true"
 
 @ThreadLocal
 private val localRequestBytes = mutableMapOf<DRILL_SOCKET, ByteArray?>()
 
-class HttpInterceptor(adminAddress: String) : Interceptor {
+class HttpInterceptor : Interceptor {
 
     private val httpVerbs = setOf(
         "OPTIONS", "GET", "HEAD", "POST", "PUT", "PATCH", "DELETE", "TRACE", "CONNECT", "PRI", HTTP_RESPONSE_MARKER
     )
-    private val adminHostHeader = "Host: $adminAddress".encodeToByteArray()
+    private val drillInternalHeader = HTTP_HEADER_DRILL_INTERNAL.encodeToByteArray()
     private val logger = KotlinLogging.logger("com.epam.drill.agent.interceptor.HttpInterceptor")
 
     override fun MemScope.interceptRead(fd: DRILL_SOCKET, bytes: CPointer<ByteVarOf<Byte>>, size: Int) = try {
         val prefix = bytes.readBytes(HTTP_DETECTOR_BYTES_COUNT).decodeToString()
         val readBytes by lazy { bytes.readBytes(size.convert()) }
         when {
-            httpVerbs.any(prefix::startsWith) && !containsAdminHostHeader(readBytes) -> {
+            httpVerbs.any(prefix::startsWith) && !containsDrillInternalHeader(readBytes) -> {
                 if (containsFullHeadersPart(readBytes)) readHeaders(fd, readBytes)
                 else localRequestBytes[fd] = readBytes
             }
@@ -78,7 +79,7 @@ class HttpInterceptor(adminAddress: String) : Interceptor {
             prefix.startsWith("PRI") -> {
                 TcpFinalData(bytes, size)
             }
-            headersSeparator > 0 && containsAdminHostHeader(readBytes) -> {
+            headersSeparator > 0 && containsDrillInternalHeader(readBytes) -> {
                 TcpFinalData(bytes, size)
             }
             headersSeparator > 0 && !containsHeaders(readBytes, writeHeaders) -> {
@@ -130,7 +131,7 @@ class HttpInterceptor(adminAddress: String) : Interceptor {
         return modified
     }
 
-    private fun containsAdminHostHeader(bytes: ByteArray) = bytes.indexOf(adminHostHeader) != -1
+    private fun containsDrillInternalHeader(bytes: ByteArray) = bytes.indexOf(drillInternalHeader) != -1
 
     private fun containsFullHeadersPart(bytes: ByteArray) = bytes.indexOf(HEADERS_DELIMITER) != -1
 
