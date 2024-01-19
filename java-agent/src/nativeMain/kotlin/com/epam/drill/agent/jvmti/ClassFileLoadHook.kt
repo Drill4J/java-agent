@@ -38,9 +38,9 @@ import com.epam.drill.agent.interceptor.HttpInterceptorConfigurer
 import com.epam.drill.agent.module.InstrumentationAgentModule
 import com.epam.drill.agent.module.JvmModuleStorage
 import com.epam.drill.common.classloading.ClassSource
-import com.epam.drill.instrument.http.ApacheClient
-import com.epam.drill.instrument.http.JavaHttpUrlConnection
-import com.epam.drill.instrument.http.OkHttpClient
+import com.epam.drill.agent.instrument.clients.ApacheClient
+import com.epam.drill.agent.instrument.clients.JavaHttpUrlConnection
+import com.epam.drill.agent.instrument.clients.OkHttpClient
 import com.epam.drill.jvmapi.gen.Allocate
 import com.epam.drill.jvmapi.gen.jint
 import com.epam.drill.jvmapi.gen.jintVar

@@ -21,7 +21,7 @@ import mu.KotlinLogging
 import com.epam.drill.agent.KAFKA_CONSUMER_SPRING
 import com.epam.drill.agent.KAFKA_PRODUCER_INTERFACE
 import com.epam.drill.agent.instrument.request.HttpRequest
-import com.epam.drill.instrument.util.createAndTransform
+import com.epam.drill.agent.instrument.util.createAndTransform
 
 actual object KafkaTransformer : AbstractTransformer() {
 

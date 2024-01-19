@@ -83,10 +83,10 @@ kotlin {
             }
             dependencies {
                 implementation("org.jetbrains.kotlinx:kotlinx-serialization-core:$kotlinxSerializationVersion")
-                implementation(project(":http-clients-instrumentation"))
                 implementation(project(":logging"))
                 implementation(project(":common"))
                 implementation(project(":agent-config"))
+                implementation(project(":agent-instrumentation"))
             }
         }
         val commonTest by getting {
@@ -101,7 +101,7 @@ kotlin {
                 implementation("com.alibaba:transmittable-thread-local:$transmittableThreadLocalVersion")
                 implementation("io.aesy:datasize:$aesyDatasizeVersion")
                 implementation(project(":agent-transport"))
-                implementation(project(":http-clients-instrumentation"))
+                implementation(project(":agent-instrumentation"))
                 runtimeOnly(project(":test2code"))
             }
         }

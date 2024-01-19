@@ -21,7 +21,7 @@ import mu.KotlinLogging
 import com.epam.drill.agent.CADENCE_CONSUMER
 import com.epam.drill.agent.CADENCE_PRODUCER
 import com.epam.drill.agent.instrument.request.HttpRequest
-import com.epam.drill.instrument.util.createAndTransform
+import com.epam.drill.agent.instrument.util.createAndTransform
 
 actual object CadenceTransformer : AbstractTransformer() {
 

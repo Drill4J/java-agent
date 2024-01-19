@@ -20,7 +20,7 @@ import mu.KotlinLogging
 import com.epam.drill.agent.instrument.request.HttpRequest
 import com.epam.drill.agent.request.HeadersRetriever
 import com.epam.drill.agent.request.RequestProcessor
-import com.epam.drill.instrument.util.createAndTransform
+import com.epam.drill.agent.instrument.util.createAndTransform
 
 actual object NettyTransformer : AbstractTransformer() {
 

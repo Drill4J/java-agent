@@ -18,10 +18,10 @@ package com.epam.drill.agent.instrument.request
 import kotlinx.serialization.protobuf.ProtoBuf
 import java.nio.ByteBuffer
 import mu.KotlinLogging
+import com.epam.drill.agent.instrument.ClientsCallback
 import com.epam.drill.agent.request.HeadersRetriever
 import com.epam.drill.agent.request.RequestHolder
 import com.epam.drill.common.agent.request.DrillRequest
-import com.epam.drill.instrument.ClientsCallback
 
 object HttpRequest {
 
