@@ -15,73 +15,55 @@
  */
 package com.epam.drill.agent.instrument
 
+import javassist.CtClass
 import javassist.CtMethod
 import mu.KotlinLogging
 import com.epam.drill.agent.instrument.request.HttpRequest
 import com.epam.drill.agent.request.HeadersRetriever
 import com.epam.drill.agent.request.RequestProcessor
-import com.epam.drill.agent.instrument.util.createAndTransform
 
-actual object TomcatTransformer : AbstractTransformerObject() {
+actual object TomcatTransformer : TransformerObject, AbstractTransformerObject() {
 
     override val logger = KotlinLogging.logger {}
 
-    actual override fun transform(
-        className: String,
-        classFileBuffer: ByteArray,
-        loader: Any?,
-        protectionDomain: Any?,
-    ): ByteArray? = createAndTransform(classFileBuffer, loader, protectionDomain) { ctClass, _, _, _ ->
-        return try {
-            val adminHeader = HeadersRetriever.adminAddressHeader()
-            val adminUrl = HeadersRetriever.adminAddressValue()
-            val agentIdHeader = HeadersRetriever.agentIdHeader()
-            val agentIdValue = HeadersRetriever.agentIdHeaderValue()
-            logger.info { "starting TomcatTransformer with admin host $adminUrl..." }
-            ctClass.run {
-                val method = getMethod(
-                    "doFilter",
-                    "(Ljavax/servlet/ServletRequest;Ljavax/servlet/ServletResponse;)V"
-                ) ?: run {
-                    return null
-                }
-                method.insertCatching(
-                    CtMethod::insertBefore,
-                    """
-                        if ($1 instanceof org.apache.catalina.connector.RequestFacade && $2 instanceof org.apache.catalina.connector.ResponseFacade) {
-                            org.apache.catalina.connector.ResponseFacade tomcatResponse = (org.apache.catalina.connector.ResponseFacade)$2;
-                            if (!"$adminUrl".equals(tomcatResponse.getHeader("$adminHeader"))) {
-                                tomcatResponse.addHeader("$adminHeader", "$adminUrl");
-                                tomcatResponse.addHeader("$agentIdHeader", "$agentIdValue");
-                            }
-                            
-                            org.apache.catalina.connector.RequestFacade tomcatRequest = (org.apache.catalina.connector.RequestFacade)${'$'}1;
-                            java.util.Map/*<java.lang.String, java.lang.String>*/ allHeaders = new java.util.HashMap();
-                            java.util.Enumeration/*<String>*/ headerNames = tomcatRequest.getHeaderNames();
-                            while (headerNames.hasMoreElements()) {
-                                java.lang.String headerName = (java.lang.String) headerNames.nextElement();
-                                java.lang.String header = tomcatRequest.getHeader(headerName);
-                                allHeaders.put(headerName, header);
-                                if (headerName.startsWith("${HttpRequest.DRILL_HEADER_PREFIX}") && tomcatResponse.getHeader(headerName) == null) {
-                                    tomcatResponse.addHeader(headerName, header);
-                                }
-                            }
-                            ${HttpRequest::class.java.name}.INSTANCE.${HttpRequest::storeDrillHeaders.name}(allHeaders);
+    override fun transform(className: String, ctClass: CtClass) {
+        val adminHeader = HeadersRetriever.adminAddressHeader()
+        val adminUrl = HeadersRetriever.adminAddressValue()
+        val agentIdHeader = HeadersRetriever.agentIdHeader()
+        val agentIdValue = HeadersRetriever.agentIdHeaderValue()
+        logger.info { "transform: Starting TomcatTransformer with admin host $adminUrl..." }
+        val method = ctClass.getMethod("doFilter", "(Ljavax/servlet/ServletRequest;Ljavax/servlet/ServletResponse;)V")
+        method.insertCatching(
+            CtMethod::insertBefore,
+            """
+                if ($1 instanceof org.apache.catalina.connector.RequestFacade && $2 instanceof org.apache.catalina.connector.ResponseFacade) {
+                    org.apache.catalina.connector.ResponseFacade tomcatResponse = (org.apache.catalina.connector.ResponseFacade)$2;
+                    if (!"$adminUrl".equals(tomcatResponse.getHeader("$adminHeader"))) {
+                        tomcatResponse.addHeader("$adminHeader", "$adminUrl");
+                        tomcatResponse.addHeader("$agentIdHeader", "$agentIdValue");
+                    }
+                    
+                    org.apache.catalina.connector.RequestFacade tomcatRequest = (org.apache.catalina.connector.RequestFacade)${'$'}1;
+                    java.util.Map/*<java.lang.String, java.lang.String>*/ allHeaders = new java.util.HashMap();
+                    java.util.Enumeration/*<String>*/ headerNames = tomcatRequest.getHeaderNames();
+                    while (headerNames.hasMoreElements()) {
+                        java.lang.String headerName = (java.lang.String) headerNames.nextElement();
+                        java.lang.String header = tomcatRequest.getHeader(headerName);
+                        allHeaders.put(headerName, header);
+                        if (headerName.startsWith("${HttpRequest.DRILL_HEADER_PREFIX}") && tomcatResponse.getHeader(headerName) == null) {
+                            tomcatResponse.addHeader(headerName, header);
                         }
-                    """.trimIndent()
-                )
-                method.insertCatching(
-                    CtMethod::insertAfter,
-                    """
-                       ${RequestProcessor::class.java.name}.INSTANCE.${RequestProcessor::processServerResponse.name}();
-                    """.trimIndent()
-                )
-                return toBytecode()
-            }
-        } catch (e: Exception) {
-            logger.warn(e) { "Instrumentation error" }
-            null
-        }
+                    }
+                    ${HttpRequest::class.java.name}.INSTANCE.${HttpRequest::storeDrillHeaders.name}(allHeaders);
+                }
+            """.trimIndent()
+        )
+        method.insertCatching(
+            CtMethod::insertAfter,
+            """
+               ${RequestProcessor::class.java.name}.INSTANCE.${RequestProcessor::processServerResponse.name}();
+            """.trimIndent()
+        )
     }
 
 }

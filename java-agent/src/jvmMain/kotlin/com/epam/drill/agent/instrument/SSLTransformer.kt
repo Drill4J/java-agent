@@ -15,40 +15,23 @@
  */
 package com.epam.drill.agent.instrument
 
+import javassist.CtClass
 import javassist.CtMethod
 import mu.KotlinLogging
 import com.epam.drill.agent.instrument.request.HttpRequest
-import com.epam.drill.agent.instrument.util.createAndTransform
 
-actual object SSLTransformer : AbstractTransformerObject() {
+actual object SSLTransformer : TransformerObject, AbstractTransformerObject() {
 
     override val logger = KotlinLogging.logger {}
 
-    actual override fun transform(
-        className: String,
-        classFileBuffer: ByteArray,
-        loader: Any?,
-        protectionDomain: Any?,
-    ): ByteArray? = createAndTransform(classFileBuffer, loader, protectionDomain) { ctClass, _, _, _ ->
-        return try {
-            ctClass.run {
-                getMethod(
-                    "unwrap",
-                    "(Ljava/nio/ByteBuffer;[Ljava/nio/ByteBuffer;II)Ljavax/net/ssl/SSLEngineResult;"
-                )?.insertCatching(
-                    CtMethod::insertAfter,
-                    """
-                       ${HttpRequest::class.java.name}.INSTANCE.${HttpRequest::parse.name}($2);
-                    """.trimIndent()
-                ) ?: run {
-                    return null
-                }
-                return toBytecode()
-            }
-        } catch (e: Exception) {
-            logger.warn(e) { "Instrumentation error" }
-            null
-        }
+    override fun transform(className: String, ctClass: CtClass) {
+        ctClass.getMethod("unwrap","(Ljava/nio/ByteBuffer;[Ljava/nio/ByteBuffer;II)Ljavax/net/ssl/SSLEngineResult;")
+            .insertCatching(
+                CtMethod::insertAfter,
+                """
+                   ${HttpRequest::class.java.name}.INSTANCE.${HttpRequest::parse.name}($2);
+                """.trimIndent()
+            )
     }
 
 }

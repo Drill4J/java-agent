@@ -15,7 +15,7 @@
  */
 package com.epam.drill.agent.instrument
 
-actual object TTLTransformer : AbstractTransformerObject() {
+actual object TTLTransformer : TransformerObject, AbstractTransformerObject() {
     val directTtlClasses = listOf(
         "java/util/concurrent/ScheduledThreadPoolExecutor",
         "java/util/concurrent/ThreadPoolExecutor",

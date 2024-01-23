@@ -15,6 +15,6 @@
  */
 package com.epam.drill.agent.instrument
 
-actual object SSLTransformer : AbstractTransformerObject() {
+actual object SSLTransformer : TransformerObject, AbstractTransformerObject() {
     const val SSL_ENGINE_CLASS_NAME = "javax/net/ssl/SSLEngine"
 }

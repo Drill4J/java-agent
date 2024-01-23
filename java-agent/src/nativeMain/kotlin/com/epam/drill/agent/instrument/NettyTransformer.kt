@@ -15,6 +15,6 @@
  */
 package com.epam.drill.agent.instrument
 
-actual object NettyTransformer : AbstractTransformerObject() {
+actual object NettyTransformer : TransformerObject, AbstractTransformerObject() {
     const val HANDLER_CONTEXT = "io/netty/channel/AbstractChannelHandlerContext"
 }

@@ -21,32 +21,21 @@ import mu.KotlinLogging
 import com.epam.drill.agent.KAFKA_CONSUMER_SPRING
 import com.epam.drill.agent.KAFKA_PRODUCER_INTERFACE
 import com.epam.drill.agent.instrument.request.HttpRequest
-import com.epam.drill.agent.instrument.util.createAndTransform
 
-actual object KafkaTransformer : AbstractTransformerObject() {
+actual object KafkaTransformer : TransformerObject, AbstractTransformerObject() {
 
     override val logger = KotlinLogging.logger {}
 
-    actual override fun transform(
-        className: String,
-        classFileBuffer: ByteArray,
-        loader: Any?,
-        protectionDomain: Any?,
-    ): ByteArray? = createAndTransform(classFileBuffer, loader, protectionDomain) { ctClass, _, _, _ ->
-        runCatching {
-            when (className) {
-                KAFKA_PRODUCER_INTERFACE -> ctClass.producerInstrument()
-                KAFKA_CONSUMER_SPRING -> ctClass.consumerInstrument()
-                //todo add Consumer for Kafka EPMDJ-8488
-                else -> null
-            }
-        }.onFailure {
-            logger.warn(it) { "Instrumentation error" }
-        }.getOrNull()
+    override fun transform(className: String, ctClass: CtClass) {
+        when (className) {
+            KAFKA_PRODUCER_INTERFACE -> instrumentProducer(ctClass)
+            KAFKA_CONSUMER_SPRING -> instrumentConsumer(ctClass)
+            //TODO add Consumer for Kafka EPMDJ-8488
+        }
     }
 
-    private fun CtClass.producerInstrument() = run {
-        getDeclaredMethods("send").forEach {
+    private fun instrumentProducer(ctClass: CtClass) {
+        ctClass.getDeclaredMethods("send").forEach {
             it.insertCatching(
                 CtMethod::insertBefore,
                 """
@@ -61,15 +50,13 @@ actual object KafkaTransformer : AbstractTransformerObject() {
                         }
                     }
                 }
-            """.trimIndent()
+                """.trimIndent()
             )
         }
-        toBytecode()
     }
 
-
-    private fun CtClass.consumerInstrument() = run {
-        getDeclaredMethods("doInvokeRecordListener").forEach {
+    private fun instrumentConsumer(ctClass: CtClass) {
+        ctClass.getDeclaredMethods("doInvokeRecordListener").forEach {
             it.insertCatching(
                 CtMethod::insertBefore,
                 """
@@ -82,10 +69,9 @@ actual object KafkaTransformer : AbstractTransformerObject() {
                     }    
                 }
                 ${HttpRequest::class.java.name}.INSTANCE.${HttpRequest::storeDrillHeaders.name}(drillHeaders);
-            """.trimIndent()
+                """.trimIndent()
             )
         }
-        toBytecode()
     }
 
 }

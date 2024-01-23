@@ -15,4 +15,4 @@
  */
 package com.epam.drill.agent.instrument
 
-actual object CadenceTransformer : AbstractTransformerObject()
+actual object CadenceTransformer : TransformerObject, AbstractTransformerObject()

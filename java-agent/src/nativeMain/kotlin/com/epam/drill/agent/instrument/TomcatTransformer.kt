@@ -15,4 +15,4 @@
  */
 package com.epam.drill.agent.instrument
 
-actual object TomcatTransformer : AbstractTransformerObject()
+actual object TomcatTransformer : TransformerObject, AbstractTransformerObject()

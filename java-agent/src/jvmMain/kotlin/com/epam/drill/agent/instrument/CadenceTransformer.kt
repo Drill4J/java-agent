@@ -16,114 +16,109 @@
 package com.epam.drill.agent.instrument
 
 import javassist.CtClass
-import javassist.CtConstructor
 import mu.KotlinLogging
 import com.epam.drill.agent.CADENCE_CONSUMER
 import com.epam.drill.agent.CADENCE_PRODUCER
 import com.epam.drill.agent.instrument.request.HttpRequest
-import com.epam.drill.agent.instrument.util.createAndTransform
 
-actual object CadenceTransformer : AbstractTransformerObject() {
+actual object CadenceTransformer : TransformerObject, AbstractTransformerObject() {
+
+    private val instrumentedMethods = listOf(
+        "signalAsync",
+        "signalAsyncWithTimeout",
+        "start",
+        "startAsync",
+        "startAsyncWithTimeout",
+        "signalWithStart",
+    )
 
     override val logger = KotlinLogging.logger {}
 
-    actual override fun transform(
-        className: String,
-        classFileBuffer: ByteArray,
-        loader: Any?,
-        protectionDomain: Any?,
-    ): ByteArray? = createAndTransform(classFileBuffer, loader, protectionDomain) { ctClass, _, _, _ ->
-        runCatching {
-            when (className) {
-                CADENCE_PRODUCER -> ctClass.producerInstrument()
-                CADENCE_CONSUMER -> ctClass.consumerInstrument()
-                else -> null
+    override fun transform(className: String, ctClass: CtClass) {
+        when (className) {
+            CADENCE_PRODUCER -> instrumentProducer(ctClass)
+            CADENCE_CONSUMER -> instrumentConsumer(ctClass)
+        }
+    }
+
+    private fun instrumentProducer(ctClass: CtClass) {
+        ctClass.constructors
+            .mapNotNull { constructor ->
+                constructor.parameterTypes
+                    .indexOfFirst { it.name.replace(".", "/") == "com/uber/cadence/client/WorkflowOptions" }
+                    .takeIf { it >= 0 }
+                    ?.let { constructor to it + 1 }  // 0 - index of "this" object
             }
-        }.onFailure {
-            logger.warn(it) { "Instrumentation error" }
-        }.getOrNull()
-    }
-
-    private fun CtClass.producerInstrument() = run {
-        val constructors: List<Pair<CtConstructor, Int>> = constructors.mapNotNull { constructor ->
-            constructor.parameterTypes.indexOfFirst { clazz ->
-                clazz.name.replace(".", "/") == "com/uber/cadence/client/WorkflowOptions"
-            }.takeIf { it >= 0 }?.let { constructor to it + 1 /* 0 - index of "this" object */ }
-        }
-        constructors.forEach { (constructor, paramIndex) ->
-            constructor.insertBefore("""
-                if ($$paramIndex.getMemo() == null) {
-                    $$paramIndex = new com.uber.cadence.client.WorkflowOptions.Builder($$paramIndex).setMemo(new java.util.HashMap()).build();
-                }
-            """.trimIndent())
-        }
-
-        listOf(
-            "signalAsync",
-            "signalAsyncWithTimeout",
-            "start",
-            "startAsync",
-            "startAsyncWithTimeout",
-            "signalWithStart",
-        ).mapNotNull { methodName ->
-            runCatching {
-                getDeclaredMethod(methodName)
-            }.onFailure {
-                logger.error { "Method `$methodName` not found, check cadence api version" }
-            }.getOrNull()
-        }.forEach {
-            it.insertBefore("""
-                java.util.Map drillHeaders = ${HttpRequest::class.java.name}.INSTANCE.${HttpRequest::loadDrillHeaders.name}();
-                if (drillHeaders != null) {
-                    java.util.Iterator iterator = drillHeaders.entrySet().iterator();
-                     if (getOptions().isPresent()) {
-                        com.uber.cadence.client.WorkflowOptions options = (com.uber.cadence.client.WorkflowOptions) getOptions().get();
-                        if (options.getMemo() != null) {
-                            while (iterator.hasNext()) {
-                                java.util.Map.Entry entry = (java.util.Map.Entry) iterator.next();
-                                String key = ((String) entry.getKey());
-                                if (options.getMemo().get(key) == null) {
-                                    options.getMemo().put(key, entry.getValue());
-                                }
-                            }
-                        }
-                     }
-                }
-            """.trimIndent())
-        }
-        toBytecode()
-    }
-
-    private fun CtClass.consumerInstrument() = run {
-        getDeclaredMethod("run").also {
-            it.insertBefore("""
-                java.util.Map drillHeaders = new java.util.HashMap();
-                com.uber.cadence.Memo memo = attributes.getMemo();
-                if (memo != null) {
-                    java.util.Map fields = memo.getFields();
-                    if (fields != null) {
-                        java.util.Iterator iterator = fields.entrySet().iterator(); 
-                        while (iterator.hasNext()) {
-                            java.util.Map.Entry entry = (java.util.Map.Entry) iterator.next();
-                            String key = ((String) entry.getKey());
-                            if (key.startsWith("${HttpRequest.DRILL_HEADER_PREFIX}")) {
-                                java.nio.ByteBuffer byteBuffer = (java.nio.ByteBuffer) entry.getValue(); 
-                                if (byteBuffer != null) {
-                                    final byte[] valueBytes = new byte[byteBuffer.remaining()];
-                                    byteBuffer.mark(); 
-                                    byteBuffer.get(valueBytes); 
-                                    byteBuffer.reset();
-                                    String value = (String) com.uber.cadence.converter.JsonDataConverter.getInstance().fromData(valueBytes, String.class, String.class);
-                                    drillHeaders.put(key, value);
-                                }
-                            }
-                        }
-                        ${HttpRequest::class.java.name}.INSTANCE.${HttpRequest::storeDrillHeaders.name}(drillHeaders);
+            .forEach { (constructor, paramIndex) ->
+                constructor.insertBefore(
+                    """
+                    if ($$paramIndex.getMemo() == null) {
+                        $$paramIndex = new com.uber.cadence.client.WorkflowOptions.Builder($$paramIndex).setMemo(new java.util.HashMap()).build();
                     }
+                    """.trimIndent()
+                )
+            }
+
+        instrumentedMethods
+            .mapNotNull { method ->
+                ctClass
+                    .runCatching { this.getDeclaredMethod(method) }
+                    .onFailure { logger.error(it) { "instrumentProducer: Method `$method` not found, check cadence api version" } }
+                    .getOrNull()
+            }
+            .forEach { method ->
+                method.insertBefore(
+                    """
+                    java.util.Map drillHeaders = ${HttpRequest::class.java.name}.INSTANCE.${HttpRequest::loadDrillHeaders.name}();
+                    if (drillHeaders != null) {
+                        java.util.Iterator iterator = drillHeaders.entrySet().iterator();
+                         if (getOptions().isPresent()) {
+                            com.uber.cadence.client.WorkflowOptions options = (com.uber.cadence.client.WorkflowOptions) getOptions().get();
+                            if (options.getMemo() != null) {
+                                while (iterator.hasNext()) {
+                                    java.util.Map.Entry entry = (java.util.Map.Entry) iterator.next();
+                                    String key = ((String) entry.getKey());
+                                    if (options.getMemo().get(key) == null) {
+                                        options.getMemo().put(key, entry.getValue());
+                                    }
+                                }
+                            }
+                         }
+                    }
+                    """.trimIndent()
+                )
+            }
+    }
+
+    private fun instrumentConsumer(ctClass: CtClass) {
+        ctClass.getDeclaredMethod("run").insertBefore(
+            """
+            java.util.Map drillHeaders = new java.util.HashMap();
+            com.uber.cadence.Memo memo = attributes.getMemo();
+            if (memo != null) {
+                java.util.Map fields = memo.getFields();
+                if (fields != null) {
+                    java.util.Iterator iterator = fields.entrySet().iterator(); 
+                    while (iterator.hasNext()) {
+                        java.util.Map.Entry entry = (java.util.Map.Entry) iterator.next();
+                        String key = ((String) entry.getKey());
+                        if (key.startsWith("${HttpRequest.DRILL_HEADER_PREFIX}")) {
+                            java.nio.ByteBuffer byteBuffer = (java.nio.ByteBuffer) entry.getValue(); 
+                            if (byteBuffer != null) {
+                                final byte[] valueBytes = new byte[byteBuffer.remaining()];
+                                byteBuffer.mark(); 
+                                byteBuffer.get(valueBytes); 
+                                byteBuffer.reset();
+                                String value = (String) com.uber.cadence.converter.JsonDataConverter.getInstance().fromData(valueBytes, String.class, String.class);
+                                drillHeaders.put(key, value);
+                            }
+                        }
+                    }
+                    ${HttpRequest::class.java.name}.INSTANCE.${HttpRequest::storeDrillHeaders.name}(drillHeaders);
                 }
-            """.trimIndent())
-        }
-        toBytecode()
+            }
+            """.trimIndent()
+        )
     }
 
 }

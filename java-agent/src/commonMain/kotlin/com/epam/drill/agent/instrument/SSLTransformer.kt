@@ -15,11 +15,18 @@
  */
 package com.epam.drill.agent.instrument
 
-expect object SSLTransformer {
-    fun transform(
+expect object SSLTransformer : TransformerObject {
+
+    // TODO Waiting for this feature to move this permit to common part: https://youtrack.jetbrains.com/issue/KT-20427
+    override fun permit(className: String?, superName: String?, interfaces: Array<String?>): Boolean
+
+    override fun permit(className: String?, superName: String?, interfaces: String?): Boolean
+
+    override fun transform(
         className: String,
         classFileBuffer: ByteArray,
         loader: Any?,
         protectionDomain: Any?,
-    ): ByteArray?
+    ): ByteArray
+
 }

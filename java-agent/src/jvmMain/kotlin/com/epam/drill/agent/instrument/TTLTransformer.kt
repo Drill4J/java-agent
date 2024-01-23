@@ -26,7 +26,8 @@ import com.alibaba.ttl.threadpool.agent.internal.transformlet.impl.TtlForkJoinTr
 import com.alibaba.ttl.threadpool.agent.internal.transformlet.impl.TtlTimerTaskTransformlet
 import mu.KotlinLogging
 
-actual object TTLTransformer : AbstractTransformerObject() {
+actual object TTLTransformer : TransformerObject, AbstractTransformerObject() {
+
     private val transformletList: MutableList<JavassistTransformlet> = ArrayList()
 
     override val logger = KotlinLogging.logger {}
@@ -35,8 +36,7 @@ actual object TTLTransformer : AbstractTransformerObject() {
         Logger.setLoggerImplType("")
         transformletList.add(TtlExecutorTransformlet(false))
         transformletList.add(TtlForkJoinTransformlet(false))
-        if (TtlAgent.isEnableTimerTask())
-            transformletList.add(TtlTimerTaskTransformlet())
+        if (TtlAgent.isEnableTimerTask()) transformletList.add(TtlTimerTaskTransformlet())
     }
 
     actual override fun transform(
@@ -44,23 +44,17 @@ actual object TTLTransformer : AbstractTransformerObject() {
         classFileBuffer: ByteArray,
         loader: Any?,
         protectionDomain: Any?
-    ): ByteArray? {
+    ): ByteArray {
         try {
-            val classInfo = ClassInfo(toClassName(className), classFileBuffer, (loader as? ClassLoader))
+            val classInfo = ClassInfo(className.replace('/', '.'), classFileBuffer, (loader as? ClassLoader))
             for (transformlet in transformletList) {
                 transformlet.doTransform(classInfo)
                 if (classInfo.isModified) return classInfo.ctClass.toBytecode()
             }
         } catch (e: Exception) {
-            logger.warn(e) { "Fail to transform class $className" }
+            logger.error(e) { "transform: Failed to transform class $className" }
         }
-        return null
-    }
-
-    private val EMPTY_BYTE_ARRAY = byteArrayOf()
-    private fun toClassName(classFile: String): String {
-        return classFile.replace('/', '.')
+        return classFileBuffer
     }
 
 }
-
