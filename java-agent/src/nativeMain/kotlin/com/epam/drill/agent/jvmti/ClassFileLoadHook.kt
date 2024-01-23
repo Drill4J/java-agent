@@ -38,9 +38,9 @@ import com.epam.drill.agent.interceptor.HttpInterceptorConfigurer
 import com.epam.drill.agent.module.InstrumentationAgentModule
 import com.epam.drill.agent.module.JvmModuleStorage
 import com.epam.drill.common.classloading.ClassSource
-import com.epam.drill.agent.instrument.clients.ApacheClient
+import com.epam.drill.agent.instrument.clients.ApacheHttpClientConnection
 import com.epam.drill.agent.instrument.clients.JavaHttpUrlConnection
-import com.epam.drill.agent.instrument.clients.OkHttpClient
+import com.epam.drill.agent.instrument.clients.OkHttp3Codec
 import com.epam.drill.jvmapi.gen.Allocate
 import com.epam.drill.jvmapi.gen.jint
 import com.epam.drill.jvmapi.gen.jintVar
@@ -52,7 +52,7 @@ object ClassFileLoadHook {
 
     private val logger = KotlinLogging.logger("com.epam.drill.agent.jvmti.ClassFileLoadHook")
 
-    private val strategies = listOf(JavaHttpUrlConnection, ApacheClient, OkHttpClient)
+    private val strategies = listOf(JavaHttpUrlConnection, ApacheHttpClientConnection, OkHttp3Codec)
 
     private val isAsyncApp = Configuration.parameters[ParameterDefinitions.IS_ASYNC_APP]
     private val isTlsApp = Configuration.parameters[ParameterDefinitions.IS_TLS_APP]

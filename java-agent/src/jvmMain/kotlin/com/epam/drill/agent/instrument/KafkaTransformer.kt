@@ -23,9 +23,9 @@ import com.epam.drill.agent.KAFKA_PRODUCER_INTERFACE
 import com.epam.drill.agent.instrument.request.HttpRequest
 import com.epam.drill.agent.instrument.util.createAndTransform
 
-actual object KafkaTransformer : AbstractTransformer() {
+actual object KafkaTransformer : AbstractTransformerObject() {
 
-    private val logger = KotlinLogging.logger {}
+    override val logger = KotlinLogging.logger {}
 
     actual override fun transform(
         className: String,
@@ -44,8 +44,6 @@ actual object KafkaTransformer : AbstractTransformer() {
             logger.warn(it) { "Instrumentation error" }
         }.getOrNull()
     }
-
-    override fun logError(exception: Throwable, message: String) = logger.error(exception) { message }
 
     private fun CtClass.producerInstrument() = run {
         getDeclaredMethods("send").forEach {

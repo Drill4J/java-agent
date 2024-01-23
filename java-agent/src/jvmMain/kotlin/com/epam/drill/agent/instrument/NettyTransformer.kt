@@ -22,9 +22,9 @@ import com.epam.drill.agent.request.HeadersRetriever
 import com.epam.drill.agent.request.RequestProcessor
 import com.epam.drill.agent.instrument.util.createAndTransform
 
-actual object NettyTransformer : AbstractTransformer() {
+actual object NettyTransformer : AbstractTransformerObject() {
 
-    private val logger = KotlinLogging.logger {}
+    override val logger = KotlinLogging.logger {}
 
     private val DefaultHttpRequest = "io.netty.handler.codec.http.DefaultHttpRequest"
     private val DefaultHttpResponse = "io.netty.handler.codec.http.DefaultHttpResponse"
@@ -101,7 +101,5 @@ actual object NettyTransformer : AbstractTransformer() {
             null
         }
     }
-
-    override fun logError(exception: Throwable, message: String) = logger.error(exception) { message }
 
 }

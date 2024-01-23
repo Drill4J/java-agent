@@ -26,10 +26,10 @@ import com.alibaba.ttl.threadpool.agent.internal.transformlet.impl.TtlForkJoinTr
 import com.alibaba.ttl.threadpool.agent.internal.transformlet.impl.TtlTimerTaskTransformlet
 import mu.KotlinLogging
 
-actual object TTLTransformer : AbstractTransformer() {
+actual object TTLTransformer : AbstractTransformerObject() {
     private val transformletList: MutableList<JavassistTransformlet> = ArrayList()
 
-    private val logger = KotlinLogging.logger {}
+    override val logger = KotlinLogging.logger {}
 
     init {
         Logger.setLoggerImplType("")
@@ -61,8 +61,6 @@ actual object TTLTransformer : AbstractTransformer() {
     private fun toClassName(classFile: String): String {
         return classFile.replace('/', '.')
     }
-
-    override fun logError(exception: Throwable, message: String) = logger.error(exception) { message }
 
 }
 

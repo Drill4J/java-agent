@@ -23,9 +23,9 @@ import com.epam.drill.agent.CADENCE_PRODUCER
 import com.epam.drill.agent.instrument.request.HttpRequest
 import com.epam.drill.agent.instrument.util.createAndTransform
 
-actual object CadenceTransformer : AbstractTransformer() {
+actual object CadenceTransformer : AbstractTransformerObject() {
 
-    private val logger = KotlinLogging.logger {}
+    override val logger = KotlinLogging.logger {}
 
     actual override fun transform(
         className: String,
@@ -43,8 +43,6 @@ actual object CadenceTransformer : AbstractTransformer() {
             logger.warn(it) { "Instrumentation error" }
         }.getOrNull()
     }
-
-    override fun logError(exception: Throwable, message: String) = logger.error(exception) { message }
 
     private fun CtClass.producerInstrument() = run {
         val constructors: List<Pair<CtConstructor, Int>> = constructors.mapNotNull { constructor ->

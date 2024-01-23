@@ -20,9 +20,9 @@ import mu.KotlinLogging
 import com.epam.drill.agent.instrument.request.HttpRequest
 import com.epam.drill.agent.instrument.util.createAndTransform
 
-actual object SSLTransformer : AbstractTransformer() {
+actual object SSLTransformer : AbstractTransformerObject() {
 
-    private val logger = KotlinLogging.logger {}
+    override val logger = KotlinLogging.logger {}
 
     actual override fun transform(
         className: String,
@@ -50,7 +50,5 @@ actual object SSLTransformer : AbstractTransformer() {
             null
         }
     }
-
-    override fun logError(exception: Throwable, message: String) = logger.error(exception) { message }
 
 }

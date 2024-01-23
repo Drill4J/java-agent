@@ -15,4 +15,4 @@
  */
 package com.epam.drill.agent.instrument
 
-actual object KafkaTransformer : AbstractTransformer()
+actual object KafkaTransformer : AbstractTransformerObject()

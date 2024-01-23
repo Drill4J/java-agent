@@ -22,9 +22,9 @@ import com.epam.drill.agent.request.HeadersRetriever
 import com.epam.drill.agent.request.RequestProcessor
 import com.epam.drill.agent.instrument.util.createAndTransform
 
-actual object TomcatTransformer : AbstractTransformer() {
+actual object TomcatTransformer : AbstractTransformerObject() {
 
-    private val logger = KotlinLogging.logger {}
+    override val logger = KotlinLogging.logger {}
 
     actual override fun transform(
         className: String,
@@ -83,7 +83,5 @@ actual object TomcatTransformer : AbstractTransformer() {
             null
         }
     }
-
-    override fun logError(exception: Throwable, message: String) = logger.error(exception) { message }
 
 }
