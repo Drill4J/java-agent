@@ -13,56 +13,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-@file:Suppress("unused", "UNUSED_PARAMETER")
-
 package com.epam.drill.agent.instrument.servers
 
-import com.alibaba.ttl.threadpool.agent.TtlAgent
-import com.alibaba.ttl.threadpool.agent.internal.logging.Logger
-import com.alibaba.ttl.threadpool.agent.internal.transformlet.ClassInfo
-import com.alibaba.ttl.threadpool.agent.internal.transformlet.JavassistTransformlet
-import com.alibaba.ttl.threadpool.agent.internal.transformlet.impl.TtlExecutorTransformlet
-import com.alibaba.ttl.threadpool.agent.internal.transformlet.impl.TtlForkJoinTransformlet
-import com.alibaba.ttl.threadpool.agent.internal.transformlet.impl.TtlTimerTaskTransformlet
-import javassist.CtClass
-import mu.KotlinLogging
-import com.epam.drill.agent.instrument.AbstractTransformerObject
 import com.epam.drill.agent.instrument.TransformerObject
 
-actual object TTLTransformer : TransformerObject, AbstractTransformerObject() {
-
-    private val transformletList: MutableList<JavassistTransformlet> = ArrayList()
-
-    override val logger = KotlinLogging.logger {}
-
-    init {
-        Logger.setLoggerImplType("")
-        transformletList.add(TtlExecutorTransformlet(false))
-        transformletList.add(TtlForkJoinTransformlet(false))
-        if (TtlAgent.isEnableTimerTask()) transformletList.add(TtlTimerTaskTransformlet())
-    }
-
-    actual override fun permit(className: String?, superName: String?, interfaces: Array<String?>): Boolean =
-        throw NotImplementedError()
-
-    actual override fun transform(
-        className: String,
-        classFileBuffer: ByteArray,
-        loader: Any?,
-        protectionDomain: Any?
-    ): ByteArray {
-        try {
-            val classInfo = ClassInfo(className.replace('/', '.'), classFileBuffer, (loader as? ClassLoader))
-            for (transformlet in transformletList) {
-                transformlet.doTransform(classInfo)
-                if (classInfo.isModified) return classInfo.ctClass.toBytecode()
-            }
-        } catch (e: Exception) {
-            logger.error(e) { "transform: Failed to transform class $className" }
-        }
-        return classFileBuffer
-    }
-
-    override fun transform(className: String, ctClass: CtClass): Unit = throw NotImplementedError()
-
-}
+actual object TTLTransformer : TransformerObject, TTLTransformerObject()
