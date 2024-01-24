@@ -19,9 +19,13 @@ import javassist.CtClass
 import mu.KotlinLogging
 import com.epam.drill.agent.CADENCE_CONSUMER
 import com.epam.drill.agent.CADENCE_PRODUCER
-import com.epam.drill.agent.instrument.request.HttpRequest
+import com.epam.drill.agent.request.HeadersRetriever
+import com.epam.drill.agent.request.RequestHolder
 
-actual object CadenceTransformer : TransformerObject, AbstractTransformerObject() {
+actual object CadenceTransformer :
+    TransformerObject,
+    AbstractTransformerObject(),
+    HeadersProcessor by DrillRequestHeadersProcessor(HeadersRetriever, RequestHolder) {
 
     private val instrumentedMethods = listOf(
         "signalAsync",
@@ -33,6 +37,9 @@ actual object CadenceTransformer : TransformerObject, AbstractTransformerObject(
     )
 
     override val logger = KotlinLogging.logger {}
+
+    actual override fun permit(className: String?, superName: String?, interfaces: Array<String?>): Boolean =
+        throw NotImplementedError()
 
     override fun transform(className: String, ctClass: CtClass) {
         when (className) {
@@ -69,7 +76,7 @@ actual object CadenceTransformer : TransformerObject, AbstractTransformerObject(
             .forEach { method ->
                 method.insertBefore(
                     """
-                    java.util.Map drillHeaders = ${HttpRequest::class.java.name}.INSTANCE.${HttpRequest::loadDrillHeaders.name}();
+                    java.util.Map drillHeaders = ${this::class.java.name}.INSTANCE.${this::retrieveHeaders.name}();
                     if (drillHeaders != null) {
                         java.util.Iterator iterator = drillHeaders.entrySet().iterator();
                          if (getOptions().isPresent()) {
@@ -102,7 +109,7 @@ actual object CadenceTransformer : TransformerObject, AbstractTransformerObject(
                     while (iterator.hasNext()) {
                         java.util.Map.Entry entry = (java.util.Map.Entry) iterator.next();
                         String key = ((String) entry.getKey());
-                        if (key.startsWith("${HttpRequest.DRILL_HEADER_PREFIX}")) {
+                        if (key.startsWith("${HeadersProcessor.DRILL_HEADER_PREFIX}")) {
                             java.nio.ByteBuffer byteBuffer = (java.nio.ByteBuffer) entry.getValue(); 
                             if (byteBuffer != null) {
                                 final byte[] valueBytes = new byte[byteBuffer.remaining()];
@@ -114,7 +121,7 @@ actual object CadenceTransformer : TransformerObject, AbstractTransformerObject(
                             }
                         }
                     }
-                    ${HttpRequest::class.java.name}.INSTANCE.${HttpRequest::storeDrillHeaders.name}(drillHeaders);
+                    ${this::class.java.name}.INSTANCE.${this::storeHeaders.name}(drillHeaders);
                 }
             }
             """.trimIndent()

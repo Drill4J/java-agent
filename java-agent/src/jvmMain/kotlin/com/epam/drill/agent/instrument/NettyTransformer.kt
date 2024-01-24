@@ -18,16 +18,21 @@ package com.epam.drill.agent.instrument
 import javassist.CtClass
 import javassist.CtMethod
 import mu.KotlinLogging
-import com.epam.drill.agent.instrument.request.HttpRequest
 import com.epam.drill.agent.request.HeadersRetriever
-import com.epam.drill.agent.request.RequestProcessor
+import com.epam.drill.agent.request.RequestHolder
 
-actual object NettyTransformer : TransformerObject, AbstractTransformerObject() {
+actual object NettyTransformer :
+    TransformerObject,
+    AbstractTransformerObject(),
+    HeadersProcessor by DrillRequestHeadersProcessor(HeadersRetriever, RequestHolder) {
 
     private const val DEFAULT_HTTP_REQUEST = "io.netty.handler.codec.http.DefaultHttpRequest"
     private const val DEFAULT_HTTP_RESPONSE = "io.netty.handler.codec.http.DefaultHttpResponse"
 
     override val logger = KotlinLogging.logger {}
+
+    actual override fun permit(className: String?, superName: String?, interfaces: Array<String?>): Boolean =
+        throw NotImplementedError()
 
     override fun transform(className: String, ctClass: CtClass) {
         ctClass.getMethod("invokeChannelRead", "(Ljava/lang/Object;)V").insertCatching(
@@ -43,7 +48,7 @@ actual object NettyTransformer : TransformerObject, AbstractTransformerObject() 
                         java.lang.String headerValue = headers.get(headerName);
                         allHeaders.put(headerName, headerValue);
                     }
-                    ${HttpRequest::class.java.name}.INSTANCE.${HttpRequest::storeDrillHeaders.name}(allHeaders);
+                    ${this::class.java.name}.INSTANCE.${this::storeHeaders.name}(allHeaders);
                 }
             """.trimIndent()
         )
@@ -64,7 +69,7 @@ actual object NettyTransformer : TransformerObject, AbstractTransformerObject() 
                 }
                 if ($1 instanceof $DEFAULT_HTTP_REQUEST) {
                     $DEFAULT_HTTP_REQUEST nettyRequest = ($DEFAULT_HTTP_REQUEST) $1;
-                    java.util.Map drillHeaders = ${HttpRequest::class.java.name}.INSTANCE.${HttpRequest::loadDrillHeaders.name}();
+                    java.util.Map drillHeaders = ${this::class.java.name}.INSTANCE.${this::retrieveHeaders.name}();
                     if (drillHeaders != null) {
                         java.util.Iterator iterator = drillHeaders.entrySet().iterator();
                         while (iterator.hasNext()) {
@@ -83,7 +88,7 @@ actual object NettyTransformer : TransformerObject, AbstractTransformerObject() 
             CtMethod::insertAfter,
             """
                 if ($1 instanceof $DEFAULT_HTTP_RESPONSE) {
-                    ${RequestProcessor::class.java.name}.INSTANCE.${RequestProcessor::processServerResponse.name}();
+                    ${this::class.java.name}.INSTANCE.${this::retrieveHeaders.name}();
                 }
             """.trimIndent()
         )

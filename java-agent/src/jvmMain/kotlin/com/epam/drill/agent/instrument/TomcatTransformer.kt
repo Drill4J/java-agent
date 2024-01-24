@@ -18,13 +18,18 @@ package com.epam.drill.agent.instrument
 import javassist.CtClass
 import javassist.CtMethod
 import mu.KotlinLogging
-import com.epam.drill.agent.instrument.request.HttpRequest
 import com.epam.drill.agent.request.HeadersRetriever
-import com.epam.drill.agent.request.RequestProcessor
+import com.epam.drill.agent.request.RequestHolder
 
-actual object TomcatTransformer : TransformerObject, AbstractTransformerObject() {
+actual object TomcatTransformer :
+    TransformerObject,
+    AbstractTransformerObject(),
+    HeadersProcessor by DrillRequestHeadersProcessor(HeadersRetriever, RequestHolder) {
 
     override val logger = KotlinLogging.logger {}
+
+    actual override fun permit(className: String?, superName: String?, interfaces: Array<String?>): Boolean =
+        throw NotImplementedError()
 
     override fun transform(className: String, ctClass: CtClass) {
         val adminHeader = HeadersRetriever.adminAddressHeader()
@@ -50,18 +55,18 @@ actual object TomcatTransformer : TransformerObject, AbstractTransformerObject()
                         java.lang.String headerName = (java.lang.String) headerNames.nextElement();
                         java.lang.String header = tomcatRequest.getHeader(headerName);
                         allHeaders.put(headerName, header);
-                        if (headerName.startsWith("${HttpRequest.DRILL_HEADER_PREFIX}") && tomcatResponse.getHeader(headerName) == null) {
+                        if (headerName.startsWith("${HeadersProcessor.DRILL_HEADER_PREFIX}") && tomcatResponse.getHeader(headerName) == null) {
                             tomcatResponse.addHeader(headerName, header);
                         }
                     }
-                    ${HttpRequest::class.java.name}.INSTANCE.${HttpRequest::storeDrillHeaders.name}(allHeaders);
+                    ${this::class.java.name}.INSTANCE.${this::storeHeaders.name}(allHeaders);
                 }
             """.trimIndent()
         )
         method.insertCatching(
             CtMethod::insertAfter,
             """
-               ${RequestProcessor::class.java.name}.INSTANCE.${RequestProcessor::processServerResponse.name}();
+               ${this::class.java.name}.INSTANCE.${this::removeHeaders.name}();
             """.trimIndent()
         )
     }

@@ -24,6 +24,7 @@ import com.alibaba.ttl.threadpool.agent.internal.transformlet.JavassistTransform
 import com.alibaba.ttl.threadpool.agent.internal.transformlet.impl.TtlExecutorTransformlet
 import com.alibaba.ttl.threadpool.agent.internal.transformlet.impl.TtlForkJoinTransformlet
 import com.alibaba.ttl.threadpool.agent.internal.transformlet.impl.TtlTimerTaskTransformlet
+import javassist.CtClass
 import mu.KotlinLogging
 
 actual object TTLTransformer : TransformerObject, AbstractTransformerObject() {
@@ -38,6 +39,9 @@ actual object TTLTransformer : TransformerObject, AbstractTransformerObject() {
         transformletList.add(TtlForkJoinTransformlet(false))
         if (TtlAgent.isEnableTimerTask()) transformletList.add(TtlTimerTaskTransformlet())
     }
+
+    actual override fun permit(className: String?, superName: String?, interfaces: Array<String?>): Boolean =
+        throw NotImplementedError()
 
     actual override fun transform(
         className: String,
@@ -56,5 +60,7 @@ actual object TTLTransformer : TransformerObject, AbstractTransformerObject() {
         }
         return classFileBuffer
     }
+
+    override fun transform(className: String, ctClass: CtClass): Unit = throw NotImplementedError()
 
 }

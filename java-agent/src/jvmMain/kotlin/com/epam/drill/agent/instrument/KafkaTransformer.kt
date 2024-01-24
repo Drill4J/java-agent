@@ -20,11 +20,18 @@ import javassist.CtMethod
 import mu.KotlinLogging
 import com.epam.drill.agent.KAFKA_CONSUMER_SPRING
 import com.epam.drill.agent.KAFKA_PRODUCER_INTERFACE
-import com.epam.drill.agent.instrument.request.HttpRequest
+import com.epam.drill.agent.request.HeadersRetriever
+import com.epam.drill.agent.request.RequestHolder
 
-actual object KafkaTransformer : TransformerObject, AbstractTransformerObject() {
+actual object KafkaTransformer :
+    TransformerObject,
+    AbstractTransformerObject(),
+    HeadersProcessor by DrillRequestHeadersProcessor(HeadersRetriever, RequestHolder) {
 
     override val logger = KotlinLogging.logger {}
+
+    actual override fun permit(className: String?, superName: String?, interfaces: Array<String?>): Boolean =
+        throw NotImplementedError()
 
     override fun transform(className: String, ctClass: CtClass) {
         when (className) {
@@ -39,7 +46,7 @@ actual object KafkaTransformer : TransformerObject, AbstractTransformerObject() 
             it.insertCatching(
                 CtMethod::insertBefore,
                 """
-                java.util.Map drillHeaders = ${HttpRequest::class.java.name}.INSTANCE.${HttpRequest::loadDrillHeaders.name}();
+                java.util.Map drillHeaders = ${this::class.java.name}.INSTANCE.${this::retrieveHeaders.name}();
                 if (drillHeaders != null) {
                     java.util.Iterator iterator = drillHeaders.entrySet().iterator();
                     while (iterator.hasNext()) {
@@ -64,11 +71,11 @@ actual object KafkaTransformer : TransformerObject, AbstractTransformerObject() 
                 java.util.Map drillHeaders = new java.util.HashMap();
                 while (headers.hasNext()) {
                     org.apache.kafka.common.header.Header header = (org.apache.kafka.common.header.Header) headers.next();
-                    if (header.key().startsWith("${HttpRequest.DRILL_HEADER_PREFIX}")) {
+                    if (header.key().startsWith("${HeadersProcessor.DRILL_HEADER_PREFIX}")) {
                         drillHeaders.put(header.key(), new String(header.value()));
                     }    
                 }
-                ${HttpRequest::class.java.name}.INSTANCE.${HttpRequest::storeDrillHeaders.name}(drillHeaders);
+                ${this::class.java.name}.INSTANCE.${this::storeHeaders.name}(drillHeaders);
                 """.trimIndent()
             )
         }
