@@ -117,7 +117,7 @@ kotlin {
                 if (nativeAgentHookEnabled == "true")
                     implementation(project(":interceptor-http"))
                 else
-                    implementation(project(":java-agent-interceptor-stub"))
+                    implementation(project(":interceptor-stub"))
             }
         }
         val linuxX64Main by getting(configuration = configureNativeDependencies)
