@@ -15,7 +15,7 @@
  */
 @file:Suppress("unused", "UNUSED_PARAMETER")
 
-package com.epam.drill.agent.instrument
+package com.epam.drill.agent.instrument.servers
 
 import com.alibaba.ttl.threadpool.agent.TtlAgent
 import com.alibaba.ttl.threadpool.agent.internal.logging.Logger
@@ -26,6 +26,8 @@ import com.alibaba.ttl.threadpool.agent.internal.transformlet.impl.TtlForkJoinTr
 import com.alibaba.ttl.threadpool.agent.internal.transformlet.impl.TtlTimerTaskTransformlet
 import javassist.CtClass
 import mu.KotlinLogging
+import com.epam.drill.agent.instrument.AbstractTransformerObject
+import com.epam.drill.agent.instrument.TransformerObject
 
 actual object TTLTransformer : TransformerObject, AbstractTransformerObject() {
 

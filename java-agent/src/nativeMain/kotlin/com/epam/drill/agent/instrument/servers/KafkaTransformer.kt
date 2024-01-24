@@ -13,8 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.epam.drill.agent.instrument
+package com.epam.drill.agent.instrument.servers
 
-actual object SSLTransformer : TransformerObject, AbstractTransformerObject() {
-    const val SSL_ENGINE_CLASS_NAME = "javax/net/ssl/SSLEngine"
-}
+import com.epam.drill.agent.instrument.AbstractTransformerObject
+import com.epam.drill.agent.instrument.TransformerObject
+
+actual object KafkaTransformer : TransformerObject, AbstractTransformerObject()

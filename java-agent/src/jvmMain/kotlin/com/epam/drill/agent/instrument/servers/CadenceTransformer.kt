@@ -13,12 +13,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.epam.drill.agent.instrument
+package com.epam.drill.agent.instrument.servers
 
 import javassist.CtClass
 import mu.KotlinLogging
-import com.epam.drill.agent.CADENCE_CONSUMER
-import com.epam.drill.agent.CADENCE_PRODUCER
+import com.epam.drill.agent.instrument.AbstractTransformerObject
+import com.epam.drill.agent.instrument.CADENCE_CONSUMER
+import com.epam.drill.agent.instrument.CADENCE_PRODUCER
+import com.epam.drill.agent.instrument.DrillRequestHeadersProcessor
+import com.epam.drill.agent.instrument.HeadersProcessor
+import com.epam.drill.agent.instrument.TransformerObject
 import com.epam.drill.agent.request.HeadersRetriever
 import com.epam.drill.agent.request.RequestHolder
 

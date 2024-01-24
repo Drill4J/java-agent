@@ -13,20 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.epam.drill.agent.instrument
+package com.epam.drill.agent.instrument.servers
 
-expect object TTLTransformer : TransformerObject {
+import com.epam.drill.agent.instrument.AbstractTransformerObject
+import com.epam.drill.agent.instrument.TransformerObject
 
-    // TODO Waiting for this feature to move this permit to common part: https://youtrack.jetbrains.com/issue/KT-20427
-    override fun permit(className: String?, superName: String?, interfaces: Array<String?>): Boolean
-
-    override fun permit(className: String?, superName: String?, interfaces: String?): Boolean
-
-    override fun transform(
-        className: String,
-        classFileBuffer: ByteArray,
-        loader: Any?,
-        protectionDomain: Any?,
-    ): ByteArray
-
-}
+actual object TomcatTransformer : TransformerObject, AbstractTransformerObject()

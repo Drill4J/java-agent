@@ -13,9 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.epam.drill.agent.instrument
+package com.epam.drill.agent.instrument.servers
 
-expect object TomcatTransformer : TransformerObject {
+import com.epam.drill.agent.instrument.TransformerObject
+
+expect object KafkaTransformer : TransformerObject {
 
     // TODO Waiting for this feature to move this permit to common part: https://youtrack.jetbrains.com/issue/KT-20427
     override fun permit(className: String?, superName: String?, interfaces: Array<String?>): Boolean
