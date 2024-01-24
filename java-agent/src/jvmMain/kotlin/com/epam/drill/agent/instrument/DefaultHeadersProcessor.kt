@@ -13,13 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.epam.drill.agent.instrument.clients
+package com.epam.drill.agent.instrument
 
-import com.epam.drill.agent.instrument.DefaultHeadersProcessor
-import com.epam.drill.agent.instrument.HeadersProcessor
-import com.epam.drill.agent.instrument.TransformerObject
+import com.epam.drill.agent.request.HeadersRetriever
+import com.epam.drill.agent.request.RequestHolder
 
-actual object OkHttp3Codec :
-    TransformerObject,
-    OkHttp3CodecObject(),
-    HeadersProcessor by DefaultHeadersProcessor
+object DefaultHeadersProcessor : DrillRequestHeadersProcessor(HeadersRetriever, RequestHolder)

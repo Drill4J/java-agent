@@ -15,13 +15,11 @@
  */
 package com.epam.drill.agent.instrument.clients
 
-import com.epam.drill.agent.instrument.DrillRequestHeadersProcessor
+import com.epam.drill.agent.instrument.DefaultHeadersProcessor
 import com.epam.drill.agent.instrument.HeadersProcessor
 import com.epam.drill.agent.instrument.TransformerObject
-import com.epam.drill.agent.request.HeadersRetriever
-import com.epam.drill.agent.request.RequestHolder
 
 actual object JavaHttpUrlConnection :
     TransformerObject,
     JavaHttpUrlConnectionObject(),
-    HeadersProcessor by DrillRequestHeadersProcessor(HeadersRetriever, RequestHolder)
+    HeadersProcessor by DefaultHeadersProcessor
