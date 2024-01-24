@@ -1,5 +1,5 @@
 import java.net.URI
-import org.jetbrains.kotlin.gradle.dsl.KotlinMultiplatformExtension
+import org.jetbrains.kotlin.gradle.plugin.KotlinCompilation
 import org.jetbrains.kotlin.gradle.plugin.KotlinSourceSet
 import org.jetbrains.kotlin.gradle.plugin.mpp.KotlinNativeTarget
 import org.jetbrains.kotlin.gradle.targets.jvm.KotlinJvmTarget
@@ -43,9 +43,6 @@ kotlin {
         compilations["test"].cinterops.create("test_stubs")
         binaries.sharedLib(nativeAgentLibName, setOf(DEBUG))
     }
-    val currentPlatformTarget: KotlinMultiplatformExtension.() -> KotlinNativeTarget = {
-        targets.withType<KotlinNativeTarget>()[HostManager.host.presetName]
-    }
     targets {
         jvm()
         linuxX64(configure = configureNativeTarget)
@@ -55,14 +52,6 @@ kotlin {
             }
         }
         macosX64(configure = configureNativeTarget)
-        currentPlatformTarget().compilations["main"].defaultSourceSet {
-            kotlin.srcDir("src/nativeMain/kotlin")
-            resources.srcDir("src/nativeMain/resources")
-        }
-        currentPlatformTarget().compilations["test"].defaultSourceSet {
-            kotlin.srcDir("src/nativeTest/kotlin")
-            resources.srcDir("src/nativeTest/resources")
-        }
     }
     @Suppress("UNUSED_VARIABLE")
     sourceSets {
@@ -71,15 +60,21 @@ kotlin {
             languageSettings.optIn("kotlinx.serialization.ExperimentalSerializationApi")
             languageSettings.optIn("io.ktor.utils.io.core.ExperimentalIoApi")
         }
+        targets.withType<KotlinNativeTarget>()[HostManager.host.presetName].compilations.forEach {
+            it.defaultSourceSet.kotlin.srcDir("src/native${it.compilationName.capitalize()}/kotlin")
+            it.defaultSourceSet.resources.srcDir("src/native${it.compilationName.capitalize()}/resources")
+        }
         val commonMain by getting {
             kotlin.srcDir("src/commonGenerated/kotlin")
             file("src/commonGenerated/kotlin/com/epam/drill/agent").apply {
                 mkdirs()
-                resolve("Version.kt").writeText("""
+                resolve("Version.kt").writeText(
+                    """
                     package com.epam.drill.agent
                     
                     internal val agentVersion = "${project.version}"
-                """.trimIndent())
+                    """.trimIndent()
+                )
             }
             dependencies {
                 implementation("org.jetbrains.kotlinx:kotlinx-serialization-core:$kotlinxSerializationVersion")
@@ -130,32 +125,31 @@ kotlin {
             implementation(project(":logging-native"))
         }
     }
-    val copyNativeClassesForTarget: TaskContainer.(KotlinNativeTarget) -> Task = {
-        val copyNativeClasses:TaskProvider<Copy> = register("copyNativeClasses${it.targetName.capitalize()}", Copy::class) {
-            group = "build"
-            from("src/nativeMain/kotlin")
-            into("src/${it.targetName}Main/kotlin/gen")
-        }
-        copyNativeClasses.get()
-    }
-    val copyNativeTestClassesForTarget: TaskContainer.(KotlinNativeTarget) -> Task = {
-        val copyNativeTestClasses:TaskProvider<Copy> = register("copyNativeTestClasses${it.targetName.capitalize()}", Copy::class) {
-            group = "build"
-            from("src/nativeTest/kotlin")
-            into("src/${it.targetName}Test/kotlin/gen")
-        }
-        copyNativeTestClasses.get()
-    }
-    val filterOutCurrentPlatform: (KotlinNativeTarget) -> Boolean = {
-        it.targetName != HostManager.host.presetName
-    }
     tasks {
-        targets.withType<KotlinNativeTarget>().filter(filterOutCurrentPlatform).forEach {
-            val copyNativeClasses = copyNativeClassesForTarget(it)
-            val copyNativeTestClasses = copyNativeTestClassesForTarget(it)
-            it.compilations["main"].compileKotlinTask.dependsOn(copyNativeClasses)
-            it.compilations["test"].compileKotlinTask.dependsOn(copyNativeTestClasses)
+        val filterOutCurrentPlatform: (KotlinNativeTarget) -> Boolean = {
+            it.targetName != HostManager.host.presetName
         }
+        val copyNativeClassesTask: (KotlinCompilation<*>) -> Unit = {
+            val taskName = "copyNativeClasses${it.target.targetName.capitalize()}${it.compilationName.capitalize()}"
+            val copyNativeClasses: TaskProvider<Copy> = register(taskName, Copy::class) {
+                group = "build"
+                from("src/native${it.compilationName.capitalize()}/kotlin")
+                into("src/${it.target.targetName}${it.compilationName.capitalize()}/kotlin/gen")
+            }
+            it.compileKotlinTask.dependsOn(copyNativeClasses.get())
+        }
+        val cleanNativeClassesTask: (KotlinCompilation<*>) -> Unit = {
+            val taskName = "cleanNativeClasses${it.target.targetName.capitalize()}${it.compilationName.capitalize()}"
+            val cleanNativeClasses: TaskProvider<Delete> = register(taskName, Delete::class) {
+                group = "build"
+                delete("src/${it.target.targetName}${it.compilationName.capitalize()}/kotlin/gen")
+            }
+            clean.get().dependsOn(cleanNativeClasses.get())
+        }
+        targets.withType<KotlinNativeTarget>().filter(filterOutCurrentPlatform)
+            .flatMap(KotlinNativeTarget::compilations)
+            .onEach(copyNativeClassesTask)
+            .onEach(cleanNativeClassesTask)
         val jvmMainCompilation = kotlin.targets.withType<KotlinJvmTarget>()["jvm"].compilations["main"]
         val relocatePackages = setOf(
             "javax.validation",
@@ -192,18 +186,6 @@ kotlin {
             }
         }
         runtimeJar.get().dependsOn(jvmMainCompilation.compileKotlinTask)
-        val clean by getting
-        val cleanGeneratedClasses by registering(Delete::class) {
-            group = "build"
-            targets.withType<KotlinNativeTarget> {
-                delete("src/${name}Main/kotlin/gen")
-                delete("src/${name}Test/kotlin/gen")
-            }
-        }
-        clean.dependsOn(cleanGeneratedClasses)
-        withType<Copy>().getByName("jvmProcessResources") {
-            duplicatesStrategy = DuplicatesStrategy.EXCLUDE
-        }
     }
 }
 
