@@ -51,6 +51,7 @@ dependencies {
     implementation(project(":test2code-common"))
     implementation(project(":agent"))
 
+    testImplementation(kotlin("test-junit5"))
     testImplementation("junit:junit:4.13.1")
     testImplementation("org.junit.jupiter:junit-jupiter:5.7.1")
     testImplementation("org.mockito:mockito-core:3.12.4")
