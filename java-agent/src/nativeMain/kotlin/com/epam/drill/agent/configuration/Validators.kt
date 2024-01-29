@@ -20,7 +20,7 @@ import com.epam.drill.konform.validation.ValidationBuilder
 import platform.posix.access
 import platform.posix.F_OK
 
-val WS_SCHEMES = setOf("ws", "wss")
+val WS_SCHEMES = setOf("http", "https")
 
 fun ValidationBuilder<String>.validWsUrl(): Constraint<String> {
     return addConstraint(

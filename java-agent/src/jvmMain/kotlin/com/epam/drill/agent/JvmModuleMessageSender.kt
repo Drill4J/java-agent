@@ -15,9 +15,42 @@
  */
 package com.epam.drill.agent
 
-import com.epam.drill.agent.websocket.WsClient
-import com.epam.drill.common.agent.Sender
+import com.epam.drill.agent.configuration.TransportConfiguration
+import com.epam.drill.agent.transport.InMemoryAgentMessageQueue
+import com.epam.drill.agent.transport.ProtoBufAgentMessageSerializer
+import com.epam.drill.agent.transport.QueuedAgentMessageSender
+import com.epam.drill.agent.transport.RetryingAgentConfigSender
+import com.epam.drill.agent.transport.RetryingTransportStateNotifier
+import com.epam.drill.agent.transport.http.HttpAgentMessageDestinationMapper
+import com.epam.drill.agent.transport.http.HttpAgentMessageTransport
 
-object JvmModuleMessageSender : Sender {
-    override fun send(pluginId: String, message: String) = WsClient.sendMessage(pluginId, message)
+actual object JvmModuleMessageSender : QueuedAgentMessageSender<ByteArray>(
+    transport,
+    serializer,
+    mapper,
+    configSender,
+    stateNotifier,
+    stateNotifier,
+    queue
+) {
+    actual fun sendAgentConfig() = send(TransportConfiguration.getAgentConfigBytes()).let {}
 }
+
+private val transport = HttpAgentMessageTransport(
+    TransportConfiguration.getAdminAddress(),
+    TransportConfiguration.getSslTruststoreResolved(),
+    TransportConfiguration.getSslTruststorePassword()
+)
+
+private val serializer = ProtoBufAgentMessageSerializer()
+
+private val mapper = HttpAgentMessageDestinationMapper(
+    TransportConfiguration.getAgentId(),
+    TransportConfiguration.getBuildVersion()
+)
+
+private val configSender = RetryingAgentConfigSender(transport, serializer, mapper)
+
+private val queue = InMemoryAgentMessageQueue(serializer, TransportConfiguration.getCoverageRetentionLimitBytes())
+
+private val stateNotifier = RetryingTransportStateNotifier(transport, serializer, queue)

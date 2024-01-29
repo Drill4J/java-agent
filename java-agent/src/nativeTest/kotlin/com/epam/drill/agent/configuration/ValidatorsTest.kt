@@ -30,22 +30,22 @@ class UrlValidatorTest {
 
     @Test
     fun `given ws schema and correct host and port wsUrl validator must be valid`() {
-        assertTrue { wsUrl.validate(SomeObject("ws://localhost:8080")) is Valid }
+        assertTrue { wsUrl.validate(SomeObject("http://localhost:8080")) is Valid }
     }
 
     @Test
     fun `given ws schema and correct domain wsUrl validator must be valid`() {
-        assertTrue { wsUrl.validate(SomeObject("ws://example.com")) is Valid }
+        assertTrue { wsUrl.validate(SomeObject("http://example.com")) is Valid }
     }
 
     @Test
     fun `given wss schema wsUrl validator must be valid`() {
-        assertTrue { wsUrl.validate(SomeObject("wss://example.com")) is Valid }
+        assertTrue { wsUrl.validate(SomeObject("https://example.com")) is Valid }
     }
 
     @Test
     fun `given http schema wsUrl validator must be invalid`() {
-        assertTrue { wsUrl.validate(SomeObject("http://example.com")) is Invalid }
+        assertTrue { wsUrl.validate(SomeObject("ws://example.com")) is Invalid }
     }
 
     @Test

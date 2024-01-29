@@ -30,6 +30,7 @@ val javassistVersion: String by parent!!.extra
 val transmittableThreadLocalVersion: String by parent!!.extra
 val uuidVersion: String by parent!!.extra
 val nativeAgentLibName: String by parent!!.extra
+val aesyDatasizeVersion: String by parent!!.extra
 
 repositories {
     mavenLocal()
@@ -97,6 +98,7 @@ kotlin {
                 implementation("org.jetbrains.kotlinx:kotlinx-serialization-protobuf:$kotlinxSerializationVersion")
                 implementation("org.javassist:javassist:$javassistVersion")
                 implementation("com.alibaba:transmittable-thread-local:$transmittableThreadLocalVersion")
+                implementation("io.aesy:datasize:$aesyDatasizeVersion")
                 implementation(project(":agent"))
                 implementation(project(":http-clients-instrumentation"))
                 implementation(project(":test2code"))
@@ -105,6 +107,7 @@ kotlin {
         val configureNativeDependencies: KotlinSourceSet.() -> Unit = {
             dependencies {
                 implementation("org.jetbrains.kotlinx:kotlinx-serialization-protobuf:$kotlinxSerializationVersion")
+                implementation("com.benasher44:uuid:$uuidVersion")
                 implementation("io.ktor:ktor-utils:$ktorVersion")
                 implementation(project(":agent"))
                 implementation(project(":jvmapi"))
@@ -158,18 +161,22 @@ kotlin {
         }
         val jvmMainCompilation = kotlin.targets.withType<KotlinJvmTarget>()["jvm"].compilations["main"]
         val relocatePackages = setOf(
+            "javax.validation",
             "javax.websocket",
             "javassist",
             "ch.qos.logback",
+            "io.aesy.datasize",
             "com.alibaba",
             "org.slf4j",
             "org.jacoco",
             "org.objectweb.asm",
             "org.apache.bcel",
             "org.apache.commons",
+            "org.apache.hc",
             "org.eclipse.jetty",
             "org.intellij.lang.annotations",
-            "org.jetbrains.annotations"
+            "org.jetbrains.annotations",
+            "org.petitparser"
         )
         val runtimeJar by registering(ShadowJar::class) {
             mergeServiceFiles()
