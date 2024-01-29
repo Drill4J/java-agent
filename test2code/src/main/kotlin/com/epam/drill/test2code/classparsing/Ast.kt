@@ -18,13 +18,16 @@ package com.epam.drill.test2code.classparsing
 import com.epam.drill.jacoco.DrillClassProbesAdapter
 import com.epam.drill.plugins.test2code.common.api.AstEntity
 import com.epam.drill.plugins.test2code.common.api.AstMethod
+import com.sun.xml.internal.fastinfoset.util.StringArray
 import org.jacoco.core.internal.flow.ClassProbesVisitor
 import org.jacoco.core.internal.flow.IFrame
 import org.jacoco.core.internal.flow.MethodProbesVisitor
 import org.jacoco.core.internal.instr.InstrSupport
+import org.objectweb.asm.AnnotationVisitor
 import org.objectweb.asm.Label
 import org.objectweb.asm.MethodVisitor
 import org.objectweb.asm.Type
+import org.objectweb.asm.tree.AnnotationNode
 import org.objectweb.asm.tree.MethodNode
 
 
@@ -44,12 +47,32 @@ open class ProbeCounter : ClassProbesVisitor() {
 }
 
 class ClassProbeCounter(val name: String) : ProbeCounter() {
-    val astClass = newAstClass(name, ArrayList())
+    private val methods: List<AstMethod> = ArrayList()
+    private val annotations: MutableMap<String, List<String>> = mutableMapOf()
+
+    fun getAstClass() = AstEntity(
+        path = getPackageName(name),
+        name = getShortClassName(name),
+        methods = methods,
+        annotations = annotations
+    )
 
     override fun visitMethod(
         access: Int, name: String?, desc: String?, signature: String?, exceptions: Array<out String>?
     ): MethodProbesVisitor {
-        return MethodProbeCounter(astClass.methods as MutableList)
+        return MethodProbeCounter(methods as MutableList)
+    }
+
+    override fun visitAnnotation(desc: String?, visible: Boolean): AnnotationVisitor? {
+        val annotationValues = mutableListOf<String>()
+
+        val annotationVisitor = object : AnnotationVisitor(api) {
+            override fun visit(name: String?, value: Any?) {
+                annotationValues.add(value.toString())
+            }
+        }
+        annotations[Type.getType(desc).className] = annotationValues
+        return annotationVisitor
     }
 }
 
@@ -69,7 +92,8 @@ class MethodProbeCounter(
             params = getParams(methodNode),
             returnType = getReturnType(methodNode),
             checksum = "",
-            probes = probes
+            probes = probes,
+            annotations = getAnnotations(methodNode)
         )
         methods.add(method)
     }
@@ -100,7 +124,7 @@ fun parseAstClass(className: String, classBytes: ByteArray): AstEntity {
     val counter = ClassProbeCounter(className)
     classReader.accept(DrillClassProbesAdapter(counter, false), 0)
 
-    val astClass = counter.astClass
+    val astClass = counter.getAstClass()
     val astMethodsWithChecksum = calculateMethodsChecksums(classBytes, className)
 
     astClass.methods = astClass.methods.map {
@@ -110,15 +134,6 @@ fun parseAstClass(className: String, classBytes: ByteArray): AstEntity {
     }
     return astClass
 }
-
-fun newAstClass(
-    className: String,
-    methods: MutableList<AstMethod> = ArrayList()
-) = AstEntity(
-    path = getPackageName(className),
-    name = getShortClassName(className),
-    methods
-)
 
 private fun AstMethod.classSignature() =
     "${name}/${params.joinToString()}/${returnType}"
@@ -151,3 +166,25 @@ private fun getReturnType(methodNode: MethodNode): String {
 private fun getParams(methodNode: MethodNode): List<String> = Type
     .getArgumentTypes(methodNode.desc)
     .map { it.className }
+
+private fun getAnnotations(methodNode: MethodNode): Map<String, List<String>> {
+    // visibleAnnotations - set in code
+    // invisibleAnnotations - produced during build (e.g. Lombok-generated methods)
+    return (methodNode.visibleAnnotations.orEmpty() + methodNode.invisibleAnnotations.orEmpty())
+        .associateBy({ it.desc }, { getValuesOfAnnotation(it) })
+}
+
+private fun getValuesOfAnnotation(annotationNode: AnnotationNode): List<String> {
+    return annotationNode.values
+        .orEmpty()
+        .flatMap { annotationValue -> parseAnnotationValueToString(annotationValue) }
+}
+
+private fun parseAnnotationValueToString(annotationValue: Any?): List<String> {
+    return when (annotationValue) {
+        is StringArray -> annotationValue._array.map { it.toString() }
+        is List<*> -> annotationValue.flatMap { parseAnnotationValueToString(it) }
+        is AnnotationNode -> getValuesOfAnnotation(annotationValue)
+        else -> listOf(annotationValue.toString())
+    }
+}
