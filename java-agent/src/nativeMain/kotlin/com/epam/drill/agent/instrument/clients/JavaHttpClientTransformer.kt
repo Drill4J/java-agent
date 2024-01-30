@@ -15,6 +15,7 @@
  */
 package com.epam.drill.agent.instrument.clients
 
+import com.epam.drill.agent.instrument.AbstractTransformerObject
 import com.epam.drill.agent.instrument.TransformerObject
 
-expect object ApacheHttpClientConnection : TransformerObject
+actual object JavaHttpClientTransformer : TransformerObject, AbstractTransformerObject()

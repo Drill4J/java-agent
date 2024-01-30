@@ -15,6 +15,7 @@
  */
 package com.epam.drill.agent.instrument.clients
 
+import com.epam.drill.agent.instrument.AbstractTransformerObject
 import com.epam.drill.agent.instrument.TransformerObject
 
-expect object OkHttp3Codec : TransformerObject
+actual object ApacheHttpClientTransformer : TransformerObject, AbstractTransformerObject()

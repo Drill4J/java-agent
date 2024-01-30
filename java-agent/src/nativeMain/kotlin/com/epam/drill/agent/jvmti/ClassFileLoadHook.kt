@@ -28,9 +28,9 @@ import com.epam.drill.agent.instrument.CADENCE_CONSUMER
 import com.epam.drill.agent.instrument.CADENCE_PRODUCER
 import com.epam.drill.agent.instrument.KAFKA_CONSUMER_SPRING
 import com.epam.drill.agent.instrument.KAFKA_PRODUCER_INTERFACE
-import com.epam.drill.agent.instrument.clients.ApacheHttpClientConnection
-import com.epam.drill.agent.instrument.clients.JavaHttpUrlConnection
-import com.epam.drill.agent.instrument.clients.OkHttp3Codec
+import com.epam.drill.agent.instrument.clients.ApacheHttpClientTransformer
+import com.epam.drill.agent.instrument.clients.JavaHttpClientTransformer
+import com.epam.drill.agent.instrument.clients.OkHttp3ClientTransformer
 import com.epam.drill.agent.instrument.servers.CadenceTransformer
 import com.epam.drill.agent.instrument.servers.KafkaTransformer
 import com.epam.drill.agent.instrument.servers.NettyTransformer
@@ -52,7 +52,7 @@ object ClassFileLoadHook {
 
     private val logger = KotlinLogging.logger("com.epam.drill.agent.jvmti.ClassFileLoadHook")
 
-    private val strategies = listOf(JavaHttpUrlConnection, ApacheHttpClientConnection, OkHttp3Codec)
+    private val strategies = listOf(JavaHttpClientTransformer, ApacheHttpClientTransformer, OkHttp3ClientTransformer)
 
     private val isAsyncApp = Configuration.parameters[ParameterDefinitions.IS_ASYNC_APP]
     private val isTlsApp = Configuration.parameters[ParameterDefinitions.IS_TLS_APP]
