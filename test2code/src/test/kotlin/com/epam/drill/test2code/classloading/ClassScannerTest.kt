@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.epam.drill.plugins.test2code
+package com.epam.drill.test2code.classloading
 
 import com.epam.drill.test2code.classloading.ClassLoadersScanner
 import kotlin.test.Test
