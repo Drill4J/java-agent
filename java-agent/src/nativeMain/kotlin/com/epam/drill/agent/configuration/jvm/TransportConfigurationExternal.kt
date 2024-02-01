@@ -62,3 +62,8 @@ fun getTransportCoverageRetentionLimit(env: JNIEnv, thiz: jobject) =
 @CName("Java_com_epam_drill_agent_configuration_TransportConfiguration_getAdminAddress")
 fun getAdminAddress(env: JNIEnv, thiz: jobject) =
     callNativeStringMethod(env, thiz, TransportConfiguration::getAdminAddress)
+
+@Suppress("UNUSED")
+@CName("Java_com_epam_drill_agent_configuration_TransportConfiguration_getApiKey")
+fun getApiKey(env: JNIEnv, thiz: jobject) =
+    callNativeStringMethod(env, thiz, TransportConfiguration::getApiKey)

@@ -42,6 +42,8 @@ actual object TransportConfiguration {
 
     actual external fun getAdminAddress(): String
 
+    actual external fun getApiKey(): String
+
     fun getSslTruststoreResolved() = resolveRelativePath(getSslTruststore())
 
     fun getCoverageRetentionLimitBytes() = getCoverageRetentionLimit().run {

@@ -38,4 +38,6 @@ actual object TransportConfiguration {
 
     actual fun getAdminAddress() = adminAddress.toString()
 
+    actual fun getApiKey() = agentParameters.apiKey
+
 }

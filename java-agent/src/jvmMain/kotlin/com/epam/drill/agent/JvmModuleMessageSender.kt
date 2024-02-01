@@ -39,7 +39,8 @@ actual object JvmModuleMessageSender : QueuedAgentMessageSender<ByteArray>(
 private val transport = HttpAgentMessageTransport(
     TransportConfiguration.getAdminAddress(),
     TransportConfiguration.getSslTruststoreResolved(),
-    TransportConfiguration.getSslTruststorePassword()
+    TransportConfiguration.getSslTruststorePassword(),
+    TransportConfiguration.getApiKey()
 )
 
 private val serializer = ProtoBufAgentMessageSerializer()

@@ -33,4 +33,6 @@ expect object TransportConfiguration {
 
     fun getAdminAddress(): String
 
+    fun getApiKey(): String
+
 }
