@@ -52,12 +52,7 @@ dependencies {
     implementation(project(":agent"))
 
     testImplementation(kotlin("test-junit5"))
-    testImplementation("junit:junit:4.13.1")
-    testImplementation("org.junit.jupiter:junit-jupiter:5.7.1")
-    testImplementation("org.mockito:mockito-core:3.12.4")
-    testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.5.2")
     testImplementation("com.nhaarman.mockitokotlin2:mockito-kotlin:2.2.0")
-
 }
 
 kotlin.sourceSets.all {
