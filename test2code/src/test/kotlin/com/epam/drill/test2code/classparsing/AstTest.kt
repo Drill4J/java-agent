@@ -15,7 +15,9 @@
  */
 package com.epam.drill.test2code.classparsing
 
+import com.epam.drill.fixture.ast.CheckProbeRanges
 import com.epam.drill.fixture.ast.SimpleClass
+import com.epam.drill.plugins.test2code.common.api.AstMethod
 import org.junit.jupiter.api.Test
 import kotlin.reflect.KClass
 import kotlin.test.assertEquals
@@ -48,6 +50,134 @@ class AstTest {
             assertNotNull(checksum)
         }
     }
+
+
+    //FYI: ProbeRange test-cases
+    private val astEntity = parseAstClass(CheckProbeRanges::class.getFullName(), CheckProbeRanges::class.readBytes())
+    private val methods = astEntity.methods.groupBy { it.name }.mapValues { it.value[0] }
+
+    @Test
+    fun `test setting probes for empty method`() {
+        /**
+         *     void noOp() {
+         *         AgentProbes var1 = ...
+         *         var1.set(1);
+         *     }
+         */
+        methods["noOp"].assertProbesCount(1)
+    }
+
+    @Test
+    fun `test setting probes for method with one operation`() {
+        /**
+         *     String oneOp() {
+         *         AgentProbes var1 = ...
+         *         var1.set(2);
+         *         return "oneOp";
+         *     }
+         */
+        methods["oneOp"].assertProbesCount(1)
+    }
+
+    @Test
+    fun `test setting probes for method with two operations`() {
+        /**
+         *     void twoOps(List<String> list) {
+         *         AgentProbes var2 = ...
+         *         list.add("1");
+         *         var2.set(3);
+         *         list.add("2");
+         *         var2.set(4);
+         *     }
+         */
+        methods["twoOps"].assertProbesCount(2)
+    }
+
+    @Test
+    fun `test setting probes for method with if operation`() {
+        /**
+         *     String ifOp(boolean b) {
+         *         AgentProbes var2 = ...
+         *         if (b) {
+         *             var2.set(5);
+         *             return "true";
+         *         } else {
+         *             var2.set(6);
+         *             return "false";
+         *         }
+         *     }
+         */
+        methods["ifOp"].assertProbesCount(2)
+    }
+
+    @Test
+    fun `test setting probes for method with if expression`() {
+        /**
+         *     String ifExpr(boolean b) {
+         *         AgentProbes var2 = ...
+         *         String var10000;
+         *         if (b) {
+         *             var10000 = "true";
+         *             var2.set(7);
+         *         } else {
+         *             var10000 = "false";
+         *             var2.set(8);
+         *         }
+         *
+         *         var2.set(9);
+         *         return var10000;
+         *     }
+         */
+        methods["ifExpr"].assertProbesCount(3)
+    }
+
+    @Test
+    fun `test setting probes for method with while loop`() {
+        /**
+         *     void whileOp(List<String> list) {
+         *         AgentProbes var2 = ...
+         *
+         *         while(!list.isEmpty()) {
+         *             var2.set(10);
+         *             list.remove(0);
+         *             var2.set(11);
+         *         }
+         *
+         *         var2.set(12);
+         *     }
+         */
+        methods["whileOp"].assertProbesCount(3)
+    }
+
+    @Test
+    fun `test setting probes for method with lambda expression`() {
+        /**
+         *     void methodWithLambda(List<String> list) {
+         *         AgentProbes var2 = ...
+         *         list.forEach((s) -> {
+         *            AgentProbes var1 = ...
+         *            System.out.println(s);
+         *            var1.set(15);
+         *         });
+         *         var2.set(13);
+         *     }
+         */
+        methods["methodWithLambda"].assertProbesCount(1)
+        methods["lambda\$methodWithLambda\$0"].assertProbesCount(1)
+    }
+
+    @Test
+    fun `test setting probes for method with method reference`() {
+        /**
+         *     void methodRef(List<String> list) {
+         *         AgentProbes var2 = ...
+         *         PrintStream var10001 = System.out;
+         *         list.forEach(var10001::println);
+         *         var2.set(14);
+         *     }
+         */
+        methods["methodRef"].assertProbesCount(1)
+    }
 }
 
 internal fun KClass<*>.readBytes(): ByteArray = java.getResourceAsStream(
@@ -55,3 +185,8 @@ internal fun KClass<*>.readBytes(): ByteArray = java.getResourceAsStream(
 )!!.readBytes()
 
 internal fun KClass<*>.getFullName() = java.name.replace('.', '/')
+
+internal fun AstMethod?.assertProbesCount(count: Int) {
+    assertNotNull(this)
+    assertEquals(count, this.probes.size)
+}

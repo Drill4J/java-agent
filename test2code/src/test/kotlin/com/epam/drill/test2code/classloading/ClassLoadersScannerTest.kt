@@ -15,11 +15,10 @@
  */
 package com.epam.drill.test2code.classloading
 
-import com.epam.drill.test2code.classloading.ClassLoadersScanner
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
-class ClassScannerTest {
+class ClassLoadersScannerTest {
     @Test
     fun `check class scan in one consumer call`() {
         var classCount = 0
