@@ -25,4 +25,6 @@ object InstrumentationErrorLogger {
 
     fun warn(exception: Throwable, message: String) = logger.warn(exception) { message }
 
+    fun info(message: String) = logger.info("[" + Thread.currentThread().name + "]: " + message)
+
 }

@@ -39,8 +39,18 @@ actual object RequestHolder {
 
     fun storeRequest(drillRequest: DrillRequest) {
         threadStorage.set(drillRequest)
-        logger.trace { "session ${drillRequest.drillSessionId} saved" }
         RequestProcessor.processServerRequest()
+    }
+
+    fun remove() {
+        RequestProcessor.processServerResponse()
+        threadStorage.get()?.let { current ->
+            threadStorage.remove()
+        }
+    }
+
+    fun getRequest(): DrillRequest? {
+        return threadStorage.get()
     }
 
     actual fun dump(): ByteArray? {

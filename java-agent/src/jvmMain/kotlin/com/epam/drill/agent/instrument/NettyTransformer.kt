@@ -20,7 +20,6 @@ import mu.KotlinLogging
 import com.epam.drill.agent.instrument.error.wrapCatching
 import com.epam.drill.agent.instrument.request.HttpRequest
 import com.epam.drill.agent.request.HeadersRetriever
-import com.epam.drill.agent.request.RequestProcessor
 import com.epam.drill.instrument.util.createAndTransform
 
 actual object NettyTransformer {
@@ -35,10 +34,11 @@ actual object NettyTransformer {
         classFileBuffer: ByteArray,
         loader: Any?,
         protectionDomain: Any?,
-    ): ByteArray? =  createAndTransform(classFileBuffer, loader, protectionDomain) { ctClass, _, _, _ ->
+    ): ByteArray? = createAndTransform(classFileBuffer, loader, protectionDomain) { ctClass, _, _, _ ->
         return try {
             ctClass.run {
-                getMethod("invokeChannelRead", "(Ljava/lang/Object;)V").wrapCatching(
+                val methodChannelRead = getMethod("invokeChannelRead", "(Ljava/lang/Object;)V")
+                methodChannelRead.wrapCatching(
                     CtMethod::insertBefore,
                     """
                         if ($1 instanceof $DefaultHttpRequest) {
@@ -50,11 +50,24 @@ actual object NettyTransformer {
                                 java.lang.String headerName = (String) iterator.next();
                                 java.lang.String headerValue = headers.get(headerName);
                                 allHeaders.put(headerName, headerValue);
-                            }
-                            ${HttpRequest::class.java.name}.INSTANCE.${HttpRequest::storeDrillHeaders.name}(allHeaders);
+                            }         
+                            com.epam.drill.agent.request.DrillRequest drillRequest = ${HttpRequest::class.java.name}.INSTANCE.${HttpRequest::storeDrillHeaders.name}(allHeaders);
+                            if (drillRequest != null) {
+                                com.epam.drill.agent.instrument.error.InstrumentationErrorLogger.INSTANCE.info("channelRead propagated: " + drillRequest);
+                                io.netty.util.AttributeKey drillContext = io.netty.util.AttributeKey.valueOf("com.epam.drill.agent.request.DrillRequest");
+                                this.channel().attr(drillContext).set(drillRequest);                                   
+                            }                                                                                       
                         }
                     """.trimIndent()
                 )
+                methodChannelRead.insertAfter(
+                    """    
+                        if ($1 instanceof $DefaultHttpRequest) {
+                            com.epam.drill.agent.request.RequestHolder.INSTANCE.remove();
+                        }
+                    """.trimIndent(), true
+                )
+
                 val drillAdminHeader = HeadersRetriever.adminAddressHeader()
                 val adminUrl = HeadersRetriever.retrieveAdminAddress()
                 val writeMethod = getMethod("write", "(Ljava/lang/Object;ZLio/netty/channel/ChannelPromise;)V")
@@ -82,16 +95,25 @@ actual object NettyTransformer {
                                      }
                                 }
                             }
+                        }  
+                        if ($1 instanceof $DefaultHttpResponse) {                            
+                            io.netty.util.AttributeKey drillContext = io.netty.util.AttributeKey.valueOf("com.epam.drill.agent.request.DrillRequest");                            
+                            io.netty.util.Attribute drillAttr = this.channel().attr(drillContext);
+                            com.epam.drill.agent.request.DrillRequest drillRequest = (com.epam.drill.agent.request.DrillRequest) drillAttr.get();
+                            drillAttr.compareAndSet(drillRequest, null);
+                            if (drillRequest != null) {
+                                com.epam.drill.agent.instrument.error.InstrumentationErrorLogger.INSTANCE.info("channelWrite: " + drillRequest + " restored");
+                                com.epam.drill.agent.request.RequestHolder.INSTANCE.storeRequest(drillRequest);   
+                            }                            
                         }
                     """.trimIndent()
                 )
-                writeMethod.wrapCatching(
-                    CtMethod::insertAfter,
-                    """
-                        if ($1 instanceof $DefaultHttpResponse) {
-                            ${RequestProcessor::class.java.name}.INSTANCE.${RequestProcessor::processServerResponse.name}();
-                        }
-                    """.trimIndent()
+                writeMethod.insertAfter(
+                    """     
+                        if ($1 instanceof $DefaultHttpRequest) {
+                            com.epam.drill.agent.request.RequestHolder.INSTANCE.remove();
+                        }                                                
+                    """.trimIndent(), true
                 )
                 toBytecode()
             }

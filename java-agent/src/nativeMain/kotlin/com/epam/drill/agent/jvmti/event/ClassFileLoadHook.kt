@@ -26,6 +26,7 @@ import com.epam.drill.*
 import com.epam.drill.agent.*
 import com.epam.drill.agent.configuration.*
 import com.epam.drill.agent.instrument.*
+import com.epam.drill.agent.instrument.reactor.*
 import com.epam.drill.agent.module.*
 import com.epam.drill.common.classloading.*
 import com.epam.drill.instrument.http.*
@@ -35,7 +36,8 @@ import com.epam.drill.jvmapi.gen.*
 private val logger = KotlinLogging.logger("com.epam.drill.agent.jvmti.event.ClassFileLoadHook")
 
 @SharedImmutable
-private val strategys = listOf(JavaHttpUrlConnection, ApacheClient, OkHttpClient)
+private val strategys = listOf(JavaHttpUrlConnection, ApacheClient, OkHttpClient,
+    SchedulersTransformer, MonoTransformer, FluxTransformer, ParallelFluxTransformer)
 
 internal val totalTransformClass = AtomicInt(0)
 

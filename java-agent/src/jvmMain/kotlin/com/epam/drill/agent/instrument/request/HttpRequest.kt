@@ -62,16 +62,19 @@ object HttpRequest {
         }
     }.onFailure { logger.error(it) { "Error while parse buffer. Reason: " } }.getOrNull()
 
-    fun storeDrillHeaders(headers: Map<String, String>?) {
-        runCatching {
-            headers?.get(HeadersRetriever.sessionHeaderPattern() ?: DRILL_SESSION_ID_HEADER_NAME)?.let { drillSessionId ->
+    fun storeDrillHeaders(headers: Map<String, String>?): DrillRequest? {
+        return runCatching {
+            headers?.get(DRILL_SESSION_ID_HEADER_NAME)?.let { drillSessionId ->
                 val drillHeaders = headers.filter { it.key.startsWith(DRILL_HEADER_PREFIX) }
                 logger.trace { "for drillSessionId '$drillSessionId' store drillHeaders '$drillHeaders' to thread storage" }
-                RequestHolder.storeRequest(DrillRequest(drillSessionId, drillHeaders))
+                logger.info { "[${Thread.currentThread().name}] session saved ${drillSessionId}" }
+                val drillRequest = DrillRequest(drillSessionId, drillHeaders)
+                RequestHolder.storeRequest(drillRequest)
+                drillRequest
             }
         }.onFailure {
             logger.error(it) { "Error while storing headers. Reason: " }
-        }
+        }.getOrNull()
     }
 
     fun loadDrillHeaders() = runCatching {
