@@ -34,7 +34,7 @@ import com.epam.drill.agent.instrument.clients.OkHttp3ClientTransformer
 import com.epam.drill.agent.instrument.servers.CadenceTransformer
 import com.epam.drill.agent.instrument.servers.KafkaTransformer
 import com.epam.drill.agent.instrument.servers.NettyTransformer
-import com.epam.drill.agent.instrument.servers.SSLTransformer
+import com.epam.drill.agent.instrument.servers.SSLEngineTransformer
 import com.epam.drill.agent.instrument.servers.TTLTransformer
 import com.epam.drill.agent.instrument.servers.TomcatTransformer
 import com.epam.drill.agent.interceptor.HttpInterceptorConfigurer
@@ -97,8 +97,8 @@ object ClassFileLoadHook {
                         )
                     }
                 }
-                if (superName == SSLTransformer.SSL_ENGINE_CLASS_NAME) {
-                    transformers += { bytes -> SSLTransformer.transform(kClassName, bytes, loader, protectionDomain) }
+                if (superName == SSLEngineTransformer.SSL_ENGINE_CLASS_NAME) {
+                    transformers += { bytes -> SSLEngineTransformer.transform(kClassName, bytes, loader, protectionDomain) }
                 }
             }
 
