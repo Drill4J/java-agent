@@ -30,6 +30,7 @@ val javassistVersion: String by parent!!.extra
 val transmittableThreadLocalVersion: String by parent!!.extra
 val uuidVersion: String by parent!!.extra
 val nativeAgentLibName: String by parent!!.extra
+val cglibVersion: String by parent!!.extra
 
 repositories {
     mavenLocal()
@@ -100,6 +101,7 @@ kotlin {
                 implementation(project(":agent"))
                 implementation(project(":http-clients-instrumentation"))
                 implementation(project(":test2code"))
+                implementation("cglib:cglib:$cglibVersion")
             }
         }
         val configureNativeDependencies: KotlinSourceSet.() -> Unit = {

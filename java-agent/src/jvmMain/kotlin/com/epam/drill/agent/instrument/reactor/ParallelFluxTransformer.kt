@@ -34,10 +34,16 @@ actual object ParallelFluxTransformer: TransformStrategy(), IStrategy {
         runCatching {
             ctClass.getMethod("onAssembly", "(Lreactor/core/publisher/ParallelFlux;)Lreactor/core/publisher/ParallelFlux;").wrapCatching(
                 CtMethod::insertBefore,
-                """                   
-                   com.epam.drill.agent.instrument.reactor.DrillWrapper drillWrapper = com.epam.drill.agent.instrument.reactor.DrillWrapper.INSTANCE;
-                   com.epam.drill.agent.instrument.reactor.DrillSupplier drillSupplier = com.epam.drill.agent.instrument.reactor.DrillSupplier.INSTANCE;
-                   $1 = (reactor.core.publisher.ParallelFlux) com.epam.drill.DrillSubscriber.drillRequestPassingOperator(drillWrapper, drillSupplier).apply($1);                                                                                                                                                                                                                                           
+                """
+                    com.epam.drill.agent.instrument.reactor.DrillWrapper drillWrapper = com.epam.drill.agent.instrument.reactor.DrillWrapper.INSTANCE;
+                    com.epam.drill.agent.instrument.reactor.DrillSupplier drillSupplier = com.epam.drill.agent.instrument.reactor.DrillSupplier.INSTANCE;
+                    $1 = (reactor.core.publisher.ParallelFlux) com.epam.drill.agent.instrument.reactor.PublisherProxy.onAssembly(
+                        $1,
+                        drillWrapper,
+                        drillSupplier,
+                        reactor.core.publisher.ParallelFlux.class,
+                        reactor.core.CoreSubscriber.class,
+                        org.reactivestreams.Subscription.class);
                 """.trimIndent()
             )
         }.onFailure {
