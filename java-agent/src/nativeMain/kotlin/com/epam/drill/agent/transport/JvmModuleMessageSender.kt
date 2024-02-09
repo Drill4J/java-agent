@@ -13,24 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.epam.drill.agent.configuration
+package com.epam.drill.agent.transport
 
-expect object TransportConfiguration {
+import com.epam.drill.jvmapi.callObjectVoidMethod
 
-    fun getAgentConfigBytes(): ByteArray
+actual object JvmModuleMessageSender {
 
-    fun getAgentId(): String
-
-    fun getBuildVersion(): String
-
-    fun getSslTruststore(): String
-
-    fun getSslTruststorePassword(): String
-
-    fun getDrillInstallationDir(): String
-
-    fun getCoverageRetentionLimit(): String
-
-    fun getAdminAddress(): String
+    actual fun sendAgentMetadata(): Unit =
+        callObjectVoidMethod(JvmModuleMessageSender::class, JvmModuleMessageSender::sendAgentMetadata)
 
 }

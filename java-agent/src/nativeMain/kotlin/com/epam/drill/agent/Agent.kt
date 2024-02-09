@@ -16,12 +16,11 @@
 package com.epam.drill.agent
 
 import kotlin.native.concurrent.*
-import kotlin.time.TimeMark
-import kotlin.time.TimeSource
 import kotlinx.cinterop.*
 import platform.posix.*
 import mu.*
 import com.epam.drill.agent.configuration.*
+import com.epam.drill.agent.configuration.DefaultParameterDefinitions.INSTALLATION_DIR
 import com.epam.drill.agent.jvmti.event.*
 import com.epam.drill.jvmapi.gen.*
 
@@ -40,38 +39,20 @@ U| |_| |\|  _ <       | |    \| |/__ \| |/__     |__   _|        | |_| |_,-.
 
 object Agent {
 
-    val startTimeMark: TimeMark = TimeSource.Monotonic.markNow().freeze()
-
-    val isHttpHookEnabled: Boolean by lazy {
-        getenv(SYSTEM_HTTP_HOOK_ENABLED)?.toKString()?.toBoolean() ?: memScoped {
-            alloc<CPointerVar<ByteVar>>().apply {
-                GetSystemProperty(HTTP_HOOK_ENABLED, this.ptr)
-            }.value?.toKString()?.toBoolean() ?: true
-        }
-    }
-
     fun agentOnLoad(options: String): Int {
         println(LOGO)
 
-        defaultNativeLoggingConfiguration()
-        val agentArguments = convertToAgentArguments(options)
-        validate(agentArguments)
-        performInitialConfiguration(agentArguments)
-        setUnhandledExceptionHook({ error: Throwable ->
-            logger.error(error) { "unhandled event $error" }
-        }.freeze())
+        AgentLoggingConfiguration.defaultNativeLoggingConfiguration()
+        Configuration.initializeNative(options)
+        AgentLoggingConfiguration.updateNativeLoggingConfiguration()
 
-        memScoped {
-            val jvmtiCapabilities = alloc<jvmtiCapabilities>()
-            jvmtiCapabilities.can_retransform_classes = 1.toUInt()
-            jvmtiCapabilities.can_maintain_original_method_order = 1.toUInt()
-            AddCapabilities(jvmtiCapabilities.ptr)
-        }
-        AddToBootstrapClassLoaderSearch("${agentParameters.drillInstallationDir}/drillRuntime.jar")
-        callbackRegister()
+        addCapabilities()
+        setEventCallbacks()
+        setUnhandledExceptionHook({ error: Throwable -> logger.error(error) { "Unhandled event: $error" }}.freeze())
+        AddToBootstrapClassLoaderSearch("${Configuration.parameters[INSTALLATION_DIR]}/drillRuntime.jar")
 
-        logger.info { "The native agent was loaded" }
-        logger.info { "Pid is: " + getpid() }
+        logger.info { "agentOnLoad: The native agent has been loaded" }
+        logger.info { "agentOnLoad: Pid is: " + getpid() }
 
         return JNI_OK
     }
@@ -80,7 +61,14 @@ object Agent {
         logger.info { "Agent_OnUnload" }
     }
 
-    private fun callbackRegister() = memScoped {
+    private fun addCapabilities() = memScoped {
+        val jvmtiCapabilities = alloc<jvmtiCapabilities>()
+        jvmtiCapabilities.can_retransform_classes = 1.toUInt()
+        jvmtiCapabilities.can_maintain_original_method_order = 1.toUInt()
+        AddCapabilities(jvmtiCapabilities.ptr)
+    }
+
+    private fun setEventCallbacks() = memScoped {
         val alloc = alloc<jvmtiEventCallbacks>()
         alloc.VMInit = staticCFunction(::vmInitEvent)
         alloc.VMDeath = staticCFunction(::vmDeathEvent)
@@ -88,6 +76,5 @@ object Agent {
         SetEventCallbacks(alloc.ptr, sizeOf<jvmtiEventCallbacks>().toInt())
         SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_VM_INIT, null)
     }
-
 
 }

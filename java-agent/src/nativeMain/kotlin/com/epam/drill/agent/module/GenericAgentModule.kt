@@ -19,6 +19,7 @@ import com.epam.drill.*
 import com.epam.drill.agent.*
 import com.epam.drill.common.*
 import com.epam.drill.common.agent.*
+import com.epam.drill.common.agent.configuration.*
 import com.epam.drill.common.agent.transport.*
 import com.epam.drill.jvmapi.*
 import com.epam.drill.jvmapi.gen.*
@@ -31,7 +32,8 @@ open class GenericAgentModule(
 ) : AgentModule<Any>(
     pluginId,
     NopAgentContext,
-    NopPluginSender
+    NopMessageSender,
+    NopConfiguration
 ) {
 
     override fun load() {
@@ -66,16 +68,19 @@ open class GenericAgentModule(
 }
 
 private object NopAgentContext : AgentContext {
-    override fun get(key: String): String? = null
-    override fun invoke(): String? = null
+    override fun get(key: String) = throw NotImplementedError()
+    override fun invoke() = throw NotImplementedError()
 }
 
-private object NopPluginSender : AgentMessageSender {
-    override val available: Boolean = false
-    override fun send(destination: AgentMessageDestination, message: AgentMessage) = NopResponseStatus()
+private object NopMessageSender : AgentMessageSender {
+    override val available
+        get() = throw NotImplementedError()
+    override fun send(destination: AgentMessageDestination, message: AgentMessage) = throw NotImplementedError()
 }
 
-private class NopResponseStatus: ResponseStatus {
-    override val success = false
-    override val statusObject = null
+private object NopConfiguration: AgentConfiguration {
+    override val agentMetadata
+        get() = throw NotImplementedError()
+    override val parameters
+        get() = throw NotImplementedError()
 }

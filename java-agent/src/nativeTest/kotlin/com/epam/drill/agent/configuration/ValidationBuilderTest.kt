@@ -15,16 +15,17 @@
  */
 package com.epam.drill.agent.configuration
 
+import kotlin.test.Test
+import kotlin.test.assertTrue
 import com.epam.drill.konform.validation.Invalid
 import com.epam.drill.konform.validation.Valid
 import com.epam.drill.konform.validation.Validation
-import kotlin.test.Test
-import kotlin.test.assertTrue
 
-class UrlValidatorTest {
+class ValidationBuilderTest {
+
     private val wsUrl = Validation<SomeObject> {
         SomeObject::str required {
-            validWsUrl()
+            validTransportUrl()
         }
     }
 
@@ -53,9 +54,6 @@ class UrlValidatorTest {
         assertTrue { wsUrl.validate(SomeObject("example.com")) is Invalid }
     }
 
-}
-
-class IdentifierValidatorTest {
     private val identifier = Validation<SomeObject> {
         SomeObject::str required {
             identifier()
@@ -91,9 +89,7 @@ class IdentifierValidatorTest {
     fun `given extra symbols identifier validator must be invalid`() {
         assertTrue { identifier.validate(SomeObject("myProject@")) is Invalid }
     }
-}
 
-class PackageValidator {
     private val validPackage = Validation<SomeObject> {
         SomeObject::str required {
             isValidPackage()
@@ -114,9 +110,7 @@ class PackageValidator {
     fun `given the first numbers package validator must be invalid`() {
         assertTrue { validPackage.validate(SomeObject("123com/example")) is Invalid }
     }
-}
 
-class LogLevelValidator {
     private val logLevel = Validation<SomeObject> {
         SomeObject::strToList onEach {
             isValidLogLevel()
@@ -186,9 +180,10 @@ class LogLevelValidator {
     fun `given combination of logging level and packages logLevel validator must be valid`() {
         assertTrue { logLevel.validate(SomeObject("INFO;com.example=DEBUG;other.domain=ERROR")) is Valid }
     }
-}
 
-data class SomeObject(var str: String?) {
-    val strToList: List<String>
-        get() = if (str.isNullOrEmpty()) emptyList() else str?.split(";")?.toList() ?: emptyList()
+    private data class SomeObject(var str: String?) {
+        val strToList: List<String>
+            get() = if (str.isNullOrEmpty()) emptyList() else str?.split(";")?.toList() ?: emptyList()
+    }
+
 }

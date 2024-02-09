@@ -3,7 +3,6 @@ import org.jetbrains.kotlin.gradle.dsl.KotlinMultiplatformExtension
 import org.jetbrains.kotlin.gradle.plugin.KotlinSourceSet
 import org.jetbrains.kotlin.gradle.plugin.mpp.KotlinNativeTarget
 import org.jetbrains.kotlin.gradle.targets.jvm.KotlinJvmTarget
-import org.jetbrains.kotlin.gradle.targets.native.tasks.KotlinNativeTest
 import org.jetbrains.kotlin.konan.target.HostManager
 import org.jetbrains.kotlin.konan.target.presetName
 import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
@@ -24,6 +23,7 @@ group = "com.epam.drill"
 version = rootProject.version
 
 val kotlinxSerializationVersion: String by parent!!.extra
+val kotlinxCollectionsVersion: String by parent!!.extra
 val kotlinxCoroutinesVersion: String by parent!!.extra
 val ktorVersion: String by parent!!.extra
 val javassistVersion: String by parent!!.extra
@@ -39,7 +39,7 @@ repositories {
 
 kotlin {
     val configureNativeTarget: KotlinNativeTarget.() -> Unit = {
-        compilations["test"].cinterops.create("testStubs")
+        compilations["test"].cinterops.create("test_stubs")
         binaries.sharedLib(nativeAgentLibName, setOf(DEBUG))
     }
     val currentPlatformTarget: KotlinMultiplatformExtension.() -> KotlinNativeTarget = {
@@ -67,10 +67,8 @@ kotlin {
     sourceSets {
         all {
             languageSettings.optIn("kotlin.ExperimentalStdlibApi")
-            languageSettings.optIn("kotlin.ExperimentalUnsignedTypes")
             languageSettings.optIn("kotlin.time.ExperimentalTime")
             languageSettings.optIn("kotlinx.serialization.ExperimentalSerializationApi")
-            languageSettings.optIn("kotlinx.serialization.InternalSerializationApi")
             languageSettings.optIn("io.ktor.utils.io.core.ExperimentalIoApi")
         }
         val commonMain by getting {
@@ -81,7 +79,6 @@ kotlin {
                     package com.epam.drill.agent
                     
                     internal val agentVersion = "${project.version}"
-                    internal val nativeAgentLibName = "$nativeAgentLibName"
                 """.trimIndent())
             }
             dependencies {
@@ -89,43 +86,40 @@ kotlin {
                 implementation(project(":http-clients-instrumentation"))
                 implementation(project(":logging"))
                 implementation(project(":common"))
+                implementation(project(":agent-config"))
+            }
+        }
+        val commonTest by getting {
+            dependencies {
+                implementation(kotlin("test"))
             }
         }
         val jvmMain by getting {
             dependencies {
-                implementation(kotlin("reflect"))
-                implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:$kotlinxSerializationVersion")
                 implementation("org.jetbrains.kotlinx:kotlinx-serialization-protobuf:$kotlinxSerializationVersion")
                 implementation("org.javassist:javassist:$javassistVersion")
                 implementation("com.alibaba:transmittable-thread-local:$transmittableThreadLocalVersion")
                 implementation("io.aesy:datasize:$aesyDatasizeVersion")
-                implementation(project(":agent"))
+                implementation(project(":agent-transport"))
                 implementation(project(":http-clients-instrumentation"))
-                implementation(project(":test2code"))
+                runtimeOnly(project(":test2code"))
             }
         }
         val configureNativeDependencies: KotlinSourceSet.() -> Unit = {
             dependencies {
+                implementation("org.jetbrains.kotlinx:kotlinx-collections-immutable:$kotlinxCollectionsVersion")
                 implementation("org.jetbrains.kotlinx:kotlinx-serialization-protobuf:$kotlinxSerializationVersion")
                 implementation("com.benasher44:uuid:$uuidVersion")
                 implementation("io.ktor:ktor-utils:$ktorVersion")
-                implementation(project(":agent"))
+                implementation(project(":interceptor-http"))
                 implementation(project(":jvmapi"))
                 implementation(project(":knasm"))
                 implementation(project(":konform"))
             }
         }
-        val configureNativeTestDependencies: KotlinSourceSet.() -> Unit = {
-            dependencies {
-                implementation(kotlin("test"))
-            }
-        }
         val linuxX64Main by getting(configuration = configureNativeDependencies)
         val mingwX64Main by getting(configuration = configureNativeDependencies)
         val macosX64Main by getting(configuration = configureNativeDependencies)
-        val linuxX64Test by getting(configuration = configureNativeTestDependencies)
-        val mingwX64Test by getting(configuration = configureNativeTestDependencies)
-        val macosX64Test by getting(configuration = configureNativeTestDependencies)
         mingwX64Main.dependencies {
             implementation(project(":logging-native"))
         }
@@ -204,9 +198,6 @@ kotlin {
             }
         }
         clean.dependsOn(cleanGeneratedClasses)
-        withType<KotlinNativeTest> {
-            testLogging.showStandardStreams = true
-        }
         withType<Copy>().getByName("jvmProcessResources") {
             duplicatesStrategy = DuplicatesStrategy.EXCLUDE
         }

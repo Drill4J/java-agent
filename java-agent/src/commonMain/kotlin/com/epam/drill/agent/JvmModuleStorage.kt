@@ -15,11 +15,14 @@
  */
 package com.epam.drill.agent
 
-import com.epam.drill.jvmapi.callObjectVoidMethod
+import com.epam.drill.common.agent.AgentModule
 
-actual object JvmModuleMessageSender {
+expect object JvmModuleStorage {
 
-    actual fun sendAgentConfig(): Unit =
-        callObjectVoidMethod(JvmModuleMessageSender::class, JvmModuleMessageSender::sendAgentConfig)
+    operator fun get(id: String): AgentModule<*>?
+
+    fun values(): Collection<AgentModule<*>>
+
+    fun add(module: AgentModule<*>)
 
 }

@@ -13,12 +13,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.epam.drill.test2code
+package com.epam.drill.agent.configuration
 
-object JvmModuleConfiguration {
-    external fun getPackagePrefixes(): String
-    external fun getScanClassPath(): String
-    external fun waitClassScanning()
-    external fun getSendCoverageInterval(): Long
-    external fun getCoverageRetentionLimit(): String
+import com.epam.drill.common.agent.configuration.AgentConfiguration
+import com.epam.drill.common.agent.configuration.AgentMetadata
+import com.epam.drill.common.agent.configuration.AgentParameters
+
+expect object Configuration : AgentConfiguration {
+    override val agentMetadata: AgentMetadata
+    override val parameters: AgentParameters
+    fun initializeNative(agentOptions: String)
+    fun initializeJvm(inputParameters: String)
 }

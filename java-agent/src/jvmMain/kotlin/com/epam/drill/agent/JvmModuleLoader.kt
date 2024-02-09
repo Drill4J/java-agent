@@ -15,24 +15,27 @@
  */
 package com.epam.drill.agent
 
+import com.epam.drill.agent.configuration.Configuration
 import com.epam.drill.agent.request.RequestHolder
-import com.epam.drill.common.agent.AgentModule
+import com.epam.drill.agent.transport.JvmModuleMessageSender
 import com.epam.drill.common.agent.AgentContext
+import com.epam.drill.common.agent.AgentModule
+import com.epam.drill.common.agent.configuration.AgentConfiguration
 import com.epam.drill.common.agent.transport.AgentMessageSender
-import com.epam.drill.test2code.Test2Code
 
 actual object JvmModuleLoader {
 
-    actual fun loadJvmModule(id: String): AgentModule<*> = run {
-        val jvmModuleClass = getJvmModuleClass(id)!!
-        val constructor = jvmModuleClass.getConstructor(String::class.java, AgentContext::class.java, AgentMessageSender::class.java)
-        constructor.newInstance(id, RequestHolder.agentContext, JvmModuleMessageSender).also { PluginStorage.add(it) }
-    }
-
     @Suppress("UNCHECKED_CAST")
-    private fun getJvmModuleClass(id: String): Class<AgentModule<*>>? = when(id) {
-        "test2code" -> Test2Code::class.java as Class<AgentModule<*>>
-        else -> null
+    actual fun loadJvmModule(classname: String): AgentModule<*> = run {
+        val jvmModuleClass = Class.forName(classname) as Class<out AgentModule<*>>
+        val constructor = jvmModuleClass.getConstructor(
+            String::class.java,
+            AgentContext::class.java,
+            AgentMessageSender::class.java,
+            AgentConfiguration::class.java
+        )
+        constructor.newInstance(classname, RequestHolder.agentContext, JvmModuleMessageSender, Configuration)
+            .also { JvmModuleStorage.add(it) }
     }
 
 }

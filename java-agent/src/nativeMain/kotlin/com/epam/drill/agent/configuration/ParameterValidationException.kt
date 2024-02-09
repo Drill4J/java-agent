@@ -13,12 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.epam.drill.agent
+package com.epam.drill.agent.configuration
 
-import com.epam.drill.common.agent.AgentModule
-
-expect object JvmModuleLoader {
-
-    fun loadJvmModule(classname: String): AgentModule<*>
-
-}
+class ParameterValidationException(message: String): RuntimeException(message)

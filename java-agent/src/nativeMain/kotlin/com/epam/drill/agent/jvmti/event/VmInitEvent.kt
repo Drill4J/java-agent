@@ -15,20 +15,21 @@
  */
 package com.epam.drill.agent.jvmti.event
 
-import com.benasher44.uuid.uuid4
 import kotlinx.cinterop.CPointer
+import kotlinx.serialization.protobuf.ProtoBuf
 import mu.KotlinLogging
-import com.epam.drill.agent.Agent
 import com.epam.drill.agent.JvmModuleLoader
-import com.epam.drill.agent.JvmModuleMessageSender
-import com.epam.drill.agent.configuration.agentConfig
-import com.epam.drill.agent.globalCallbacks
-import com.epam.drill.agent.configuration.agentParameters
+import com.epam.drill.agent.closeSession
+import com.epam.drill.agent.configuration.AgentLoggingConfiguration
+import com.epam.drill.agent.configuration.Configuration
+import com.epam.drill.agent.configuration.ParameterDefinitions
 import com.epam.drill.agent.configuration.configureHttp
-import com.epam.drill.agent.configuration.defaultJvmLoggingConfiguration
-import com.epam.drill.agent.configuration.updateJvmLoggingConfiguration
-import com.epam.drill.agent.configuration.updatePackagePrefixesConfiguration
+import com.epam.drill.agent.drillRequest
+import com.epam.drill.agent.request.DrillRequest
 import com.epam.drill.agent.request.RequestHolder
+import com.epam.drill.agent.request.RequestProcessor
+import com.epam.drill.agent.sessionStorage
+import com.epam.drill.agent.transport.JvmModuleMessageSender
 import com.epam.drill.jvmapi.gen.JNIEnvVar
 import com.epam.drill.jvmapi.gen.JVMTI_ENABLE
 import com.epam.drill.jvmapi.gen.JVMTI_EVENT_CLASS_FILE_LOAD_HOOK
@@ -43,33 +44,35 @@ fun vmInitEvent(env: CPointer<jvmtiEnvVar>?, jniEnv: CPointer<JNIEnvVar>?, threa
     initRuntimeIfNeeded()
     SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_CLASS_FILE_LOAD_HOOK, null)
 
-    defaultJvmLoggingConfiguration()
-    updateJvmLoggingConfiguration()
+    AgentLoggingConfiguration.defaultJvmLoggingConfiguration()
+    AgentLoggingConfiguration.updateJvmLoggingConfiguration()
+    Configuration.initializeJvm()
 
-    if (Agent.isHttpHookEnabled) {
-        logger.info { "run with http hook" }
+    if (Configuration.parameters[ParameterDefinitions.HTTP_HOOK_ENABLED]) {
+        logger.info { "vmInitEvent: Run with http hook" }
         configureHttp()
     } else {
-        logger.warn { "run without http hook" }
+        logger.warn { "vmInitEvent: Run without http hook" }
     }
 
-    globalCallbacks()
-    updatePackagePrefixesConfiguration()
-    loadJvmModule("test2code")
-    RequestHolder.init(isAsync = agentParameters.isAsyncApp)
-    generateAgentConfigInstanceId()
-    JvmModuleMessageSender.sendAgentConfig()
+    registerGlobalCallbacks()
+    loadJvmModule("com.epam.drill.test2code.Test2Code")
+    JvmModuleMessageSender.sendAgentMetadata()
 }
 
-@Suppress("UNCHECKED_CAST")
-private fun loadJvmModule(id: String) {
-    try {
-        JvmModuleLoader.loadJvmModule(id).load()
-    } catch (ex: Exception) {
-        logger.error(ex) { "Fatal error processing plugin: id=${id}" }
+private fun registerGlobalCallbacks() {
+    sessionStorage = {
+        RequestHolder.store(ProtoBuf.encodeToByteArray(DrillRequest.serializer(), it))
     }
+    closeSession = {
+        RequestProcessor.processServerResponse()
+        RequestHolder.closeSession()
+    }
+    drillRequest = {
+        RequestHolder.dump()?.let { ProtoBuf.decodeFromByteArray(DrillRequest.serializer(), it) }
+    }
+    RequestHolder.init(Configuration.parameters[ParameterDefinitions.IS_ASYNC_APP])
 }
 
-private fun generateAgentConfigInstanceId() = run {
-    if(agentConfig.instanceId.isEmpty()) agentConfig = agentConfig.copy(instanceId = uuid4().toString())
-}
+private fun loadJvmModule(id: String) = runCatching { JvmModuleLoader.loadJvmModule(id).load() }
+    .onFailure { logger.error(it) { "Fatal error processing plugin: id=${id}" } }

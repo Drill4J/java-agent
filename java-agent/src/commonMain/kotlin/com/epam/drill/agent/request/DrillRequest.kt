@@ -13,7 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.epam.drill.agent.configuration.exceptions
+package com.epam.drill.agent.request
 
-class AgentParameterValidationException(message: String): RuntimeException(message) {
-}
+import kotlinx.serialization.Serializable
+
+@Serializable
+class DrillRequest(
+    val drillSessionId: String,
+    val headers: Map<String, String> = emptyMap()
+)

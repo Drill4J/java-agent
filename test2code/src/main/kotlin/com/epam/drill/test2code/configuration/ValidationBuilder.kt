@@ -13,13 +13,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.epam.drill.agent
+package com.epam.drill.test2code.configuration
 
-const val DRILL_PACKAGE = "com/epam/drill"
-const val SYSTEM_CONFIG_PATH = "DRILL_AGENT_CONFIG_PATH"
+import kotlin.time.Duration
+import java.io.File
+import com.epam.drill.konform.validation.Constraint
+import com.epam.drill.konform.validation.ValidationBuilder
 
-const val KAFKA_PRODUCER_INTERFACE = "org/apache/kafka/clients/producer/Producer"
-const val KAFKA_CONSUMER_SPRING = "org/springframework/kafka/listener/KafkaMessageListenerContainer\$ListenerConsumer"
+fun ValidationBuilder<Duration>.minimum(minimumInclusive: Duration) = addConstraint(
+    "must be at least '{0}' ms", minimumInclusive.inWholeMilliseconds.toString()
+) { it.inWholeMilliseconds >= minimumInclusive.inWholeMilliseconds }
 
-const val CADENCE_PRODUCER =  "com/uber/cadence/internal/sync/WorkflowStubImpl"
-const val CADENCE_CONSUMER = "com/uber/cadence/internal/sync/WorkflowRunnable"
+fun ValidationBuilder<String>.pathExists(): Constraint<String> = addConstraint(
+    "must be an existing filepath, but was {value}",
+) { File(it).exists() }

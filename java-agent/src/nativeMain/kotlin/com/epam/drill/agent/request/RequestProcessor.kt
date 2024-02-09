@@ -15,7 +15,7 @@
  */
 package com.epam.drill.agent.request
 
-import com.epam.drill.agent.PluginStorage
+import com.epam.drill.agent.JvmModuleStorage
 import com.epam.drill.agent.module.GenericAgentModule
 
 actual object RequestProcessor {
@@ -28,6 +28,6 @@ actual object RequestProcessor {
         plugins().forEach { it.processServerResponse() }
     }
 
-    private fun plugins() = PluginStorage.values().filterIsInstance<GenericAgentModule>()
+    private fun plugins() = JvmModuleStorage.values().filterIsInstance<GenericAgentModule>()
 
 }
