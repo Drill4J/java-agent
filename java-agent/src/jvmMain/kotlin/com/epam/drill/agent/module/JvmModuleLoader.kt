@@ -13,28 +13,28 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.epam.drill.agent
+package com.epam.drill.agent.module
 
+import com.epam.drill.agent.RequestAgentContext
 import com.epam.drill.agent.configuration.Configuration
-import com.epam.drill.agent.request.RequestHolder
 import com.epam.drill.agent.transport.JvmModuleMessageSender
 import com.epam.drill.common.agent.AgentContext
-import com.epam.drill.common.agent.AgentModule
 import com.epam.drill.common.agent.configuration.AgentConfiguration
+import com.epam.drill.common.agent.module.AgentModule
 import com.epam.drill.common.agent.transport.AgentMessageSender
 
 actual object JvmModuleLoader {
 
     @Suppress("UNCHECKED_CAST")
-    actual fun loadJvmModule(classname: String): AgentModule<*> = run {
-        val jvmModuleClass = Class.forName(classname) as Class<out AgentModule<*>>
+    actual fun loadJvmModule(classname: String): AgentModule = run {
+        val jvmModuleClass = Class.forName(classname) as Class<out AgentModule>
         val constructor = jvmModuleClass.getConstructor(
             String::class.java,
             AgentContext::class.java,
             AgentMessageSender::class.java,
             AgentConfiguration::class.java
         )
-        constructor.newInstance(classname, RequestHolder.agentContext, JvmModuleMessageSender, Configuration)
+        constructor.newInstance(classname, RequestAgentContext, JvmModuleMessageSender, Configuration)
             .also { JvmModuleStorage.add(it) }
     }
 

@@ -13,14 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.epam.drill.test2code
+package com.epam.drill.agent.module
 
-import java.util.zip.*
-import java.lang.Long.*
+import com.epam.drill.common.agent.module.AgentModule
 
-fun currentTimeMillis() = System.currentTimeMillis()
+expect object JvmModuleLoader {
 
-fun String.id(): String = CRC32().let {
-    it.update(toByteArray())
-    toHexString(it.value)
+    fun loadJvmModule(classname: String): AgentModule
+
 }

@@ -13,16 +13,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.epam.drill.agent
+package com.epam.drill.agent.module
 
-import com.epam.drill.common.agent.AgentModule
+import com.epam.drill.common.agent.module.AgentModule
 
 expect object JvmModuleStorage {
 
-    operator fun get(id: String): AgentModule<*>?
+    operator fun get(id: String): AgentModule?
 
-    fun values(): Collection<AgentModule<*>>
+    fun values(): Collection<AgentModule>
 
-    fun add(module: AgentModule<*>)
+    fun add(module: AgentModule)
 
 }

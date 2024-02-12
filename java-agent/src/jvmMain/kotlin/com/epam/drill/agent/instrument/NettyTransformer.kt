@@ -55,17 +55,19 @@ actual object NettyTransformer {
                         }
                     """.trimIndent()
                 )
-                val drillAdminHeader = HeadersRetriever.adminAddressHeader()
-                val adminUrl = HeadersRetriever.retrieveAdminAddress()
+                val adminHeader = HeadersRetriever.adminAddressHeader()
+                val adminUrl = HeadersRetriever.adminAddressValue()
+                val agentIdHeader = HeadersRetriever.agentIdHeader()
+                val agentIdValue = HeadersRetriever.agentIdHeaderValue()
                 val writeMethod = getMethod("write", "(Ljava/lang/Object;ZLio/netty/channel/ChannelPromise;)V")
                 writeMethod.wrapCatching(
                     CtMethod::insertBefore,
                     """
                         if ($1 instanceof $DefaultHttpResponse) {
                             $DefaultHttpResponse nettyResponse = ($DefaultHttpResponse) $1;
-                            if (!"$adminUrl".equals(nettyResponse.headers().get("$drillAdminHeader"))) {
-                                nettyResponse.headers().add("$drillAdminHeader", "$adminUrl");
-                                nettyResponse.headers().add("${HeadersRetriever.idHeaderConfigKey()}", "${HeadersRetriever.idHeaderConfigValue()}");
+                            if (!"$adminUrl".equals(nettyResponse.headers().get("$adminHeader"))) {
+                                nettyResponse.headers().add("$adminHeader", "$adminUrl");
+                                nettyResponse.headers().add("$agentIdHeader", "$agentIdValue");
                             }
                         }
                         if ($1 instanceof $DefaultHttpRequest) {

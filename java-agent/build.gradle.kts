@@ -29,8 +29,9 @@ val ktorVersion: String by parent!!.extra
 val javassistVersion: String by parent!!.extra
 val transmittableThreadLocalVersion: String by parent!!.extra
 val uuidVersion: String by parent!!.extra
-val nativeAgentLibName: String by parent!!.extra
 val aesyDatasizeVersion: String by parent!!.extra
+val nativeAgentLibName: String by parent!!.extra
+val nativeAgentHookEnabled: String by parent!!.extra
 
 repositories {
     mavenLocal()
@@ -53,7 +54,11 @@ kotlin {
                 linkerOpts("-lpsapi", "-lwsock32", "-lws2_32", "-lmswsock")
             }
         }
-        macosX64(configure = configureNativeTarget)
+        macosX64(configure = configureNativeTarget).apply {
+            binaries.all {
+                linkerOpts("-ld64")
+            }
+        }
         currentPlatformTarget().compilations["main"].defaultSourceSet {
             kotlin.srcDir("src/nativeMain/kotlin")
             resources.srcDir("src/nativeMain/resources")
@@ -67,7 +72,6 @@ kotlin {
     sourceSets {
         all {
             languageSettings.optIn("kotlin.ExperimentalStdlibApi")
-            languageSettings.optIn("kotlin.time.ExperimentalTime")
             languageSettings.optIn("kotlinx.serialization.ExperimentalSerializationApi")
             languageSettings.optIn("io.ktor.utils.io.core.ExperimentalIoApi")
         }
@@ -111,10 +115,13 @@ kotlin {
                 implementation("org.jetbrains.kotlinx:kotlinx-serialization-protobuf:$kotlinxSerializationVersion")
                 implementation("com.benasher44:uuid:$uuidVersion")
                 implementation("io.ktor:ktor-utils:$ktorVersion")
-                implementation(project(":interceptor-http"))
                 implementation(project(":jvmapi"))
                 implementation(project(":knasm"))
                 implementation(project(":konform"))
+                if (nativeAgentHookEnabled == "true")
+                    implementation(project(":interceptor-http"))
+                else
+                    implementation(project(":java-agent-interceptor-stub"))
             }
         }
         val linuxX64Main by getting(configuration = configureNativeDependencies)
@@ -218,6 +225,8 @@ distributions {
                 from(runtimeJarTask)
                 from(nativeAgentLinkTask) {
                     duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+                    exclude("*.h")
+                    exclude("*.def")
                 }
                 from("drill.properties")
                 from("temporary.jks")

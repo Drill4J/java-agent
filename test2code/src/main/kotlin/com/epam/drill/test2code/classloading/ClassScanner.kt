@@ -13,18 +13,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.epam.drill.agent
+package com.epam.drill.test2code.classloading
 
-import com.epam.drill.common.agent.AgentModule
+import com.epam.drill.common.classloading.EntitySource
 
-actual object JvmModuleStorage {
-
-    private val storage = mutableMapOf<String, AgentModule<*>>()
-
-    actual operator fun get(id: String) = storage.get(id)
-
-    actual fun values(): Collection<AgentModule<*>> = storage.values
-
-    actual fun add(module: AgentModule<*>) = storage.put(module.id, module).let {}
-
+/**
+ * Service for scanning classes of the application under test
+ */
+interface ClassScanner {
+    /**
+     * Scan target classes of the application under test
+     * @param consumer the function for processing chunks of scanned classes
+     */
+    fun scanClasses(consumer: (Set<EntitySource>) -> Unit)
 }

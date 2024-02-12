@@ -13,16 +13,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.epam.drill.agent.jvmti.event
+package com.epam.drill.agent.module
 
-import kotlinx.cinterop.CPointer
-import mu.KotlinLogging
-import com.epam.drill.jvmapi.gen.JNIEnvVar
-import com.epam.drill.jvmapi.gen.jvmtiEnvVar
+import com.epam.drill.common.agent.module.AgentModule
 
-private val logger = KotlinLogging.logger("com.epam.drill.agent.jvmti.event.VmDeathEvent")
+actual object JvmModuleStorage {
 
-@Suppress("UNUSED_PARAMETER")
-fun vmDeathEvent(jvmtiEnv: CPointer<jvmtiEnvVar>?, jniEnv: CPointer<JNIEnvVar>?) {
-    logger.info { "vmDeathEvent" }
+    private val storage = mutableMapOf<String, AgentModule>()
+
+    actual operator fun get(id: String) = storage.get(id)
+
+    actual fun values(): Collection<AgentModule> = storage.values
+
+    actual fun add(module: AgentModule) = storage.put(module.id, module).let {}
+
 }

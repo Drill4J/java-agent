@@ -47,7 +47,7 @@ dependencies {
 
     implementation(project(":common"))
     implementation(project(":test2code-common"))
-    implementation(project(":jacoco"))
+    implementation(project(":test2code-jacoco"))
     implementation(project(":konform"))
 }
 

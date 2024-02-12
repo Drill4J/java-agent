@@ -16,40 +16,40 @@
 package com.epam.drill.agent.request
 
 import kotlinx.serialization.protobuf.ProtoBuf
-import mu.KotlinLogging
 import com.alibaba.ttl.TransmittableThreadLocal
-import com.epam.drill.agent.RequestAgentContext
-import com.epam.drill.common.agent.AgentContext
+import mu.KotlinLogging
+import com.epam.drill.common.agent.request.DrillRequest
+import com.epam.drill.common.agent.request.RequestHolder
 
-actual object RequestHolder {
+actual object RequestHolder : RequestHolder {
 
     private val logger = KotlinLogging.logger {}
-
     private lateinit var threadStorage: InheritableThreadLocal<DrillRequest>
 
-    val agentContext: AgentContext = RequestAgentContext { threadStorage.get() }
-
-    actual fun init(isAsync: Boolean) {
-        threadStorage = if (isAsync) TransmittableThreadLocal() else InheritableThreadLocal()
+    actual override fun remove() {
+        if (threadStorage.get() == null) return
+        RequestProcessor.processServerResponse()
+        logger.trace { "remove: Request ${threadStorage.get().drillSessionId} removed" }
+        threadStorage.remove()
     }
 
-    actual fun store(drillRequest: ByteArray) {
-        storeRequest(ProtoBuf.decodeFromByteArray(DrillRequest.serializer(), drillRequest))
-    }
+    actual override fun retrieve(): DrillRequest? =
+        threadStorage.get()
 
-    fun storeRequest(drillRequest: DrillRequest) {
+    actual override fun store(drillRequest: DrillRequest) {
         threadStorage.set(drillRequest)
-        logger.trace { "session ${drillRequest.drillSessionId} saved" }
+        logger.trace { "store: Request ${drillRequest.drillSessionId} saved" }
         RequestProcessor.processServerRequest()
     }
 
-    actual fun dump(): ByteArray? {
-        return threadStorage.get()?.let { ProtoBuf.encodeToByteArray(DrillRequest.serializer(), it) }
-    }
+    actual fun store(drillRequest: ByteArray) =
+        store(ProtoBuf.decodeFromByteArray(DrillRequest.serializer(), drillRequest))
 
-    actual fun closeSession() {
-        logger.trace { "session ${threadStorage.get()} closed" }
-        threadStorage.remove()
+    actual fun dump(): ByteArray? =
+        retrieve()?.let { ProtoBuf.encodeToByteArray(DrillRequest.serializer(), it) }
+
+    actual fun init(isAsync: Boolean) {
+        threadStorage = if (isAsync) TransmittableThreadLocal() else InheritableThreadLocal()
     }
 
 }

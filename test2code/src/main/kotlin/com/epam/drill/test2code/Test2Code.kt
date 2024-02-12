@@ -21,19 +21,19 @@ import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.json.Json
 import java.util.concurrent.ConcurrentHashMap
 import mu.KotlinLogging
-import com.epam.drill.common.agent.AgentContext
-import com.epam.drill.common.agent.AgentModule
-import com.epam.drill.common.agent.Instrumenter
 import com.epam.drill.common.agent.configuration.AgentConfiguration
+import com.epam.drill.common.agent.AgentContext
+import com.epam.drill.common.agent.module.AgentModule
+import com.epam.drill.common.agent.module.Instrumenter
+import com.epam.drill.common.agent.request.RequestProcessor
 import com.epam.drill.common.agent.transport.AgentMessage
 import com.epam.drill.common.agent.transport.AgentMessageDestination
 import com.epam.drill.common.agent.transport.AgentMessageSender
-import com.epam.drill.common.classloading.ClassScanner
 import com.epam.drill.common.classloading.EntitySource
-import com.epam.drill.plugins.test2code.common.api.AgentAction
 import com.epam.drill.plugins.test2code.common.api.AstEntity
 import com.epam.drill.plugins.test2code.common.transport.ClassMetadata
 import com.epam.drill.test2code.classloading.ClassLoadersScanner
+import com.epam.drill.test2code.classloading.ClassScanner
 import com.epam.drill.test2code.classparsing.parseAstClass
 import com.epam.drill.test2code.configuration.ParameterDefinitions
 import com.epam.drill.test2code.configuration.ParametersValidator
@@ -50,7 +50,7 @@ class Test2Code(
     agentContext: AgentContext,
     sender: AgentMessageSender,
     configuration: AgentConfiguration
-) : AgentModule<AgentAction>(id, agentContext, sender, configuration), Instrumenter, ClassScanner {
+) : AgentModule(id, agentContext, sender, configuration), Instrumenter, ClassScanner, RequestProcessor {
 
     internal val logger = KotlinLogging.logger {}
     internal val json = Json { encodeDefaults = true }
@@ -85,8 +85,7 @@ class Test2Code(
      * For each request we fill the thread local variable with an array of [ExecDatum]
      * @features Running tests
      */
-    @Suppress("UNUSED")
-    fun processServerRequest() {
+    override fun processServerRequest() {
         val sessionId = context()
         val testId = context[DRILL_TEST_ID_HEADER]
         if (sessionId == null || testId == null) return
@@ -97,8 +96,7 @@ class Test2Code(
      * When the application under test returns a response to the caller
      * @features Running tests
      */
-    @Suppress("UNUSED")
-    fun processServerResponse() {
+    override fun processServerResponse() {
         val sessionId = context()
         val testId = context[DRILL_TEST_ID_HEADER]
         if (sessionId == null || testId == null) return
