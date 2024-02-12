@@ -13,20 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.epam.drill.agent.instrument.error
+package com.epam.drill.agent.instrument.servers
 
-import javassist.CtMethod
+import com.epam.drill.agent.instrument.AbstractTransformerObject
+import com.epam.drill.agent.instrument.TransformerObject
 
-inline fun CtMethod.wrapCatching(insert: CtMethod.(String) -> Unit, code: String) {
-    runCatching {
-        insert(
-            """
-            try {
-                $code
-            } catch (Throwable e) {
-                ${InstrumentationErrorLogger::class.java.name}.INSTANCE.${InstrumentationErrorLogger::error.name}(e, "Error in the injected code. Method name: $name.");
-            }
-            """.trimIndent()
-        )
-    }.onFailure { InstrumentationErrorLogger.warn(it, "Can't insert code. Method name: $name") }
+actual object SSLTransformer : TransformerObject, AbstractTransformerObject() {
+    const val SSL_ENGINE_CLASS_NAME = "javax/net/ssl/SSLEngine"
 }

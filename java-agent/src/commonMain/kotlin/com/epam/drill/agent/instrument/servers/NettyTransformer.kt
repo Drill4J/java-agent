@@ -13,13 +13,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.epam.drill.agent.instrument
+package com.epam.drill.agent.instrument.servers
 
-expect object TTLTransformer {
-    fun transform(
-        loader: Any?,
-        classFile: String?,
-        classBeingRedefined: Any?,
-        classFileBuffer: ByteArray
-    ): ByteArray?
-}
+import com.epam.drill.agent.instrument.TransformerObject
+
+expect object NettyTransformer : TransformerObject

@@ -13,17 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.epam.drill.agent.interceptor
+package com.epam.drill.agent.instrument.clients
 
-import com.epam.drill.common.agent.request.HeadersRetriever
-import com.epam.drill.common.agent.request.RequestHolder
+import com.epam.drill.agent.instrument.AbstractTransformerObject
+import com.epam.drill.agent.instrument.TransformerObject
 
-@Suppress("unused")
-object HttpInterceptorConfigurer {
-
-    const val enabled = false;
-
-    @Suppress("unused_parameter")
-    operator fun invoke(headersRetriever: HeadersRetriever, requestHolder: RequestHolder) {}
-
-}
+actual object OkHttp3Codec : TransformerObject, AbstractTransformerObject()

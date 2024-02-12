@@ -13,13 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.epam.drill.agent.instrument
+package com.epam.drill.agent.instrument.servers
 
-expect object NettyTransformer {
-    fun transform(
-        className: String,
-        classFileBuffer: ByteArray,
-        loader: Any?,
-        protectionDomain: Any?,
-    ): ByteArray?
-}
+import com.epam.drill.agent.instrument.DefaultHeadersProcessor
+import com.epam.drill.agent.instrument.HeadersProcessor
+import com.epam.drill.agent.instrument.TransformerObject
+import com.epam.drill.agent.request.HeadersRetriever
+
+actual object TomcatTransformer :
+    TransformerObject,
+    TomcatTransformerObject(HeadersRetriever),
+    HeadersProcessor by DefaultHeadersProcessor

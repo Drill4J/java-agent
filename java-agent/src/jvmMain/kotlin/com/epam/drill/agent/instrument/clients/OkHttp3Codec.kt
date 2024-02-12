@@ -13,16 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.epam.drill.agent.instrument.error
+package com.epam.drill.agent.instrument.clients
 
-import mu.KotlinLogging
+import com.epam.drill.agent.instrument.DefaultHeadersProcessor
+import com.epam.drill.agent.instrument.HeadersProcessor
+import com.epam.drill.agent.instrument.TransformerObject
 
-object InstrumentationErrorLogger {
-
-    private val logger = KotlinLogging.logger {}
-
-    fun error(exception: Throwable, message: String) = logger.error(exception) { message }
-
-    fun warn(exception: Throwable, message: String) = logger.warn(exception) { message }
-
-}
+actual object OkHttp3Codec :
+    TransformerObject,
+    OkHttp3CodecObject(),
+    HeadersProcessor by DefaultHeadersProcessor

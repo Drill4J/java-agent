@@ -13,10 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.epam.drill.agent
+package com.epam.drill.agent.instrument.servers
 
-const val KAFKA_PRODUCER_INTERFACE = "org/apache/kafka/clients/producer/Producer"
-const val KAFKA_CONSUMER_SPRING = "org/springframework/kafka/listener/KafkaMessageListenerContainer\$ListenerConsumer"
+import com.epam.drill.agent.instrument.AbstractTransformerObject
+import com.epam.drill.agent.instrument.TransformerObject
 
-const val CADENCE_PRODUCER =  "com/uber/cadence/internal/sync/WorkflowStubImpl"
-const val CADENCE_CONSUMER = "com/uber/cadence/internal/sync/WorkflowRunnable"
+actual object TomcatTransformer : TransformerObject, AbstractTransformerObject()

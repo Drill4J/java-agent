@@ -13,11 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.epam.drill.agent.instrument
+package com.epam.drill.agent.instrument.servers
 
-import com.epam.drill.agent.instrument.jvm.callTTLTransformerTransformMethod
+import com.epam.drill.agent.instrument.AbstractTransformerObject
+import com.epam.drill.agent.instrument.TransformerObject
 
-actual object TTLTransformer {
+actual object TTLTransformer : TransformerObject, AbstractTransformerObject() {
     val directTtlClasses = listOf(
         "java/util/concurrent/ScheduledThreadPoolExecutor",
         "java/util/concurrent/ThreadPoolExecutor",
@@ -28,19 +29,4 @@ actual object TTLTransformer {
     const val runnableInterface = "java/lang/Runnable"
     const val poolExecutor = "java/util/concurrent/ThreadPoolExecutor"
     const val jdkInternal = "jdk/internal"
-
-    actual fun transform(
-        loader: Any?,
-        classFile: String?,
-        classBeingRedefined: Any?,
-        classFileBuffer: ByteArray,
-    ): ByteArray? =
-        callTTLTransformerTransformMethod(
-            TTLTransformer::class,
-            TTLTransformer::transform,
-            loader,
-            classFile,
-            classBeingRedefined,
-            classFileBuffer
-        )
 }

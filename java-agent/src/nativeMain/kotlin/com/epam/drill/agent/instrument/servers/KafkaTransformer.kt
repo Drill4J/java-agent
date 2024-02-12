@@ -13,26 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.epam.drill.agent.instrument
+package com.epam.drill.agent.instrument.servers
 
-import com.epam.drill.agent.instrument.jvm.callTransformerTransformMethod
+import com.epam.drill.agent.instrument.AbstractTransformerObject
+import com.epam.drill.agent.instrument.TransformerObject
 
-actual object SSLTransformer {
-    const val SSL_ENGINE_CLASS_NAME = "javax/net/ssl/SSLEngine"
-
-    actual fun transform(
-        className: String,
-        classFileBuffer: ByteArray,
-        loader: Any?,
-        protectionDomain: Any?,
-    ): ByteArray? =
-        callTransformerTransformMethod(
-            SSLTransformer::class,
-            SSLTransformer::transform,
-            className,
-            classFileBuffer,
-            loader,
-            protectionDomain
-        )
-
-}
+actual object KafkaTransformer : TransformerObject, AbstractTransformerObject()

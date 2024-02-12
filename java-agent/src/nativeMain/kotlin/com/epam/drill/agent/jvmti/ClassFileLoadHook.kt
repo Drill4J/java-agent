@@ -22,27 +22,26 @@ import io.ktor.utils.io.bits.Memory
 import io.ktor.utils.io.bits.loadByteArray
 import io.ktor.utils.io.bits.of
 import mu.KotlinLogging
-import com.epam.drill.agent.CADENCE_CONSUMER
-import com.epam.drill.agent.CADENCE_PRODUCER
-import com.epam.drill.agent.KAFKA_CONSUMER_SPRING
-import com.epam.drill.agent.KAFKA_PRODUCER_INTERFACE
 import com.epam.drill.agent.configuration.Configuration
 import com.epam.drill.agent.configuration.ParameterDefinitions
-import com.epam.drill.agent.instrument.CadenceTransformer
-import com.epam.drill.agent.instrument.KafkaTransformer
-import com.epam.drill.agent.instrument.NettyTransformer
-import com.epam.drill.agent.instrument.SSLTransformer
-import com.epam.drill.agent.instrument.TTLTransformer
-import com.epam.drill.agent.instrument.TomcatTransformer
+import com.epam.drill.agent.instrument.CADENCE_CONSUMER
+import com.epam.drill.agent.instrument.CADENCE_PRODUCER
+import com.epam.drill.agent.instrument.KAFKA_CONSUMER_SPRING
+import com.epam.drill.agent.instrument.KAFKA_PRODUCER_INTERFACE
+import com.epam.drill.agent.instrument.clients.ApacheHttpClientConnection
+import com.epam.drill.agent.instrument.clients.JavaHttpUrlConnection
+import com.epam.drill.agent.instrument.clients.OkHttp3Codec
+import com.epam.drill.agent.instrument.servers.CadenceTransformer
+import com.epam.drill.agent.instrument.servers.KafkaTransformer
+import com.epam.drill.agent.instrument.servers.NettyTransformer
+import com.epam.drill.agent.instrument.servers.SSLTransformer
+import com.epam.drill.agent.instrument.servers.TTLTransformer
+import com.epam.drill.agent.instrument.servers.TomcatTransformer
 import com.epam.drill.agent.interceptor.HttpInterceptorConfigurer
 import com.epam.drill.agent.module.InstrumentationAgentModule
 import com.epam.drill.agent.module.JvmModuleStorage
 import com.epam.drill.common.classloading.ClassSource
-import com.epam.drill.instrument.http.ApacheClient
-import com.epam.drill.instrument.http.JavaHttpUrlConnection
-import com.epam.drill.instrument.http.OkHttpClient
 import com.epam.drill.jvmapi.gen.Allocate
-import com.epam.drill.jvmapi.gen.jclass
 import com.epam.drill.jvmapi.gen.jint
 import com.epam.drill.jvmapi.gen.jintVar
 import com.epam.drill.jvmapi.gen.jobject
@@ -53,7 +52,7 @@ object ClassFileLoadHook {
 
     private val logger = KotlinLogging.logger("com.epam.drill.agent.jvmti.ClassFileLoadHook")
 
-    private val strategies = listOf(JavaHttpUrlConnection, ApacheClient, OkHttpClient)
+    private val strategies = listOf(JavaHttpUrlConnection, ApacheHttpClientConnection, OkHttp3Codec)
 
     private val isAsyncApp = Configuration.parameters[ParameterDefinitions.IS_ASYNC_APP]
     private val isTlsApp = Configuration.parameters[ParameterDefinitions.IS_TLS_APP]
@@ -64,7 +63,6 @@ object ClassFileLoadHook {
     private val totalTransformClass = AtomicInt(0)
 
     operator fun invoke(
-        classBeingRedefined: jclass?,
         loader: jobject?,
         clsName: CPointer<ByteVar>?,
         protectionDomain: jobject?,
@@ -92,10 +90,10 @@ object ClassFileLoadHook {
                 if (isAsyncApp && isTTLCandidate(kClassName, superName, interfaces)) {
                     transformers += { bytes ->
                         TTLTransformer.transform(
-                            loader,
                             kClassName,
-                            classBeingRedefined,
-                            bytes
+                            bytes,
+                            loader,
+                            protectionDomain
                         )
                     }
                 }
