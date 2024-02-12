@@ -23,6 +23,7 @@ object ParameterDefinitions {
         name = "adminAddress",
         parser = { it.takeIf(URL_SCHEME_REGEX::matches) ?: "https://$it"}
     )
+    val API_KEY = AgentParameterDefinition.forString(name = "apiKey")
     val MESSAGE_QUEUE_LIMIT = AgentParameterDefinition.forString(name = "coverageRetentionLimit", defaultValue = "512Mb")
     val SSL_TRUSTSTORE = AgentParameterDefinition.forString(name = "sslTruststore")
     val SSL_TRUSTSTORE_PASSWORD = AgentParameterDefinition.forString(name = "sslTruststorePassword")
