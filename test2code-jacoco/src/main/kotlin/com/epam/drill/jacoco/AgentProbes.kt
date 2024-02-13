@@ -36,4 +36,12 @@ open class AgentProbes(
     }
 
     fun containCovered() = values.any { it }
+
+    override fun equals(other: Any?): Boolean {
+        return other is AgentProbes && values.contentEquals(other.values)
+    }
+
+    override fun hashCode(): Int {
+        return values.contentHashCode()
+    }
 }
