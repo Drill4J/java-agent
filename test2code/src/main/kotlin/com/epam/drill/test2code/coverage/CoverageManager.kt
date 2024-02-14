@@ -16,14 +16,13 @@
 package com.epam.drill.test2code.coverage
 
 import com.epam.drill.jacoco.AgentProbes
-import com.epam.drill.test2code.JvmModuleConfiguration
 
 open class CoverageManager(
     private val classDescriptorsManager: IClassDescriptorsManager = ConcurrentClassDescriptorsManager(),
     private val threadCoverageRecorder: ICoverageRecorder = ThreadCoverageRecorder(),
     private val globalCoverageRecorder: GlobalCoverageRecorder = GlobalCoverageRecorder(),
     private val coverageSender: CoverageSender = IntervalCoverageSender(
-        intervalMs = JvmModuleConfiguration.getSendCoverageInterval(),
+        intervalMs = 2000L,
         collectProbes = { globalCoverageRecorder.pollRecorded() + threadCoverageRecorder.pollRecorded() }
     )
 ) : IProbesProxy,

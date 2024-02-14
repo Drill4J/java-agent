@@ -15,7 +15,18 @@
  */
 package com.epam.drill.agent.request
 
-actual object RequestProcessor {
-    actual external fun processServerRequest()
-    actual external fun processServerResponse()
+import com.epam.drill.agent.module.JvmModuleStorage
+import com.epam.drill.common.agent.request.RequestProcessor
+
+actual object RequestProcessor : RequestProcessor {
+
+    actual override fun processServerRequest() {
+        module().forEach { it.processServerRequest() }
+    }
+
+    actual override fun processServerResponse() {
+        module().forEach { it.processServerResponse() }
+    }
+
+    private fun module() = JvmModuleStorage.values().filterIsInstance<RequestProcessor>()
 }

@@ -15,72 +15,91 @@
  */
 package com.epam.drill.agent
 
-import kotlin.native.concurrent.*
-import kotlin.time.TimeMark
-import kotlin.time.TimeSource
-import kotlinx.cinterop.*
-import platform.posix.*
-import mu.*
-import com.epam.drill.agent.configuration.*
-import com.epam.drill.agent.jvmti.event.*
+import kotlin.native.concurrent.freeze
+import kotlinx.cinterop.alloc
+import kotlinx.cinterop.memScoped
+import kotlinx.cinterop.ptr
+import kotlinx.cinterop.sizeOf
+import kotlinx.cinterop.staticCFunction
+import platform.posix.getpid
+import mu.KotlinLogging
+import com.epam.drill.agent.configuration.AgentLoggingConfiguration
+import com.epam.drill.agent.configuration.Configuration
+import com.epam.drill.agent.configuration.DefaultParameterDefinitions.INSTALLATION_DIR
+import com.epam.drill.agent.configuration.ParameterDefinitions
+import com.epam.drill.agent.interceptor.HttpInterceptorConfigurer
+import com.epam.drill.agent.jvmti.classFileLoadHook
+import com.epam.drill.agent.jvmti.vmDeathEvent
+import com.epam.drill.agent.jvmti.vmInitEvent
+import com.epam.drill.agent.module.JvmModuleLoader
+import com.epam.drill.agent.request.HeadersRetriever
+import com.epam.drill.agent.request.RequestHolder
+import com.epam.drill.agent.transport.JvmModuleMessageSender
 import com.epam.drill.jvmapi.gen.*
-
-@SharedImmutable
-private val logger = KotlinLogging.logger("com.epam.drill.agent.Agent")
-
-private val LOGO = """
-  ____    ____                 _       _          _  _                _      
- |  _"\U |  _"\ u     ___     |"|     |"|        | ||"|            U |"| u   
-/| | | |\| |_) |/    |_"_|  U | | u U | | u      | || |_          _ \| |/    
-U| |_| |\|  _ <       | |    \| |/__ \| |/__     |__   _|        | |_| |_,-. 
- |____/ u|_| \_\    U/| |\u   |_____| |_____|      /|_|\          \___/-(_/  
-  |||_   //   \\_.-,_|___|_,-.//  \\  //  \\      u_|||_u          _//       
- (__)_) (__)  (__)\_)-' '-(_/(_")("_)(_")("_)     (__)__)         (__)  v. ${agentVersion}⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
-        """.trimIndent()
 
 object Agent {
 
-    val startTimeMark: TimeMark = TimeSource.Monotonic.markNow().freeze()
+    private val logo = """
+          ____    ____                 _       _          _  _                _      
+         |  _"\U |  _"\ u     ___     |"|     |"|        | ||"|            U |"| u   
+        /| | | |\| |_) |/    |_"_|  U | | u U | | u      | || |_          _ \| |/    
+        U| |_| |\|  _ <       | |    \| |/__ \| |/__     |__   _|        | |_| |_,-. 
+         |____/ u|_| \_\    U/| |\u   |_____| |_____|      /|_|\          \___/-(_/  
+          |||_   //   \\_.-,_|___|_,-.//  \\  //  \\      u_|||_u          _//       
+         (__)_) (__)  (__)\_)-' '-(_/(_")("_)(_")("_)     (__)__)         (__)  v. ${agentVersion}⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+        """.trimIndent()
 
-    val isHttpHookEnabled: Boolean by lazy {
-        getenv(SYSTEM_HTTP_HOOK_ENABLED)?.toKString()?.toBoolean() ?: memScoped {
-            alloc<CPointerVar<ByteVar>>().apply {
-                GetSystemProperty(HTTP_HOOK_ENABLED, this.ptr)
-            }.value?.toKString()?.toBoolean() ?: true
-        }
-    }
+    private val logger = KotlinLogging.logger("com.epam.drill.agent.Agent")
 
     fun agentOnLoad(options: String): Int {
-        println(LOGO)
+        println(logo)
 
-        defaultNativeLoggingConfiguration()
-        val agentArguments = convertToAgentArguments(options)
-        validate(agentArguments)
-        performInitialConfiguration(agentArguments)
-        setUnhandledExceptionHook({ error: Throwable ->
-            logger.error(error) { "unhandled event $error" }
-        }.freeze())
+        AgentLoggingConfiguration.defaultNativeLoggingConfiguration()
+        Configuration.initializeNative(options)
+        AgentLoggingConfiguration.updateNativeLoggingConfiguration()
 
-        memScoped {
-            val jvmtiCapabilities = alloc<jvmtiCapabilities>()
-            jvmtiCapabilities.can_retransform_classes = 1.toUInt()
-            jvmtiCapabilities.can_maintain_original_method_order = 1.toUInt()
-            AddCapabilities(jvmtiCapabilities.ptr)
-        }
-        AddToBootstrapClassLoaderSearch("${agentParameters.drillInstallationDir}/drillRuntime.jar")
-        callbackRegister()
+        addCapabilities()
+        setEventCallbacks()
+        setUnhandledExceptionHook({ error: Throwable -> logger.error(error) { "Unhandled event: $error" }}.freeze())
+        AddToBootstrapClassLoaderSearch("${Configuration.parameters[INSTALLATION_DIR]}/drillRuntime.jar")
 
-        logger.info { "The native agent was loaded" }
-        logger.info { "Pid is: " + getpid() }
+        logger.info { "agentOnLoad: The native agent has been loaded" }
+        logger.info { "agentOnLoad: Pid is: " + getpid() }
 
         return JNI_OK
     }
 
     fun agentOnUnload() {
-        logger.info { "Agent_OnUnload" }
+        logger.info { "agentOnUnload" }
     }
 
-    private fun callbackRegister() = memScoped {
+    fun agentOnVmInit() {
+        initRuntimeIfNeeded()
+        SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_CLASS_FILE_LOAD_HOOK, null)
+
+        AgentLoggingConfiguration.defaultJvmLoggingConfiguration()
+        AgentLoggingConfiguration.updateJvmLoggingConfiguration()
+        Configuration.initializeJvm()
+
+        RequestHolder.init(Configuration.parameters[ParameterDefinitions.IS_ASYNC_APP])
+        HttpInterceptorConfigurer(HeadersRetriever, RequestHolder)
+
+        loadJvmModule("com.epam.drill.test2code.Test2Code")
+        JvmModuleMessageSender.sendAgentMetadata()
+    }
+
+    fun agentOnVmDeath() {
+        logger.info { "agentOnVmDeath" }
+    }
+
+    private fun addCapabilities() = memScoped {
+        val jvmtiCapabilities = alloc<jvmtiCapabilities>()
+        jvmtiCapabilities.can_retransform_classes = 1.toUInt()
+        jvmtiCapabilities.can_maintain_original_method_order = 1.toUInt()
+        AddCapabilities(jvmtiCapabilities.ptr)
+    }
+
+    private fun setEventCallbacks() = memScoped {
         val alloc = alloc<jvmtiEventCallbacks>()
         alloc.VMInit = staticCFunction(::vmInitEvent)
         alloc.VMDeath = staticCFunction(::vmDeathEvent)
@@ -89,5 +108,7 @@ object Agent {
         SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_VM_INIT, null)
     }
 
+    private fun loadJvmModule(clazz: String) = runCatching { JvmModuleLoader.loadJvmModule(clazz).load() }
+        .onFailure { logger.error(it) { "loadJvmModule: Fatal error: id=${clazz}" } }
 
 }

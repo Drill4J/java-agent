@@ -15,46 +15,36 @@
  */
 package com.epam.drill.test2code.coverage
 
+import com.epam.drill.common.agent.transport.*
 import com.epam.drill.plugins.test2code.common.api.*
-import com.epam.drill.test2code.*
-import io.aesy.datasize.*
+import com.epam.drill.plugins.test2code.common.transport.*
 import kotlinx.coroutines.*
-import kotlinx.serialization.protobuf.*
 import mu.*
-import java.math.*
-import java.text.*
-import java.util.*
 import java.util.concurrent.*
 
 interface CoverageSender {
-    fun setCoverageTransport(transport: CoverageTransport)
+    fun setCoverageSendInterval(intervalMs: Long)
+    fun setAgentMessageSender(sender: AgentMessageSender)
     fun startSendingCoverage()
     fun stopSendingCoverage()
 }
 
 class IntervalCoverageSender(
-    private val logger: KLogger = KotlinLogging.logger("com.epam.drill.test2code.coverage.IntervalCoverageSender"),
-    private val intervalMs: Long,
-    private var coverageTransport: CoverageTransport = StubTransport(),
-    private val inMemoryRetentionQueue: RetentionQueue = InMemoryRetentionQueue(
-        totalSizeByteLimit = try {
-            DataSize.parse(JvmModuleConfiguration.getCoverageRetentionLimit())
-                .toUnit(ByteUnit.BYTE)
-                .value
-                .toBigInteger()
-        } catch (e: ParseException) {
-            logger.warn { "Catch exception while parsing CoverageRetentionLimit. Exception: ${e.message}" }
-            BigInteger.valueOf(1024 * 1024 * 512)
-        }
-    ),
+    private var intervalMs: Long,
+    private var sender: AgentMessageSender = StubSender(),
     private val collectProbes: () -> Sequence<ExecDatum> = { emptySequence() }
 ) : CoverageSender {
     private val scheduledThreadPool = Executors.newSingleThreadScheduledExecutor()
+    private val destination = AgentMessageDestination("POST", "coverage")
+    private val logger = KotlinLogging.logger {}
 
-    override fun setCoverageTransport(transport: CoverageTransport) {
-        coverageTransport = transport
+    override fun setCoverageSendInterval(intervalMs: Long) {
+        this.intervalMs = intervalMs
     }
 
+    override fun setAgentMessageSender(sender: AgentMessageSender) {
+        this.sender = sender
+    }
 
     override fun startSendingCoverage() {
         scheduledThreadPool.scheduleAtFixedRate(
@@ -76,40 +66,20 @@ class IntervalCoverageSender(
      * @return the function of sending test coverage
      * @features Coverage data sending
      */
-    private fun sendProbes(data: Sequence<ExecDatum>) {
-        val dataToSend = data
-            .map {
-                ExecClassData(
-                    id = it.id,
-                    className = it.name,
-                    probes = it.probes.values.toBitSet(),
-                    sessionId = it.sessionId,
-                    testId = it.testId,
-                )
-            }
+    private fun sendProbes(dataToSend: Sequence<ExecDatum>) {
+        dataToSend.map { ExecClassData(it.id, it.name, it.probes.values.toBitSet(), it.sessionId, it.testId) }
             .chunked(0xffff)
-            .map { chunk -> CoverDataPart(data = chunk) }
-            .map { message ->
-                ProtoBuf.encodeToByteArray(CoverMessage.serializer(), message)
-            }
-
-        if (coverageTransport.isAvailable()) {
-            val failedToSend = mutableListOf<ByteArray>()
-
-            val send = { message: ByteArray ->
-                val encoded = Base64.getEncoder().encodeToString(message)
-                try {
-                    coverageTransport.send(encoded)
-                } catch (e: Exception) {
-                    failedToSend.add(message)
-                }
-            }
-
-            dataToSend.forEach { send(it) }
-            inMemoryRetentionQueue.flush().forEach { send(it) }
-            if (failedToSend.size > 0) inMemoryRetentionQueue.addAll(failedToSend.asSequence())
-        } else {
-            inMemoryRetentionQueue.addAll(dataToSend)
-        }
+            .forEach { sender.send(destination, CoverageData(it)) }
     }
+
+}
+
+private class StubSender : AgentMessageSender {
+    override val available: Boolean = false
+    override fun send(destination: AgentMessageDestination, message: AgentMessage) = StubResponseStatus()
+}
+
+private class StubResponseStatus : ResponseStatus {
+    override val success: Boolean = false
+    override val statusObject: Any? = null
 }
