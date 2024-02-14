@@ -49,6 +49,9 @@ dependencies {
     implementation(project(":test2code-common"))
     implementation(project(":test2code-jacoco"))
     implementation(project(":konform"))
+
+    testImplementation(kotlin("test-junit5"))
+    testImplementation("org.junit.jupiter:junit-jupiter:5.4.2")
 }
 
 kotlin.sourceSets.all {

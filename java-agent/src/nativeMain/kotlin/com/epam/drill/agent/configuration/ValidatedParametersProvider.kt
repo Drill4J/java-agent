@@ -41,6 +41,7 @@ class ValidatedParametersProvider(
         val packagePrefixesAsList = packagePrefixes?.split(";") ?: emptyList()
         val drillInstallationDir by provider
         val adminAddress by provider
+        val apiKey by provider
         val logLevel by provider
         val logLevelAsList = logLevel?.split(";") ?: emptyList()
         val logLimit by provider
@@ -60,6 +61,9 @@ class ValidatedParametersProvider(
         }
         ValidatingParameters::adminAddress required {
             validTransportUrl()
+        }
+        ValidatingParameters::apiKey required {
+            minLength(1)
         }
         ValidatingParameters::packagePrefixesAsList {
             minItems(1)

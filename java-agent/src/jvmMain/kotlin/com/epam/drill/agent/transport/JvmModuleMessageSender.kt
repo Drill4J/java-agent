@@ -48,6 +48,7 @@ actual object JvmModuleMessageSender : AgentMessageSender {
     private fun messageSender(): QueuedAgentMessageSender<ByteArray> {
         val transport = HttpAgentMessageTransport(
             Configuration.parameters[ParameterDefinitions.ADMIN_ADDRESS],
+            Configuration.parameters[ParameterDefinitions.API_KEY],
             Configuration.parameters[ParameterDefinitions.SSL_TRUSTSTORE].let(::resolvePath),
             Configuration.parameters[ParameterDefinitions.SSL_TRUSTSTORE_PASSWORD]
         )

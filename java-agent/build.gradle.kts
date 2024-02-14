@@ -51,7 +51,11 @@ kotlin {
                 linkerOpts("-lpsapi", "-lwsock32", "-lws2_32", "-lmswsock")
             }
         }
-        macosX64(configure = configureNativeTarget)
+        macosX64(configure = configureNativeTarget).apply {
+            binaries.all {
+                linkerOpts("-ld64")
+            }
+        }
     }
     @Suppress("UNUSED_VARIABLE")
     sourceSets {
