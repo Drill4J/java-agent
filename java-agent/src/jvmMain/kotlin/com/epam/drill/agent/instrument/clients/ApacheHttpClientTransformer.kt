@@ -15,6 +15,11 @@
  */
 package com.epam.drill.agent.instrument.clients
 
+import com.epam.drill.agent.instrument.DefaultHeadersProcessor
+import com.epam.drill.agent.instrument.HeadersProcessor
 import com.epam.drill.agent.instrument.TransformerObject
 
-expect object JavaHttpUrlConnection : TransformerObject
+actual object ApacheHttpClientTransformer :
+    TransformerObject,
+    ApacheHttpClientTransformerObject(),
+    HeadersProcessor by DefaultHeadersProcessor

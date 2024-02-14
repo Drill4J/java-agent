@@ -18,8 +18,9 @@ package com.epam.drill.agent.instrument.servers
 import com.epam.drill.agent.instrument.DefaultHeadersProcessor
 import com.epam.drill.agent.instrument.HeadersProcessor
 import com.epam.drill.agent.instrument.TransformerObject
+import com.epam.drill.agent.request.HeadersRetriever
 
-actual object SSLTransformer :
+actual object SSLEngineTransformer :
     TransformerObject,
-    SSLTransformerObject(),
+    SSLEngineTransformerObject(HeadersRetriever),
     HeadersProcessor by DefaultHeadersProcessor

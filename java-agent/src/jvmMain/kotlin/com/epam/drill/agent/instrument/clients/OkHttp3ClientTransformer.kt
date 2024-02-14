@@ -15,7 +15,11 @@
  */
 package com.epam.drill.agent.instrument.clients
 
-import com.epam.drill.agent.instrument.AbstractTransformerObject
+import com.epam.drill.agent.instrument.DefaultHeadersProcessor
+import com.epam.drill.agent.instrument.HeadersProcessor
 import com.epam.drill.agent.instrument.TransformerObject
 
-actual object OkHttp3Codec : TransformerObject, AbstractTransformerObject()
+actual object OkHttp3ClientTransformer :
+    TransformerObject,
+    OkHttp3ClientTransformerObject(),
+    HeadersProcessor by DefaultHeadersProcessor
