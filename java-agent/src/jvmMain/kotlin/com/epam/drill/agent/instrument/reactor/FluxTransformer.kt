@@ -35,29 +35,13 @@ actual object FluxTransformer: TransformStrategy(), IStrategy {
             ctClass.getMethod("onAssembly", "(Lreactor/core/publisher/Flux;)Lreactor/core/publisher/Flux;").wrapCatching(
                 CtMethod::insertBefore,
                 """
-                    com.epam.drill.agent.instrument.reactor.DrillWrapper drillWrapper = com.epam.drill.agent.instrument.reactor.DrillWrapper.INSTANCE;
-                    com.epam.drill.agent.instrument.reactor.DrillSupplier drillSupplier = com.epam.drill.agent.instrument.reactor.DrillSupplier.INSTANCE;
-                    $1 = (reactor.core.publisher.Flux) com.epam.drill.agent.instrument.reactor.PublisherProxy.onAssembly(
-                        $1,
-                        drillWrapper,
-                        drillSupplier,
-                        reactor.core.publisher.Flux.class,
-                        reactor.core.CoreSubscriber.class,
-                        org.reactivestreams.Subscription.class);
+                    $1 = (reactor.core.publisher.Flux) com.epam.drill.agent.instrument.reactor.PublisherAssembler.onAssembly($1, reactor.core.publisher.Flux.class);
                 """.trimIndent()
             )
             ctClass.getMethod("onAssembly", "(Lreactor/core/publisher/ConnectableFlux;)Lreactor/core/publisher/ConnectableFlux;").wrapCatching(
                 CtMethod::insertBefore,
                 """
-                    com.epam.drill.agent.instrument.reactor.DrillWrapper drillWrapper = com.epam.drill.agent.instrument.reactor.DrillWrapper.INSTANCE;
-                    com.epam.drill.agent.instrument.reactor.DrillSupplier drillSupplier = com.epam.drill.agent.instrument.reactor.DrillSupplier.INSTANCE;
-                    $1 = (reactor.core.publisher.ConnectableFlux) com.epam.drill.agent.instrument.reactor.PublisherProxy.onAssembly(
-                        $1,
-                        drillWrapper,
-                        drillSupplier,
-                        reactor.core.publisher.ConnectableFlux.class,
-                        reactor.core.CoreSubscriber.class,
-                        org.reactivestreams.Subscription.class);
+                    $1 = (reactor.core.publisher.ConnectableFlux) com.epam.drill.agent.instrument.reactor.PublisherAssembler.onAssembly($1, reactor.core.publisher.ConnectableFlux.class);                    
                 """.trimIndent()
             )
         }.onFailure {

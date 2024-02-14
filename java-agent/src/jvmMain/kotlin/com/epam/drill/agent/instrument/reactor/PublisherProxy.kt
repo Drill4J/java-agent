@@ -1,84 +1,95 @@
 package com.epam.drill.agent.instrument.reactor
 
+import com.epam.drill.agent.request.DrillRequest
+import com.epam.drill.agent.request.RequestHolder
 import mu.KotlinLogging
-import net.sf.cglib.proxy.Enhancer
-import net.sf.cglib.proxy.MethodInterceptor
-import net.sf.cglib.proxy.MethodProxy
+import net.bytebuddy.description.modifier.Visibility
+import net.bytebuddy.implementation.bind.annotation.*
 import java.lang.reflect.Method
-import java.util.function.BiFunction
-import java.util.function.Supplier
+import java.util.function.Function
 
 private val logger = KotlinLogging.logger {}
 
-class PublisherProxy(
-    private val target: Any,
-    private val drillWrapper: BiFunction<Supplier<*>, Any, *>,
-    private val drillRequest: Any?,
-    private val subscriberClass: Class<*>,
-    private val subscriptionClass: Class<*>,
-) : MethodInterceptor {
+object PublisherInterceptor {
 
-    override fun intercept(proxy: Any, method: Method, args: Array<out Any>, superMethod: MethodProxy): Any? {
-        val methodName = method.name
-        return when (methodName) {
-            "subscribe" -> {
-                val subscriber = args[0]
-                val currentContextMethod = subscriber.javaClass.getMethod("currentContext")
-                currentContextMethod.isAccessible = true
-                val context = currentContextMethod.invoke(subscriber)
-
-                val getOrDefaultMethod = context.javaClass.getMethod("getOrDefault", Any::class.java, Any::class.java)
-                getOrDefaultMethod.isAccessible = true
-                val contextualDrillRequest = getOrDefaultMethod.invoke(context, "DrillRequest", null)
-
-                logger.info("[${Thread.currentThread().name}] ${target.javaClass.simpleName}.${methodName}:${target.hashCode()}, context $contextualDrillRequest, drillRequest $drillRequest")
-                val parentDrillRequest =
-                    contextualDrillRequest ?: drillRequest ?: return superMethod.invoke(target, args)
-
-                val newContext = if (drillRequest != contextualDrillRequest) {
-                    val putMethod = context.javaClass.getMethod("put", Any::class.java, Any::class.java)
-                    putMethod.isAccessible = true
-                    putMethod.invoke(context, "DrillRequest", drillRequest)
-                } else context
-
-                val enhancer = Enhancer()
-                enhancer.setSuperclass(subscriberClass)
-                enhancer.setCallback(
-                    SubscriberProxy(
-                        subscriber,
-                        newContext,
-                        drillWrapper,
-                        parentDrillRequest,
-                        subscriptionClass
-                    )
-                )
-                val subscriberProxy = enhancer.create()
-                drillWrapper.apply(Supplier {
-                    logger.info("[" + Thread.currentThread().name + "] ${target.javaClass.simpleName}.${methodName}:${target.hashCode()}, drillRequest $drillRequest")
-                    superMethod.invoke(target, arrayOf(subscriberProxy))
-                }, parentDrillRequest)
-            }
-
-            else -> superMethod.invoke(target, args)
+    @RuntimeType
+    fun intercept(
+        @FieldValue(DRILL_DELEGATE_FIELD) target: Any,
+        @FieldValue(DRILL_REQUEST_FIELD) drillRequest: DrillRequest?,
+        @Origin superMethod: Method,
+        @Pipe pipe: Function<Any?, Any?>,
+        @AllArguments args: Array<Any?>,
+    ): Any? {
+        return when (superMethod.name) {
+            "subscribe" -> subscribe(target, drillRequest, superMethod, pipe, args[0])
+            else -> pipe.apply(target)
         }
     }
 
-    companion object {
-        @JvmStatic
-        fun <T> onAssembly(
-            target: Any,
-            drillWrapper: BiFunction<Supplier<*>, Any, *>,
-            drillSupplier: Supplier<Any?>,
-            publisherClass: Class<*>,
-            subscriberClass: Class<*>,
-            subscriptionClass: Class<*>
-        ): Any {
-            val drillRequest = drillSupplier.get()
-            logger.info("[${Thread.currentThread().name}] ${target.javaClass.simpleName}.onAssembly:${target.hashCode()}, drillRequest $drillRequest")
-            val enhancer = Enhancer()
-            enhancer.setSuperclass(publisherClass)
-            enhancer.setCallback(PublisherProxy(target, drillWrapper, drillRequest, subscriberClass, subscriptionClass))
-            return enhancer.create()
+    private fun subscribe(
+        target: Any,
+        drillRequest: DrillRequest?,
+        superMethod: Method,
+        pipe: Function<Any?, Any?>,
+        subscriber: Any?,
+    ): Any? {
+        if (subscriber == null) return pipe.apply(target)
+        val currentContextMethod = subscriber.javaClass.getMethod("currentContext")
+        currentContextMethod.isAccessible = true
+        val context = currentContextMethod.invoke(subscriber)
+
+        val getOrDefaultMethod = context.javaClass.getMethod("getOrDefault", Any::class.java, Any::class.java)
+        getOrDefaultMethod.isAccessible = true
+        val contextualDrillRequest = getOrDefaultMethod.invoke(context, "DrillRequest", null) as DrillRequest?
+
+        logger.info("[${Thread.currentThread().name}] ${target.javaClass.simpleName}.subscribe(${subscriber.javaClass.simpleName}):${target.hashCode()}, context $contextualDrillRequest, drillRequest $drillRequest")
+        val parentDrillRequest = contextualDrillRequest
+            ?: drillRequest
+            ?: return pipe.apply(target)
+
+        val newContext = if (drillRequest != contextualDrillRequest) {
+            val putMethod = context.javaClass.getMethod("put", Any::class.java, Any::class.java)
+            putMethod.isAccessible = true
+            putMethod.invoke(context, DRILL_CONTEXT, drillRequest)
+        } else context
+
+        val subscriberProxy = createProxyDelegate(
+            subscriber,
+            Class.forName(SUBSCRIBER_CLASS, true, target.javaClass.classLoader),
+            SubscriberInterceptor,
+            configure = {
+                defineField(DRILL_REQUEST_FIELD, DrillRequest::class.java, Visibility.PUBLIC).
+                defineField(DRILL_CONTEXT_FIELD, Object::class.java, Visibility.PUBLIC)
+            },
+            initialize = { proxy, proxyType ->
+                proxyType.getField(DRILL_REQUEST_FIELD).set(proxy, parentDrillRequest)
+                if (newContext != null)
+                    proxyType.getField(DRILL_CONTEXT_FIELD).set(proxy, newContext)
+            }
+        )
+        return propagateDrillRequest(parentDrillRequest) {
+            superMethod.invoke(target, subscriberProxy)
         }
+    }
+}
+
+object PublisherAssembler {
+    @JvmStatic
+    fun onAssembly(
+        target: Any,
+        publisherClass: Class<*>
+    ): Any {
+        val drillRequest = RequestHolder.getRequest()
+        logger.info("[${Thread.currentThread().name}] ${target.javaClass.simpleName}.onAssembly:${target.hashCode()}, drillRequest $drillRequest")
+        return createProxyDelegate(
+            target,
+            publisherClass,
+            PublisherInterceptor,
+            configure = { defineField(DRILL_REQUEST_FIELD, DrillRequest::class.java, Visibility.PUBLIC) },
+            initialize = { proxy, proxyType ->
+                if (drillRequest != null)
+                    proxyType.getField(DRILL_REQUEST_FIELD).set(proxy, drillRequest)
+            }
+        )
     }
 }

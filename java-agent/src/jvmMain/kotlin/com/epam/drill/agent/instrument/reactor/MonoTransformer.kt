@@ -35,15 +35,7 @@ actual object MonoTransformer: TransformStrategy(), IStrategy {
             ctClass.getMethod("onAssembly", "(Lreactor/core/publisher/Mono;)Lreactor/core/publisher/Mono;").wrapCatching(
                 CtMethod::insertBefore,
                 """
-                    com.epam.drill.agent.instrument.reactor.DrillWrapper drillWrapper = com.epam.drill.agent.instrument.reactor.DrillWrapper.INSTANCE;
-                    com.epam.drill.agent.instrument.reactor.DrillSupplier drillSupplier = com.epam.drill.agent.instrument.reactor.DrillSupplier.INSTANCE;
-                    $1 = (reactor.core.publisher.Mono) com.epam.drill.agent.instrument.reactor.PublisherProxy.onAssembly(
-                        $1,
-                        drillWrapper,
-                        drillSupplier,
-                        reactor.core.publisher.Mono.class,
-                        reactor.core.CoreSubscriber.class,
-                        org.reactivestreams.Subscription.class);
+                    $1 = (reactor.core.publisher.Mono) com.epam.drill.agent.instrument.reactor.PublisherAssembler.onAssembly($1, reactor.core.publisher.Mono.class);
                 """.trimIndent()
             )
         }.onFailure {
