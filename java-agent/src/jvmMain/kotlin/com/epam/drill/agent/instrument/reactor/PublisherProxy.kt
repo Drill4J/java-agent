@@ -34,15 +34,15 @@ object PublisherInterceptor {
         subscriber: Any?,
     ): Any? {
         if (subscriber == null) return pipe.apply(target)
-        val context = getContext(subscriber)
-        val contextualDrillRequest = getDrillContext(context)
+        val context = getCurrentContext(subscriber)
+        val contextualDrillRequest = getContext(context, DRILL_CONTEXT_KEY)
 
         val parentDrillRequest = contextualDrillRequest
             ?: drillRequest
             ?: return pipe.apply(target)
 
         val newContext = if (drillRequest != contextualDrillRequest) {
-            putContext(context, parentDrillRequest)
+            putContext(context, DRILL_CONTEXT_KEY, parentDrillRequest)
         } else context
 
         val subscriberProxy = createProxyDelegate(
@@ -68,22 +68,22 @@ object PublisherInterceptor {
         }
     }
 
-    private fun getDrillContext(context: Any): DrillRequest? {
+    private fun getContext(context: Any, key: String): DrillRequest? {
         val getOrDefaultMethod = context.javaClass.getMethod("getOrDefault", Any::class.java, Any::class.java)
         getOrDefaultMethod.isAccessible = true
-        return getOrDefaultMethod.invoke(context, DRILL_CONTEXT_KEY, null) as DrillRequest?
+        return getOrDefaultMethod.invoke(context, key, null) as DrillRequest?
     }
 
-    private fun getContext(subscriber: Any): Any {
+    private fun getCurrentContext(subscriber: Any): Any {
         val currentContextMethod = subscriber.javaClass.getMethod("currentContext")
         currentContextMethod.isAccessible = true
         return currentContextMethod.invoke(subscriber)
     }
 
-    private fun putContext(context: Any, drillRequest: DrillRequest): Any {
+    private fun putContext(context: Any, key: String, value: Any): Any {
         val putMethod = context.javaClass.getMethod("put", Any::class.java, Any::class.java)
         putMethod.isAccessible = true
-        return putMethod.invoke(context, DRILL_CONTEXT_KEY, drillRequest)
+        return putMethod.invoke(context, key, value)
     }
 }
 
