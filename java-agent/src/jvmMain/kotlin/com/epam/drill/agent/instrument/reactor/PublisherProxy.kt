@@ -70,6 +70,7 @@ object PublisherInterceptor {
             }
         )
         return propagateDrillRequest(parentDrillRequest) {
+            logger.trace { "${target.javaClass.simpleName}.${superMethod.name}():${target.hashCode()}, sessionId = ${drillRequest?.drillSessionId}" }
             superMethod.invoke(target, subscriberProxy)
         }
     }
