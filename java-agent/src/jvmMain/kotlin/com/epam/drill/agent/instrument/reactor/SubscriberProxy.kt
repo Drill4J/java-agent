@@ -22,7 +22,7 @@ object SubscriberInterceptor {
     ): Any? {
         return when (superMethod.name) {
             "onSubscribe" -> onSubscribe(target, drillRequest, superMethod, args[0], pipe)
-            "currentContext" -> currentContext(target, drillRequest, drillContext, superMethod)
+            "currentContext" -> currentContext(drillContext)
             "onNext", "onComplete", "onError" -> onOtherMethods(target, drillRequest, superMethod, pipe)
             else -> pipe.apply(target)
         }
@@ -51,11 +51,7 @@ object SubscriberInterceptor {
         }
     }
 
-    private fun currentContext(
-        target: Any,
-        drillRequest: DrillRequest,
-        drillContext: Any,
-        superMethod: Method
+    private fun currentContext(drillContext: Any
     ): Any {
         return drillContext
     }

@@ -50,11 +50,12 @@ object PublisherInterceptor {
             Class.forName(SUBSCRIBER_CLASS, true, target.javaClass.classLoader),
             SubscriberInterceptor,
             configure = {
-                defineField(DRILL_REQUEST_FIELD, DrillRequest::class.java, Visibility.PUBLIC).defineField(
-                    DRILL_CONTEXT_FIELD,
-                    Object::class.java,
-                    Visibility.PUBLIC
-                )
+                defineField(DRILL_REQUEST_FIELD, DrillRequest::class.java, Visibility.PUBLIC)
+                    .defineField(
+                        DRILL_CONTEXT_FIELD,
+                        Object::class.java,
+                        Visibility.PUBLIC
+                    )
             },
             initialize = { proxy, proxyType ->
                 proxyType.getField(DRILL_REQUEST_FIELD).set(proxy, parentDrillRequest)
@@ -79,10 +80,10 @@ object PublisherInterceptor {
         return currentContextMethod.invoke(subscriber)
     }
 
-    private fun putContext(context: Any, drillRequest: DrillRequest) {
+    private fun putContext(context: Any, drillRequest: DrillRequest): Any {
         val putMethod = context.javaClass.getMethod("put", Any::class.java, Any::class.java)
         putMethod.isAccessible = true
-        putMethod.invoke(context, DRILL_CONTEXT_KEY, drillRequest)
+        return putMethod.invoke(context, DRILL_CONTEXT_KEY, drillRequest)
     }
 }
 
