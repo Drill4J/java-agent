@@ -30,7 +30,7 @@ object SubscriptionInterceptor {
         pipe: Function<Any?, Any?>,
     ): Any? {
         return propagateDrillRequest(drillRequest) {
-            logger.info("[" + Thread.currentThread().name + "] ${target.javaClass.simpleName}.${superMethod.name}:${target.hashCode()}, context $drillRequest")
+            logger.trace { "${target.javaClass.simpleName}.${superMethod.name}():${target.hashCode()}, sessionId = ${drillRequest.drillSessionId}" }
             pipe.apply(target)
         }
     }

@@ -42,7 +42,6 @@ object PublisherInterceptor {
         getOrDefaultMethod.isAccessible = true
         val contextualDrillRequest = getOrDefaultMethod.invoke(context, "DrillRequest", null) as DrillRequest?
 
-        logger.info("[${Thread.currentThread().name}] ${target.javaClass.simpleName}.subscribe(${subscriber.javaClass.simpleName}):${target.hashCode()}, context $contextualDrillRequest, drillRequest $drillRequest")
         val parentDrillRequest = contextualDrillRequest
             ?: drillRequest
             ?: return pipe.apply(target)
@@ -58,8 +57,11 @@ object PublisherInterceptor {
             Class.forName(SUBSCRIBER_CLASS, true, target.javaClass.classLoader),
             SubscriberInterceptor,
             configure = {
-                defineField(DRILL_REQUEST_FIELD, DrillRequest::class.java, Visibility.PUBLIC).
-                defineField(DRILL_CONTEXT_FIELD, Object::class.java, Visibility.PUBLIC)
+                defineField(DRILL_REQUEST_FIELD, DrillRequest::class.java, Visibility.PUBLIC).defineField(
+                    DRILL_CONTEXT_FIELD,
+                    Object::class.java,
+                    Visibility.PUBLIC
+                )
             },
             initialize = { proxy, proxyType ->
                 proxyType.getField(DRILL_REQUEST_FIELD).set(proxy, parentDrillRequest)
@@ -80,7 +82,7 @@ object PublisherAssembler {
         publisherClass: Class<*>
     ): Any {
         val drillRequest = RequestHolder.retrieve()
-        logger.info("[${Thread.currentThread().name}] ${target.javaClass.simpleName}.onAssembly:${target.hashCode()}, drillRequest $drillRequest")
+        logger.trace { "${publisherClass.simpleName}.onAssembly(${target.javaClass.simpleName}):${target.hashCode()}, sessionId = ${drillRequest?.drillSessionId}" }
         return createProxyDelegate(
             target,
             publisherClass,

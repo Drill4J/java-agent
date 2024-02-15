@@ -2,7 +2,6 @@ package com.epam.drill.agent.instrument.reactor
 
 import com.epam.drill.agent.request.RequestHolder
 import com.epam.drill.common.agent.request.DrillRequest
-import mu.KotlinLogging
 import net.bytebuddy.ByteBuddy
 import net.bytebuddy.TypeCache
 import net.bytebuddy.description.modifier.Visibility
@@ -20,7 +19,6 @@ const val DRILL_CONTEXT = "drillContext"
 const val SUBSCRIPTION_CLASS = "org.reactivestreams.Subscription"
 const val SUBSCRIBER_CLASS = "reactor.core.CoreSubscriber"
 
-private val logger = KotlinLogging.logger {}
 
 val proxyClassCache = TypeCache<Class<*>>()
 
