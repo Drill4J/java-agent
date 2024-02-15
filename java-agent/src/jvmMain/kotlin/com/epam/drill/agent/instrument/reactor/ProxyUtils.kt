@@ -15,7 +15,7 @@ import java.util.function.Function
 const val DRILL_DELEGATE_FIELD = "drillDelegate"
 const val DRILL_REQUEST_FIELD = "drillRequest"
 const val DRILL_CONTEXT_FIELD = "drillContext"
-const val DRILL_CONTEXT = "drillContext"
+const val DRILL_CONTEXT_KEY = "drillRequest"
 const val SUBSCRIPTION_CLASS = "org.reactivestreams.Subscription"
 const val SUBSCRIBER_CLASS = "reactor.core.CoreSubscriber"
 

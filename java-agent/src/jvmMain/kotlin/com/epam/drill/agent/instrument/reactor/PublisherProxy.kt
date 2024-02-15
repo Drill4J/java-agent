@@ -34,22 +34,15 @@ object PublisherInterceptor {
         subscriber: Any?,
     ): Any? {
         if (subscriber == null) return pipe.apply(target)
-        val currentContextMethod = subscriber.javaClass.getMethod("currentContext")
-        currentContextMethod.isAccessible = true
-        val context = currentContextMethod.invoke(subscriber)
-
-        val getOrDefaultMethod = context.javaClass.getMethod("getOrDefault", Any::class.java, Any::class.java)
-        getOrDefaultMethod.isAccessible = true
-        val contextualDrillRequest = getOrDefaultMethod.invoke(context, "DrillRequest", null) as DrillRequest?
+        val context = getContext(subscriber)
+        val contextualDrillRequest = getDrillContext(context)
 
         val parentDrillRequest = contextualDrillRequest
             ?: drillRequest
             ?: return pipe.apply(target)
 
         val newContext = if (drillRequest != contextualDrillRequest) {
-            val putMethod = context.javaClass.getMethod("put", Any::class.java, Any::class.java)
-            putMethod.isAccessible = true
-            putMethod.invoke(context, DRILL_CONTEXT, drillRequest)
+            putContext(context, parentDrillRequest)
         } else context
 
         val subscriberProxy = createProxyDelegate(
@@ -65,14 +58,31 @@ object PublisherInterceptor {
             },
             initialize = { proxy, proxyType ->
                 proxyType.getField(DRILL_REQUEST_FIELD).set(proxy, parentDrillRequest)
-                if (newContext != null)
-                    proxyType.getField(DRILL_CONTEXT_FIELD).set(proxy, newContext)
+                proxyType.getField(DRILL_CONTEXT_FIELD).set(proxy, newContext)
             }
         )
         return propagateDrillRequest(parentDrillRequest) {
             logger.trace { "${target.javaClass.simpleName}.${superMethod.name}():${target.hashCode()}, sessionId = ${drillRequest?.drillSessionId}" }
             superMethod.invoke(target, subscriberProxy)
         }
+    }
+
+    private fun getDrillContext(context: Any): DrillRequest? {
+        val getOrDefaultMethod = context.javaClass.getMethod("getOrDefault", Any::class.java, Any::class.java)
+        getOrDefaultMethod.isAccessible = true
+        return getOrDefaultMethod.invoke(context, DRILL_CONTEXT_KEY, null) as DrillRequest?
+    }
+
+    private fun getContext(subscriber: Any): Any {
+        val currentContextMethod = subscriber.javaClass.getMethod("currentContext")
+        currentContextMethod.isAccessible = true
+        return currentContextMethod.invoke(subscriber)
+    }
+
+    private fun putContext(context: Any, drillRequest: DrillRequest) {
+        val putMethod = context.javaClass.getMethod("put", Any::class.java, Any::class.java)
+        putMethod.isAccessible = true
+        putMethod.invoke(context, DRILL_CONTEXT_KEY, drillRequest)
     }
 }
 
