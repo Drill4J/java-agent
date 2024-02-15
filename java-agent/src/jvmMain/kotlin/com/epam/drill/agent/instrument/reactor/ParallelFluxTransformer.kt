@@ -16,7 +16,7 @@ actual object ParallelFluxTransformer: TransformerObject, AbstractTransformerObj
         ctClass.getMethod("onAssembly", "(Lreactor/core/publisher/ParallelFlux;)Lreactor/core/publisher/ParallelFlux;").insertCatching(
             CtBehavior::insertBefore,
             """
-              $1 = (reactor.core.publisher.ParallelFlux) com.epam.drill.agent.instrument.reactor.PublisherAssembler.onAssembly($1, reactor.core.publisher.ParallelFlux.class);                    
+              $1 = (reactor.core.publisher.ParallelFlux) ${PublisherAssembler::class.java.name}.${PublisherAssembler::onAssembly.name}($1, reactor.core.publisher.ParallelFlux.class);                    
             """.trimIndent()
         )
     }

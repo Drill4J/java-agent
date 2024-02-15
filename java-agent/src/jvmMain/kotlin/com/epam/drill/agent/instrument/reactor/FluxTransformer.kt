@@ -16,13 +16,13 @@ actual object FluxTransformer: TransformerObject, AbstractTransformerObject() {
         ctClass.getMethod("onAssembly", "(Lreactor/core/publisher/Flux;)Lreactor/core/publisher/Flux;").insertCatching(
             CtBehavior::insertBefore,
             """
-                $1 = (reactor.core.publisher.Flux) com.epam.drill.agent.instrument.reactor.PublisherAssembler.onAssembly($1, reactor.core.publisher.Flux.class);
+                $1 = (reactor.core.publisher.Flux) ${PublisherAssembler::class.java.name}.${PublisherAssembler::onAssembly.name}($1, reactor.core.publisher.Flux.class);
             """.trimIndent()
         )
         ctClass.getMethod("onAssembly", "(Lreactor/core/publisher/ConnectableFlux;)Lreactor/core/publisher/ConnectableFlux;").insertCatching(
             CtBehavior::insertBefore,
             """
-                $1 = (reactor.core.publisher.ConnectableFlux) com.epam.drill.agent.instrument.reactor.PublisherAssembler.onAssembly($1, reactor.core.publisher.ConnectableFlux.class);                    
+                $1 = (reactor.core.publisher.ConnectableFlux) ${PublisherAssembler::class.java.name}.${PublisherAssembler::onAssembly.name}($1, reactor.core.publisher.ConnectableFlux.class);                    
             """.trimIndent()
         )
     }

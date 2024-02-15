@@ -16,7 +16,7 @@ actual object MonoTransformer: TransformerObject, AbstractTransformerObject() {
         ctClass.getMethod("onAssembly", "(Lreactor/core/publisher/Mono;)Lreactor/core/publisher/Mono;").insertCatching(
             CtBehavior::insertBefore,
             """
-                    $1 = (reactor.core.publisher.Mono) com.epam.drill.agent.instrument.reactor.PublisherAssembler.onAssembly($1, reactor.core.publisher.Mono.class);
+                    $1 = (reactor.core.publisher.Mono) ${PublisherAssembler::class.java.name}.${PublisherAssembler::onAssembly.name}($1, reactor.core.publisher.Mono.class);
                 """.trimIndent()
         )
     }
