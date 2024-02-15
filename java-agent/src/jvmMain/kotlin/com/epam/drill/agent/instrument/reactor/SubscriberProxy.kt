@@ -1,6 +1,6 @@
 package com.epam.drill.agent.instrument.reactor
 
-import com.epam.drill.agent.request.DrillRequest
+import com.epam.drill.common.agent.request.DrillRequest
 import mu.KotlinLogging
 import net.bytebuddy.description.modifier.Visibility
 import net.bytebuddy.implementation.bind.annotation.*

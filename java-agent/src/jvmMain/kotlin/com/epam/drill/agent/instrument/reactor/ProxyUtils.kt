@@ -1,7 +1,7 @@
 package com.epam.drill.agent.instrument.reactor
 
-import com.epam.drill.agent.request.DrillRequest
 import com.epam.drill.agent.request.RequestHolder
+import com.epam.drill.common.agent.request.DrillRequest
 import mu.KotlinLogging
 import net.bytebuddy.ByteBuddy
 import net.bytebuddy.TypeCache
@@ -52,15 +52,15 @@ inline fun <T> createProxyDelegate(
 }
 
 inline fun <T> propagateDrillRequest(ctx: DrillRequest, body: () -> T?): T? {
-    val previous = RequestHolder.getRequest()
+    val previous = RequestHolder.retrieve()
     if (previous != null)
         RequestHolder.remove()
     try {
-        RequestHolder.storeRequest(ctx)
+        RequestHolder.store(ctx)
         return body()
     } finally {
         RequestHolder.remove()
         if (previous != null)
-            RequestHolder.storeRequest(previous)
+            RequestHolder.store(previous)
     }
 }

@@ -24,7 +24,4 @@ expect object JvmModuleStorage {
     fun values(): Collection<AgentModule>
 
     fun add(module: AgentModule)
-
-    fun info(message: String) = logger.info("[" + Thread.currentThread().name + "]: " + message)
-
 }

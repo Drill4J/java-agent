@@ -1,7 +1,7 @@
 package com.epam.drill.agent.instrument.reactor
 
-import com.epam.drill.agent.request.DrillRequest
 import com.epam.drill.agent.request.RequestHolder
+import com.epam.drill.common.agent.request.DrillRequest
 import mu.KotlinLogging
 import net.bytebuddy.description.modifier.Visibility
 import net.bytebuddy.implementation.bind.annotation.*
@@ -79,7 +79,7 @@ object PublisherAssembler {
         target: Any,
         publisherClass: Class<*>
     ): Any {
-        val drillRequest = RequestHolder.getRequest()
+        val drillRequest = RequestHolder.retrieve()
         logger.info("[${Thread.currentThread().name}] ${target.javaClass.simpleName}.onAssembly:${target.hashCode()}, drillRequest $drillRequest")
         return createProxyDelegate(
             target,
