@@ -13,16 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.epam.drill.agent.instrument.clients
+package com.epam.drill.agent.instrument
 
-import com.epam.drill.agent.instrument.ClassPathProvider
-import com.epam.drill.agent.instrument.DefaultHeadersProcessor
-import com.epam.drill.agent.instrument.HeadersProcessor
-import com.epam.drill.agent.instrument.RuntimeClassPathProvider
-import com.epam.drill.agent.instrument.TransformerObject
+import com.epam.drill.agent.configuration.Configuration
+import com.epam.drill.agent.configuration.DefaultParameterDefinitions.INSTALLATION_DIR
 
-actual object OkHttp3ClientTransformer :
-    TransformerObject,
-    OkHttp3ClientTransformerObject(),
-    HeadersProcessor by DefaultHeadersProcessor,
-    ClassPathProvider by RuntimeClassPathProvider
+object RuntimeClassPathProvider : ClassPathProvider {
+
+    override fun getClassPath() = "${Configuration.parameters[INSTALLATION_DIR]}/drill-runtime.jar"
+
+}
