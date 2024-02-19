@@ -21,6 +21,9 @@ import javassist.CtBehavior
 import javassist.CtClass
 import mu.KotlinLogging
 
+/**
+ * Transformer for {@link reactor.core.publisher.Mono}.
+ */
 actual object MonoTransformer: TransformerObject, AbstractTransformerObject() {
     override val logger = KotlinLogging.logger {}
 

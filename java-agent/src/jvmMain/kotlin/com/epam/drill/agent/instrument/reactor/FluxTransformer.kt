@@ -21,7 +21,10 @@ import javassist.CtBehavior
 import javassist.CtClass
 import mu.KotlinLogging
 
-actual object FluxTransformer: TransformerObject, AbstractTransformerObject() {
+/**
+ * Transformer for {@link reactor.core.publisher.Flux}.
+ */
+actual object FluxTransformer : TransformerObject, AbstractTransformerObject() {
     override val logger = KotlinLogging.logger {}
 
     override fun permit(className: String?, superName: String?, interfaces: Array<String?>) =

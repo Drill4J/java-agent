@@ -23,6 +23,10 @@ import javassist.CtBehavior
 import javassist.CtClass
 import mu.KotlinLogging
 
+/**
+ * Transformer for {@link reactor.core.scheduler.Schedulers}.
+ * It propagates {@link DrillRequest} using {@link PropagatedDrillRequestRunnable} on the method {@link Schedulers#onSchedule}.
+ */
 actual object SchedulersTransformer: TransformerObject, AbstractTransformerObject() {
     override val logger = KotlinLogging.logger {}
 
