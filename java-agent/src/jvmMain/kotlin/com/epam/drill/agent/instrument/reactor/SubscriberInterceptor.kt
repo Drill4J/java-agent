@@ -24,8 +24,24 @@ import java.util.function.Function
 
 private val logger = KotlinLogging.logger {}
 
+/**
+ * The Byte buddy method interceptor object for the {@link reactor.core.CoreSubscriber} class.
+ */
 object SubscriberInterceptor {
 
+    /**
+     * Intercepts all public methods of {@link reactor.core.CoreSubscriber} class and propagates the Drill Request.
+     * In the `onSubscribe()` method it changes {@link org.reactivestreams.Subscription} argument on proxy copy and propagates the Drill Request.
+     * In the `currentContext()` method it returns {drillContext} object as a {@link reactor.util.context.Context}.
+     * In the `onNext`, `onComplete`, `onError` methods it propagates the Drill Request.
+     * In other methods it calls the corresponding delegate method.
+     * @param target the delegate of the {@link reactor.core.CoreSubscriber} class.
+     * @param drillRequest the value of the Drill Request which is located in field `DRILL_REQUEST_FIELD` in the {@link reactor.core.CoreSubscriber} proxy class.
+     * @param superMethod the name of the intercepted method.
+     * @param pipe the Byte buddy method interceptor object.
+     * @param args the arguments of the intercepted method.
+     * @return the result of the intercepted method.
+     */
     @RuntimeType
     fun intercept(
         @FieldValue(DRILL_DELEGATE_FIELD) target: Any,

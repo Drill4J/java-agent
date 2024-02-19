@@ -25,13 +25,20 @@ import java.util.function.Function
 private val logger = KotlinLogging.logger {}
 
 /**
- * The Byte buddy method interceptor class for the {@link reactor.core.publisher.Flux} and {@link reactor.core.publisher.Mono}.
+ * The Byte buddy method interceptor object for the {@link reactor.core.publisher.Flux} and {@link reactor.core.publisher.Mono}.
  */
 object PublisherInterceptor {
 
     /**
      * Intercepts all public methods of {@link org.reactivestreams.Publisher} class and propagates the Drill Request.
-     * In the `subscribe()` method it changes {@link org.reactivestreams.Subscription} argument on proxy copy.
+     * In the `subscribe()` method it changes {@link reactor.core.CoreSubscriber} argument on proxy copy and propagates the Drill Request.
+     * In other methods it calls the corresponding delegate method.
+     * @param target the delegate of the {@link org.reactivestreams.Publisher} class.
+     * @param drillRequest the value of the Drill Request which is located in field `DRILL_REQUEST_FIELD` in the {@link org.reactivestreams.Publisher} proxy class.
+     * @param superMethod the name of the intercepted method.
+     * @param pipe the Byte buddy method interceptor object.
+     * @param args the arguments of the intercepted method.
+     * @return the result of the intercepted method.
      */
     @RuntimeType
     fun intercept(
@@ -85,18 +92,34 @@ object PublisherInterceptor {
         }
     }
 
+    /**
+     * Calls the {@link reactor.util.context.Context#getOrDefault(Object, Object)} method and returns the result.
+     * @param context the value of the Context
+     * @param key the key of the context
+     */
     private fun getContext(context: Any, key: String): DrillRequest? {
         val getOrDefaultMethod = context.javaClass.getMethod("getOrDefault", Any::class.java, Any::class.java)
         getOrDefaultMethod.isAccessible = true
         return getOrDefaultMethod.invoke(context, key, null) as DrillRequest?
     }
 
+    /**
+     * Calls the {@link reactor.core.CoreSubscriber#currentContext()} method and returns the result.
+     * @param subscriber the value of the CoreSubscriber
+     */
     private fun getCurrentContext(subscriber: Any): Any {
         val currentContextMethod = subscriber.javaClass.getMethod("currentContext")
         currentContextMethod.isAccessible = true
         return currentContextMethod.invoke(subscriber)
     }
 
+    /**
+     * Calls the {@link reactor.util.context.Context#put(Object, Object)} method and returns the result.
+     * @param context the value of the Context
+     * @param key the key of the context
+     * @param value the value of the context
+     * @return the result of calling the {@link reactor.util.context.Context#put(Object, Object)} method
+     */
     private fun putContext(context: Any, key: String, value: Any): Any {
         val putMethod = context.javaClass.getMethod("put", Any::class.java, Any::class.java)
         putMethod.isAccessible = true

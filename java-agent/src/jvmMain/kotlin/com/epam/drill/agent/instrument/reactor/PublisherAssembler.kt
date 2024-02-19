@@ -7,7 +7,16 @@ import net.bytebuddy.description.modifier.Visibility
 
 private val logger = KotlinLogging.logger {}
 
+/**
+ * Object for creation proxy delegates instances of publisher classes.
+ */
 object PublisherAssembler {
+    /**
+     * Creates proxy delegate for the given publisher class.
+     * @param target the delegate instance.
+     * @param publisherClass the publisher class. Must be a superclass of the delegate class
+     * @return the proxy delegate instance
+     */
     @JvmStatic
     fun onAssembly(
         target: Any,
