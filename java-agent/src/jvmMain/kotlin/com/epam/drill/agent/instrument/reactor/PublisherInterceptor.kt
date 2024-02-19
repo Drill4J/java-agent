@@ -25,8 +25,15 @@ import java.util.function.Function
 
 private val logger = KotlinLogging.logger {}
 
+/**
+ * The Byte buddy method interceptor class for the {@link reactor.core.publisher.Flux} and {@link reactor.core.publisher.Mono}.
+ */
 object PublisherInterceptor {
 
+    /**
+     * Intercepts all public methods of {@link org.reactivestreams.Publisher} class and propagates the Drill Request.
+     * In the `subscribe()` method it changes {@link org.reactivestreams.Subscription} argument on proxy copy.
+     */
     @RuntimeType
     fun intercept(
         @FieldValue(DRILL_DELEGATE_FIELD) target: Any,

@@ -34,9 +34,20 @@ const val DRILL_CONTEXT_KEY = "drillRequest"
 const val SUBSCRIPTION_CLASS = "org.reactivestreams.Subscription"
 const val SUBSCRIBER_CLASS = "reactor.core.CoreSubscriber"
 
-
+/**
+ * The cache of proxy classes
+ */
 val proxyClassCache = TypeCache<Class<*>>()
 
+/**
+ * Creates a proxy class for the given delegate and interceptor.
+ * Every public method of the delegate will be intercepted by the interceptor.
+ * @param delegate the delegate object
+ * @param clazz the class of the proxy class. Must be a superclass of the class of the delegate
+ * @param interceptor the Byte buddy method interceptor
+ * @param configure the Byte buddy configuration which will be applied before building proxy class
+ * @param initialize the proxy instance initialization logic
+ */
 @Suppress("UNCHECKED_CAST")
 inline fun <T> createProxyDelegate(
     delegate: Any,
@@ -64,6 +75,13 @@ inline fun <T> createProxyDelegate(
     return proxy
 }
 
+/**
+ * Propagates the drill request to the given body via the ThreadLocal context.
+ * If the request was already propagated, the previous request will be restored after the body invocation.
+ * @param ctx the drill request
+ * @param body the body function in which the drill request will be propagated
+ * @return the result of the body function
+ */
 inline fun <T> propagateDrillRequest(ctx: DrillRequest, body: () -> T?): T? {
     val previous = RequestHolder.retrieve()
     if (previous != null)
