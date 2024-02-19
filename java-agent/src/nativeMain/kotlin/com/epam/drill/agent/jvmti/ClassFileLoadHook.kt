@@ -128,7 +128,7 @@ object ClassFileLoadHook {
                 if (kClassName.startsWith("org/apache/catalina/core/ApplicationFilterChain")) {
                     transformers += { bytes -> TomcatTransformer.transform(kClassName, bytes, loader, protectionDomain) }
                 }
-                if (kClassName == "org/eclipse/jetty/servlet/ServletHolder") {
+                if (kClassName == "org/eclipse/jetty/server/handler/HandlerWrapper") {
                     transformers += { bytes -> JettyTransformer.transform(kClassName, bytes, loader, protectionDomain) }
                 }
                 strategies.forEach { strategy ->
