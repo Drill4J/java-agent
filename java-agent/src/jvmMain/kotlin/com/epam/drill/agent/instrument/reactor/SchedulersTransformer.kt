@@ -21,7 +21,6 @@ import com.epam.drill.agent.request.RequestHolder
 import com.epam.drill.common.agent.request.DrillRequest
 import javassist.CtBehavior
 import javassist.CtClass
-import javassist.CtMethod
 import mu.KotlinLogging
 
 actual object SchedulersTransformer: TransformerObject, AbstractTransformerObject() {
@@ -36,7 +35,7 @@ actual object SchedulersTransformer: TransformerObject, AbstractTransformerObjec
                 """
                     ${DrillRequest::class.java.name} drillRequest = ${RequestHolder::class.java.name}.INSTANCE.${RequestHolder::retrieve.name}();
                     if (drillRequest != null)
-                        $1 = new ${PropagatedDrillContextRunnable::class.java.name}(drillRequest, $1);                    
+                        $1 = new ${PropagatedDrillRequestRunnable::class.java.name}(drillRequest, $1);                    
                 """.trimIndent()
             )
     }
