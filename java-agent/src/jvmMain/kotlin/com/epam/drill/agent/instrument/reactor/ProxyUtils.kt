@@ -40,13 +40,14 @@ const val SUBSCRIBER_CLASS = "reactor.core.CoreSubscriber"
 val proxyClassCache = TypeCache<Class<*>>()
 
 /**
- * Creates a proxy class for the given delegate and interceptor.
- * Every public method of the delegate will be intercepted by the interceptor.
- * @param delegate the delegate object
- * @param clazz the class of the proxy class. Must be a superclass of the class of the delegate
- * @param interceptor the Byte buddy method interceptor
- * @param configure the Byte buddy configuration which will be applied before building proxy class
- * @param initialize the proxy instance initialization logic
+ * Creates a proxy class and an instance of this class to intercept calls with this interceptor.
+ * Every public method of the class will be intercepted by the interceptor.
+ * @param delegate the original instance of the class.
+ * @param clazz the class that will be delegated. Must be a superclass of the class of the delegate.
+ * @param interceptor the Byte buddy method interceptor.
+ * @param configure the Byte buddy configuration which will be applied before building proxy class.
+ * @param initialize the proxy instance initialization logic.
+ * @return the proxy instance.
  */
 @Suppress("UNCHECKED_CAST")
 inline fun <T> createProxyDelegate(
