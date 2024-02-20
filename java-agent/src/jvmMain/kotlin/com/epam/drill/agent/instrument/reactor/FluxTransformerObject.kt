@@ -15,29 +15,30 @@
  */
 package com.epam.drill.agent.instrument.reactor
 
-import com.epam.drill.agent.instrument.TransformerObject
 import com.epam.drill.agent.instrument.AbstractTransformerObject
-import com.epam.drill.agent.request.RequestHolder
-import com.epam.drill.common.agent.request.DrillRequest
+import com.epam.drill.agent.instrument.TransformerObject
 import javassist.CtBehavior
 import javassist.CtClass
-import javassist.CtMethod
 import mu.KotlinLogging
 
-actual object SchedulersTransformer: TransformerObject, AbstractTransformerObject() {
+object FluxTransformerObject: TransformerObject, AbstractTransformerObject() {
     override val logger = KotlinLogging.logger {}
 
     override fun permit(className: String?, superName: String?, interfaces: Array<String?>) =
-        className == "reactor/core/scheduler/Schedulers"
+        className == FLUX_CLASS_NAME
 
     override fun transform(className: String, ctClass: CtClass) {
-        ctClass.getDeclaredMethod("onSchedule").insertCatching(
+        ctClass.getMethod("onAssembly", "(Lreactor/core/publisher/Flux;)Lreactor/core/publisher/Flux;").insertCatching(
             CtBehavior::insertBefore,
-                """
-                    ${DrillRequest::class.java.name} drillRequest = ${RequestHolder::class.java.name}.INSTANCE.${RequestHolder::retrieve.name}();
-                    if (drillRequest != null)
-                        $1 = new ${PropagatedDrillContextRunnable::class.java.name}(drillRequest, $1);                    
-                """.trimIndent()
-            )
+            """
+                $1 = (reactor.core.publisher.Flux) ${PublisherAssembler::class.java.name}.${PublisherAssembler::onAssembly.name}($1, reactor.core.publisher.Flux.class);
+            """.trimIndent()
+        )
+        ctClass.getMethod("onAssembly", "(Lreactor/core/publisher/ConnectableFlux;)Lreactor/core/publisher/ConnectableFlux;").insertCatching(
+            CtBehavior::insertBefore,
+            """
+                $1 = (reactor.core.publisher.ConnectableFlux) ${PublisherAssembler::class.java.name}.${PublisherAssembler::onAssembly.name}($1, reactor.core.publisher.ConnectableFlux.class);                    
+            """.trimIndent()
+        )
     }
 }

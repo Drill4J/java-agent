@@ -24,10 +24,7 @@ import com.epam.drill.agent.instrument.KAFKA_PRODUCER_INTERFACE
 import com.epam.drill.agent.instrument.clients.ApacheHttpClientTransformer
 import com.epam.drill.agent.instrument.clients.JavaHttpClientTransformer
 import com.epam.drill.agent.instrument.clients.OkHttp3ClientTransformer
-import com.epam.drill.agent.instrument.reactor.FluxTransformer
-import com.epam.drill.agent.instrument.reactor.MonoTransformer
-import com.epam.drill.agent.instrument.reactor.ParallelFluxTransformer
-import com.epam.drill.agent.instrument.reactor.SchedulersTransformer
+import com.epam.drill.agent.instrument.reactor.ReactorTransformer
 import com.epam.drill.agent.instrument.servers.*
 import com.epam.drill.agent.interceptor.HttpInterceptorConfigurer
 import com.epam.drill.agent.module.InstrumentationAgentModule
@@ -49,8 +46,9 @@ object ClassFileLoadHook {
 
     private val logger = KotlinLogging.logger("com.epam.drill.agent.jvmti.ClassFileLoadHook")
 
-    private val strategies = listOf(JavaHttpClientTransformer, ApacheHttpClientTransformer, OkHttp3ClientTransformer,
-        SchedulersTransformer, MonoTransformer, FluxTransformer, ParallelFluxTransformer
+    private val strategies = listOf(
+        JavaHttpClientTransformer, ApacheHttpClientTransformer, OkHttp3ClientTransformer,
+        ReactorTransformer
     )
 
     private val isAsyncApp = Configuration.parameters[ParameterDefinitions.IS_ASYNC_APP]

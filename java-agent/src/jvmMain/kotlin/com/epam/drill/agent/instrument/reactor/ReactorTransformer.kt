@@ -17,28 +17,30 @@ package com.epam.drill.agent.instrument.reactor
 
 import com.epam.drill.agent.instrument.AbstractTransformerObject
 import com.epam.drill.agent.instrument.TransformerObject
-import javassist.CtBehavior
 import javassist.CtClass
 import mu.KotlinLogging
 
-actual object FluxTransformer: TransformerObject, AbstractTransformerObject() {
+const val FLUX_CLASS_NAME = "reactor/core/publisher/Flux"
+const val MONO_CLASS_NAME = "reactor/core/publisher/Mono"
+const val PARALLEL_FLUX_CLASS_NAME = "reactor/core/publisher/ParallelFlux"
+const val SCHEDULERS_CLASS_NAME = "reactor/core/scheduler/Schedulers"
+
+private val reactorTransformers = setOf(
+    FluxTransformerObject,
+    MonoTransformerObject,
+    ParallelFluxTransformerObject,
+    SchedulersTransformerObject
+)
+
+actual object ReactorTransformer : TransformerObject, AbstractTransformerObject() {
     override val logger = KotlinLogging.logger {}
 
     override fun permit(className: String?, superName: String?, interfaces: Array<String?>) =
-        className == "reactor/core/publisher/Flux"
+        reactorTransformers.any { it.permit(className, null, null) }
 
     override fun transform(className: String, ctClass: CtClass) {
-        ctClass.getMethod("onAssembly", "(Lreactor/core/publisher/Flux;)Lreactor/core/publisher/Flux;").insertCatching(
-            CtBehavior::insertBefore,
-            """
-                $1 = (reactor.core.publisher.Flux) ${PublisherAssembler::class.java.name}.${PublisherAssembler::onAssembly.name}($1, reactor.core.publisher.Flux.class);
-            """.trimIndent()
-        )
-        ctClass.getMethod("onAssembly", "(Lreactor/core/publisher/ConnectableFlux;)Lreactor/core/publisher/ConnectableFlux;").insertCatching(
-            CtBehavior::insertBefore,
-            """
-                $1 = (reactor.core.publisher.ConnectableFlux) ${PublisherAssembler::class.java.name}.${PublisherAssembler::onAssembly.name}($1, reactor.core.publisher.ConnectableFlux.class);                    
-            """.trimIndent()
-        )
+        reactorTransformers.find { it.permit(className, null, null) }
+            ?.transform(className, ctClass)
+            ?: logger.error { "Reactor transformer object for class $className not found" }
     }
 }

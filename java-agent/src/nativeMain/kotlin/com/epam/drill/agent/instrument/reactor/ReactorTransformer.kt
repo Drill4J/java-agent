@@ -15,7 +15,7 @@
  */
 package com.epam.drill.agent.instrument.reactor
 
+import com.epam.drill.agent.instrument.AbstractTransformerObject
 import com.epam.drill.agent.instrument.TransformerObject
 
-
-expect object SchedulersTransformer: TransformerObject
+actual object ReactorTransformer: TransformerObject, AbstractTransformerObject()

@@ -21,11 +21,11 @@ import javassist.CtBehavior
 import javassist.CtClass
 import mu.KotlinLogging
 
-actual object MonoTransformer: TransformerObject, AbstractTransformerObject() {
+object MonoTransformerObject : TransformerObject, AbstractTransformerObject() {
     override val logger = KotlinLogging.logger {}
 
     override fun permit(className: String?, superName: String?, interfaces: Array<String?>) =
-        className == "reactor/core/publisher/Mono"
+        className == MONO_CLASS_NAME
 
     override fun transform(className: String, ctClass: CtClass) {
         ctClass.getMethod("onAssembly", "(Lreactor/core/publisher/Mono;)Lreactor/core/publisher/Mono;").insertCatching(
