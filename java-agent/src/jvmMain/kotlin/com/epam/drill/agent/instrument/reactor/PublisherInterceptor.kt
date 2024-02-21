@@ -66,7 +66,7 @@ object PublisherInterceptor {
             SubscriberInterceptor,
             configure = {
                 defineField(DRILL_REQUEST_FIELD, DrillRequest::class.java, Visibility.PUBLIC)
-                defineField(DRILL_CONTEXT_FIELD, Object::class.java, Visibility.PUBLIC)
+                    .defineField(DRILL_CONTEXT_FIELD, Object::class.java, Visibility.PUBLIC)
             },
             initialize = { proxy, proxyType ->
                 proxyType.getField(DRILL_REQUEST_FIELD).set(proxy, parentDrillRequest)
