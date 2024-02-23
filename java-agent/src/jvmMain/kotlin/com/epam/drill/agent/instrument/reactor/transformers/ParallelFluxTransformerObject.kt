@@ -13,35 +13,30 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.epam.drill.agent.instrument.reactor
+package com.epam.drill.agent.instrument.reactor.transformers
 
 import com.epam.drill.agent.instrument.AbstractTransformerObject
 import com.epam.drill.agent.instrument.TransformerObject
-import com.epam.drill.agent.instrument.servers.FLUX_CLASS_NAME
+import com.epam.drill.agent.instrument.reactor.PublisherAssembler
+import com.epam.drill.agent.instrument.servers.PARALLEL_FLUX_CLASS_NAME
 import javassist.CtBehavior
 import javassist.CtClass
 import mu.KotlinLogging
 
 /**
- * Transformer for {@link reactor.core.publisher.Flux}.
+ * Transformer for {@link reactor.core.publisher.ParallelFlux}.
  */
-object FluxTransformerObject: TransformerObject, AbstractTransformerObject() {
+object ParallelFluxTransformerObject: TransformerObject, AbstractTransformerObject() {
     override val logger = KotlinLogging.logger {}
 
     override fun permit(className: String?, superName: String?, interfaces: Array<String?>) =
-        className == FLUX_CLASS_NAME
+        className == PARALLEL_FLUX_CLASS_NAME
 
     override fun transform(className: String, ctClass: CtClass) {
-        ctClass.getMethod("onAssembly", "(Lreactor/core/publisher/Flux;)Lreactor/core/publisher/Flux;").insertCatching(
+        ctClass.getMethod("onAssembly", "(Lreactor/core/publisher/ParallelFlux;)Lreactor/core/publisher/ParallelFlux;").insertCatching(
             CtBehavior::insertBefore,
             """
-                $1 = (reactor.core.publisher.Flux) ${PublisherAssembler::class.java.name}.${PublisherAssembler::onAssembly.name}($1, reactor.core.publisher.Flux.class);
-            """.trimIndent()
-        )
-        ctClass.getMethod("onAssembly", "(Lreactor/core/publisher/ConnectableFlux;)Lreactor/core/publisher/ConnectableFlux;").insertCatching(
-            CtBehavior::insertBefore,
-            """
-                $1 = (reactor.core.publisher.ConnectableFlux) ${PublisherAssembler::class.java.name}.${PublisherAssembler::onAssembly.name}($1, reactor.core.publisher.ConnectableFlux.class);                    
+              $1 = (reactor.core.publisher.ParallelFlux) ${PublisherAssembler::class.java.name}.${PublisherAssembler::onAssembly.name}($1, reactor.core.publisher.ParallelFlux.class);                    
             """.trimIndent()
         )
     }

@@ -17,10 +17,10 @@ package com.epam.drill.agent.instrument.servers
 
 import com.epam.drill.agent.instrument.AbstractTransformerObject
 import com.epam.drill.agent.instrument.TransformerObject
-import com.epam.drill.agent.instrument.reactor.FluxTransformerObject
-import com.epam.drill.agent.instrument.reactor.MonoTransformerObject
-import com.epam.drill.agent.instrument.reactor.ParallelFluxTransformerObject
-import com.epam.drill.agent.instrument.reactor.SchedulersTransformerObject
+import com.epam.drill.agent.instrument.reactor.transformers.FluxTransformerObject
+import com.epam.drill.agent.instrument.reactor.transformers.MonoTransformerObject
+import com.epam.drill.agent.instrument.reactor.transformers.ParallelFluxTransformerObject
+import com.epam.drill.agent.instrument.reactor.transformers.SchedulersTransformerObject
 import javassist.CtClass
 import mu.KotlinLogging
 
