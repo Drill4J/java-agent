@@ -21,6 +21,9 @@ import javassist.CtBehavior
 import javassist.CtClass
 import mu.KotlinLogging
 
+/**
+ * Transformer for {@link reactor.core.publisher.Flux}.
+ */
 object FluxTransformerObject: TransformerObject, AbstractTransformerObject() {
     override val logger = KotlinLogging.logger {}
 

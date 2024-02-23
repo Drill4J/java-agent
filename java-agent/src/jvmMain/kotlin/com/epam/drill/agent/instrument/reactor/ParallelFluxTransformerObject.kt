@@ -21,6 +21,9 @@ import javassist.CtBehavior
 import javassist.CtClass
 import mu.KotlinLogging
 
+/**
+ * Transformer for {@link reactor.core.publisher.ParallelFlux}.
+ */
 object ParallelFluxTransformerObject: TransformerObject, AbstractTransformerObject() {
     override val logger = KotlinLogging.logger {}
 

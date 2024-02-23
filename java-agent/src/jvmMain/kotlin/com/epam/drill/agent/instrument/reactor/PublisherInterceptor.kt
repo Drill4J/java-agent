@@ -15,7 +15,6 @@
  */
 package com.epam.drill.agent.instrument.reactor
 
-import com.epam.drill.agent.request.RequestHolder
 import com.epam.drill.common.agent.request.DrillRequest
 import mu.KotlinLogging
 import net.bytebuddy.description.modifier.Visibility
@@ -25,8 +24,22 @@ import java.util.function.Function
 
 private val logger = KotlinLogging.logger {}
 
+/**
+ * The Byte buddy method interceptor object for the {@link reactor.core.publisher.Flux} and {@link reactor.core.publisher.Mono}.
+ */
 object PublisherInterceptor {
 
+    /**
+     * Intercepts all public methods of {@link org.reactivestreams.Publisher} class and propagates the Drill Request.
+     * In the `subscribe()` method it changes {@link reactor.core.CoreSubscriber} argument on proxy copy and propagates the Drill Request.
+     * In other methods it calls the corresponding delegate method.
+     * @param target the delegate of the {@link org.reactivestreams.Publisher} class.
+     * @param drillRequest the value of the Drill Request which is located in field `DRILL_REQUEST_FIELD` in the {@link org.reactivestreams.Publisher} proxy class.
+     * @param superMethod the name of the intercepted method.
+     * @param pipe the Byte buddy method interceptor object.
+     * @param args the arguments of the intercepted method.
+     * @return the result of the intercepted method.
+     */
     @RuntimeType
     fun intercept(
         @FieldValue(DRILL_DELEGATE_FIELD) target: Any,
@@ -79,42 +92,37 @@ object PublisherInterceptor {
         }
     }
 
+    /**
+     * Calls the {@link reactor.util.context.Context#getOrDefault(Object, Object)} method and returns the result.
+     * @param context the value of the Context
+     * @param key the key of the context
+     */
     private fun getContext(context: Any, key: String): DrillRequest? {
         val getOrDefaultMethod = context.javaClass.getMethod("getOrDefault", Any::class.java, Any::class.java)
         getOrDefaultMethod.isAccessible = true
         return getOrDefaultMethod.invoke(context, key, null) as DrillRequest?
     }
 
+    /**
+     * Calls the {@link reactor.core.CoreSubscriber#currentContext()} method and returns the result.
+     * @param subscriber the value of the CoreSubscriber
+     */
     private fun getCurrentContext(subscriber: Any): Any {
         val currentContextMethod = subscriber.javaClass.getMethod("currentContext")
         currentContextMethod.isAccessible = true
         return currentContextMethod.invoke(subscriber)
     }
 
+    /**
+     * Calls the {@link reactor.util.context.Context#put(Object, Object)} method and returns the result.
+     * @param context the value of the Context
+     * @param key the key of the context
+     * @param value the value of the context
+     * @return the result of calling the {@link reactor.util.context.Context#put(Object, Object)} method
+     */
     private fun putContext(context: Any, key: String, value: Any): Any {
         val putMethod = context.javaClass.getMethod("put", Any::class.java, Any::class.java)
         putMethod.isAccessible = true
         return putMethod.invoke(context, key, value)
-    }
-}
-
-object PublisherAssembler {
-    @JvmStatic
-    fun onAssembly(
-        target: Any,
-        publisherClass: Class<*>
-    ): Any {
-        val drillRequest = RequestHolder.retrieve()
-        logger.trace { "${publisherClass.simpleName}.onAssembly(${target.javaClass.simpleName}):${target.hashCode()}, sessionId = ${drillRequest?.drillSessionId}, threadId = ${Thread.currentThread().id} " }
-        return createProxyDelegate(
-            target,
-            publisherClass,
-            PublisherInterceptor,
-            configure = { defineField(DRILL_REQUEST_FIELD, DrillRequest::class.java, Visibility.PUBLIC) },
-            initialize = { proxy, proxyType ->
-                if (drillRequest != null)
-                    proxyType.getField(DRILL_REQUEST_FIELD).set(proxy, drillRequest)
-            }
-        )
     }
 }
