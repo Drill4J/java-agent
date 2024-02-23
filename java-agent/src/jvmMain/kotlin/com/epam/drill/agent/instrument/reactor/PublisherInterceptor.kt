@@ -62,15 +62,15 @@ object PublisherInterceptor {
         subscriber: Any?,
     ): Any? {
         if (subscriber == null) return pipe.apply(target)
-        val context = getCurrentContext(subscriber)
-        val contextualDrillRequest = getContext(context, DRILL_CONTEXT_KEY)
+        val context = subscriber.getCurrentContext()
+        val contextualDrillRequest = context.getOrDefault(DRILL_CONTEXT_KEY, null)
 
         val parentDrillRequest = contextualDrillRequest
             ?: drillRequest
             ?: return pipe.apply(target)
 
         val newContext = if (drillRequest != contextualDrillRequest) {
-            putContext(context, DRILL_CONTEXT_KEY, parentDrillRequest)
+            context.put(DRILL_CONTEXT_KEY, parentDrillRequest)
         } else context
 
         val subscriberProxy = createProxyDelegate(
@@ -94,35 +94,38 @@ object PublisherInterceptor {
 
     /**
      * Calls the {@link reactor.util.context.Context#getOrDefault(Object, Object)} method and returns the result.
-     * @param context the value of the Context
+     * @receiver a context {@link reactor.util.context.Context}
      * @param key the key of the context
+     * @param defaultValue the default value
+     * @return the result of calling the {@link reactor.util.context.Context#getOrDefault(Object, Object)} method
      */
-    private fun getContext(context: Any, key: String): DrillRequest? {
-        val getOrDefaultMethod = context.javaClass.getMethod("getOrDefault", Any::class.java, Any::class.java)
+    private fun Any.getOrDefault(key: String, defaultValue: Any?): DrillRequest? {
+        val getOrDefaultMethod = this.javaClass.getMethod("getOrDefault", Any::class.java, Any::class.java)
         getOrDefaultMethod.isAccessible = true
-        return getOrDefaultMethod.invoke(context, key, null) as DrillRequest?
+        return getOrDefaultMethod.invoke(this, key, defaultValue) as DrillRequest?
     }
 
     /**
      * Calls the {@link reactor.core.CoreSubscriber#currentContext()} method and returns the result.
-     * @param subscriber the value of the CoreSubscriber
+     * @receiver a subscriber {@link reactor.core.CoreSubscriber}
+     * @return a
      */
-    private fun getCurrentContext(subscriber: Any): Any {
-        val currentContextMethod = subscriber.javaClass.getMethod("currentContext")
+    private fun Any.getCurrentContext(): Any {
+        val currentContextMethod = this.javaClass.getMethod("currentContext")
         currentContextMethod.isAccessible = true
-        return currentContextMethod.invoke(subscriber)
+        return currentContextMethod.invoke(this)
     }
 
     /**
      * Calls the {@link reactor.util.context.Context#put(Object, Object)} method and returns the result.
-     * @param context the value of the Context
+     * @receiver a context {@link reactor.util.context.Context}
      * @param key the key of the context
      * @param value the value of the context
      * @return the result of calling the {@link reactor.util.context.Context#put(Object, Object)} method
      */
-    private fun putContext(context: Any, key: String, value: Any): Any {
-        val putMethod = context.javaClass.getMethod("put", Any::class.java, Any::class.java)
+    private fun Any.put(key: String, value: Any): Any {
+        val putMethod = this.javaClass.getMethod("put", Any::class.java, Any::class.java)
         putMethod.isAccessible = true
-        return putMethod.invoke(context, key, value)
+        return putMethod.invoke(this, key, value)
     }
 }
