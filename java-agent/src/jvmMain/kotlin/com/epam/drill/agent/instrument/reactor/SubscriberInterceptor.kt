@@ -61,7 +61,7 @@ object SubscriberInterceptor {
         )
 
         return propagateDrillRequest(drillRequest) {
-            logger.trace { "${target.javaClass.simpleName}.onSubscribe(${subscription.javaClass.name}):${target.hashCode()}, sessionId = ${drillRequest.drillSessionId}" }
+            logger.trace { "${target.javaClass.simpleName}.onSubscribe(${subscription.javaClass.name}):${target.hashCode()}, sessionId = ${drillRequest.drillSessionId}, threadId = ${Thread.currentThread().id}" }
             superMethod.invoke(target, subscriptionProxy)
         }
     }
@@ -78,7 +78,7 @@ object SubscriberInterceptor {
         pipe: Function<Any?, Any?>,
     ): Any? {
         return propagateDrillRequest(drillRequest) {
-            logger.trace { "${target.javaClass.simpleName}.${superMethod.name}():${target.hashCode()}, sessionId = ${drillRequest.drillSessionId}" }
+            logger.trace { "${target.javaClass.simpleName}.${superMethod.name}():${target.hashCode()}, sessionId = ${drillRequest.drillSessionId}, threadId = ${Thread.currentThread().id}" }
             pipe.apply(target)
         }
     }

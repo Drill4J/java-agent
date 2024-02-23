@@ -23,8 +23,9 @@ private val logger = KotlinLogging.logger {}
 class PropagatedDrillContextRunnable(private val drillRequest: DrillRequest, private val decorate: Runnable): Runnable {
     override fun run() {
         propagateDrillRequest(drillRequest) {
-            logger.trace { "run task, sessionId = ${drillRequest.drillSessionId}" }
+            logger.trace { "Scheduled task ran, sessionId = ${drillRequest.drillSessionId}, threadId = ${Thread.currentThread().id}" }
             decorate.run()
+            logger.trace { "Scheduled task finished, sessionId = ${drillRequest.drillSessionId}, threadId = ${Thread.currentThread().id}" }
         }
     }
 }
