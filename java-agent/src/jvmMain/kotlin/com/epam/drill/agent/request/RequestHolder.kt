@@ -29,7 +29,7 @@ actual object RequestHolder : RequestHolder {
     actual override fun remove() {
         if (threadStorage.get() == null) return
         RequestProcessor.processServerResponse()
-        logger.trace { "remove: Request ${threadStorage.get().drillSessionId} removed" }
+        logger.trace { "remove: Request ${threadStorage.get().drillSessionId} removed, threadId = ${Thread.currentThread().id}" }
         threadStorage.remove()
     }
 
@@ -38,7 +38,7 @@ actual object RequestHolder : RequestHolder {
 
     actual override fun store(drillRequest: DrillRequest) {
         threadStorage.set(drillRequest)
-        logger.trace { "store: Request ${drillRequest.drillSessionId} saved" }
+        logger.trace { "store: Request ${drillRequest.drillSessionId} saved, threadId = ${Thread.currentThread().id}" }
         RequestProcessor.processServerRequest()
     }
 

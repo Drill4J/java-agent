@@ -31,14 +31,14 @@ class ThreadCoverageRecorder(
             ctx,
             default = { ExecData() }
         ))
-        logger.trace { "Test recording started (sessionId = $sessionId, testId=$testId, threadId=${Thread.currentThread().id})." }
+        logger.trace { "Test recording started (sessionId = $sessionId, testId = $testId, threadId = ${Thread.currentThread().id})." }
     }
 
     override fun stopRecording(sessionId: String, testId: String) {
         execDataPool.release(ContextKey(sessionId, testId), execData.get() ?: ExecData())
         execData.remove()
         context.remove()
-        logger.trace { "Test recording stopped (sessionId = $sessionId, testId=$testId, threadId=${Thread.currentThread().id})." }
+        logger.trace { "Test recording stopped (sessionId = $sessionId, testId = $testId, threadId = ${Thread.currentThread().id})." }
     }
 
     override fun pollRecorded(): Sequence<ExecDatum> {
