@@ -1,5 +1,6 @@
 package com.epam.drill.agent.instrument.reactor
 
+import com.epam.drill.agent.instrument.reactor.interceptors.PublisherInterceptor
 import com.epam.drill.agent.request.RequestHolder
 import com.epam.drill.common.agent.request.DrillRequest
 import mu.KotlinLogging
