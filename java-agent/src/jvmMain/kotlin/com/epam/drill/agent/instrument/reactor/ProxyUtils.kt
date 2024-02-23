@@ -34,7 +34,6 @@ const val DRILL_CONTEXT_KEY = "drillRequest"
 const val SUBSCRIPTION_CLASS = "org.reactivestreams.Subscription"
 const val SUBSCRIBER_CLASS = "reactor.core.CoreSubscriber"
 
-
 val proxyClassCache = TypeCache<Class<*>>()
 
 @Suppress("UNCHECKED_CAST")
@@ -66,14 +65,16 @@ inline fun <T> createProxyDelegate(
 
 inline fun <T> propagateDrillRequest(ctx: DrillRequest, body: () -> T?): T? {
     val previous = RequestHolder.retrieve()
-    if (previous != null)
-        RequestHolder.remove()
-    try {
+    if (previous != ctx) {
         RequestHolder.store(ctx)
+    }
+    try {
         return body()
     } finally {
-        RequestHolder.remove()
-        if (previous != null)
+        if (previous != ctx && previous != null) {
             RequestHolder.store(previous)
+        } else {
+            RequestHolder.remove()
+        }
     }
 }
