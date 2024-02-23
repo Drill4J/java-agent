@@ -23,7 +23,7 @@ object PublisherAssembler {
         publisherClass: Class<*>
     ): Any {
         val drillRequest = RequestHolder.retrieve()
-        logger.trace { "${publisherClass.simpleName}.onAssembly(${target.javaClass.simpleName}):${target.hashCode()}, sessionId = ${drillRequest?.drillSessionId}" }
+        logger.trace { "${publisherClass.simpleName}.onAssembly(${target.javaClass.simpleName}):${target.hashCode()}, sessionId = ${drillRequest?.drillSessionId}, threadId = ${Thread.currentThread().id}" }
         return createProxyDelegate(
             target,
             publisherClass,

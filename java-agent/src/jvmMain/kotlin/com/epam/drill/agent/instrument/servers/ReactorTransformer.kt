@@ -13,10 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.epam.drill.agent.instrument.reactor
+package com.epam.drill.agent.instrument.servers
 
 import com.epam.drill.agent.instrument.AbstractTransformerObject
 import com.epam.drill.agent.instrument.TransformerObject
+import com.epam.drill.agent.instrument.reactor.FluxTransformerObject
+import com.epam.drill.agent.instrument.reactor.MonoTransformerObject
+import com.epam.drill.agent.instrument.reactor.ParallelFluxTransformerObject
+import com.epam.drill.agent.instrument.reactor.SchedulersTransformerObject
 import javassist.CtClass
 import mu.KotlinLogging
 

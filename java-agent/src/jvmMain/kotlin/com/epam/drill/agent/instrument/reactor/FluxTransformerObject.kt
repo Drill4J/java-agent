@@ -17,6 +17,7 @@ package com.epam.drill.agent.instrument.reactor
 
 import com.epam.drill.agent.instrument.AbstractTransformerObject
 import com.epam.drill.agent.instrument.TransformerObject
+import com.epam.drill.agent.instrument.servers.FLUX_CLASS_NAME
 import javassist.CtBehavior
 import javassist.CtClass
 import mu.KotlinLogging

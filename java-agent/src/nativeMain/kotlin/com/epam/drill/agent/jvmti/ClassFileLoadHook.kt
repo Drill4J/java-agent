@@ -24,7 +24,7 @@ import com.epam.drill.agent.instrument.KAFKA_PRODUCER_INTERFACE
 import com.epam.drill.agent.instrument.clients.ApacheHttpClientTransformer
 import com.epam.drill.agent.instrument.clients.JavaHttpClientTransformer
 import com.epam.drill.agent.instrument.clients.OkHttp3ClientTransformer
-import com.epam.drill.agent.instrument.reactor.ReactorTransformer
+import com.epam.drill.agent.instrument.servers.ReactorTransformer
 import com.epam.drill.agent.instrument.servers.*
 import com.epam.drill.agent.interceptor.HttpInterceptorConfigurer
 import com.epam.drill.agent.module.InstrumentationAgentModule
