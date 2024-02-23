@@ -63,13 +63,15 @@ object PublisherInterceptor {
     ): Any? {
         if (subscriber == null) return pipe.apply(target)
         val context = subscriber.getCurrentContext()
-        val contextualDrillRequest = context.getOrDefault(DRILL_CONTEXT_KEY, null)
+        val drillRequestFromContext = context.getOrDefault(DRILL_CONTEXT_KEY, null)
 
-        val parentDrillRequest = contextualDrillRequest
+        //It is necessary to obtain the test context either from the subscriber context or from the current thread
+        val parentDrillRequest = drillRequestFromContext
             ?: drillRequest
             ?: return pipe.apply(target)
 
-        val newContext = if (drillRequest != contextualDrillRequest) {
+        //If the test context is not in the subscriber context, then it's necessary to put it there
+        val newContext = if (drillRequest != drillRequestFromContext) {
             context.put(DRILL_CONTEXT_KEY, parentDrillRequest)
         } else context
 
