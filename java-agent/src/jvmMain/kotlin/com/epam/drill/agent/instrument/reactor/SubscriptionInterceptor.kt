@@ -21,12 +21,12 @@ import net.bytebuddy.implementation.bind.annotation.*
 import java.lang.reflect.Method
 import java.util.function.Function
 
-private val logger = KotlinLogging.logger {}
-
 /**
  * The Byte buddy method interceptor object for the {@link org.reactivestreams.Subscription} class.
  */
 object SubscriptionInterceptor {
+
+    private val logger = KotlinLogging.logger {}
 
     /**
      * Intercepts all public methods of {@link org.reactivestreams.Subscription} class and propagates the Drill Request.
