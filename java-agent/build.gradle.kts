@@ -176,7 +176,7 @@ kotlin {
         val runtimeJar by registering(ShadowJar::class) {
             mergeServiceFiles()
             isZip64 = true
-            archiveFileName.set("drillRuntime.jar")
+            archiveFileName.set("drill-runtime.jar")
             from(jvmMainCompilation.output, jvmMainCompilation.runtimeDependencyFiles)
             relocate("kotlin", "kruntime")
             relocate("kotlinx", "kruntimex")

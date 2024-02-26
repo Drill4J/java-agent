@@ -61,7 +61,7 @@ object Agent {
         addCapabilities()
         setEventCallbacks()
         setUnhandledExceptionHook({ error: Throwable -> logger.error(error) { "Unhandled event: $error" }}.freeze())
-        AddToBootstrapClassLoaderSearch("${Configuration.parameters[INSTALLATION_DIR]}/drillRuntime.jar")
+        AddToBootstrapClassLoaderSearch("${Configuration.parameters[INSTALLATION_DIR]}/drill-runtime.jar")
 
         logger.info { "agentOnLoad: The native agent has been loaded" }
         logger.info { "agentOnLoad: Pid is: " + getpid() }
