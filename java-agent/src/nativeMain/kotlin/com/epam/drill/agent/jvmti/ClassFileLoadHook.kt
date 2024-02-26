@@ -15,13 +15,6 @@
  */
 package com.epam.drill.agent.jvmti
 
-import kotlin.native.concurrent.AtomicInt
-import kotlinx.cinterop.*
-import org.objectweb.asm.ClassReader
-import io.ktor.utils.io.bits.Memory
-import io.ktor.utils.io.bits.loadByteArray
-import io.ktor.utils.io.bits.of
-import mu.KotlinLogging
 import com.epam.drill.agent.configuration.Configuration
 import com.epam.drill.agent.configuration.ParameterDefinitions
 import com.epam.drill.agent.instrument.CADENCE_CONSUMER
@@ -31,12 +24,8 @@ import com.epam.drill.agent.instrument.KAFKA_PRODUCER_INTERFACE
 import com.epam.drill.agent.instrument.clients.ApacheHttpClientTransformer
 import com.epam.drill.agent.instrument.clients.JavaHttpClientTransformer
 import com.epam.drill.agent.instrument.clients.OkHttp3ClientTransformer
-import com.epam.drill.agent.instrument.servers.CadenceTransformer
-import com.epam.drill.agent.instrument.servers.KafkaTransformer
-import com.epam.drill.agent.instrument.servers.NettyTransformer
-import com.epam.drill.agent.instrument.servers.SSLEngineTransformer
-import com.epam.drill.agent.instrument.servers.TTLTransformer
-import com.epam.drill.agent.instrument.servers.TomcatTransformer
+import com.epam.drill.agent.instrument.servers.ReactorTransformer
+import com.epam.drill.agent.instrument.servers.*
 import com.epam.drill.agent.interceptor.HttpInterceptorConfigurer
 import com.epam.drill.agent.module.InstrumentationAgentModule
 import com.epam.drill.agent.module.JvmModuleStorage
@@ -45,6 +34,11 @@ import com.epam.drill.jvmapi.gen.Allocate
 import com.epam.drill.jvmapi.gen.jint
 import com.epam.drill.jvmapi.gen.jintVar
 import com.epam.drill.jvmapi.gen.jobject
+import io.ktor.utils.io.bits.*
+import kotlinx.cinterop.*
+import mu.KotlinLogging
+import org.objectweb.asm.ClassReader
+import kotlin.native.concurrent.AtomicInt
 
 object ClassFileLoadHook {
 
@@ -52,7 +46,10 @@ object ClassFileLoadHook {
 
     private val logger = KotlinLogging.logger("com.epam.drill.agent.jvmti.ClassFileLoadHook")
 
-    private val strategies = listOf(JavaHttpClientTransformer, ApacheHttpClientTransformer, OkHttp3ClientTransformer)
+    private val strategies = listOf(
+        JavaHttpClientTransformer, ApacheHttpClientTransformer, OkHttp3ClientTransformer,
+        ReactorTransformer
+    )
 
     private val isAsyncApp = Configuration.parameters[ParameterDefinitions.IS_ASYNC_APP]
     private val isTlsApp = Configuration.parameters[ParameterDefinitions.IS_TLS_APP]

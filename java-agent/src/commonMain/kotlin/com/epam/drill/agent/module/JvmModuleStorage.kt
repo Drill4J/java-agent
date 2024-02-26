@@ -24,5 +24,4 @@ expect object JvmModuleStorage {
     fun values(): Collection<AgentModule>
 
     fun add(module: AgentModule)
-
 }
