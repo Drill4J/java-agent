@@ -1,0 +1,9 @@
+---
+void* currentEnvs() {
+}
+void* jvmtii() {
+}
+void* checkEx() {
+}
+void* getJvm() {
+}

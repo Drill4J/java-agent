@@ -1,4 +1,3 @@
-import org.gradle.api.Task
 import org.jetbrains.kotlin.util.prefixIfNot
 import org.apache.commons.configuration2.builder.fluent.Configurations
 import org.ajoberstar.grgit.Grgit
