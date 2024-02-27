@@ -16,6 +16,8 @@
 package com.epam.drill.agent.instrument.reactor.transformers
 
 import com.epam.drill.agent.instrument.AbstractTransformerObject
+import com.epam.drill.agent.instrument.ClassPathProvider
+import com.epam.drill.agent.instrument.RuntimeClassPathProvider
 import com.epam.drill.agent.instrument.TransformerObject
 import com.epam.drill.agent.instrument.reactor.PublisherAssembler
 import com.epam.drill.agent.instrument.servers.FLUX_CLASS_NAME
@@ -26,7 +28,9 @@ import mu.KotlinLogging
 /**
  * Transformer for {@link reactor.core.publisher.Flux}.
  */
-object FluxTransformerObject: TransformerObject, AbstractTransformerObject() {
+object FluxTransformerObject: TransformerObject,
+    AbstractTransformerObject(),
+    ClassPathProvider by RuntimeClassPathProvider {
     override val logger = KotlinLogging.logger {}
 
     override fun permit(className: String?, superName: String?, interfaces: Array<String?>) =

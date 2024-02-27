@@ -16,6 +16,8 @@
 package com.epam.drill.agent.instrument.servers
 
 import com.epam.drill.agent.instrument.AbstractTransformerObject
+import com.epam.drill.agent.instrument.ClassPathProvider
+import com.epam.drill.agent.instrument.RuntimeClassPathProvider
 import com.epam.drill.agent.instrument.TransformerObject
 import com.epam.drill.agent.instrument.reactor.transformers.FluxTransformerObject
 import com.epam.drill.agent.instrument.reactor.transformers.MonoTransformerObject
@@ -36,7 +38,9 @@ private val reactorTransformers = setOf(
     SchedulersTransformerObject
 )
 
-actual object ReactorTransformer : TransformerObject, AbstractTransformerObject() {
+actual object ReactorTransformer : TransformerObject,
+    AbstractTransformerObject(),
+    ClassPathProvider by RuntimeClassPathProvider {
     override val logger = KotlinLogging.logger {}
 
     override fun permit(className: String?, superName: String?, interfaces: Array<String?>) =

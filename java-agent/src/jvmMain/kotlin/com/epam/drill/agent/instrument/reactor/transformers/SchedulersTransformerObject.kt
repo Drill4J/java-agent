@@ -17,6 +17,8 @@ package com.epam.drill.agent.instrument.reactor.transformers
 
 import com.epam.drill.agent.instrument.TransformerObject
 import com.epam.drill.agent.instrument.AbstractTransformerObject
+import com.epam.drill.agent.instrument.ClassPathProvider
+import com.epam.drill.agent.instrument.RuntimeClassPathProvider
 import com.epam.drill.agent.instrument.reactor.PropagatedDrillRequestRunnable
 import com.epam.drill.agent.instrument.servers.SCHEDULERS_CLASS_NAME
 import com.epam.drill.agent.request.RequestHolder
@@ -29,7 +31,9 @@ import mu.KotlinLogging
  * Transformer for {@link reactor.core.scheduler.Schedulers}.
  * It propagates {@link DrillRequest} using {@link PropagatedDrillRequestRunnable} on the method {@link Schedulers#onSchedule}.
  */
-object SchedulersTransformerObject: TransformerObject, AbstractTransformerObject() {
+object SchedulersTransformerObject: TransformerObject,
+    AbstractTransformerObject(),
+    ClassPathProvider by RuntimeClassPathProvider {
     override val logger = KotlinLogging.logger {}
 
     override fun permit(className: String?, superName: String?, interfaces: Array<String?>) =
