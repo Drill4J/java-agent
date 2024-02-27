@@ -41,7 +41,7 @@ class ValidatedParametersProviderTest {
         val provider1 = SimpleMapProvider(mapOf("foo1" to "bar1"))
         val provider2 = SimpleMapProvider(mapOf("foo2" to "bar2"))
         val result = ValidatedParametersProvider(setOf(default, provider1, provider2)).validatingConfiguration()
-        assertEquals(7, result.size)
+        assertEquals(8, result.size)
         assertEquals("bar1", result["foo1"])
         assertEquals("bar2", result["foo2"])
         assertEquals("agent-id", result[DefaultParameterDefinitions.AGENT_ID.name])
@@ -57,7 +57,7 @@ class ValidatedParametersProviderTest {
         val provider1 = SimpleMapProvider(mapOf("foo1" to "bar11", "foo2" to "bar12"), 100)
         val provider2 = SimpleMapProvider(mapOf("foo2" to "bar22", "foo3" to "bar23"), 200)
         val result = ValidatedParametersProvider(setOf(default, provider1, provider2)).validatingConfiguration()
-        assertEquals(8, result.size)
+        assertEquals(9, result.size)
         assertEquals("bar11", result["foo1"])
         assertEquals("bar22", result["foo2"])
         assertEquals("bar23", result["foo3"])
@@ -125,7 +125,8 @@ class ValidatedParametersProviderTest {
         DefaultParameterDefinitions.BUILD_VERSION.name to "1.0.0",
         DefaultParameterDefinitions.PACKAGE_PREFIXES.name to "foo/bar",
         DefaultParameterDefinitions.INSTALLATION_DIR.name to "/data/agent",
-        ParameterDefinitions.ADMIN_ADDRESS.name to "https://localhost"
+        ParameterDefinitions.ADMIN_ADDRESS.name to "https://localhost",
+        ParameterDefinitions.API_KEY.name to "apikey",
     )
 
     private class SimpleMapProvider(

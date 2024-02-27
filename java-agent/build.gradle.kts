@@ -33,6 +33,7 @@ val aesyDatasizeVersion: String by parent!!.extra
 val nativeAgentLibName: String by parent!!.extra
 val nativeAgentHookEnabled: String by parent!!.extra
 val macosLd64: String by parent!!.extra
+val bytebuddyVersion: String by parent!!.extra
 
 repositories {
     mavenLocal()
@@ -102,6 +103,7 @@ kotlin {
                 implementation("org.javassist:javassist:$javassistVersion")
                 implementation("com.alibaba:transmittable-thread-local:$transmittableThreadLocalVersion")
                 implementation("io.aesy:datasize:$aesyDatasizeVersion")
+                implementation("net.bytebuddy:byte-buddy:$bytebuddyVersion")
                 implementation(project(":agent-transport"))
                 implementation(project(":agent-instrumentation"))
                 runtimeOnly(project(":test2code"))
@@ -179,7 +181,7 @@ kotlin {
         val runtimeJar by registering(ShadowJar::class) {
             mergeServiceFiles()
             isZip64 = true
-            archiveFileName.set("drillRuntime.jar")
+            archiveFileName.set("drill-runtime.jar")
             from(jvmMainCompilation.output, jvmMainCompilation.runtimeDependencyFiles)
             relocate("kotlin", "kruntime")
             relocate("kotlinx", "kruntimex")
