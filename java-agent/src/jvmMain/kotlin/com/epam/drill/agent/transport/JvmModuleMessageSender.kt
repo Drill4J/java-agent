@@ -19,8 +19,8 @@ import java.io.File
 import io.aesy.datasize.ByteUnit
 import io.aesy.datasize.DataSize
 import mu.KotlinLogging
-import com.epam.drill.agent.configuration.DefaultParameterDefinitions
 import com.epam.drill.agent.configuration.Configuration
+import com.epam.drill.agent.configuration.DefaultParameterDefinitions
 import com.epam.drill.agent.configuration.ParameterDefinitions
 import com.epam.drill.agent.transport.http.HttpAgentMessageDestinationMapper
 import com.epam.drill.agent.transport.http.HttpAgentMessageTransport
@@ -45,7 +45,7 @@ actual object JvmModuleMessageSender : AgentMessageSender {
         messageSender.send(Configuration.agentMetadata)
     }
 
-    private fun messageSender(): QueuedAgentMessageSender<ByteArray> {
+    private fun messageSender(): QueuedAgentMessageMetadataSender<ByteArray> {
         val transport = HttpAgentMessageTransport(
             Configuration.parameters[ParameterDefinitions.ADMIN_ADDRESS],
             Configuration.parameters[ParameterDefinitions.API_KEY],
@@ -55,6 +55,7 @@ actual object JvmModuleMessageSender : AgentMessageSender {
         val serializer = ProtoBufAgentMessageSerializer()
         val mapper = HttpAgentMessageDestinationMapper(
             Configuration.agentMetadata.id,
+            Configuration.agentMetadata.serviceGroupId,
             Configuration.agentMetadata.buildVersion
         )
         val metadataSender = RetryingAgentMetadataSender(transport, serializer, mapper)
@@ -63,7 +64,7 @@ actual object JvmModuleMessageSender : AgentMessageSender {
             Configuration.parameters[ParameterDefinitions.MESSAGE_QUEUE_LIMIT].let(::parseBytes)
         )
         val notifier = RetryingTransportStateNotifier(transport, serializer, queue)
-        return QueuedAgentMessageSender(transport, serializer, mapper, metadataSender, notifier, notifier, queue)
+        return QueuedAgentMessageMetadataSender(transport, serializer, mapper, metadataSender, notifier, notifier, queue)
     }
 
     private fun resolvePath(path: String) = File(path).run {
