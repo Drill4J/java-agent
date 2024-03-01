@@ -15,23 +15,27 @@
  */
 package com.epam.drill.test2code.coverage
 
-import com.epam.drill.common.agent.transport.*
-import com.epam.drill.plugins.test2code.common.api.*
-import com.epam.drill.plugins.test2code.common.transport.*
-import kotlinx.coroutines.*
-import mu.*
-import java.util.concurrent.*
+import kotlinx.coroutines.Runnable
+import java.util.concurrent.Executors
+import java.util.concurrent.TimeUnit
+import mu.KotlinLogging
+import com.epam.drill.common.agent.transport.AgentMessageDestination
+import com.epam.drill.common.agent.transport.AgentMessageSender
+import com.epam.drill.common.agent.transport.ResponseStatus
+import com.epam.drill.plugins.test2code.common.api.ExecClassData
+import com.epam.drill.plugins.test2code.common.api.toBitSet
+import com.epam.drill.plugins.test2code.common.transport.CoverageData
 
 interface CoverageSender {
     fun setCoverageSendInterval(intervalMs: Long)
-    fun setAgentMessageSender(sender: AgentMessageSender)
+    fun setAgentMessageSender(sender: AgentMessageSender<in CoverageData>)
     fun startSendingCoverage()
     fun stopSendingCoverage()
 }
 
 class IntervalCoverageSender(
     private var intervalMs: Long,
-    private var sender: AgentMessageSender = StubSender(),
+    private var sender: AgentMessageSender<in CoverageData> = StubSender(),
     private val collectProbes: () -> Sequence<ExecDatum> = { emptySequence() }
 ) : CoverageSender {
     private val scheduledThreadPool = Executors.newSingleThreadScheduledExecutor()
@@ -42,7 +46,7 @@ class IntervalCoverageSender(
         this.intervalMs = intervalMs
     }
 
-    override fun setAgentMessageSender(sender: AgentMessageSender) {
+    override fun setAgentMessageSender(sender: AgentMessageSender<in CoverageData>) {
         this.sender = sender
     }
 
@@ -74,9 +78,9 @@ class IntervalCoverageSender(
 
 }
 
-private class StubSender : AgentMessageSender {
+private class StubSender : AgentMessageSender<CoverageData> {
     override val available: Boolean = false
-    override fun send(destination: AgentMessageDestination, message: AgentMessage) = StubResponseStatus()
+    override fun send(destination: AgentMessageDestination, message: CoverageData) = StubResponseStatus()
 }
 
 private class StubResponseStatus : ResponseStatus {

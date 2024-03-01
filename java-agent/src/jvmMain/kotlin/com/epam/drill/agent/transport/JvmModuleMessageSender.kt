@@ -28,7 +28,7 @@ import com.epam.drill.common.agent.transport.AgentMessage
 import com.epam.drill.common.agent.transport.AgentMessageDestination
 import com.epam.drill.common.agent.transport.AgentMessageSender
 
-actual object JvmModuleMessageSender : AgentMessageSender {
+actual object JvmModuleMessageSender : AgentMessageSender<AgentMessage> {
 
     private const val QUEUE_DEFAULT_SIZE: Long = 512L * 1024 * 1024
 
@@ -45,14 +45,14 @@ actual object JvmModuleMessageSender : AgentMessageSender {
         messageSender.send(Configuration.agentMetadata)
     }
 
-    private fun messageSender(): QueuedAgentMessageMetadataSender<ByteArray> {
+    private fun messageSender(): QueuedAgentMessageMetadataSender<AgentMessage, ByteArray> {
         val transport = HttpAgentMessageTransport(
             Configuration.parameters[ParameterDefinitions.ADMIN_ADDRESS],
             Configuration.parameters[ParameterDefinitions.API_KEY],
             Configuration.parameters[ParameterDefinitions.SSL_TRUSTSTORE].let(::resolvePath),
             Configuration.parameters[ParameterDefinitions.SSL_TRUSTSTORE_PASSWORD]
         )
-        val serializer = ProtoBufAgentMessageSerializer()
+        val serializer = ProtoBufAgentMessageSerializer<AgentMessage>()
         val mapper = HttpAgentMessageDestinationMapper(
             Configuration.agentMetadata.id,
             Configuration.agentMetadata.serviceGroupId,
