@@ -49,8 +49,8 @@ class ReactorTest {
     }
 
     @Test
-    fun `given Mono class, onAssembly must propagate test session to another threads`() {
-        //Use Reactor Hooks to replace the Mono class with a decorator one
+    fun `given Mono class, onAssembly should seamlessly propagate test session to other threads`() {
+        //Use Reactor Hooks to replace the Mono class with a decorated one
         Hooks.onEachOperator {
             PublisherAssembler.onAssembly(it, Mono::class.java, RequestHolder) as Mono<Any>?
         }
@@ -62,7 +62,7 @@ class ReactorTest {
                 .subscribeOn(Schedulers.single())
                 .map {
                     //Retrieve testSession in subscriber thread
-                    it + "-" + RequestHolder.retrieve()?.drillSessionId
+                    "$it-${RequestHolder.retrieve()?.drillSessionId}"
                 }
 
             StepVerifier.create(mono)
@@ -76,7 +76,7 @@ class ReactorTest {
     }
 
     @Test
-    fun `given Flux class, onAssembly must propagate test session to another threads`() {
+    fun `given Flux class, onAssembly should seamlessly propagate test session to other threads`() {
         val testSession = "session-1"
 
         //Use Reactor Hooks to replace the Flux class with a decorator one
@@ -95,7 +95,7 @@ class ReactorTest {
                 }
                 .map {
                     //Retrieve testSession in subscriber thread
-                    it + "-" + RequestHolder.retrieve()?.drillSessionId
+                    "$it-${RequestHolder.retrieve()?.drillSessionId}"
                 }
 
             StepVerifier.create(flux)
@@ -109,7 +109,7 @@ class ReactorTest {
     }
 
     @Test
-    fun `given ParallelFlux class, onAssembly must propagate test session to another threads`() {
+    fun `given ParallelFlux class, onAssembly should seamlessly propagate test session to other threads`() {
         val testSession = "session-1"
 
         //Use Reactor Hooks to replace the ParallelFlux class with a decorator one
@@ -130,7 +130,7 @@ class ReactorTest {
                 }
                 .map {
                     //Retrieve testSession in subscriber thread
-                    it + "-" + RequestHolder.retrieve()?.drillSessionId
+                    "$it-${RequestHolder.retrieve()?.drillSessionId}"
                 }
                 .parallel()
                 .runOn(Schedulers.single())
@@ -146,25 +146,27 @@ class ReactorTest {
     }
 
     @Test
-    fun `given MonoDelay class, PropagatedDrillRequestRunnable must propagate test session to scheduled task`() {
+    fun `given MonoDelay class, PropagatedDrillRequestRunnable should seamlessly propagate test session to scheduled task`() {
+        val testSession = "test-session"
+
         //Use Reactor Schedulers Hook to replace the Runnable class with a decorator one
         Schedulers.onScheduleHook("test-hook") { runnable ->
             RequestHolder.retrieve()?.let { PropagatedDrillRequestRunnable(it, RequestHolder, runnable) } ?: runnable
         }
 
         //Save testSession in the current thread
-        RequestHolder.store(DrillRequest("test-session"))
+        RequestHolder.store(DrillRequest(testSession))
         try {
-            val mono = Mono.just("test")
+            val mono = Mono.just("task")
                 .delaySubscription(Duration.ofMillis(10), Schedulers.single())
                 .map {
                     //Retrieve testSession in a scheduled task
-                    RequestHolder.retrieve()?.drillSessionId
+                    "$it-${RequestHolder.retrieve()?.drillSessionId}"
                 }
 
             StepVerifier.create(mono)
                 //Check that testSession was propagated to subscriber thread
-                .expectNext("test-session")
+                .expectNext("task-$testSession")
                 .expectComplete()
                  .verify()
         } finally {
