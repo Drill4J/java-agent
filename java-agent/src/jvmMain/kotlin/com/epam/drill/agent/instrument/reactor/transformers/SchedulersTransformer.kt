@@ -13,25 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.epam.drill.agent.instrument.servers
+package com.epam.drill.agent.instrument.reactor.transformers
 
-import com.epam.drill.agent.instrument.AbstractTransformerObject
+import com.epam.drill.agent.instrument.TransformerObject
 import com.epam.drill.agent.instrument.ClassPathProvider
 import com.epam.drill.agent.instrument.RuntimeClassPathProvider
-import com.epam.drill.agent.instrument.TransformerObject
-import com.epam.drill.agent.instrument.reactor.transformers.FluxTransformer
-import com.epam.drill.agent.instrument.reactor.transformers.MonoTransformer
-import com.epam.drill.agent.instrument.reactor.transformers.ParallelFluxTransformer
-import com.epam.drill.agent.instrument.reactor.transformers.SchedulersTransformer
+import com.epam.drill.agent.request.RequestHolder
 
-private val reactorTransformers = setOf<AbstractTransformerObject>(
-    FluxTransformer,
-    MonoTransformer,
-    ParallelFluxTransformer,
-    SchedulersTransformer
-)
-
-actual object ReactorTransformer :
-    TransformerObject,
-    ReactorTransformerObject(reactorTransformers),
+object SchedulersTransformer: TransformerObject,
+    SchedulersTransformerObject(),
+    com.epam.drill.common.agent.request.RequestHolder by RequestHolder,
     ClassPathProvider by RuntimeClassPathProvider
