@@ -8,6 +8,7 @@ import org.jetbrains.kotlin.konan.target.presetName
 import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
 import com.hierynomus.gradle.license.tasks.LicenseCheck
 import com.hierynomus.gradle.license.tasks.LicenseFormat
+import org.jetbrains.kotlin.gradle.plugin.mpp.NativeBuildType
 
 @Suppress("RemoveRedundantBackticks")
 plugins {
@@ -107,6 +108,14 @@ kotlin {
                 implementation(project(":agent-transport"))
                 implementation(project(":agent-instrumentation"))
                 runtimeOnly(project(":test2code"))
+            }
+        }
+        val jvmTest by getting {
+            dependsOn(commonTest)
+            dependencies {
+                implementation(kotlin("test-junit"))
+                implementation("io.projectreactor:reactor-core:3.4.16")
+                implementation("io.projectreactor:reactor-test:3.4.16")
             }
         }
         val configureNativeDependencies: KotlinSourceSet.() -> Unit = {
