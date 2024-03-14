@@ -22,7 +22,6 @@ import mu.KotlinLogging
 import com.epam.drill.agent.configuration.Configuration
 import com.epam.drill.agent.configuration.DefaultParameterDefinitions
 import com.epam.drill.agent.configuration.ParameterDefinitions
-import com.epam.drill.agent.transport.http.HttpAgentMessageDestinationMapper
 import com.epam.drill.agent.transport.http.HttpAgentMessageTransport
 import com.epam.drill.common.agent.transport.AgentMessage
 import com.epam.drill.common.agent.transport.AgentMessageDestination
@@ -53,11 +52,7 @@ actual object JvmModuleMessageSender : AgentMessageSender<AgentMessage> {
             Configuration.parameters[ParameterDefinitions.SSL_TRUSTSTORE_PASSWORD]
         )
         val serializer = ProtoBufAgentMessageSerializer<AgentMessage>()
-        val mapper = HttpAgentMessageDestinationMapper(
-            Configuration.agentMetadata.id,
-            Configuration.agentMetadata.serviceGroupId,
-            Configuration.agentMetadata.buildVersion
-        )
+        val mapper = HttpAgentMessageDestinationMapper()
         val metadataSender = RetryingAgentMetadataSender(transport, serializer, mapper)
         val queue = InMemoryAgentMessageQueue(
             serializer,

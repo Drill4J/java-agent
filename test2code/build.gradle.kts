@@ -50,9 +50,7 @@ dependencies {
     implementation(project(":test2code-jacoco"))
     implementation(project(":konform"))
 
-    testImplementation(kotlin("test-junit5"))
-    testImplementation("org.junit.jupiter:junit-jupiter:5.4.2")
-    testImplementation("com.nhaarman.mockitokotlin2:mockito-kotlin:2.2.0")
+    testImplementation(kotlin("test-junit"))
 }
 
 kotlin.sourceSets.all {
@@ -68,9 +66,6 @@ kotlin.sourceSets.all {
 
 @Suppress("UNUSED_VARIABLE")
 tasks {
-    test {
-        useJUnitPlatform()
-    }
     withType<KotlinCompile> {
         kotlinOptions.jvmTarget = "1.8"
     }

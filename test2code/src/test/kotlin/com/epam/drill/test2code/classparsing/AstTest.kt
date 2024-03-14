@@ -15,13 +15,13 @@
  */
 package com.epam.drill.test2code.classparsing
 
-import com.epam.drill.fixture.ast.CheckProbeRanges
-import com.epam.drill.fixture.ast.SimpleClass
-import com.epam.drill.plugins.test2code.common.api.AstMethod
-import org.junit.jupiter.api.Test
 import kotlin.reflect.KClass
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
+import kotlin.test.Test
+import com.epam.drill.fixture.ast.CheckProbeRanges
+import com.epam.drill.fixture.ast.SimpleClass
+import com.epam.drill.plugins.test2code.common.api.AstMethod
 
 class AstTest {
 
