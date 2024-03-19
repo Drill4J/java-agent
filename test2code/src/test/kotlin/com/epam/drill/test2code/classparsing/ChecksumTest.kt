@@ -15,11 +15,11 @@
  */
 package com.epam.drill.test2code.classparsing
 
-import com.epam.drill.fixture.ast.*
-import com.epam.drill.fixture.ast.OverrideTest
-import org.junit.jupiter.api.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotEquals
+import kotlin.test.Test
+import com.epam.drill.fixture.ast.*
+import com.epam.drill.fixture.ast.OverrideTest
 // TODO
 //  -make test cases independent (split fixture class into multiple classes)
 //  -rewrite tests cases testing change ("Build1" and "Build2")

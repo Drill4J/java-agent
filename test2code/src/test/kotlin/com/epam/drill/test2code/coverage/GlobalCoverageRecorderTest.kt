@@ -15,9 +15,10 @@
  */
 package com.epam.drill.test2code.coverage
 
+import kotlin.test.Test
+import kotlin.test.assertEquals
+import kotlin.test.assertTrue
 import com.epam.drill.jacoco.AgentProbes
-import org.junit.jupiter.api.*
-import org.junit.jupiter.api.Assertions.*
 
 class GlobalCoverageRecorderTest {
 

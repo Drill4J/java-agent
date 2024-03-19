@@ -19,16 +19,15 @@ import java.io.File
 import io.aesy.datasize.ByteUnit
 import io.aesy.datasize.DataSize
 import mu.KotlinLogging
-import com.epam.drill.agent.configuration.DefaultParameterDefinitions
 import com.epam.drill.agent.configuration.Configuration
+import com.epam.drill.agent.configuration.DefaultParameterDefinitions
 import com.epam.drill.agent.configuration.ParameterDefinitions
-import com.epam.drill.agent.transport.http.HttpAgentMessageDestinationMapper
 import com.epam.drill.agent.transport.http.HttpAgentMessageTransport
 import com.epam.drill.common.agent.transport.AgentMessage
 import com.epam.drill.common.agent.transport.AgentMessageDestination
 import com.epam.drill.common.agent.transport.AgentMessageSender
 
-actual object JvmModuleMessageSender : AgentMessageSender {
+actual object JvmModuleMessageSender : AgentMessageSender<AgentMessage> {
 
     private const val QUEUE_DEFAULT_SIZE: Long = 512L * 1024 * 1024
 
@@ -45,25 +44,22 @@ actual object JvmModuleMessageSender : AgentMessageSender {
         messageSender.send(Configuration.agentMetadata)
     }
 
-    private fun messageSender(): QueuedAgentMessageSender<ByteArray> {
+    private fun messageSender(): QueuedAgentMessageMetadataSender<AgentMessage, ByteArray> {
         val transport = HttpAgentMessageTransport(
             Configuration.parameters[ParameterDefinitions.ADMIN_ADDRESS],
             Configuration.parameters[ParameterDefinitions.API_KEY],
             Configuration.parameters[ParameterDefinitions.SSL_TRUSTSTORE].let(::resolvePath),
             Configuration.parameters[ParameterDefinitions.SSL_TRUSTSTORE_PASSWORD]
         )
-        val serializer = ProtoBufAgentMessageSerializer()
-        val mapper = HttpAgentMessageDestinationMapper(
-            Configuration.agentMetadata.id,
-            Configuration.agentMetadata.buildVersion
-        )
+        val serializer = ProtoBufAgentMessageSerializer<AgentMessage>()
+        val mapper = HttpAgentMessageDestinationMapper()
         val metadataSender = RetryingAgentMetadataSender(transport, serializer, mapper)
         val queue = InMemoryAgentMessageQueue(
             serializer,
             Configuration.parameters[ParameterDefinitions.MESSAGE_QUEUE_LIMIT].let(::parseBytes)
         )
         val notifier = RetryingTransportStateNotifier(transport, serializer, queue)
-        return QueuedAgentMessageSender(transport, serializer, mapper, metadataSender, notifier, notifier, queue)
+        return QueuedAgentMessageMetadataSender(transport, serializer, mapper, metadataSender, notifier, notifier, queue)
     }
 
     private fun resolvePath(path: String) = File(path).run {

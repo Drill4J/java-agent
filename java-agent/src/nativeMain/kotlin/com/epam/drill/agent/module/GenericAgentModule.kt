@@ -15,8 +15,8 @@
  */
 package com.epam.drill.agent.module
 
-import com.epam.drill.common.agent.configuration.AgentConfiguration
 import com.epam.drill.common.agent.AgentContext
+import com.epam.drill.common.agent.configuration.AgentConfiguration
 import com.epam.drill.common.agent.module.AgentModule
 import com.epam.drill.common.agent.request.RequestProcessor
 import com.epam.drill.common.agent.transport.AgentMessage
@@ -56,7 +56,7 @@ open class GenericAgentModule(
         override fun invoke() = throw NotImplementedError()
     }
 
-    private class NopMessageSender : AgentMessageSender {
+    private class NopMessageSender : AgentMessageSender<AgentMessage> {
         override val available
             get() = throw NotImplementedError()
         override fun send(destination: AgentMessageDestination, message: AgentMessage) = throw NotImplementedError()

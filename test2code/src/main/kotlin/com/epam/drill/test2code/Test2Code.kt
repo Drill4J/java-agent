@@ -21,8 +21,8 @@ import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.json.Json
 import java.util.concurrent.ConcurrentHashMap
 import mu.KotlinLogging
-import com.epam.drill.common.agent.configuration.AgentConfiguration
 import com.epam.drill.common.agent.AgentContext
+import com.epam.drill.common.agent.configuration.AgentConfiguration
 import com.epam.drill.common.agent.module.AgentModule
 import com.epam.drill.common.agent.module.Instrumenter
 import com.epam.drill.common.agent.request.RequestProcessor
@@ -48,7 +48,7 @@ private const val DRILL_TEST_ID_HEADER = "drill-test-id"
 class Test2Code(
     id: String,
     agentContext: AgentContext,
-    sender: AgentMessageSender,
+    sender: AgentMessageSender<AgentMessage>,
     configuration: AgentConfiguration
 ) : AgentModule(id, agentContext, sender, configuration), Instrumenter, ClassScanner, RequestProcessor {
 
