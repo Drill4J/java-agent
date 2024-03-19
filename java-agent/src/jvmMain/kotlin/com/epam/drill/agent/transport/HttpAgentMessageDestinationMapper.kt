@@ -20,12 +20,15 @@ import com.epam.drill.common.agent.transport.AgentMessageDestination
 
 class HttpAgentMessageDestinationMapper : AgentMessageDestinationMapper {
 
-    private val defaultTargetPrefix =
-        "api/agents/${Configuration.agentMetadata.id}/builds/${Configuration.agentMetadata.buildVersion}"
-
-    override fun map(destination: AgentMessageDestination): AgentMessageDestination = when (destination.target) {
-        "agent-metadata" -> destination.copy(target = "api/agents")
-        else -> destination.copy(target = "$defaultTargetPrefix/${destination.target}")
+    private val apiPath = run {
+        val groupId = Configuration.agentMetadata.serviceGroupId
+        val agentId = Configuration.agentMetadata.id
+        val buildVersion = Configuration.agentMetadata.buildVersion
+        val instanceId = Configuration.agentMetadata.instanceId
+        "/api/groups/${groupId}/agents/$agentId/builds/$buildVersion/instances/${instanceId}"
     }
 
+    override fun map(destination: AgentMessageDestination): AgentMessageDestination =
+        destination.copy(target =
+        if (destination.target.isEmpty()) apiPath else "${apiPath}/${destination.target}")
 }
