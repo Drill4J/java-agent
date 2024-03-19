@@ -56,6 +56,10 @@ class ValidatedParametersProvider(
             identifier()
             minLength(3)
         }
+        ValidatingParameters::groupId required {
+            identifier()
+            minLength(3)
+        }
         ValidatingParameters::buildVersion required {
             pattern("^\\S*$") hint "must not contain whitespaces"
         }
@@ -74,10 +78,6 @@ class ValidatedParametersProvider(
     }
 
     private val softValidators = Validation<ValidatingParameters> {
-        ValidatingParameters::groupId ifPresent {
-            identifier()
-            minLength(3)
-        }
         ValidatingParameters::logLevelAsList onEach {
             isValidLogLevel()
         }
