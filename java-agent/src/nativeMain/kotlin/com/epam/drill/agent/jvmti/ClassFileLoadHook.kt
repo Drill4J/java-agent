@@ -24,6 +24,7 @@ import com.epam.drill.agent.instrument.KAFKA_PRODUCER_INTERFACE
 import com.epam.drill.agent.instrument.clients.ApacheHttpClientTransformer
 import com.epam.drill.agent.instrument.clients.JavaHttpClientTransformer
 import com.epam.drill.agent.instrument.clients.OkHttp3ClientTransformer
+import com.epam.drill.agent.instrument.clients.WebClientTransformer
 import com.epam.drill.agent.instrument.servers.ReactorTransformer
 import com.epam.drill.agent.instrument.servers.*
 import com.epam.drill.agent.interceptor.HttpInterceptorConfigurer
@@ -48,7 +49,7 @@ object ClassFileLoadHook {
 
     private val strategies = listOf(
         JavaHttpClientTransformer, ApacheHttpClientTransformer, OkHttp3ClientTransformer,
-        ReactorTransformer
+        ReactorTransformer, WebClientTransformer
     )
 
     private val isAsyncApp = Configuration.parameters[ParameterDefinitions.IS_ASYNC_APP]
