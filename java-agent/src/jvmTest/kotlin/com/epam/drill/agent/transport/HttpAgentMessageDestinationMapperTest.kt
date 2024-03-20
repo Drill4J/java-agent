@@ -25,26 +25,37 @@ class HttpAgentMessageDestinationMapperTest {
 
     private lateinit var mapper: HttpAgentMessageDestinationMapper
 
+    private val groupId = "someGroupId"
+    private val agentId = "someAgentId"
+    private val buildVersion = "someBuildVer"
+    private val instanceId = "someInstanceId"
+
     @BeforeTest
     fun prepareConfiguration() {
-        Configuration.initializeJvm("agentId=someAgentId,buildVersion=someBuildVer")
+        Configuration.initializeJvm("groupId=${groupId},agentId=${agentId},buildVersion=${buildVersion},instanceId=${instanceId}")
         mapper = HttpAgentMessageDestinationMapper()
     }
 
     @Test
     fun `map AgentMetadata`() {
-        val destination = AgentMessageDestination("SOME", "agent-metadata")
+        val destination = AgentMessageDestination("PUT", "")
         val mapped = mapper.map(destination)
-        assertEquals("api/agents", mapped.target)
-        assertEquals("SOME", mapped.type)
+        assertEquals(
+            "/api/groups/${groupId}/agents/${agentId}/builds/${buildVersion}/instances/${instanceId}",
+            mapped.target
+        )
+        assertEquals("PUT", mapped.type)
     }
 
     @Test
     fun `map AgentMessage`() {
-        val destination = AgentMessageDestination("SOME", "something-else")
+        val destination = AgentMessageDestination("POST", "something-else")
         val mapped = mapper.map(destination)
-        assertEquals("api/agents/someAgentId/builds/someBuildVer/something-else", mapped.target)
-        assertEquals("SOME", mapped.type)
+        assertEquals(
+            "/api/groups/${groupId}/agents/${agentId}/builds/${buildVersion}/instances/${instanceId}/something-else",
+            mapped.target
+        )
+        assertEquals("POST", mapped.type)
     }
 
 }

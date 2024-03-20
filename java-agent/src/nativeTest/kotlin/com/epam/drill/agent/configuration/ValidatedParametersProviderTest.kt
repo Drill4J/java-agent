@@ -41,7 +41,7 @@ class ValidatedParametersProviderTest {
         val provider1 = SimpleMapProvider(mapOf("foo1" to "bar1"))
         val provider2 = SimpleMapProvider(mapOf("foo2" to "bar2"))
         val result = ValidatedParametersProvider(setOf(default, provider1, provider2)).validatingConfiguration()
-        assertEquals(8, result.size)
+        assertEquals(9, result.size)
         assertEquals("bar1", result["foo1"])
         assertEquals("bar2", result["foo2"])
         assertEquals("agent-id", result[DefaultParameterDefinitions.AGENT_ID.name])
@@ -57,7 +57,7 @@ class ValidatedParametersProviderTest {
         val provider1 = SimpleMapProvider(mapOf("foo1" to "bar11", "foo2" to "bar12"), 100)
         val provider2 = SimpleMapProvider(mapOf("foo2" to "bar22", "foo3" to "bar23"), 200)
         val result = ValidatedParametersProvider(setOf(default, provider1, provider2)).validatingConfiguration()
-        assertEquals(9, result.size)
+        assertEquals(10, result.size)
         assertEquals("bar11", result["foo1"])
         assertEquals("bar22", result["foo2"])
         assertEquals("bar23", result["foo3"])
@@ -109,19 +109,18 @@ class ValidatedParametersProviderTest {
     fun `validate soft parameters defaults`() {
         val default = SimpleMapProvider(defaultParameters())
         val soft = SimpleMapProvider(mapOf(
-            DefaultParameterDefinitions.GROUP_ID.name to "id",
             ParameterDefinitions.LOG_LEVEL.name to "foo.bar=UNKNOWN",
             ParameterDefinitions.LOG_LIMIT.name to "-512"
         ))
         val result = ValidatedParametersProvider(setOf(default, soft)).configuration
-        assertEquals(3, result.size)
-        assertEquals(DefaultParameterDefinitions.GROUP_ID.defaultValue, result[DefaultParameterDefinitions.GROUP_ID.name])
+        assertEquals(2, result.size)
         assertEquals(ParameterDefinitions.LOG_LEVEL.defaultValue, result[ParameterDefinitions.LOG_LEVEL.name])
         assertEquals(ParameterDefinitions.LOG_LIMIT.defaultValue.toString(), result[ParameterDefinitions.LOG_LIMIT.name])
     }
 
     private fun defaultParameters() = mutableMapOf(
         DefaultParameterDefinitions.AGENT_ID.name to "agent-id",
+        DefaultParameterDefinitions.GROUP_ID.name to "group-id",
         DefaultParameterDefinitions.BUILD_VERSION.name to "1.0.0",
         DefaultParameterDefinitions.PACKAGE_PREFIXES.name to "foo/bar",
         DefaultParameterDefinitions.INSTALLATION_DIR.name to "/data/agent",
