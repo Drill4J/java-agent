@@ -41,7 +41,7 @@ class HttpAgentMessageDestinationMapperTest {
         val destination = AgentMessageDestination("PUT", "")
         val mapped = mapper.map(destination)
         assertEquals(
-            "/api/groups/${groupId}/agents/${agentId}/builds/${buildVersion}/instances/${instanceId}",
+            "/api/instances/${instanceId}",
             mapped.target
         )
         assertEquals("PUT", mapped.type)
