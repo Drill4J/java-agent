@@ -52,7 +52,7 @@ class HttpAgentMessageDestinationMapperTest {
         val destination = AgentMessageDestination("POST", "something-else")
         val mapped = mapper.map(destination)
         assertEquals(
-            "/api/groups/${groupId}/agents/${agentId}/builds/${buildVersion}/instances/${instanceId}/something-else",
+            "/api/instances/${instanceId}/something-else",
             mapped.target
         )
         assertEquals("POST", mapped.type)
