@@ -126,22 +126,15 @@ class Test2Code(
                 .also(::sendClassMetadata)
                 .also { classCount += it.size }
         }
-        sendClassMetadataComplete()
         logger.info { "Scanned $classCount classes" }
     }
 
     private val classMetadataDestination = AgentMessageDestination("POST", "class-metadata")
-    private val classMetadataCompleteDestination = AgentMessageDestination("POST", "class-metadata/complete")
 
     private fun sendClassMetadata(astEntities: List<AstEntity>) {
         val message = ClassMetadata(astEntities = astEntities)
         logger.debug { "sendClassMetadata: Sending class metadata: $message" }
         sender.send(classMetadataDestination, message)
-    }
-
-    private fun sendClassMetadataComplete() {
-        logger.debug { "sendClassMetadataComplete: Sending class metadata complete message" }
-        sender.send(classMetadataCompleteDestination, AgentMessage())
     }
 
 }
