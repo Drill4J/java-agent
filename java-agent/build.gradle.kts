@@ -1,9 +1,8 @@
 import java.net.URI
-import org.jetbrains.kotlin.gradle.dsl.KotlinMultiplatformExtension
+import org.jetbrains.kotlin.gradle.plugin.KotlinCompilation
 import org.jetbrains.kotlin.gradle.plugin.KotlinSourceSet
 import org.jetbrains.kotlin.gradle.plugin.mpp.KotlinNativeTarget
 import org.jetbrains.kotlin.gradle.targets.jvm.KotlinJvmTarget
-import org.jetbrains.kotlin.gradle.targets.native.tasks.KotlinNativeTest
 import org.jetbrains.kotlin.konan.target.HostManager
 import org.jetbrains.kotlin.konan.target.presetName
 import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
@@ -24,12 +23,17 @@ group = "com.epam.drill"
 version = rootProject.version
 
 val kotlinxSerializationVersion: String by parent!!.extra
+val kotlinxCollectionsVersion: String by parent!!.extra
 val kotlinxCoroutinesVersion: String by parent!!.extra
 val ktorVersion: String by parent!!.extra
 val javassistVersion: String by parent!!.extra
 val transmittableThreadLocalVersion: String by parent!!.extra
 val uuidVersion: String by parent!!.extra
+val aesyDatasizeVersion: String by parent!!.extra
 val nativeAgentLibName: String by parent!!.extra
+val nativeAgentHookEnabled: String by parent!!.extra
+val macosLd64: String by parent!!.extra
+val bytebuddyVersion: String by parent!!.extra
 
 repositories {
     mavenLocal()
@@ -38,11 +42,8 @@ repositories {
 
 kotlin {
     val configureNativeTarget: KotlinNativeTarget.() -> Unit = {
-        compilations["test"].cinterops.create("testStubs")
+        compilations["test"].cinterops.create("test_stubs")
         binaries.sharedLib(nativeAgentLibName, setOf(DEBUG))
-    }
-    val currentPlatformTarget: KotlinMultiplatformExtension.() -> KotlinNativeTarget = {
-        targets.withType<KotlinNativeTarget>()[HostManager.host.presetName]
     }
     targets {
         jvm()
@@ -52,77 +53,80 @@ kotlin {
                 linkerOpts("-lpsapi", "-lwsock32", "-lws2_32", "-lmswsock")
             }
         }
-        macosX64(configure = configureNativeTarget)
-        currentPlatformTarget().compilations["main"].defaultSourceSet {
-            kotlin.srcDir("src/nativeMain/kotlin")
-            resources.srcDir("src/nativeMain/resources")
-        }
-        currentPlatformTarget().compilations["test"].defaultSourceSet {
-            kotlin.srcDir("src/nativeTest/kotlin")
-            resources.srcDir("src/nativeTest/resources")
+        macosX64(configure = configureNativeTarget).apply {
+            if(macosLd64.toBoolean()){
+                binaries.all {
+                    linkerOpts("-ld64")
+                }
+            }
         }
     }
     @Suppress("UNUSED_VARIABLE")
     sourceSets {
         all {
             languageSettings.optIn("kotlin.ExperimentalStdlibApi")
-            languageSettings.optIn("kotlin.ExperimentalUnsignedTypes")
-            languageSettings.optIn("kotlin.time.ExperimentalTime")
             languageSettings.optIn("kotlinx.serialization.ExperimentalSerializationApi")
-            languageSettings.optIn("kotlinx.serialization.InternalSerializationApi")
             languageSettings.optIn("io.ktor.utils.io.core.ExperimentalIoApi")
+        }
+        targets.withType<KotlinNativeTarget>()[HostManager.host.presetName].compilations.forEach {
+            it.defaultSourceSet.kotlin.srcDir("src/native${it.compilationName.capitalize()}/kotlin")
+            it.defaultSourceSet.resources.srcDir("src/native${it.compilationName.capitalize()}/resources")
         }
         val commonMain by getting {
             kotlin.srcDir("src/commonGenerated/kotlin")
             file("src/commonGenerated/kotlin/com/epam/drill/agent").apply {
                 mkdirs()
-                resolve("Version.kt").writeText("""
+                resolve("Version.kt").writeText(
+                    """
                     package com.epam.drill.agent
                     
                     internal val agentVersion = "${project.version}"
-                    internal val nativeAgentLibName = "$nativeAgentLibName"
-                """.trimIndent())
+                    """.trimIndent()
+                )
             }
             dependencies {
                 implementation("org.jetbrains.kotlinx:kotlinx-serialization-core:$kotlinxSerializationVersion")
-                implementation(project(":http-clients-instrumentation"))
                 implementation(project(":logging"))
                 implementation(project(":common"))
+                implementation(project(":agent-config"))
+                implementation(project(":agent-instrumentation"))
+            }
+        }
+        val commonTest by getting {
+            dependencies {
+                implementation(kotlin("test"))
             }
         }
         val jvmMain by getting {
             dependencies {
-                implementation(kotlin("reflect"))
-                implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:$kotlinxSerializationVersion")
                 implementation("org.jetbrains.kotlinx:kotlinx-serialization-protobuf:$kotlinxSerializationVersion")
                 implementation("org.javassist:javassist:$javassistVersion")
                 implementation("com.alibaba:transmittable-thread-local:$transmittableThreadLocalVersion")
-                implementation(project(":agent"))
-                implementation(project(":http-clients-instrumentation"))
-                implementation(project(":test2code"))
+                implementation("io.aesy:datasize:$aesyDatasizeVersion")
+                implementation("net.bytebuddy:byte-buddy:$bytebuddyVersion")
+                implementation(project(":agent-transport"))
+                implementation(project(":agent-instrumentation"))
+                runtimeOnly(project(":test2code"))
             }
         }
         val configureNativeDependencies: KotlinSourceSet.() -> Unit = {
             dependencies {
+                implementation("org.jetbrains.kotlinx:kotlinx-collections-immutable:$kotlinxCollectionsVersion")
                 implementation("org.jetbrains.kotlinx:kotlinx-serialization-protobuf:$kotlinxSerializationVersion")
+                implementation("com.benasher44:uuid:$uuidVersion")
                 implementation("io.ktor:ktor-utils:$ktorVersion")
-                implementation(project(":agent"))
                 implementation(project(":jvmapi"))
                 implementation(project(":knasm"))
                 implementation(project(":konform"))
-            }
-        }
-        val configureNativeTestDependencies: KotlinSourceSet.() -> Unit = {
-            dependencies {
-                implementation(kotlin("test"))
+                if (nativeAgentHookEnabled == "true")
+                    implementation(project(":interceptor-http"))
+                else
+                    implementation(project(":interceptor-stub"))
             }
         }
         val linuxX64Main by getting(configuration = configureNativeDependencies)
         val mingwX64Main by getting(configuration = configureNativeDependencies)
         val macosX64Main by getting(configuration = configureNativeDependencies)
-        val linuxX64Test by getting(configuration = configureNativeTestDependencies)
-        val mingwX64Test by getting(configuration = configureNativeTestDependencies)
-        val macosX64Test by getting(configuration = configureNativeTestDependencies)
         mingwX64Main.dependencies {
             implementation(project(":logging-native"))
         }
@@ -130,51 +134,54 @@ kotlin {
             implementation(project(":logging-native"))
         }
     }
-    val copyNativeClassesForTarget: TaskContainer.(KotlinNativeTarget) -> Task = {
-        val copyNativeClasses:TaskProvider<Copy> = register("copyNativeClasses${it.targetName.capitalize()}", Copy::class) {
-            group = "build"
-            from("src/nativeMain/kotlin")
-            into("src/${it.targetName}Main/kotlin/gen")
-        }
-        copyNativeClasses.get()
-    }
-    val copyNativeTestClassesForTarget: TaskContainer.(KotlinNativeTarget) -> Task = {
-        val copyNativeTestClasses:TaskProvider<Copy> = register("copyNativeTestClasses${it.targetName.capitalize()}", Copy::class) {
-            group = "build"
-            from("src/nativeTest/kotlin")
-            into("src/${it.targetName}Test/kotlin/gen")
-        }
-        copyNativeTestClasses.get()
-    }
-    val filterOutCurrentPlatform: (KotlinNativeTarget) -> Boolean = {
-        it.targetName != HostManager.host.presetName
-    }
     tasks {
-        targets.withType<KotlinNativeTarget>().filter(filterOutCurrentPlatform).forEach {
-            val copyNativeClasses = copyNativeClassesForTarget(it)
-            val copyNativeTestClasses = copyNativeTestClassesForTarget(it)
-            it.compilations["main"].compileKotlinTask.dependsOn(copyNativeClasses)
-            it.compilations["test"].compileKotlinTask.dependsOn(copyNativeTestClasses)
+        val filterOutCurrentPlatform: (KotlinNativeTarget) -> Boolean = {
+            it.targetName != HostManager.host.presetName
         }
+        val copyNativeClassesTask: (KotlinCompilation<*>) -> Unit = {
+            val taskName = "copyNativeClasses${it.target.targetName.capitalize()}${it.compilationName.capitalize()}"
+            val copyNativeClasses: TaskProvider<Copy> = register(taskName, Copy::class) {
+                group = "build"
+                from("src/native${it.compilationName.capitalize()}/kotlin")
+                into("src/${it.target.targetName}${it.compilationName.capitalize()}/kotlin/gen")
+            }
+            it.compileKotlinTask.dependsOn(copyNativeClasses.get())
+        }
+        val cleanNativeClassesTask: (KotlinCompilation<*>) -> Unit = {
+            val taskName = "cleanNativeClasses${it.target.targetName.capitalize()}${it.compilationName.capitalize()}"
+            val cleanNativeClasses: TaskProvider<Delete> = register(taskName, Delete::class) {
+                group = "build"
+                delete("src/${it.target.targetName}${it.compilationName.capitalize()}/kotlin/gen")
+            }
+            clean.get().dependsOn(cleanNativeClasses.get())
+        }
+        targets.withType<KotlinNativeTarget>().filter(filterOutCurrentPlatform)
+            .flatMap(KotlinNativeTarget::compilations)
+            .onEach(copyNativeClassesTask)
+            .onEach(cleanNativeClassesTask)
         val jvmMainCompilation = kotlin.targets.withType<KotlinJvmTarget>()["jvm"].compilations["main"]
         val relocatePackages = setOf(
+            "javax.validation",
             "javax.websocket",
             "javassist",
             "ch.qos.logback",
+            "io.aesy.datasize",
             "com.alibaba",
             "org.slf4j",
             "org.jacoco",
             "org.objectweb.asm",
             "org.apache.bcel",
             "org.apache.commons",
+            "org.apache.hc",
             "org.eclipse.jetty",
             "org.intellij.lang.annotations",
-            "org.jetbrains.annotations"
+            "org.jetbrains.annotations",
+            "org.petitparser"
         )
         val runtimeJar by registering(ShadowJar::class) {
             mergeServiceFiles()
             isZip64 = true
-            archiveFileName.set("drillRuntime.jar")
+            archiveFileName.set("drill-runtime.jar")
             from(jvmMainCompilation.output, jvmMainCompilation.runtimeDependencyFiles)
             relocate("kotlin", "kruntime")
             relocate("kotlinx", "kruntimex")
@@ -188,21 +195,6 @@ kotlin {
             }
         }
         runtimeJar.get().dependsOn(jvmMainCompilation.compileKotlinTask)
-        val clean by getting
-        val cleanGeneratedClasses by registering(Delete::class) {
-            group = "build"
-            targets.withType<KotlinNativeTarget> {
-                delete("src/${name}Main/kotlin/gen")
-                delete("src/${name}Test/kotlin/gen")
-            }
-        }
-        clean.dependsOn(cleanGeneratedClasses)
-        withType<KotlinNativeTest> {
-            testLogging.showStandardStreams = true
-        }
-        withType<Copy>().getByName("jvmProcessResources") {
-            duplicatesStrategy = DuplicatesStrategy.EXCLUDE
-        }
     }
 }
 
@@ -220,6 +212,8 @@ distributions {
                 from(runtimeJarTask)
                 from(nativeAgentLinkTask) {
                     duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+                    exclude("*.h")
+                    exclude("*.def")
                 }
                 from("drill.properties")
                 from("temporary.jks")

@@ -15,23 +15,32 @@
  */
 package com.epam.drill.agent.request
 
+import kotlinx.serialization.protobuf.ProtoBuf
+import com.epam.drill.common.agent.request.DrillRequest
+import com.epam.drill.common.agent.request.RequestHolder
 import com.epam.drill.jvmapi.callObjectByteArrayMethod
 import com.epam.drill.jvmapi.callObjectVoidMethod
 import com.epam.drill.jvmapi.callObjectVoidMethodWithBoolean
 import com.epam.drill.jvmapi.callObjectVoidMethodWithByteArray
 
-actual object RequestHolder {
+actual object RequestHolder : RequestHolder {
 
-    actual fun init(isAsync: Boolean): Unit =
-        callObjectVoidMethodWithBoolean(RequestHolder::class, RequestHolder::init, isAsync)
+    actual override fun remove() =
+        callObjectVoidMethod(this::class, RequestHolder::remove)
 
-    actual fun store(drillRequest: ByteArray): Unit =
-        callObjectVoidMethodWithByteArray(RequestHolder::class, RequestHolder::store, drillRequest)
+    actual override fun retrieve() =
+        dump()?.let { ProtoBuf.decodeFromByteArray(DrillRequest.serializer(), it) }
+
+    actual override fun store(drillRequest: DrillRequest) =
+        store(ProtoBuf.encodeToByteArray(DrillRequest.serializer(), drillRequest))
+
+    actual fun store(drillRequest: ByteArray) =
+        callObjectVoidMethodWithByteArray(this::class, RequestHolder::store, drillRequest)
 
     actual fun dump(): ByteArray? =
-        callObjectByteArrayMethod(RequestHolder::class, RequestHolder::dump)
+        callObjectByteArrayMethod(this::class, this::dump)
 
-    actual fun closeSession(): Unit =
-        callObjectVoidMethod(RequestHolder::class, RequestHolder::closeSession)
+    actual fun init(isAsync: Boolean): Unit =
+        callObjectVoidMethodWithBoolean(this::class, this::init, isAsync)
 
 }

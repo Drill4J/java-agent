@@ -22,26 +22,26 @@ import com.epam.drill.jvmapi.gen.jobject
 import com.epam.drill.jvmapi.gen.jstring
 
 @Suppress("UNUSED")
-@CName("Java_com_epam_drill_agent_HeadersRetriever_adminAddressHeader")
+@CName("Java_com_epam_drill_agent_request_HeadersRetriever_adminAddressHeader")
 fun adminAddressHeader(env: JNIEnv, thiz: jobject): jstring? =
     callNativeStringMethod(env, thiz, HeadersRetriever::adminAddressHeader)
 
 @Suppress("UNUSED")
-@CName("Java_com_epam_drill_agent_HeadersRetriever_retrieveAdminAddress")
+@CName("Java_com_epam_drill_agent_request_HeadersRetriever_adminAddressValue")
 fun retrieveAdminAddress(env: JNIEnv, thiz: jobject): jstring? =
-    callNativeStringMethod(env, thiz, HeadersRetriever::retrieveAdminAddress)
+    callNativeStringMethod(env, thiz, HeadersRetriever::adminAddressValue)
 
 @Suppress("UNUSED")
-@CName("Java_com_epam_drill_agent_HeadersRetriever_sessionHeaderPattern")
+@CName("Java_com_epam_drill_agent_request_HeadersRetriever_sessionHeader")
 fun sessionHeaderPattern(env: JNIEnv, thiz: jobject): jstring? =
-    callNativeStringMethod(env, thiz, HeadersRetriever::sessionHeaderPattern)
+    callNativeStringMethod(env, thiz, HeadersRetriever::sessionHeader)
 
 @Suppress("UNUSED")
-@CName("Java_com_epam_drill_agent_HeadersRetriever_idHeaderConfigKey")
+@CName("Java_com_epam_drill_agent_request_HeadersRetriever_agentIdHeader")
 fun idHeaderConfigKey(env: JNIEnv, thiz: jobject): jstring? =
-    callNativeStringMethod(env, thiz, HeadersRetriever::idHeaderConfigKey)
+    callNativeStringMethod(env, thiz, HeadersRetriever::agentIdHeader)
 
 @Suppress("UNUSED")
-@CName("Java_com_epam_drill_agent_HeadersRetriever_idHeaderConfigValue")
+@CName("Java_com_epam_drill_agent_request_HeadersRetriever_agentIdHeaderValue")
 fun idHeaderConfigValue(env: JNIEnv, thiz: jobject): jstring? =
-    callNativeStringMethod(env, thiz, HeadersRetriever::idHeaderConfigValue)
+    callNativeStringMethod(env, thiz, HeadersRetriever::agentIdHeaderValue)

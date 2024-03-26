@@ -15,19 +15,19 @@
  */
 package com.epam.drill.agent.request
 
-import com.epam.drill.agent.PluginStorage
-import com.epam.drill.agent.module.GenericAgentModule
+import com.epam.drill.agent.module.JvmModuleStorage
+import com.epam.drill.common.agent.request.RequestProcessor
 
-actual object RequestProcessor {
+actual object RequestProcessor : RequestProcessor {
 
-    actual fun processServerRequest() {
-        plugins().forEach { it.processServerRequest() }
+    actual override fun processServerRequest() {
+        modules().forEach { it.processServerRequest() }
     }
 
-    actual fun processServerResponse() {
-        plugins().forEach { it.processServerResponse() }
+    actual override fun processServerResponse() {
+        modules().forEach { it.processServerResponse() }
     }
 
-    private fun plugins() = PluginStorage.values().filterIsInstance<GenericAgentModule>()
+    private fun modules() = JvmModuleStorage.values().filterIsInstance<RequestProcessor>()
 
 }

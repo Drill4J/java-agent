@@ -103,9 +103,20 @@ fun parseAstClass(className: String, classBytes: ByteArray): AstEntity {
     val astClass = counter.astClass
     val astMethodsWithChecksum = calculateMethodsChecksums(classBytes, className)
 
-    astClass.methods = astClass.methods.map {
+    var probesCounter = 0
+    var prevVal: Int
+    var prevMethodProbesCount: Int
+    astClass.methods = astClass.methods.mapIndexed  { index, it ->
         it.copy(
-            checksum = astMethodsWithChecksum[it.classSignature()] ?: ""
+            checksum = astMethodsWithChecksum[it.classSignature()] ?: "",
+            probesStartPos = if (index > 0) {
+                prevMethodProbesCount = astClass.methods[index - 1].count
+
+                prevVal = probesCounter
+                probesCounter +=  prevMethodProbesCount
+
+                prevVal + prevMethodProbesCount
+            } else 0
         )
     }
     return astClass

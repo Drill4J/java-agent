@@ -15,7 +15,7 @@
  */
 package com.epam.drill.test2code.coverage
 
-import com.epam.drill.common.agent.*
+import com.epam.drill.common.agent.module.*
 import com.epam.drill.jacoco.*
 import com.epam.drill.jacoco.BooleanArrayProbeInserter.*
 import com.epam.drill.test2code.classparsing.ProbeCounter

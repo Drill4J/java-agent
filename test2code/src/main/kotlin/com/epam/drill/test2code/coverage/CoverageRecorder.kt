@@ -15,27 +15,11 @@
  */
 package com.epam.drill.test2code.coverage
 
-import mu.KotlinLogging
-
 interface ICoverageRecorder {
     fun startRecording(sessionId: String, testId: String)
     fun stopRecording(sessionId: String, testId: String)
+    fun getContext(): ContextCoverage?
+    fun pollRecorded(): Sequence<ExecDatum>
 }
 
-class CoverageRecorder(
-    private val execDataProvider: IExecDataProvider,
-) : ICoverageRecorder {
-    private val logger = KotlinLogging.logger {}
-
-    override fun startRecording(sessionId: String, testId: String) {
-        execDataProvider.setContext(sessionId, testId)
-        logger.trace { "Test recording started (sessionId = $sessionId, testId=$testId, threadId=${Thread.currentThread().id})." }
-    }
-
-    override fun stopRecording(sessionId: String, testId: String) {
-        // TODO there might be a _large_ time gap between request - response
-        // hence - lots of coverage data piling up
-        execDataProvider.releaseContext(sessionId, testId)
-        logger.trace { "Test recording stopped (sessionId = $sessionId, testId=$testId, threadId=${Thread.currentThread().id})." }
-    }
-}
+data class ContextCoverage(val context: ContextKey, val execData: ExecData)
