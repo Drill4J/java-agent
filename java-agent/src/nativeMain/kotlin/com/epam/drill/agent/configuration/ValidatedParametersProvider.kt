@@ -37,6 +37,9 @@ class ValidatedParametersProvider(
         val agentId by provider
         val groupId by provider
         val buildVersion by provider
+        val vcsMetadataHash by provider
+        val vcsMetadataParents by provider
+        val vcsMetadataBranch by provider
         val packagePrefixes by provider
         val packagePrefixesAsList = packagePrefixes?.split(";") ?: emptyList()
         val drillInstallationDir by provider
@@ -83,6 +86,15 @@ class ValidatedParametersProvider(
         }
         ValidatingParameters::logLimitAsInt ifPresent {
             minimum(0)
+        }
+        ValidatingParameters::vcsMetadataHash ifPresent {
+            minLength(1)
+        }
+        ValidatingParameters::vcsMetadataParents ifPresent {
+            minLength(1)
+        }
+        ValidatingParameters::vcsMetadataBranch ifPresent {
+            minLength(1)
         }
     }
 
