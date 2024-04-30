@@ -48,7 +48,7 @@ actual object JvmModuleMessageSender : AgentMessageSender<AgentMessage> {
         val transport = HttpAgentMessageTransport(
             Configuration.parameters[ParameterDefinitions.ADMIN_ADDRESS],
             Configuration.parameters[ParameterDefinitions.API_KEY],
-            Configuration.parameters[ParameterDefinitions.SSL_TRUSTSTORE].let(::resolvePath),
+            Configuration.parameters[ParameterDefinitions.SSL_TRUSTSTORE].takeIf(String::isNotEmpty)?.let(::resolvePath) ?: "",
             Configuration.parameters[ParameterDefinitions.SSL_TRUSTSTORE_PASSWORD]
         )
         val serializer = ProtoBufAgentMessageSerializer<AgentMessage>()
