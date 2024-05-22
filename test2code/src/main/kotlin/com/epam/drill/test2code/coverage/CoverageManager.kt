@@ -21,14 +21,9 @@ open class CoverageManager(
     private val classDescriptorsManager: IClassDescriptorsManager = ConcurrentClassDescriptorsManager(),
     private val threadCoverageRecorder: ICoverageRecorder = ThreadCoverageRecorder(),
     private val globalCoverageRecorder: GlobalCoverageRecorder = GlobalCoverageRecorder(),
-    private val coverageSender: CoverageSender = IntervalCoverageSender(
-        intervalMs = 2000L,
-        collectProbes = { globalCoverageRecorder.pollRecorded() + threadCoverageRecorder.pollRecorded() }
-    )
 ) : IProbesProxy,
     IClassDescriptorStorage by classDescriptorsManager,
-    ICoverageRecorder by threadCoverageRecorder,
-    CoverageSender by coverageSender {
+    ICoverageRecorder by threadCoverageRecorder {
 
     override fun invoke(
         id: Long,

@@ -22,33 +22,25 @@ import mu.KotlinLogging
 import com.epam.drill.common.agent.transport.AgentMessageDestination
 import com.epam.drill.common.agent.transport.AgentMessageSender
 import com.epam.drill.common.agent.transport.ResponseStatus
-import com.epam.drill.plugins.test2code.common.api.ExecClassData
+import com.epam.drill.plugins.test2code.common.api.ClassCoverage
 import com.epam.drill.plugins.test2code.common.api.toBitSet
-import com.epam.drill.plugins.test2code.common.transport.CoverageData
+import com.epam.drill.plugins.test2code.common.transport.CoveragePayload
 
 interface CoverageSender {
-    fun setCoverageSendInterval(intervalMs: Long)
-    fun setAgentMessageSender(sender: AgentMessageSender<in CoverageData>)
     fun startSendingCoverage()
     fun stopSendingCoverage()
 }
 
 class IntervalCoverageSender(
-    private var intervalMs: Long,
-    private var sender: AgentMessageSender<in CoverageData> = StubSender(),
+    private val instanceId: String,
+    private val intervalMs: Long,
+    private val pageSize: Int,
+    private val sender: AgentMessageSender<in CoveragePayload> = StubSender(),
     private val collectProbes: () -> Sequence<ExecDatum> = { emptySequence() }
 ) : CoverageSender {
     private val scheduledThreadPool = Executors.newSingleThreadScheduledExecutor()
     private val destination = AgentMessageDestination("POST", "coverage")
     private val logger = KotlinLogging.logger {}
-
-    override fun setCoverageSendInterval(intervalMs: Long) {
-        this.intervalMs = intervalMs
-    }
-
-    override fun setAgentMessageSender(sender: AgentMessageSender<in CoverageData>) {
-        this.sender = sender
-    }
 
     override fun startSendingCoverage() {
         scheduledThreadPool.scheduleAtFixedRate(
@@ -71,16 +63,16 @@ class IntervalCoverageSender(
      * @features Coverage data sending
      */
     private fun sendProbes(dataToSend: Sequence<ExecDatum>) {
-        dataToSend.map { ExecClassData(it.id, it.name, it.probes.values.toBitSet(), it.sessionId, it.testId) }
-            .chunked(0xffff)
-            .forEach { sender.send(destination, CoverageData(it)) }
+        dataToSend.map { ClassCoverage(classname = it.name, testId = it.testId, probes = it.probes.values.toBitSet()) }
+            .chunked(pageSize)
+            .forEach { sender.send(destination, CoveragePayload(instanceId, it)) }
     }
 
 }
 
-private class StubSender : AgentMessageSender<CoverageData> {
+private class StubSender : AgentMessageSender<CoveragePayload> {
     override val available: Boolean = false
-    override fun send(destination: AgentMessageDestination, message: CoverageData) = StubResponseStatus()
+    override fun send(destination: AgentMessageDestination, message: CoveragePayload) = StubResponseStatus()
 }
 
 private class StubResponseStatus : ResponseStatus {

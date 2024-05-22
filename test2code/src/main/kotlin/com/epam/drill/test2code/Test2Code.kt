@@ -55,11 +55,14 @@ class Test2Code(
     internal val logger = KotlinLogging.logger {}
     internal val json = Json { encodeDefaults = true }
 
-    private val coverageManager = DrillCoverageManager.apply {
-        setCoverageSendInterval(configuration.parameters[ParameterDefinitions.COVERAGE_SEND_INTERVAL])
-        setAgentMessageSender(sender)
-    }
+    private val coverageManager = DrillCoverageManager
     private val instrumenter = DrillInstrumenter(coverageManager, coverageManager)
+    private val coverageSender: CoverageSender = IntervalCoverageSender(
+        instanceId = configuration.agentMetadata.instanceId,
+        intervalMs = configuration.parameters[ParameterDefinitions.COVERAGE_SEND_INTERVAL],
+        pageSize = configuration.parameters[ParameterDefinitions.COVERAGE_SEND_PAGE_SIZE],
+        sender = sender
+    )
 
     override fun onConnect() {}
 
@@ -74,7 +77,7 @@ class Test2Code(
         thread {
             while(!sender.available) Thread.sleep(500)
             scanAndSendMetadataClasses()
-            coverageManager.startSendingCoverage()
+            coverageSender.startSendingCoverage()
         }
     }
 
@@ -125,7 +128,7 @@ class Test2Code(
                 .flatMap { parseAstClass(it.entityName(), it.bytes()) }
                 .also { methodCount += it.size }
                 .chunked(configuration.parameters[ParameterDefinitions.METHODS_SEND_PAGE_SIZE])
-                .map(::sendClassMetadata)
+                .forEach(::sendClassMetadata)
         }
         logger.info { "Scanned $classCount classes with $methodCount methods" }
     }

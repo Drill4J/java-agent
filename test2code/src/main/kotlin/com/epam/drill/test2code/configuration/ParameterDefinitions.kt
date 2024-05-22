@@ -33,8 +33,12 @@ object ParameterDefinitions {
         parser = { it.toLong().toDuration(DurationUnit.MILLISECONDS) }
     )
     val COVERAGE_SEND_INTERVAL = AgentParameterDefinition.forLong(
-        name = "sendCoverageInterval",
+        name = "coverageSendInterval",
         defaultValue = 2000L
+    )
+    val COVERAGE_SEND_PAGE_SIZE = AgentParameterDefinition.forInt(
+        name = "coverageSendPageSize",
+        defaultValue = 1000
     )
     val METHODS_SEND_PAGE_SIZE = AgentParameterDefinition.forInt(
         name = "methodsSendPageSize",
