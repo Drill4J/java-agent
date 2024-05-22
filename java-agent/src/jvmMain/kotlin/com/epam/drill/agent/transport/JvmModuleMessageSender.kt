@@ -34,9 +34,6 @@ actual object JvmModuleMessageSender : AgentMessageSender<AgentMessage> {
     private val logger = KotlinLogging.logger {}
     private val messageSender = messageSender()
 
-    override val available: Boolean
-        get() = messageSender.available
-
     override fun send(destination: AgentMessageDestination, message: AgentMessage) =
         messageSender.send(destination, message)
 

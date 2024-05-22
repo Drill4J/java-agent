@@ -57,8 +57,6 @@ open class GenericAgentModule(
     }
 
     private class NopMessageSender : AgentMessageSender<AgentMessage> {
-        override val available
-            get() = throw NotImplementedError()
         override fun send(destination: AgentMessageDestination, message: AgentMessage) = throw NotImplementedError()
     }
 

@@ -71,7 +71,6 @@ class IntervalCoverageSender(
 }
 
 private class StubSender : AgentMessageSender<CoveragePayload> {
-    override val available: Boolean = false
     override fun send(destination: AgentMessageDestination, message: CoveragePayload) = StubResponseStatus()
 }
 

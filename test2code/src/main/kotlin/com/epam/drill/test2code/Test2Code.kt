@@ -75,7 +75,6 @@ class Test2Code(
         ParametersValidator.validate(configuration.parameters)
         logger.info { "load: Waiting for transport availability for class metadata scanning" }
         thread {
-            while(!sender.available) Thread.sleep(500)
             scanAndSendMetadataClasses()
             coverageSender.startSendingCoverage()
         }
