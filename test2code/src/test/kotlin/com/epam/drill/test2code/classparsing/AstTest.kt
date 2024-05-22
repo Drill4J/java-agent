@@ -64,7 +64,9 @@ class AstTest {
          *         var1.set(1);
          *     }
          */
-        methods["noOp"].assertProbesCount(1)
+        methods["noOp"]
+            .assertProbesCount(1)
+            .assertProbeStartPosition(1)
     }
 
     @Test
@@ -76,7 +78,9 @@ class AstTest {
          *         return "oneOp";
          *     }
          */
-        methods["oneOp"].assertProbesCount(1)
+        methods["oneOp"]
+            .assertProbesCount(1)
+            .assertProbeStartPosition(2)
     }
 
     @Test
@@ -90,7 +94,9 @@ class AstTest {
          *         var2.set(4);
          *     }
          */
-        methods["twoOps"].assertProbesCount(2)
+        methods["twoOps"]
+            .assertProbesCount(2)
+            .assertProbeStartPosition(3)
     }
 
     @Test
@@ -107,7 +113,9 @@ class AstTest {
          *         }
          *     }
          */
-        methods["ifOp"].assertProbesCount(2)
+        methods["ifOp"]
+            .assertProbesCount(2)
+            .assertProbeStartPosition(5)
     }
 
     @Test
@@ -128,7 +136,9 @@ class AstTest {
          *         return var10000;
          *     }
          */
-        methods["ifExpr"].assertProbesCount(3)
+        methods["ifExpr"]
+            .assertProbesCount(3)
+            .assertProbeStartPosition(7)
     }
 
     @Test
@@ -146,7 +156,9 @@ class AstTest {
          *         var2.set(12);
          *     }
          */
-        methods["whileOp"].assertProbesCount(3)
+        methods["whileOp"]
+            .assertProbesCount(3)
+            .assertProbeStartPosition(10)
     }
 
     @Test
@@ -162,8 +174,12 @@ class AstTest {
          *         var2.set(13);
          *     }
          */
-        methods["methodWithLambda"].assertProbesCount(1)
-        methods["lambda\$methodWithLambda\$0"].assertProbesCount(1)
+        methods["methodWithLambda"]
+            .assertProbesCount(1)
+            .assertProbeStartPosition(13)
+        methods["lambda\$methodWithLambda\$0"]
+            .assertProbesCount(1)
+            .assertProbeStartPosition(15)
     }
 
     @Test
@@ -176,7 +192,9 @@ class AstTest {
          *         var2.set(14);
          *     }
          */
-        methods["methodRef"].assertProbesCount(1)
+        methods["methodRef"]
+            .assertProbesCount(1)
+            .assertProbeStartPosition(14)
     }
 }
 
@@ -186,7 +204,14 @@ internal fun KClass<*>.readBytes(): ByteArray = java.getResourceAsStream(
 
 internal fun KClass<*>.getFullName() = java.name.replace('.', '/')
 
-internal fun AstMethod?.assertProbesCount(count: Int) {
+internal fun AstMethod?.assertProbesCount(count: Int): AstMethod {
     assertNotNull(this)
     assertEquals(count, this.probesCount)
+    return this
+}
+
+internal fun AstMethod?.assertProbeStartPosition(position: Int): AstMethod {
+    assertNotNull(this)
+    assertEquals(position, this.probesStartPos)
+    return this
 }
