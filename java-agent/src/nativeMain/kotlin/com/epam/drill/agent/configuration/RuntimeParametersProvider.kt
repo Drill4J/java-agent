@@ -16,7 +16,6 @@
 package com.epam.drill.agent.configuration
 
 import com.benasher44.uuid.uuid4
-import com.epam.drill.agent.agentVersion
 
 class RuntimeParametersProvider(
     override val priority: Int = 100
@@ -25,8 +24,7 @@ class RuntimeParametersProvider(
     override val configuration = configuration()
 
     private fun configuration() = mapOf(
-        Pair(DefaultParameterDefinitions.INSTANCE_ID.name, uuid4().toString()),
-        Pair(DefaultParameterDefinitions.AGENT_VERSION.name, agentVersion)
+        Pair(DefaultParameterDefinitions.INSTANCE_ID.name, uuid4().toString())
     )
 
 }

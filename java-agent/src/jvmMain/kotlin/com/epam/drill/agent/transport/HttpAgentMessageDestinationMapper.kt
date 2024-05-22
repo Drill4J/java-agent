@@ -20,7 +20,7 @@ import com.epam.drill.common.agent.transport.AgentMessageDestination
 
 class HttpAgentMessageDestinationMapper : AgentMessageDestinationMapper {
 
-    private val apiPath = "/api/instances/${Configuration.agentMetadata.instanceId}"
+    private val apiPath = "/api"
 
     override fun map(destination: AgentMessageDestination): AgentMessageDestination =
         destination.copy(target =

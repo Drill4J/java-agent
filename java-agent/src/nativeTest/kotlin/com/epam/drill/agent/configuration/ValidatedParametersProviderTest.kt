@@ -15,11 +15,8 @@
  */
 package com.epam.drill.agent.configuration
 
-import kotlin.test.BeforeTest
-import kotlin.test.Test
-import kotlin.test.assertEquals
-import kotlin.test.assertIs
 import com.epam.drill.logging.LoggingConfiguration
+import kotlin.test.*
 
 class ValidatedParametersProviderTest {
 
@@ -70,7 +67,7 @@ class ValidatedParametersProviderTest {
 
     @Test
     fun `validate strict parameters correct`() {
-        val default = SimpleMapProvider(defaultParameters())
+        val default = SimpleMapProvider(strictParameters())
         val result = ValidatedParametersProvider(setOf(default)).configuration
         assertEquals(0, result.size)
     }
@@ -79,7 +76,6 @@ class ValidatedParametersProviderTest {
     fun `validate strict parameters missing`() {
         var e: Throwable? = null
         val woAgentId = defaultParameters().also { it.remove( DefaultParameterDefinitions.APP_ID.name) }
-        val woBuildVersion = defaultParameters().also { it.remove( DefaultParameterDefinitions.BUILD_VERSION.name) }
         val woPackages = defaultParameters().also { it.remove( DefaultParameterDefinitions.PACKAGE_PREFIXES.name) }
         val woInstallationDir= defaultParameters().also { it.remove( DefaultParameterDefinitions.INSTALLATION_DIR.name) }
         val woAdminAddress = defaultParameters().also { it.remove( ParameterDefinitions.ADMIN_ADDRESS.name) }
@@ -87,9 +83,6 @@ class ValidatedParametersProviderTest {
             .onFailure { e = it }
             .onSuccess { e = null }
         assertIs<ParameterValidationException>(e)
-        runCatching { ValidatedParametersProvider(setOf(SimpleMapProvider(woBuildVersion))) }
-            .onFailure { e = it }
-            .onSuccess { e = null }
         assertIs<ParameterValidationException>(e)
         runCatching { ValidatedParametersProvider(setOf(SimpleMapProvider(woPackages))) }
             .onFailure { e = it }
@@ -118,6 +111,25 @@ class ValidatedParametersProviderTest {
         assertEquals(ParameterDefinitions.LOG_LIMIT.defaultValue.toString(), result[ParameterDefinitions.LOG_LIMIT.name])
     }
 
+    @Test
+    fun `validate soft parameters correct`() {
+        assertTrue(ValidatedParametersProvider(setOf(SimpleMapProvider(strictParameters().also {
+            it[DefaultParameterDefinitions.BUILD_VERSION.name] = "0.0.1"
+        }))).validate().isEmpty())
+
+        assertFalse(ValidatedParametersProvider(setOf(SimpleMapProvider(strictParameters().also {
+            it[DefaultParameterDefinitions.BUILD_VERSION.name] = "0. .1"
+        }))).validate().isEmpty())
+
+        assertTrue(ValidatedParametersProvider(setOf(SimpleMapProvider(strictParameters().also {
+            it[DefaultParameterDefinitions.COMMIT_SHA.name] = "d3f1e2420a0f2f1d9b4c1a4e5a6a1f4d8e3f1b2c"
+        }))).validate().isEmpty())
+
+        assertFalse(ValidatedParametersProvider(setOf(SimpleMapProvider(strictParameters().also {
+            it[DefaultParameterDefinitions.COMMIT_SHA.name] = "d3f1e24"
+        }))).validate().isEmpty())
+    }
+
     private fun defaultParameters() = mutableMapOf(
         DefaultParameterDefinitions.APP_ID.name to "agent-id",
         DefaultParameterDefinitions.GROUP_ID.name to "group-id",
@@ -126,6 +138,14 @@ class ValidatedParametersProviderTest {
         DefaultParameterDefinitions.INSTALLATION_DIR.name to "/data/agent",
         ParameterDefinitions.ADMIN_ADDRESS.name to "https://localhost",
         ParameterDefinitions.API_KEY.name to "apikey",
+    )
+
+    private fun strictParameters() = mutableMapOf(
+        DefaultParameterDefinitions.GROUP_ID.name to "group-id",
+        DefaultParameterDefinitions.APP_ID.name to "agent-id",
+        DefaultParameterDefinitions.PACKAGE_PREFIXES.name to "foo/bar",
+        ParameterDefinitions.ADMIN_ADDRESS.name to "https://localhost",
+        DefaultParameterDefinitions.INSTALLATION_DIR.name to "/data/agent",
     )
 
     private class SimpleMapProvider(

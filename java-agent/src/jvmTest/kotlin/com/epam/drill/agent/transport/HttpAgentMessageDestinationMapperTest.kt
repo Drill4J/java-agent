@@ -38,10 +38,10 @@ class HttpAgentMessageDestinationMapperTest {
 
     @Test
     fun `map AgentMetadata`() {
-        val destination = AgentMessageDestination("PUT", "")
+        val destination = AgentMessageDestination("PUT", "metadata")
         val mapped = mapper.map(destination)
         assertEquals(
-            "/api/instances/${instanceId}",
+            "/api/metadata",
             mapped.target
         )
         assertEquals("PUT", mapped.type)
@@ -52,7 +52,7 @@ class HttpAgentMessageDestinationMapperTest {
         val destination = AgentMessageDestination("POST", "something-else")
         val mapped = mapper.map(destination)
         assertEquals(
-            "/api/instances/${instanceId}/something-else",
+            "/api/something-else",
             mapped.target
         )
         assertEquals("POST", mapped.type)

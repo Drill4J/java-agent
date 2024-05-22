@@ -21,12 +21,6 @@ import kotlin.test.assertTrue
 class RuntimeParametersProviderTest {
 
     @Test
-    fun `agent version is not empty`() {
-        val result = RuntimeParametersProvider().configuration[DefaultParameterDefinitions.AGENT_VERSION.name]
-        assertTrue(result!!.isNotEmpty())
-    }
-
-    @Test
     fun `instance id is not empty`() {
         val result = RuntimeParametersProvider().configuration[DefaultParameterDefinitions.INSTANCE_ID.name]
         assertTrue(result!!.isNotEmpty())

@@ -37,6 +37,7 @@ class ValidatedParametersProvider(
         val appId by provider
         val groupId by provider
         val buildVersion by provider
+        val commitSha by provider
         val packagePrefixes by provider
         val packagePrefixesAsList = packagePrefixes?.split(";") ?: emptyList()
         val drillInstallationDir by provider
@@ -52,22 +53,16 @@ class ValidatedParametersProvider(
         ValidatingParameters::drillInstallationDir required {
             minLength(1)
         }
-        ValidatingParameters::appId required {
-            identifier()
-            minLength(3)
-        }
         ValidatingParameters::groupId required {
             identifier()
             minLength(3)
         }
-        ValidatingParameters::buildVersion required {
-            pattern("^\\S*$") hint "must not contain whitespaces"
+        ValidatingParameters::appId required {
+            identifier()
+            minLength(3)
         }
         ValidatingParameters::adminAddress required {
             validTransportUrl()
-        }
-        ValidatingParameters::apiKey required {
-            minLength(1)
         }
         ValidatingParameters::packagePrefixesAsList {
             minItems(1)
@@ -78,6 +73,15 @@ class ValidatedParametersProvider(
     }
 
     private val softValidators = Validation<ValidatingParameters> {
+        ValidatingParameters::buildVersion ifPresent {
+            pattern("^\\S*$") hint "must not contain whitespaces"
+        }
+        ValidatingParameters::commitSha ifPresent {
+            pattern("^[a-f0-9]{40}\$") hint "must be a valid full commit SHA"
+        }
+        ValidatingParameters::apiKey ifPresent {
+            minLength(1)
+        }
         ValidatingParameters::logLevelAsList onEach {
             isValidLogLevel()
         }
@@ -91,6 +95,12 @@ class ValidatedParametersProvider(
     private val validatingConfiguration = validatingConfiguration()
 
     override val configuration = validateConfiguration()
+
+    fun validate(): List<ValidationError> {
+        val strictValidationErrors = strictValidators(ValidatingParameters(this)).takeIf { it is Invalid }?.errors?.toList() ?: emptyList()
+        val softValidationErrors = softValidators(ValidatingParameters(this)).takeIf { it is Invalid }?.errors?.toList() ?: emptyList()
+        return strictValidationErrors + softValidationErrors
+    }
 
     internal fun validatingConfiguration() = configurationProviders
         .sortedBy(AgentConfigurationProvider::priority)
@@ -114,7 +124,6 @@ class ValidatedParametersProvider(
             logger.error { message }
             result.errors.forEach { error ->
                 when (convertToField(error)) {
-                    ValidatingParameters::groupId.name -> defaultFor(DefaultParameterDefinitions.GROUP_ID)
                     ValidatingParameters::logLevel.name -> defaultFor(ParameterDefinitions.LOG_LEVEL)
                     ValidatingParameters::logLimit.name -> defaultFor(ParameterDefinitions.LOG_LIMIT)
                 }
