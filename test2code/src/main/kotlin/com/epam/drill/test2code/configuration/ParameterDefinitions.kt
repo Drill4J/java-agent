@@ -36,5 +36,9 @@ object ParameterDefinitions {
         name = "sendCoverageInterval",
         defaultValue = 2000L
     )
+    val METHODS_SEND_PAGE_SIZE = AgentParameterDefinition.forInt(
+        name = "methodsSendPageSize",
+        defaultValue = 1000
+    )
 
 }

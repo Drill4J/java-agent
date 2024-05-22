@@ -30,7 +30,7 @@ import com.epam.drill.common.agent.transport.AgentMessage
 import com.epam.drill.common.agent.transport.AgentMessageDestination
 import com.epam.drill.common.agent.transport.AgentMessageSender
 import com.epam.drill.common.classloading.EntitySource
-import com.epam.drill.plugins.test2code.common.api.AstEntity
+import com.epam.drill.plugins.test2code.common.api.AstMethod
 import com.epam.drill.plugins.test2code.common.transport.ClassMetadata
 import com.epam.drill.test2code.classloading.ClassLoadersScanner
 import com.epam.drill.test2code.classloading.ClassScanner
@@ -60,8 +60,6 @@ class Test2Code(
         setAgentMessageSender(sender)
     }
     private val instrumenter = DrillInstrumenter(coverageManager, coverageManager)
-    //TODO remove after admin refactoring
-    private val sessions = ConcurrentHashMap<String, Boolean>()
 
     override fun onConnect() {}
 
@@ -120,20 +118,29 @@ class Test2Code(
      */
     private fun scanAndSendMetadataClasses() {
         var classCount = 0
+        var methodCount = 0
         scanClasses { classes ->
             classes
-                .map { parseAstClass(it.entityName(), it.bytes()) }
-                .also(::sendClassMetadata)
                 .also { classCount += it.size }
+                .flatMap { parseAstClass(it.entityName(), it.bytes()) }
+                .also { methodCount += it.size }
+                .chunked(configuration.parameters[ParameterDefinitions.METHODS_SEND_PAGE_SIZE])
+                .map(::sendClassMetadata)
         }
-        logger.info { "Scanned $classCount classes" }
+        logger.info { "Scanned $classCount classes with $methodCount methods" }
     }
 
-    private val classMetadataDestination = AgentMessageDestination("POST", "class-metadata")
+    private val classMetadataDestination = AgentMessageDestination("PUT", "methods")
 
-    private fun sendClassMetadata(astEntities: List<AstEntity>) {
-        val message = ClassMetadata(astEntities = astEntities)
-        logger.debug { "sendClassMetadata: Sending class metadata: $message" }
+    private fun sendClassMetadata(methods: List<AstMethod>) {
+        val message = ClassMetadata(
+            groupId = configuration.agentMetadata.groupId,
+            appId = configuration.agentMetadata.appId,
+            commitSha = configuration.agentMetadata.commitSha,
+            buildVersion = configuration.agentMetadata.buildVersion,
+            instanceId = configuration.agentMetadata.instanceId,
+            methods = methods)
+        logger.debug { "sendClassMetadata: Sending methods: $message" }
         sender.send(classMetadataDestination, message)
     }
 

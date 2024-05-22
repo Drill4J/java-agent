@@ -22,39 +22,39 @@ import kotlin.test.Test
 import com.epam.drill.fixture.ast.CheckProbeRanges
 import com.epam.drill.fixture.ast.SimpleClass
 import com.epam.drill.plugins.test2code.common.api.AstMethod
+import kotlin.test.assertTrue
 
 class AstTest {
 
     @Test
     fun `check parsing method signature`() {
-        val astEntity = parseAstClass(SimpleClass::class.getFullName(), SimpleClass::class.readBytes())
-        assertEquals(SimpleClass::class.simpleName, astEntity.name)
-        assertEquals("com/epam/drill/fixture/ast", astEntity.path)
-        assertEquals(4, astEntity.methods.size)
-        astEntity.methods[0].run {
+        val astMethods = parseAstClass(SimpleClass::class.getFullName(), SimpleClass::class.readBytes())
+        assertTrue(astMethods.all { it.classname == SimpleClass::class.getFullName() })
+        assertEquals(4, astMethods.size)
+        astMethods[0].run {
             assertEquals("<init>", name)
-            assertNotNull(checksum)
+            assertNotNull(bodyChecksum)
         }
-        astEntity.methods[1].run {
+        astMethods[1].run {
             assertEquals("simpleMethod", name)
-            assertNotNull(checksum)
+            assertNotNull(bodyChecksum)
         }
-        astEntity.methods[2].run {
+        astMethods[2].run {
             assertEquals("methodWithReturn", name)
             assertEquals("java.lang.String", returnType)
-            assertNotNull(checksum)
+            assertNotNull(bodyChecksum)
         }
-        astEntity.methods[3].run {
+        astMethods[3].run {
             assertEquals("methodWithParams", name)
-            assertEquals(listOf("java.lang.String", "int"), params)
-            assertNotNull(checksum)
+            assertEquals("java.lang.String,int", params)
+            assertNotNull(bodyChecksum)
         }
     }
 
 
     //FYI: ProbeRange test-cases
-    private val astEntity = parseAstClass(CheckProbeRanges::class.getFullName(), CheckProbeRanges::class.readBytes())
-    private val methods = astEntity.methods.groupBy { it.name }.mapValues { it.value[0] }
+    private val methods = parseAstClass(CheckProbeRanges::class.getFullName(), CheckProbeRanges::class.readBytes())
+        .groupBy { it.name }.mapValues { it.value[0] }
 
     @Test
     fun `test setting probes for empty method`() {
@@ -188,5 +188,5 @@ internal fun KClass<*>.getFullName() = java.name.replace('.', '/')
 
 internal fun AstMethod?.assertProbesCount(count: Int) {
     assertNotNull(this)
-    assertEquals(count, this.probes.size)
+    assertEquals(count, this.probesCount)
 }

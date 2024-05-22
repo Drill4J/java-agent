@@ -43,18 +43,19 @@ open class ProbeCounter : ClassProbesVisitor() {
     }
 }
 
-class ClassProbeCounter(val name: String) : ProbeCounter() {
-    val astClass = newAstClass(name, ArrayList())
+class ClassProbeCounter(val classname: String) : ProbeCounter() {
+    val astClass = newAstClass(classname, ArrayList())
 
     override fun visitMethod(
         access: Int, name: String?, desc: String?, signature: String?, exceptions: Array<out String>?
     ): MethodProbesVisitor {
-        return MethodProbeCounter(astClass.methods as MutableList)
+        return MethodProbeCounter(classname = classname, methods = astClass.methods as MutableList)
     }
 }
 
 
 class MethodProbeCounter(
+    private val classname: String,
     private val methods: MutableList<AstMethod>
 ) : MethodProbesVisitor() {
 
@@ -65,11 +66,13 @@ class MethodProbeCounter(
     override fun visitEnd() {
         super.visitEnd()
         val method = AstMethod(
+            classname = classname,
             name = methodNode.name,
-            params = getParams(methodNode),
+            params = getParams(methodNode).joinToString(separator = ","),
             returnType = getReturnType(methodNode),
-            checksum = "",
-            probes = probes
+            bodyChecksum = "",
+            probesStartPos = probes[0],
+            probesCount = probes.size
         )
         methods.add(method)
     }
@@ -95,7 +98,7 @@ class MethodProbeCounter(
     }
 }
 
-fun parseAstClass(className: String, classBytes: ByteArray): AstEntity {
+fun parseAstClass(className: String, classBytes: ByteArray): List<AstMethod> {
     val classReader = InstrSupport.classReaderFor(classBytes)
     val counter = ClassProbeCounter(className)
     classReader.accept(DrillClassProbesAdapter(counter, false), 0)
@@ -106,20 +109,19 @@ fun parseAstClass(className: String, classBytes: ByteArray): AstEntity {
     var probesCounter = 0
     var prevVal: Int
     var prevMethodProbesCount: Int
-    astClass.methods = astClass.methods.mapIndexed  { index, it ->
+    return astClass.methods.mapIndexed { index, it ->
         it.copy(
-            checksum = astMethodsWithChecksum[it.classSignature()] ?: "",
+            bodyChecksum = astMethodsWithChecksum[it.classSignature()] ?: "",
             probesStartPos = if (index > 0) {
-                prevMethodProbesCount = astClass.methods[index - 1].count
+                prevMethodProbesCount = astClass.methods[index - 1].probesCount
 
                 prevVal = probesCounter
-                probesCounter +=  prevMethodProbesCount
+                probesCounter += prevMethodProbesCount
 
                 prevVal + prevMethodProbesCount
             } else 0
         )
     }
-    return astClass
 }
 
 fun newAstClass(
@@ -132,7 +134,7 @@ fun newAstClass(
 )
 
 private fun AstMethod.classSignature() =
-    "${name}/${params.joinToString()}/${returnType}"
+    "${name}/${params}/${returnType}"
 
 private fun getShortClassName(className: String): String {
     val lastSlashIndex: Int = className.lastIndexOf('/')
