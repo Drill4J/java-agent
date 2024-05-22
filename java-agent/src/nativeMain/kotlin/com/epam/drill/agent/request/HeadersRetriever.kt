@@ -24,9 +24,9 @@ actual object HeadersRetriever : HeadersRetriever {
     private val adminAddress = Configuration.parameters[ParameterDefinitions.ADMIN_ADDRESS]
         .let { Regex("\\w+://(.+)").matchEntire(it)!!.groupValues[1] }
 
-    private val agentIdHeader = Configuration.agentMetadata.serviceGroupId.takeIf(String::isNotEmpty)
-        ?.let { "drill-group-id" to Configuration.agentMetadata.serviceGroupId }
-        ?: let { "drill-agent-id" to Configuration.agentMetadata.id }
+    private val agentIdHeader = Configuration.agentMetadata.groupId.takeIf(String::isNotEmpty)
+        ?.let { "drill-group-id" to Configuration.agentMetadata.groupId }
+        ?: let { "drill-agent-id" to Configuration.agentMetadata.appId }
 
     actual override fun adminAddressHeader() = "drill-admin-url"
 

@@ -26,13 +26,13 @@ class HttpAgentMessageDestinationMapperTest {
     private lateinit var mapper: HttpAgentMessageDestinationMapper
 
     private val groupId = "someGroupId"
-    private val agentId = "someAgentId"
+    private val appId = "someAgentId"
     private val buildVersion = "someBuildVer"
     private val instanceId = "someInstanceId"
 
     @BeforeTest
     fun prepareConfiguration() {
-        Configuration.initializeJvm("groupId=${groupId},agentId=${agentId},buildVersion=${buildVersion},instanceId=${instanceId}")
+        Configuration.initializeJvm("groupId=${groupId},appId=${appId},buildVersion=${buildVersion},instanceId=${instanceId}")
         mapper = HttpAgentMessageDestinationMapper()
     }
 

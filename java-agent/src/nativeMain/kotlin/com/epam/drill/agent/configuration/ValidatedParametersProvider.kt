@@ -34,7 +34,7 @@ class ValidatedParametersProvider(
 ) : AgentConfigurationProvider {
 
     private class ValidatingParameters(provider: ValidatedParametersProvider) {
-        val agentId by provider
+        val appId by provider
         val groupId by provider
         val buildVersion by provider
         val packagePrefixes by provider
@@ -52,7 +52,7 @@ class ValidatedParametersProvider(
         ValidatingParameters::drillInstallationDir required {
             minLength(1)
         }
-        ValidatingParameters::agentId required {
+        ValidatingParameters::appId required {
             identifier()
             minLength(3)
         }

@@ -44,7 +44,7 @@ class ValidatedParametersProviderTest {
         assertEquals(9, result.size)
         assertEquals("bar1", result["foo1"])
         assertEquals("bar2", result["foo2"])
-        assertEquals("agent-id", result[DefaultParameterDefinitions.AGENT_ID.name])
+        assertEquals("agent-id", result[DefaultParameterDefinitions.APP_ID.name])
         assertEquals("1.0.0", result[DefaultParameterDefinitions.BUILD_VERSION.name])
         assertEquals("foo/bar", result[DefaultParameterDefinitions.PACKAGE_PREFIXES.name])
         assertEquals("/data/agent", result[DefaultParameterDefinitions.INSTALLATION_DIR.name])
@@ -61,7 +61,7 @@ class ValidatedParametersProviderTest {
         assertEquals("bar11", result["foo1"])
         assertEquals("bar22", result["foo2"])
         assertEquals("bar23", result["foo3"])
-        assertEquals("agent-id", result[DefaultParameterDefinitions.AGENT_ID.name])
+        assertEquals("agent-id", result[DefaultParameterDefinitions.APP_ID.name])
         assertEquals("1.0.0", result[DefaultParameterDefinitions.BUILD_VERSION.name])
         assertEquals("foo/bar", result[DefaultParameterDefinitions.PACKAGE_PREFIXES.name])
         assertEquals("/data/agent", result[DefaultParameterDefinitions.INSTALLATION_DIR.name])
@@ -78,7 +78,7 @@ class ValidatedParametersProviderTest {
     @Test
     fun `validate strict parameters missing`() {
         var e: Throwable? = null
-        val woAgentId = defaultParameters().also { it.remove( DefaultParameterDefinitions.AGENT_ID.name) }
+        val woAgentId = defaultParameters().also { it.remove( DefaultParameterDefinitions.APP_ID.name) }
         val woBuildVersion = defaultParameters().also { it.remove( DefaultParameterDefinitions.BUILD_VERSION.name) }
         val woPackages = defaultParameters().also { it.remove( DefaultParameterDefinitions.PACKAGE_PREFIXES.name) }
         val woInstallationDir= defaultParameters().also { it.remove( DefaultParameterDefinitions.INSTALLATION_DIR.name) }
@@ -119,7 +119,7 @@ class ValidatedParametersProviderTest {
     }
 
     private fun defaultParameters() = mutableMapOf(
-        DefaultParameterDefinitions.AGENT_ID.name to "agent-id",
+        DefaultParameterDefinitions.APP_ID.name to "agent-id",
         DefaultParameterDefinitions.GROUP_ID.name to "group-id",
         DefaultParameterDefinitions.BUILD_VERSION.name to "1.0.0",
         DefaultParameterDefinitions.PACKAGE_PREFIXES.name to "foo/bar",
