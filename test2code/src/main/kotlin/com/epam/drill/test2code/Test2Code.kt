@@ -61,7 +61,8 @@ class Test2Code(
         instanceId = configuration.agentMetadata.instanceId,
         intervalMs = configuration.parameters[ParameterDefinitions.COVERAGE_SEND_INTERVAL],
         pageSize = configuration.parameters[ParameterDefinitions.COVERAGE_SEND_PAGE_SIZE],
-        sender = sender
+        sender = sender,
+        collectProbes = { coverageManager.pollRecorded() }
     )
 
     override fun onConnect() {}
@@ -141,7 +142,8 @@ class Test2Code(
             commitSha = configuration.agentMetadata.commitSha,
             buildVersion = configuration.agentMetadata.buildVersion,
             instanceId = configuration.agentMetadata.instanceId,
-            methods = methods)
+            methods = methods
+        )
         logger.debug { "sendClassMetadata: Sending methods: $message" }
         sender.send(classMetadataDestination, message)
     }

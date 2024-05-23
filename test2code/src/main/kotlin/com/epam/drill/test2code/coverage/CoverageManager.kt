@@ -45,6 +45,11 @@ open class CoverageManager(
         }
         return execDatum.probes
     }
+
+    override fun pollRecorded(): Sequence<ExecDatum> {
+        return threadCoverageRecorder.pollRecorded() + globalCoverageRecorder.pollRecorded()
+    }
+
 }
 
 /**
