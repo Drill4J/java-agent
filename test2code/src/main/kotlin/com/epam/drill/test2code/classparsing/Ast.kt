@@ -72,7 +72,7 @@ class MethodProbeCounter(
             params = getParams(methodNode).joinToString(separator = ","),
             returnType = getReturnType(methodNode),
             bodyChecksum = "",
-            probesStartPos = probes[0],
+            probesStartPos = if (probes.size > 0) probes[0] else 0,
             probesCount = probes.size
         )
         methods.add(method)
