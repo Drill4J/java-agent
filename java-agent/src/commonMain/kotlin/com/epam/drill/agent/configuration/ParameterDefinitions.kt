@@ -19,11 +19,8 @@ import com.epam.drill.common.agent.configuration.AgentParameterDefinition
 
 object ParameterDefinitions {
 
-    val ADMIN_ADDRESS = AgentParameterDefinition.forString(
-        name = "adminAddress",
-        parser = { it.takeIf(URL_SCHEME_REGEX::matches) ?: "https://$it"}
-    )
-    val API_KEY = AgentParameterDefinition.forString(name = "apiKey")
+    val DRILL_API_URL = AgentParameterDefinition.forString(name = "drillApiUrl", parser = { if (!it.endsWith("/")) "$it/" else it } )
+    val DRILL_API_KEY = AgentParameterDefinition.forString(name = "drillApiKey")
     val MESSAGE_QUEUE_LIMIT = AgentParameterDefinition.forString(name = "coverageRetentionLimit", defaultValue = "512Mb")
     val SSL_TRUSTSTORE = AgentParameterDefinition.forString(name = "sslTruststore")
     val SSL_TRUSTSTORE_PASSWORD = AgentParameterDefinition.forString(name = "sslTruststorePassword")
@@ -35,7 +32,4 @@ object ParameterDefinitions {
     val IS_CADENCE = AgentParameterDefinition.forBoolean(name = "isCadence")
     val IS_TLS_APP = AgentParameterDefinition.forBoolean(name = "isTlsApp")
     val IS_ASYNC_APP = AgentParameterDefinition.forBoolean(name = "isAsyncApp")
-
-    private val URL_SCHEME_REGEX = Regex("\\w+://.+")
-
 }

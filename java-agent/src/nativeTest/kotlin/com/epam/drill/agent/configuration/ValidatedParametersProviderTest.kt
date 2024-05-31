@@ -21,7 +21,8 @@ import kotlin.test.*
 class ValidatedParametersProviderTest {
 
     @BeforeTest
-    fun configureLogger() = LoggingConfiguration.setLoggingFilename("build/test-results/validatedParametersProviderTest.log")
+    fun configureLogger() =
+        LoggingConfiguration.setLoggingFilename("build/test-results/validatedParametersProviderTest.log")
 
     @Test
     fun `validating empty providers`() {
@@ -45,7 +46,7 @@ class ValidatedParametersProviderTest {
         assertEquals("1.0.0", result[DefaultParameterDefinitions.BUILD_VERSION.name])
         assertEquals("foo/bar", result[DefaultParameterDefinitions.PACKAGE_PREFIXES.name])
         assertEquals("/data/agent", result[DefaultParameterDefinitions.INSTALLATION_DIR.name])
-        assertEquals("https://localhost", result[ParameterDefinitions.ADMIN_ADDRESS.name])
+        assertEquals("https://localhost/api", result[ParameterDefinitions.DRILL_API_URL.name])
     }
 
     @Test
@@ -62,7 +63,7 @@ class ValidatedParametersProviderTest {
         assertEquals("1.0.0", result[DefaultParameterDefinitions.BUILD_VERSION.name])
         assertEquals("foo/bar", result[DefaultParameterDefinitions.PACKAGE_PREFIXES.name])
         assertEquals("/data/agent", result[DefaultParameterDefinitions.INSTALLATION_DIR.name])
-        assertEquals("https://localhost", result[ParameterDefinitions.ADMIN_ADDRESS.name])
+        assertEquals("https://localhost/api", result[ParameterDefinitions.DRILL_API_URL.name])
     }
 
     @Test
@@ -75,10 +76,11 @@ class ValidatedParametersProviderTest {
     @Test
     fun `validate strict parameters missing`() {
         var e: Throwable? = null
-        val woAgentId = defaultParameters().also { it.remove( DefaultParameterDefinitions.APP_ID.name) }
-        val woPackages = defaultParameters().also { it.remove( DefaultParameterDefinitions.PACKAGE_PREFIXES.name) }
-        val woInstallationDir= defaultParameters().also { it.remove( DefaultParameterDefinitions.INSTALLATION_DIR.name) }
-        val woAdminAddress = defaultParameters().also { it.remove( ParameterDefinitions.ADMIN_ADDRESS.name) }
+        val woAgentId = defaultParameters().also { it.remove(DefaultParameterDefinitions.APP_ID.name) }
+        val woPackages = defaultParameters().also { it.remove(DefaultParameterDefinitions.PACKAGE_PREFIXES.name) }
+        val woInstallationDir =
+            defaultParameters().also { it.remove(DefaultParameterDefinitions.INSTALLATION_DIR.name) }
+        val woAdminAddress = defaultParameters().also { it.remove(ParameterDefinitions.DRILL_API_URL.name) }
         runCatching { ValidatedParametersProvider(setOf(SimpleMapProvider(woAgentId))) }
             .onFailure { e = it }
             .onSuccess { e = null }
@@ -101,14 +103,19 @@ class ValidatedParametersProviderTest {
     @Test
     fun `validate soft parameters defaults`() {
         val default = SimpleMapProvider(defaultParameters())
-        val soft = SimpleMapProvider(mapOf(
-            ParameterDefinitions.LOG_LEVEL.name to "foo.bar=UNKNOWN",
-            ParameterDefinitions.LOG_LIMIT.name to "-512"
-        ))
+        val soft = SimpleMapProvider(
+            mapOf(
+                ParameterDefinitions.LOG_LEVEL.name to "foo.bar=UNKNOWN",
+                ParameterDefinitions.LOG_LIMIT.name to "-512"
+            )
+        )
         val result = ValidatedParametersProvider(setOf(default, soft)).configuration
         assertEquals(2, result.size)
         assertEquals(ParameterDefinitions.LOG_LEVEL.defaultValue, result[ParameterDefinitions.LOG_LEVEL.name])
-        assertEquals(ParameterDefinitions.LOG_LIMIT.defaultValue.toString(), result[ParameterDefinitions.LOG_LIMIT.name])
+        assertEquals(
+            ParameterDefinitions.LOG_LIMIT.defaultValue.toString(),
+            result[ParameterDefinitions.LOG_LIMIT.name]
+        )
     }
 
     @Test
@@ -130,21 +137,41 @@ class ValidatedParametersProviderTest {
         }))).validate().isEmpty())
     }
 
+    @Test
+    fun `given correct URL validate drillApiUrl should be valid`() {
+        assertTrue(isValid(mapOf(ParameterDefinitions.DRILL_API_URL.name to "https://example.com")))
+        assertTrue(isValid(mapOf(ParameterDefinitions.DRILL_API_URL.name to "https://example.com/api")))
+        assertTrue(isValid(mapOf(ParameterDefinitions.DRILL_API_URL.name to "http://localhost:8090")))
+        assertTrue(isValid(mapOf(ParameterDefinitions.DRILL_API_URL.name to "http://localhost:8090/api")))
+    }
+
+    @Test
+    fun `given incorrect URL validate drillApiUrl should not be valid`() {
+        assertFalse(isValid(mapOf(ParameterDefinitions.DRILL_API_URL.name to "localhost:8090")))
+        assertFalse(isValid(mapOf(ParameterDefinitions.DRILL_API_URL.name to "//localhost")))
+    }
+
+    private fun isValid(params: Map<String, String>): Boolean {
+        return ValidatedParametersProvider(setOf(SimpleMapProvider(strictParameters().also {
+            it.putAll(params)
+        }))).validate().isEmpty()
+    }
+
     private fun defaultParameters() = mutableMapOf(
         DefaultParameterDefinitions.APP_ID.name to "agent-id",
         DefaultParameterDefinitions.GROUP_ID.name to "group-id",
         DefaultParameterDefinitions.BUILD_VERSION.name to "1.0.0",
         DefaultParameterDefinitions.PACKAGE_PREFIXES.name to "foo/bar",
         DefaultParameterDefinitions.INSTALLATION_DIR.name to "/data/agent",
-        ParameterDefinitions.ADMIN_ADDRESS.name to "https://localhost",
-        ParameterDefinitions.API_KEY.name to "apikey",
+        ParameterDefinitions.DRILL_API_URL.name to "https://localhost/api",
+        ParameterDefinitions.DRILL_API_KEY.name to "apikey",
     )
 
     private fun strictParameters() = mutableMapOf(
         DefaultParameterDefinitions.GROUP_ID.name to "group-id",
         DefaultParameterDefinitions.APP_ID.name to "agent-id",
         DefaultParameterDefinitions.PACKAGE_PREFIXES.name to "foo/bar",
-        ParameterDefinitions.ADMIN_ADDRESS.name to "https://localhost",
+        ParameterDefinitions.DRILL_API_URL.name to "https://localhost/api",
         DefaultParameterDefinitions.INSTALLATION_DIR.name to "/data/agent",
     )
 

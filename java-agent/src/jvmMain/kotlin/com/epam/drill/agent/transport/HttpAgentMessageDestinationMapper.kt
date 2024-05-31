@@ -15,14 +15,13 @@
  */
 package com.epam.drill.agent.transport
 
-import com.epam.drill.agent.configuration.Configuration
 import com.epam.drill.common.agent.transport.AgentMessageDestination
 
 class HttpAgentMessageDestinationMapper : AgentMessageDestinationMapper {
 
-    private val apiPath = "/api"
+    private val dataIngestionPath = "data-ingest"
 
     override fun map(destination: AgentMessageDestination): AgentMessageDestination =
         destination.copy(target =
-        if (destination.target.isEmpty()) apiPath else "${apiPath}/${destination.target}")
+        if (destination.target.isEmpty()) dataIngestionPath else "${dataIngestionPath}/${destination.target}")
 }

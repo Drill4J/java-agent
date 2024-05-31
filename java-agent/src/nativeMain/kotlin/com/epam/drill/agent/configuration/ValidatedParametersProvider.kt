@@ -41,8 +41,8 @@ class ValidatedParametersProvider(
         val packagePrefixes by provider
         val packagePrefixesAsList = packagePrefixes?.split(";") ?: emptyList()
         val drillInstallationDir by provider
-        val adminAddress by provider
-        val apiKey by provider
+        val drillApiUrl by provider
+        val drillApiKey by provider
         val logLevel by provider
         val logLevelAsList = logLevel?.split(";") ?: emptyList()
         val logLimit by provider
@@ -61,7 +61,7 @@ class ValidatedParametersProvider(
             identifier()
             minLength(3)
         }
-        ValidatingParameters::adminAddress required {
+        ValidatingParameters::drillApiUrl required {
             validTransportUrl()
         }
         ValidatingParameters::packagePrefixesAsList {
@@ -79,7 +79,7 @@ class ValidatedParametersProvider(
         ValidatingParameters::commitSha ifPresent {
             pattern("^[a-f0-9]{40}\$") hint "must be a valid full commit SHA"
         }
-        ValidatingParameters::apiKey ifPresent {
+        ValidatingParameters::drillApiKey ifPresent {
             minLength(1)
         }
         ValidatingParameters::logLevelAsList onEach {
@@ -94,7 +94,8 @@ class ValidatedParametersProvider(
 
     private val validatingConfiguration = validatingConfiguration()
 
-    override val configuration = validateConfiguration()
+    override val configuration
+        get() = validateConfiguration()
 
     fun validate(): List<ValidationError> {
         val strictValidationErrors = strictValidators(ValidatingParameters(this)).takeIf { it is Invalid }?.errors?.toList() ?: emptyList()
