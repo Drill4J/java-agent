@@ -176,7 +176,8 @@ kotlin {
             "org.eclipse.jetty",
             "org.intellij.lang.annotations",
             "org.jetbrains.annotations",
-            "org.petitparser"
+            "org.petitparser",
+            "net.bytebuddy"
         )
         val runtimeJar by registering(ShadowJar::class) {
             mergeServiceFiles()
