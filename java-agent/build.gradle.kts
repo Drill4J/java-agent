@@ -216,7 +216,6 @@ distributions {
                     exclude("*.def")
                 }
                 from("drill.properties")
-                from("temporary.jks")
             }
         }
     }
