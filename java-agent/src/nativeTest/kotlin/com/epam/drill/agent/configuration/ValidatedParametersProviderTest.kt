@@ -27,7 +27,7 @@ class ValidatedParametersProviderTest {
     @Test
     fun `validating empty providers`() {
         var e: Throwable? = null
-        runCatching { ValidatedParametersProvider(setOf(SimpleMapProvider(emptyMap()))) }
+        runCatching { ValidatedParametersProvider(setOf(SimpleMapProvider(emptyMap()))).configuration }
             .onFailure { e = it }
             .onSuccess { e = null }
         assertIs<ParameterValidationException>(e)
@@ -81,20 +81,20 @@ class ValidatedParametersProviderTest {
         val woInstallationDir =
             defaultParameters().also { it.remove(DefaultParameterDefinitions.INSTALLATION_DIR.name) }
         val woAdminAddress = defaultParameters().also { it.remove(ParameterDefinitions.DRILL_API_URL.name) }
-        runCatching { ValidatedParametersProvider(setOf(SimpleMapProvider(woAgentId))) }
+        runCatching { ValidatedParametersProvider(setOf(SimpleMapProvider(woAgentId))).configuration }
             .onFailure { e = it }
             .onSuccess { e = null }
         assertIs<ParameterValidationException>(e)
         assertIs<ParameterValidationException>(e)
-        runCatching { ValidatedParametersProvider(setOf(SimpleMapProvider(woPackages))) }
+        runCatching { ValidatedParametersProvider(setOf(SimpleMapProvider(woPackages))).configuration }
             .onFailure { e = it }
             .onSuccess { e = null }
         assertIs<ParameterValidationException>(e)
-        runCatching { ValidatedParametersProvider(setOf(SimpleMapProvider(woInstallationDir))) }
+        runCatching { ValidatedParametersProvider(setOf(SimpleMapProvider(woInstallationDir))).configuration }
             .onFailure { e = it }
             .onSuccess { e = null }
         assertIs<ParameterValidationException>(e)
-        runCatching { ValidatedParametersProvider(setOf(SimpleMapProvider(woAdminAddress))) }
+        runCatching { ValidatedParametersProvider(setOf(SimpleMapProvider(woAdminAddress))).configuration }
             .onFailure { e = it }
             .onSuccess { e = null }
         assertIs<ParameterValidationException>(e)

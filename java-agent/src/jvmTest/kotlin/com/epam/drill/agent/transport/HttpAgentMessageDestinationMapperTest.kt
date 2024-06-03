@@ -41,7 +41,7 @@ class HttpAgentMessageDestinationMapperTest {
         val destination = AgentMessageDestination("PUT", "metadata")
         val mapped = mapper.map(destination)
         assertEquals(
-            "/api/metadata",
+            "data-ingest/metadata",
             mapped.target
         )
         assertEquals("PUT", mapped.type)
@@ -52,7 +52,7 @@ class HttpAgentMessageDestinationMapperTest {
         val destination = AgentMessageDestination("POST", "something-else")
         val mapped = mapper.map(destination)
         assertEquals(
-            "/api/something-else",
+            "data-ingest/something-else",
             mapped.target
         )
         assertEquals("POST", mapped.type)
