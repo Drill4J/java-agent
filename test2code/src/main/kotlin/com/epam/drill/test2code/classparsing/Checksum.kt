@@ -36,8 +36,8 @@ internal fun calculateMethodsChecksums(
     .filter { it.second != "" }
     .associate { it.first to it.second }
 
-private fun Method.classSignature() =
-    "${name}/${argumentTypes.asSequence().map { type -> type.toString() }.joinToString()}/${returnType}"
+fun Method.classSignature() =
+    "${name}/${argumentTypes.asSequence().map { type -> type.toString() }.joinToString(separator = ",")}/${returnType}"
 
 private fun calculateChecksum(
     method: Method,
