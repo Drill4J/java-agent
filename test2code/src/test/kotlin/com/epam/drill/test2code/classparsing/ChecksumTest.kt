@@ -127,7 +127,7 @@ class ConstructorTest {
     @Test
     fun `class with more that one constructor should have two different checksum`() {
         val constructorName =
-            "<init>/java.lang.String, java.lang.String, java.lang.String, java.lang.String, java.lang.String/void"
+            "<init>/java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String/void"
         val defaultConstructorName = "<init>//void"
         assertChecksum(constructorName, checksumsBuild1, checksumsBuild2)
         assertEquals(
