@@ -9,6 +9,7 @@ plugins {
     kotlin("plugin.serialization")
     id("kotlinx-atomicfu")
     id("com.github.hierynomus.license")
+    id("com.google.protobuf") version "0.9.4"
 }
 
 group = "com.epam.drill"
@@ -22,6 +23,8 @@ val atomicfuVersion: String by parent!!.extra
 val bcelVersion: String by parent!!.extra
 val microutilsLoggingVersion: String by parent!!.extra
 val logbackVersion: String by parent!!.extra
+val dataIngestApiProtoUrl: String by parent!!.extra
+val protobufJavaVersion = "4.27.1"
 
 repositories {
     mavenLocal()
@@ -44,6 +47,7 @@ dependencies {
     implementation("org.jacoco:org.jacoco.core:$jacocoVersion")
     implementation("org.apache.bcel:bcel:$bcelVersion")
     implementation("io.github.microutils:kotlin-logging-jvm:$microutilsLoggingVersion")
+    implementation("com.google.protobuf:protobuf-java:$protobufJavaVersion")
 
     implementation(project(":common"))
     implementation(project(":test2code-common"))
@@ -69,6 +73,31 @@ tasks {
     withType<KotlinCompile> {
         kotlinOptions.jvmTarget = "1.8"
     }
+    // protobuf class generation tasks
+    val protoPath = "src/main/proto"
+    register<de.undercouch.gradle.tasks.download.Download>("downloadProto") {
+        val destinationFile = file("$protoPath/data-ingest.proto")
+        src(dataIngestApiProtoUrl)
+        dest(destinationFile)
+        onlyIfModified(true)
+        doLast {
+            println("Downloaded $dataIngestApiProtoUrl to $destinationFile")
+        }
+    }
+    generateProto {
+        dependsOn("downloadProto")
+    }
+    compileKotlin {
+        dependsOn("generateProto")
+    }
+    register("cleanProto") {
+        doLast {
+            delete(file(protoPath))
+        }
+    }
+    named("clean") {
+        dependsOn("cleanProto")
+    }
 }
 
 noArg {
@@ -87,5 +116,12 @@ license {
         source = fileTree("$projectDir/src").also {
             include("**/*.kt", "**/*.java", "**/*.groovy")
         }
+    }
+    exclude("**/build/generated/proto/**/*.java")
+}
+
+protobuf {
+    protoc {
+        artifact = "com.google.protobuf:protoc:$protobufJavaVersion"
     }
 }
