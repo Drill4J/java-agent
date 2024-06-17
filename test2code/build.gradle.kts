@@ -91,9 +91,7 @@ tasks {
         dependsOn("generateProto")
     }
     register("cleanProto") {
-        doLast {
-            delete(file(protoPath))
-        }
+        delete(file(protoPath))
     }
     named("clean") {
         dependsOn("cleanProto")
