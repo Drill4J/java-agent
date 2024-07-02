@@ -54,6 +54,10 @@ class IntervalCoverageSender(
 
     override fun stopSendingCoverage() {
         scheduledThreadPool.shutdown()
+        if (!scheduledThreadPool.awaitTermination(5, TimeUnit.SECONDS)) {
+            scheduledThreadPool.shutdownNow();
+        }
+        sendProbes(collectProbes())
         logger.debug { "Coverage sending job is stopped." }
     }
 
