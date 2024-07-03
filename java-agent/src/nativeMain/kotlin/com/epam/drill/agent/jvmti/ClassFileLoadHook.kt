@@ -141,7 +141,7 @@ object ClassFileLoadHook {
             }
             // TODO Http hook does not work for Netty on linux system
             if ('$' !in kClassName && kClassName.startsWith(NettyTransformer.HANDLER_CONTEXT)) {
-                logger.info { "Starting transform Netty class kClassName $kClassName..." }
+                logger.debug { "Starting transform Netty class kClassName $kClassName..." }
                 transformers += { bytes ->
                     NettyTransformer.transform(kClassName, bytes, loader, protectionDomain)
                 }
@@ -152,7 +152,7 @@ object ClassFileLoadHook {
                 }.takeIf { it !== classBytes }?.let { newBytes ->
                     logger.trace { "$kClassName transformed" }
                     totalTransformClass.addAndGet(1).takeIf { it % 100 == 0 }?.let {
-                        logger.debug { "$it classes are transformed" }
+                        logger.trace { "$it classes are transformed" }
                     }
                     convertToNativePointers(newBytes, newData, newClassDataLen)
                 }

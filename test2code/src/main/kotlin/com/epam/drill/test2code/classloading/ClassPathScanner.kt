@@ -75,7 +75,7 @@ class ClassPathScanner(
      */
     private fun scanDirectory(file: File) = file.run {
         val isClassFile: (File) -> Boolean = { it.isFile && it.extension == "class" }
-        logger.debug { "ClassPathScanner: scanning directory: ${this.absolutePath}" }
+        logger.debug { "scanDirectory: scanning directory: ${this.absolutePath}" }
         this.walkTopDown().filter(isClassFile).sumOf { scanClassFile(it, this).getOrLogFail() }
     }
 
@@ -90,7 +90,7 @@ class ClassPathScanner(
         val fileToStream: (File) -> JarInputStream = { JarInputStream(it.inputStream().buffered(JAR_BUFFER_SIZE)) }
         val pathToFile: (String) -> File? = { File(this.parent, it).takeIf(File::exists) }
         var scanned = 0
-        logger.debug { "ClassPathScanner: scanning file: ${this.absolutePath}" }
+        logger.debug { "scanJarFile: scanning file: ${this.absolutePath}" }
         this.takeIf(isNotScanned)?.let(fileToStream)?.use {
             scanned += scanJarInputStream(it).also { scannedJarFiles.add(this.absolutePath) }
             scanned += it.manifest?.mainAttributes?.getValue(Attributes.Name.CLASS_PATH)?.split(" ")
@@ -170,7 +170,7 @@ class ClassPathScanner(
      * @return scanned classes count
      */
     private fun scanJarEntry(entry: JarEntry, bytes: ByteArray): Result<Int> = entry.name.runCatching {
-        logger.debug { "ClassPathScanner: scanning jar entry: $this" }
+        logger.debug { "scanJarEntry: scanning jar entry: $this" }
         JarInputStream(ByteArrayInputStream(bytes)).use(::scanJarInputStream)
     }
 

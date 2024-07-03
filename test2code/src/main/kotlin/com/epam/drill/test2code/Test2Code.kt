@@ -74,7 +74,7 @@ class Test2Code(
 
     override fun load() {
         ParametersValidator.validate(configuration.parameters)
-        logger.info { "load: Waiting for transport availability for class metadata scanning" }
+        logger.debug { "load: Waiting for transport availability for class metadata scanning" }
         thread {
             scanAndSendMetadataClasses()
             coverageSender.startSendingCoverage()
