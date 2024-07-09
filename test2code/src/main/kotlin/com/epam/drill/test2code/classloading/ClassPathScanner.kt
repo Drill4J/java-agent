@@ -42,7 +42,7 @@ class ClassPathScanner(
     private val scannedBuffer = mutableSetOf<ClassSource>()
 
     private val getOrLogFail: Result<Int>.() -> Int = {
-        this.onFailure { logger.error(it) { "ClassPathScanner: error handling class file" } }
+        this.onFailure { logger.warn { "ClassPathScanner: error handling class file: ${it.message}" } }
         this.getOrDefault(0)
     }
 

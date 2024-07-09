@@ -33,7 +33,7 @@ class ClassLoadersScanner(
     private val classPathScanner = ClassPathScanner(packagePrefixes, classesBufferSize, transfer)
 
     private val getOrLogFail: Result<URI>.() -> URI? = {
-        this.onFailure { logger.error(it) { "ClassLoadersScanner: error handling classpath URI" } }
+        this.onFailure { logger.warn { "ClassLoadersScanner: error handling classpath URI: ${it.message}" } }
         this.getOrNull()
     }
 
@@ -106,7 +106,7 @@ class ClassLoadersScanner(
             classloader.getResources("/").toList().let(addAsUris)
         }
         result.onFailure {
-            logger.error(it) { "ClassLoadersScanner: error retrieving classpath URIs from classloader $classloader" }
+            logger.warn { "ClassLoadersScanner: error retrieving classpath URIs from classloader $classloader: ${it.message}" }
         }
     }
 
