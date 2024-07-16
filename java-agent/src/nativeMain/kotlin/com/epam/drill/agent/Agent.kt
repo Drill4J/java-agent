@@ -46,14 +46,14 @@ object Agent {
         U| |_| |\|  _ <       | |    \| |/__ \| |/__     |__   _|        | |_| |_,-. 
          |____/ u|_| \_\    U/| |\u   |_____| |_____|      /|_|\          \___/-(_/  
           |||_   //   \\_.-,_|___|_,-.//  \\  //  \\      u_|||_u          _//       
-         (__)_) (__)  (__)\_)-' '-(_/(_")("_)(_")("_)     (__)__)         (__)  v. ${agentVersion}⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+         (__)_) (__)  (__)\_)-' '-(_/(_")("_)(_")("_)     (__)__)         (__)  
+         Java Agent (v${agentVersion})
         """.trimIndent()
 
     private val logger = KotlinLogging.logger("com.epam.drill.agent.Agent")
 
     fun agentOnLoad(options: String): Int {
         println(logo)
-
         AgentLoggingConfiguration.defaultNativeLoggingConfiguration()
         Configuration.initializeNative(options)
         AgentLoggingConfiguration.updateNativeLoggingConfiguration()
@@ -63,14 +63,13 @@ object Agent {
         setUnhandledExceptionHook({ error: Throwable -> logger.error(error) { "Unhandled event: $error" }}.freeze())
         AddToBootstrapClassLoaderSearch("${Configuration.parameters[INSTALLATION_DIR]}/drill-runtime.jar")
 
-        logger.info { "agentOnLoad: The native agent has been loaded" }
-        logger.info { "agentOnLoad: Pid is: " + getpid() }
+        logger.info { "agentOnLoad: Java Agent has been loaded. Pid is: " + getpid() }
 
         return JNI_OK
     }
 
     fun agentOnUnload() {
-        logger.info { "agentOnUnload" }
+        logger.info { "agentOnUnload: Java Agent has been unloaded." }
     }
 
     fun agentOnVmInit() {
@@ -89,7 +88,7 @@ object Agent {
     }
 
     fun agentOnVmDeath() {
-        logger.info { "agentOnVmDeath" }
+        logger.debug { "agentOnVmDeath" }
     }
 
     private fun addCapabilities() = memScoped {

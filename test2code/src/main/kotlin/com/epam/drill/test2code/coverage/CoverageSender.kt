@@ -59,7 +59,7 @@ class IntervalCoverageSender(
             scheduledThreadPool.shutdownNow();
         }
         sendProbes(collectProbes())
-        logger.debug { "Coverage sending job is stopped." }
+        logger.info { "Coverage sending job is stopped." }
     }
 
     /**
