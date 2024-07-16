@@ -49,11 +49,16 @@ class IntervalCoverageSender(
             intervalMs,
             TimeUnit.MILLISECONDS
         )
-        logger.info { "Coverage sending job is started." }
+        logger.debug { "Coverage sending job is started." }
     }
 
     override fun stopSendingCoverage() {
         scheduledThreadPool.shutdown()
+        if (!scheduledThreadPool.awaitTermination(5, TimeUnit.SECONDS)) {
+            logger.error("Failed to send some coverage data prior to shutdown")
+            scheduledThreadPool.shutdownNow();
+        }
+        sendProbes(collectProbes())
         logger.info { "Coverage sending job is stopped." }
     }
 

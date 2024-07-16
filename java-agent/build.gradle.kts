@@ -162,7 +162,6 @@ kotlin {
         val jvmMainCompilation = kotlin.targets.withType<KotlinJvmTarget>()["jvm"].compilations["main"]
         val relocatePackages = setOf(
             "javax.validation",
-            "javax.websocket",
             "javassist",
             "ch.qos.logback",
             "io.aesy.datasize",
@@ -170,14 +169,13 @@ kotlin {
             "org.slf4j",
             "org.jacoco",
             "org.objectweb.asm",
-            "org.apache.bcel",
-            "org.apache.commons",
-            "org.apache.hc",
+            "org.apache",
             "org.eclipse.jetty",
             "org.intellij.lang.annotations",
             "org.jetbrains.annotations",
             "org.petitparser",
-            "net.bytebuddy"
+            "net.bytebuddy",
+            "mu",
         )
         val runtimeJar by registering(ShadowJar::class) {
             mergeServiceFiles()

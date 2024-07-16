@@ -77,8 +77,9 @@ class Test2Code(
         logger.debug { "load: Waiting for transport availability for class metadata scanning" }
         thread {
             scanAndSendMetadataClasses()
-            coverageSender.startSendingCoverage()
         }
+        coverageSender.startSendingCoverage()
+        Runtime.getRuntime().addShutdownHook(Thread { coverageSender.stopSendingCoverage() })
     }
 
     /**
