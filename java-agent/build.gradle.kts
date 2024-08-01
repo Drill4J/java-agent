@@ -8,6 +8,7 @@ import org.jetbrains.kotlin.konan.target.presetName
 import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
 import com.hierynomus.gradle.license.tasks.LicenseCheck
 import com.hierynomus.gradle.license.tasks.LicenseFormat
+import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 @Suppress("RemoveRedundantBackticks")
 plugins {
@@ -45,19 +46,24 @@ kotlin {
         compilations["test"].cinterops.create("test_stubs")
         binaries.sharedLib(nativeAgentLibName, setOf(DEBUG))
     }
-    targets {
-        jvm()
-        linuxX64(configure = configureNativeTarget)
-        mingwX64(configure = configureNativeTarget).apply {
+    jvm()
+    linuxX64(configure = configureNativeTarget)
+    mingwX64(configure = configureNativeTarget).apply {
+        binaries.all {
+            linkerOpts("-lpsapi", "-lwsock32", "-lws2_32", "-lmswsock")
+        }
+    }
+    macosX64(configure = configureNativeTarget).apply {
+        if (macosLd64.toBoolean()) {
             binaries.all {
-                linkerOpts("-lpsapi", "-lwsock32", "-lws2_32", "-lmswsock")
+                linkerOpts("-ld64")
             }
         }
-        macosX64(configure = configureNativeTarget).apply {
-            if(macosLd64.toBoolean()){
-                binaries.all {
-                    linkerOpts("-ld64")
-                }
+    }
+    macosArm64(configure = configureNativeTarget).apply {
+        if (macosLd64.toBoolean()) {
+            binaries.all {
+                linkerOpts("-ld64")
             }
         }
     }
@@ -127,10 +133,14 @@ kotlin {
         val linuxX64Main by getting(configuration = configureNativeDependencies)
         val mingwX64Main by getting(configuration = configureNativeDependencies)
         val macosX64Main by getting(configuration = configureNativeDependencies)
+        val macosArm64Main by getting(configuration = configureNativeDependencies)
         mingwX64Main.dependencies {
             implementation(project(":logging-native"))
         }
         macosX64Main.dependencies {
+            implementation(project(":logging-native"))
+        }
+        macosArm64Main.dependencies {
             implementation(project(":logging-native"))
         }
     }
@@ -145,7 +155,9 @@ kotlin {
                 from("src/native${it.compilationName.capitalize()}/kotlin")
                 into("src/${it.target.targetName}${it.compilationName.capitalize()}/kotlin/gen")
             }
-            it.compileKotlinTask.dependsOn(copyNativeClasses.get())
+            named<KotlinCompile>("compileKotlinJvm") {
+                dependsOn(copyNativeClasses.get())
+            }
         }
         val cleanNativeClassesTask: (KotlinCompilation<*>) -> Unit = {
             val taskName = "cleanNativeClasses${it.target.targetName.capitalize()}${it.compilationName.capitalize()}"
@@ -178,6 +190,7 @@ kotlin {
             "mu",
         )
         val runtimeJar by registering(ShadowJar::class) {
+            dependsOn(named<KotlinCompile>("compileKotlinJvm"))
             mergeServiceFiles()
             isZip64 = true
             archiveFileName.set("drill-runtime.jar")
@@ -193,7 +206,6 @@ kotlin {
                 exclude("/ch/qos/logback/classic/servlet/*")
             }
         }
-        runtimeJar.get().dependsOn(jvmMainCompilation.compileKotlinTask)
     }
 }
 
