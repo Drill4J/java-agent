@@ -29,6 +29,7 @@ jobs:
           - {os: ubuntu-latest, preset: linuxX64}
           - {os: windows-latest, preset: mingwX64}
           - {os: macos-12, preset: macosX64}
+          - {os: macos-14, preset: macosArm64}
     runs-on: ${{ matrix.config.os }}
     steps:
       - uses: actions/checkout@v3
