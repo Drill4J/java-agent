@@ -26,7 +26,9 @@ import com.epam.drill.jvmapi.gen.CallVoidMethod
 import com.epam.drill.jvmapi.gen.GetMethodID
 import com.epam.drill.jvmapi.gen.jclass
 import com.epam.drill.jvmapi.gen.jobject
+import kotlinx.cinterop.ExperimentalForeignApi
 
+@OptIn(ExperimentalForeignApi::class)
 open class GenericAgentModule(
     moduleId: String,
     moduleClass: jclass,

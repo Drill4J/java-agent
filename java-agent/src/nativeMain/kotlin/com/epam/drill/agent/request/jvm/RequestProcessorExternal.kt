@@ -19,12 +19,16 @@ import com.epam.drill.agent.request.RequestProcessor
 import com.epam.drill.jvmapi.callNativeVoidMethod
 import com.epam.drill.jvmapi.gen.JNIEnv
 import com.epam.drill.jvmapi.gen.jobject
+import kotlinx.cinterop.ExperimentalForeignApi
+import kotlin.experimental.ExperimentalNativeApi
 
+@OptIn(ExperimentalForeignApi::class, ExperimentalNativeApi::class)
 @Suppress("UNUSED")
 @CName("Java_com_epam_drill_agent_request_RequestProcessor_processServerRequest")
 fun processServerRequest(env: JNIEnv, thiz: jobject): Unit =
     callNativeVoidMethod(env, thiz, RequestProcessor::processServerRequest)
 
+@OptIn(ExperimentalForeignApi::class, ExperimentalNativeApi::class)
 @Suppress("UNUSED")
 @CName("Java_com_epam_drill_agent_request_RequestProcessor_processServerResponse")
 fun processServerResponse(env: JNIEnv, thiz: jobject): Unit =
