@@ -29,14 +29,13 @@ jobs:
           - {os: ubuntu-latest, preset: linuxX64}
           - {os: windows-latest, preset: mingwX64}
           - {os: macos-12, preset: macosX64}
-          - {os: macos-14, preset: macosArm64}
     runs-on: ${{ matrix.config.os }}
     steps:
       - uses: actions/checkout@v3
       - uses: actions/setup-java@v3
         with:
-          java-version: '8'
-          distribution: 'zulu'
+          java-version: 8
+          distribution: zulu
       - uses: gradle/wrapper-validation-action@v1
       - if: matrix.config.preset == 'linuxX64' || matrix.config.preset == 'macosX64'
         run: chmod +x ${{ github.workspace }}/gradlew
