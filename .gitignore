@@ -7,3 +7,4 @@ build/
 kni-meta-info
 **/commonGenerated/
 /lib-jvm-shared/
+**/proto/*.proto
