@@ -15,85 +15,56 @@
  */
 package com.epam.drill.agent.module
 
-import com.epam.drill.*
-import com.epam.drill.agent.*
-import com.epam.drill.common.*
-import com.epam.drill.common.agent.*
-import com.epam.drill.jvmapi.*
-import com.epam.drill.jvmapi.gen.*
-import kotlinx.cinterop.*
-import mu.KotlinLogging
+import com.epam.drill.common.agent.AgentContext
+import com.epam.drill.common.agent.configuration.AgentConfiguration
+import com.epam.drill.common.agent.module.AgentModule
+import com.epam.drill.common.agent.request.RequestProcessor
+import com.epam.drill.common.agent.transport.AgentMessage
+import com.epam.drill.common.agent.transport.AgentMessageDestination
+import com.epam.drill.common.agent.transport.AgentMessageSender
+import com.epam.drill.jvmapi.gen.CallVoidMethod
+import com.epam.drill.jvmapi.gen.GetMethodID
+import com.epam.drill.jvmapi.gen.jclass
+import com.epam.drill.jvmapi.gen.jobject
 
 open class GenericAgentModule(
-    pluginId: String,
-    val pluginApiClass: jclass,
-    val userPlugin: jobject
-) : AgentModule<Any>(
-    pluginId,
-    NopAgentContext,
-    NopPluginSender
-) {
+    moduleId: String,
+    moduleClass: jclass,
+    protected val moduleObject: jobject
+) : AgentModule(
+    moduleId,
+    NopAgentContext(),
+    NopMessageSender(),
+    NopConfiguration()
+), RequestProcessor {
 
-    private val logger = KotlinLogging.logger(GenericAgentModule::class.qualifiedName!!)
-    private val pluginApiClassName = pluginApiClass.signature()
-        .removePrefix("L").removeSuffix(";").replace("<L", "<").replace(";>", ">").replace("/", ".")
+    private val loadMethod = GetMethodID(moduleClass, AgentModule::load.name, "()V")
+    private val onConnectMethod = GetMethodID(moduleClass, AgentModule::onConnect.name, "()V")
+    private val processServerRequestMethod = GetMethodID(moduleClass, RequestProcessor::processServerRequest.name, "()V")
+    private val processServerResponseMethod = GetMethodID(moduleClass, RequestProcessor::processServerResponse.name, "()V")
 
-    override fun doRawAction(rawAction: String): Any {
-        logger.debug { "doRawAction: $rawAction" }
-        return CallObjectMethodA(
-            userPlugin,
-            GetMethodID(pluginApiClass, AgentModule<*>::doRawAction.name, "(Ljava/lang/String;)Ljava/lang/Object;"),
-            nativeHeap.allocArray(1L) {
-                l = NewStringUTF(rawAction)
-            }
-        )!!
+    override fun load() = CallVoidMethod(moduleObject, loadMethod)
+
+    override fun onConnect() = CallVoidMethod(moduleObject, onConnectMethod)
+
+    override fun processServerRequest() = processServerRequestMethod?.let { CallVoidMethod(moduleObject, it) } ?: Unit
+
+    override fun processServerResponse() = processServerResponseMethod?.let { CallVoidMethod(moduleObject, it) } ?: Unit
+
+    private class NopAgentContext : AgentContext {
+        override fun get(key: String) = throw NotImplementedError()
+        override fun invoke() = throw NotImplementedError()
     }
 
-    override fun on() {
-        logger.debug { "on(), pluginApiClass=$pluginApiClassName" }
-        CallVoidMethodA(
-            userPlugin, GetMethodID(pluginApiClass, AgentModule<*>::on.name, "()V"), null
-        )
+    private class NopMessageSender : AgentMessageSender<AgentMessage> {
+        override fun send(destination: AgentMessageDestination, message: AgentMessage) = throw NotImplementedError()
     }
 
-    override fun load() {
-        CallVoidMethodA(
-            userPlugin, GetMethodID(pluginApiClass, AgentModule<*>::load.name, "()V"), null
-        )
-
+    private class NopConfiguration : AgentConfiguration {
+        override val agentMetadata
+            get() = throw NotImplementedError()
+        override val parameters
+            get() = throw NotImplementedError()
     }
 
-    override fun onConnect() {
-        CallVoidMethodA(
-            userPlugin,
-            GetMethodID(pluginApiClass, GenericAgentModule::onConnect.name, "()V"),
-            null
-        )
-    }
-
-    fun processServerRequest() {
-        val methodID = GetMethodID(pluginApiClass, GenericAgentModule::processServerRequest.name, "()V")
-        methodID?.let {
-            CallVoidMethodA(userPlugin, it, null)
-        }
-    }
-
-    fun processServerResponse() {
-        val methodID = GetMethodID(pluginApiClass, GenericAgentModule::processServerResponse.name, "()V")
-        methodID?.let {
-            CallVoidMethodA(userPlugin, it, null)
-        }
-    }
-
-    override fun doAction(action: Any) = TODO()
-    override fun parseAction(rawAction: String) = TODO()
-}
-
-private object NopAgentContext : AgentContext {
-    override fun get(key: String): String? = null
-    override fun invoke(): String? = null
-}
-
-private object NopPluginSender : Sender {
-    override fun send(pluginId: String, message: String) = Unit
 }

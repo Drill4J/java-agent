@@ -16,7 +16,6 @@
 package com.epam.drill.test2code.classparsing
 
 import com.epam.drill.jacoco.DrillClassProbesAdapter
-import com.epam.drill.plugins.test2code.common.api.AstEntity
 import com.epam.drill.plugins.test2code.common.api.AstMethod
 import org.jacoco.core.internal.flow.ClassProbesVisitor
 import org.jacoco.core.internal.flow.IFrame
@@ -43,18 +42,21 @@ open class ProbeCounter : ClassProbesVisitor() {
     }
 }
 
-class ClassProbeCounter(val name: String) : ProbeCounter() {
-    val astClass = newAstClass(name, ArrayList())
+class ClassProbeCounter(
+    private val classname: String,
+    val methods: List<AstMethod> = ArrayList()
+) : ProbeCounter() {
 
     override fun visitMethod(
         access: Int, name: String?, desc: String?, signature: String?, exceptions: Array<out String>?
     ): MethodProbesVisitor {
-        return MethodProbeCounter(astClass.methods as MutableList)
+        return MethodProbeCounter(classname = classname, methods = methods as MutableList<AstMethod>)
     }
 }
 
 
 class MethodProbeCounter(
+    private val classname: String,
     private val methods: MutableList<AstMethod>
 ) : MethodProbesVisitor() {
 
@@ -65,11 +67,13 @@ class MethodProbeCounter(
     override fun visitEnd() {
         super.visitEnd()
         val method = AstMethod(
+            classname = classname,
             name = methodNode.name,
-            params = getParams(methodNode),
+            params = getParams(methodNode).joinToString(separator = ","),
             returnType = getReturnType(methodNode),
-            checksum = "",
-            probes = probes
+            bodyChecksum = "",
+            probesStartPos = if (probes.size > 0) probes[0] else 0,
+            probesCount = probes.size
         )
         methods.add(method)
     }
@@ -95,53 +99,22 @@ class MethodProbeCounter(
     }
 }
 
-fun parseAstClass(className: String, classBytes: ByteArray): AstEntity {
+fun parseAstClass(className: String, classBytes: ByteArray): List<AstMethod> {
     val classReader = InstrSupport.classReaderFor(classBytes)
     val counter = ClassProbeCounter(className)
     classReader.accept(DrillClassProbesAdapter(counter, false), 0)
-
-    val astClass = counter.astClass
     val astMethodsWithChecksum = calculateMethodsChecksums(classBytes, className)
 
-    astClass.methods = astClass.methods.map {
+    return counter.methods.map {
         it.copy(
-            checksum = astMethodsWithChecksum[it.classSignature()] ?: ""
+            bodyChecksum = astMethodsWithChecksum[it.classSignature()] ?: "",
         )
     }
-    return astClass
 }
-
-fun newAstClass(
-    className: String,
-    methods: MutableList<AstMethod> = ArrayList()
-) = AstEntity(
-    path = getPackageName(className),
-    name = getShortClassName(className),
-    methods
-)
 
 private fun AstMethod.classSignature() =
-    "${name}/${params.joinToString()}/${returnType}"
+    "${name}/${params}/${returnType}"
 
-private fun getShortClassName(className: String): String {
-    val lastSlashIndex: Int = className.lastIndexOf('/')
-    val hasPackage = lastSlashIndex != -1
-    return if (hasPackage) {
-        className.substring(lastSlashIndex + 1)
-    } else {
-        className
-    }
-}
-
-private fun getPackageName(className: String): String {
-    val lastSlashIndex: Int = className.lastIndexOf('/')
-    val hasPackage = lastSlashIndex != -1
-    return if (hasPackage) {
-        className.substring(0, lastSlashIndex)
-    } else {
-        ""
-    }
-}
 
 private fun getReturnType(methodNode: MethodNode): String {
     val returnTypeDesc: String = Type.getReturnType(methodNode.desc).descriptor

@@ -15,17 +15,42 @@
  */
 package com.epam.drill.test2code.coverage
 
-import com.epam.drill.test2code.JvmModuleConfiguration
+import com.epam.drill.jacoco.AgentProbes
 
 open class CoverageManager(
     private val classDescriptorsManager: IClassDescriptorsManager = ConcurrentClassDescriptorsManager(),
-    private val execDataProvider: IExecDataProvider = ThreadExecDataProvider(classDescriptorsManager),
-    private val coverageRecorder: ICoverageRecorder = CoverageRecorder(execDataProvider),
-    private val coverageSender: CoverageSender = IntervalCoverageSender(intervalMs = JvmModuleConfiguration.getSendCoverageInterval(), collectProbes = execDataProvider::poll)
-) : IProbesProxy by execDataProvider,
+    private val threadCoverageRecorder: ICoverageRecorder = ThreadCoverageRecorder(),
+    private val globalCoverageRecorder: GlobalCoverageRecorder = GlobalCoverageRecorder(),
+) : IProbesProxy,
     IClassDescriptorStorage by classDescriptorsManager,
-    ICoverageRecorder by coverageRecorder,
-    CoverageSender by coverageSender
+    ICoverageRecorder by threadCoverageRecorder {
+
+    override fun invoke(
+        id: Long,
+        num: Int,
+        name: String,
+        probeCount: Int,
+    ): AgentProbes {
+        val coverage: ContextCoverage = threadCoverageRecorder.getContext()
+            ?: globalCoverageRecorder.getContext()
+        val execDatum = coverage.execData.getOrPut(id) {
+            val classDescriptor = classDescriptorsManager.get(id)
+            ExecDatum(
+                id = classDescriptor.id,
+                name = classDescriptor.name,
+                probes = AgentProbes(classDescriptor.probeCount),
+                sessionId = coverage.context.sessionId,
+                testId = coverage.context.testId
+            )
+        }
+        return execDatum.probes
+    }
+
+    override fun pollRecorded(): Sequence<ExecDatum> {
+        return threadCoverageRecorder.pollRecorded() + globalCoverageRecorder.pollRecorded()
+    }
+
+}
 
 /**
  * The probes proxy MUST be a Kotlin singleton object

@@ -15,9 +15,14 @@
  */
 package com.epam.drill.agent.request
 
-expect object RequestHolder {
-    fun init(isAsync: Boolean)
+import com.epam.drill.common.agent.request.DrillRequest
+import com.epam.drill.common.agent.request.RequestHolder
+
+expect object RequestHolder : RequestHolder {
+    override fun remove()
+    override fun retrieve(): DrillRequest?
+    override fun store(drillRequest: DrillRequest)
     fun store(drillRequest: ByteArray)
     fun dump(): ByteArray?
-    fun closeSession()
+    fun init(isAsync: Boolean)
 }

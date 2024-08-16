@@ -15,21 +15,31 @@
  */
 package com.epam.drill.test2code
 
+import kotlin.concurrent.thread
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.json.Json
 import java.util.concurrent.ConcurrentHashMap
 import mu.KotlinLogging
-import com.epam.drill.common.classloading.ClassScanner
-import com.epam.drill.common.classloading.EntitySource
-import com.epam.drill.common.agent.AgentModule
 import com.epam.drill.common.agent.AgentContext
-import com.epam.drill.common.agent.Instrumenter
-import com.epam.drill.common.agent.Sender
+import com.epam.drill.common.agent.configuration.AgentConfiguration
+import com.epam.drill.common.agent.module.AgentModule
+import com.epam.drill.common.agent.module.Instrumenter
+import com.epam.drill.common.agent.request.RequestProcessor
+import com.epam.drill.common.agent.transport.AgentMessage
+import com.epam.drill.common.agent.transport.AgentMessageDestination
+import com.epam.drill.common.agent.transport.AgentMessageSender
+import com.epam.drill.common.classloading.EntitySource
+import com.epam.drill.plugins.test2code.common.api.AstMethod
+import com.epam.drill.plugins.test2code.common.transport.ClassMetadata
 import com.epam.drill.test2code.classloading.ClassLoadersScanner
+import com.epam.drill.test2code.classloading.ClassScanner
 import com.epam.drill.test2code.classparsing.parseAstClass
-import com.epam.drill.plugins.test2code.common.api.*
+import com.epam.drill.test2code.configuration.ParameterDefinitions
+import com.epam.drill.test2code.configuration.ParametersValidator
 import com.epam.drill.test2code.coverage.*
 
-const val DRILL_TEST_ID_HEADER = "drill-test-id"
+private const val DRILL_TEST_ID_HEADER = "drill-test-id"
 
 /**
  * Service for managing the plugin on the agent side
@@ -38,36 +48,24 @@ const val DRILL_TEST_ID_HEADER = "drill-test-id"
 class Test2Code(
     id: String,
     agentContext: AgentContext,
-    sender: Sender
-) : AgentModule<AgentAction>(id, agentContext, sender), Instrumenter, ClassScanner {
+    sender: AgentMessageSender<AgentMessage>,
+    configuration: AgentConfiguration
+) : AgentModule(id, agentContext, sender, configuration), Instrumenter, ClassScanner, RequestProcessor {
 
     internal val logger = KotlinLogging.logger {}
-
     internal val json = Json { encodeDefaults = true }
 
-    private val coverageManager =
-        DrillCoverageManager.apply { setCoverageTransport(WebsocketCoverageTransport(id, sender)) }
-
+    private val coverageManager = DrillCoverageManager
     private val instrumenter = DrillInstrumenter(coverageManager, coverageManager)
-
-    //TODO remove after admin refactoring
-    private val sessions = ConcurrentHashMap<String, Boolean>()
+    private val coverageSender: CoverageSender = IntervalCoverageSender(
+        instanceId = configuration.agentMetadata.instanceId,
+        intervalMs = configuration.parameters[ParameterDefinitions.COVERAGE_SEND_INTERVAL],
+        pageSize = configuration.parameters[ParameterDefinitions.COVERAGE_SEND_PAGE_SIZE],
+        sender = sender,
+        collectProbes = { coverageManager.pollRecorded() }
+    )
 
     override fun onConnect() {}
-
-    /**
-     * Switch on the plugin
-     * @features Agent registration
-     */
-    override fun on() {
-        val initInfo = InitInfo(message = "Initializing plugin $id...")
-        sendMessage(initInfo)
-        logger.info { "Initializing plugin $id..." }
-
-        scanAndSendMetadataClasses()
-        sendMessage(Initialized(msg = "Initialized"))
-        logger.info { "Plugin $id initialized!" }
-    }
 
     override fun instrument(
         className: String,
@@ -75,22 +73,21 @@ class Test2Code(
     ): ByteArray? = instrumenter.instrument(className, initialBytes)
 
     override fun load() {
-        logger.info { "Plugin $id: initializing..." }
-        coverageManager.startSendingCoverage()
-        logger.info { "Plugin $id initialized!" }
+        ParametersValidator.validate(configuration.parameters)
+        logger.debug { "load: Waiting for transport availability for class metadata scanning" }
+        thread {
+            scanAndSendMetadataClasses()
+        }
+        coverageSender.startSendingCoverage()
+        Runtime.getRuntime().addShutdownHook(Thread { coverageSender.stopSendingCoverage() })
     }
-
-    // TODO remove after merging to java-agent repo
-    override fun doAction(action: AgentAction) {}
-
 
     /**
      * When the application under test receive a request from the caller
      * For each request we fill the thread local variable with an array of [ExecDatum]
      * @features Running tests
      */
-    @Suppress("UNUSED")
-    fun processServerRequest() {
+    override fun processServerRequest() {
         val sessionId = context()
         val testId = context[DRILL_TEST_ID_HEADER]
         if (sessionId == null || testId == null) return
@@ -101,22 +98,21 @@ class Test2Code(
      * When the application under test returns a response to the caller
      * @features Running tests
      */
-    @Suppress("UNUSED")
-    fun processServerResponse() {
+    override fun processServerResponse() {
         val sessionId = context()
         val testId = context[DRILL_TEST_ID_HEADER]
         if (sessionId == null || testId == null) return
         coverageManager.stopRecording(sessionId, testId)
     }
 
-    override fun parseAction(
-        rawAction: String,
-    ): AgentAction = json.decodeFromString(AgentAction.serializer(), rawAction)
-
     override fun scanClasses(consumer: (Set<EntitySource>) -> Unit) {
-        JvmModuleConfiguration.waitClassScanning()
-        val packagePrefixes = JvmModuleConfiguration.getPackagePrefixes().split(";")
-        val additionalPaths = JvmModuleConfiguration.getScanClassPath().split(";")
+        val packagePrefixes = configuration.agentMetadata.packagesPrefixes
+        val additionalPaths = configuration.parameters[ParameterDefinitions.SCAN_CLASS_PATH]
+        val classScanDelay = configuration.parameters[ParameterDefinitions.CLASS_SCAN_DELAY]
+        if (classScanDelay.isPositive()) {
+            logger.debug { "Waiting class scan delay ${classScanDelay.inWholeMilliseconds} ms..." }
+            runBlocking { delay(classScanDelay) }
+        }
         logger.info { "Scanning classes, package prefixes: $packagePrefixes... " }
         ClassLoadersScanner(packagePrefixes, 50, consumer, additionalPaths).scanClasses()
     }
@@ -126,20 +122,31 @@ class Test2Code(
      */
     private fun scanAndSendMetadataClasses() {
         var classCount = 0
+        var methodCount = 0
         scanClasses { classes ->
             classes
-                .map { parseAstClass(it.entityName(), it.bytes()) }
-                .let(::InitDataPart)
-                .also(::sendMessage)
-                .also { classCount += it.astEntities.size }
+                .also { classCount += it.size }
+                .flatMap { parseAstClass(it.entityName(), it.bytes()) }
+                .also { methodCount += it.size }
+                .chunked(configuration.parameters[ParameterDefinitions.METHODS_SEND_PAGE_SIZE])
+                .forEach(::sendClassMetadata)
         }
-        logger.info { "Scanned $classCount classes" }
+        logger.info { "Scanned $classCount classes with $methodCount methods" }
     }
 
-    private fun sendMessage(message: CoverMessage) {
-        val messageStr = json.encodeToString(CoverMessage.serializer(), message)
-        logger.debug { "Send message $messageStr" }
-        send(messageStr)
+    private val classMetadataDestination = AgentMessageDestination("PUT", "methods")
+
+    private fun sendClassMetadata(methods: List<AstMethod>) {
+        val message = ClassMetadata(
+            groupId = configuration.agentMetadata.groupId,
+            appId = configuration.agentMetadata.appId,
+            commitSha = configuration.agentMetadata.commitSha,
+            buildVersion = configuration.agentMetadata.buildVersion,
+            instanceId = configuration.agentMetadata.instanceId,
+            methods = methods
+        )
+        logger.debug { "sendClassMetadata: Sending methods: $message" }
+        sender.send(classMetadataDestination, message)
     }
 
 }

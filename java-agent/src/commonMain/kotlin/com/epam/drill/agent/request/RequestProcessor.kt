@@ -15,7 +15,9 @@
  */
 package com.epam.drill.agent.request
 
-expect object RequestProcessor {
-    fun processServerRequest()
-    fun processServerResponse()
+import com.epam.drill.common.agent.request.RequestProcessor
+
+expect object RequestProcessor : RequestProcessor {
+    override fun processServerRequest()
+    override fun processServerResponse()
 }

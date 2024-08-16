@@ -15,22 +15,26 @@
  */
 package com.epam.drill.agent.request
 
-import com.epam.drill.agent.configuration.idHeaderPairFromConfig
-import com.epam.drill.agent.configuration.requestPattern
-import com.epam.drill.agent.configuration.retrieveAdminUrl
+import com.epam.drill.agent.configuration.Configuration
+import com.epam.drill.agent.configuration.ParameterDefinitions
+import com.epam.drill.common.agent.request.HeadersRetriever
 
-actual object HeadersRetriever {
+actual object HeadersRetriever : HeadersRetriever {
 
-    private val idHeaderPair = idHeaderPairFromConfig()
+    private val adminAddress = Configuration.parameters[ParameterDefinitions.DRILL_API_URL]
 
-    actual fun adminAddressHeader(): String? = "drill-admin-url"
+    private val agentIdHeader = Configuration.agentMetadata.groupId.takeIf(String::isNotEmpty)
+        ?.let { "drill-group-id" to Configuration.agentMetadata.groupId }
+        ?: let { "drill-agent-id" to Configuration.agentMetadata.appId }
 
-    actual fun retrieveAdminAddress(): String? = retrieveAdminUrl()
+    actual override fun adminAddressHeader() = "drill-admin-url"
 
-    actual fun sessionHeaderPattern(): String? = requestPattern
+    actual override fun adminAddressValue() = adminAddress
 
-    actual fun idHeaderConfigKey(): String? = idHeaderPair.first
+    actual override fun sessionHeader() = "drill-session-id"
 
-    actual fun idHeaderConfigValue(): String? = idHeaderPair.second
+    actual override fun agentIdHeader() = agentIdHeader.first
+
+    actual override fun agentIdHeaderValue() = agentIdHeader.second
 
 }

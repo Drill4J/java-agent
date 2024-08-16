@@ -15,46 +15,32 @@
  */
 package com.epam.drill.test2code.coverage
 
-import com.epam.drill.plugins.test2code.common.api.*
-import com.epam.drill.test2code.*
-import io.aesy.datasize.*
-import kotlinx.coroutines.*
-import kotlinx.serialization.protobuf.*
-import mu.*
-import java.math.*
-import java.text.*
-import java.util.*
-import java.util.concurrent.*
+import kotlinx.coroutines.Runnable
+import java.util.concurrent.Executors
+import java.util.concurrent.TimeUnit
+import mu.KotlinLogging
+import com.epam.drill.common.agent.transport.AgentMessageDestination
+import com.epam.drill.common.agent.transport.AgentMessageSender
+import com.epam.drill.common.agent.transport.ResponseStatus
+import com.epam.drill.plugins.test2code.common.api.ClassCoverage
+import com.epam.drill.plugins.test2code.common.api.toBitSet
+import com.epam.drill.plugins.test2code.common.transport.CoveragePayload
 
 interface CoverageSender {
-    fun setCoverageTransport(transport: CoverageTransport)
     fun startSendingCoverage()
     fun stopSendingCoverage()
 }
 
 class IntervalCoverageSender(
-    private val logger: KLogger = KotlinLogging.logger("com.epam.drill.test2code.coverage.IntervalCoverageSender"),
+    private val instanceId: String,
     private val intervalMs: Long,
-    private var coverageTransport: CoverageTransport = StubTransport(),
-    private val inMemoryRetentionQueue: RetentionQueue = InMemoryRetentionQueue(
-        totalSizeByteLimit = try {
-            DataSize.parse(JvmModuleConfiguration.getCoverageRetentionLimit())
-                .toUnit(ByteUnit.BYTE)
-                .value
-                .toBigInteger()
-        } catch (e: ParseException) {
-            logger.warn { "Catch exception while parsing CoverageRetentionLimit. Exception: ${e.message}" }
-            BigInteger.valueOf(1024 * 1024 * 512)
-        }
-    ),
+    private val pageSize: Int,
+    private val sender: AgentMessageSender<in CoveragePayload> = StubSender(),
     private val collectProbes: () -> Sequence<ExecDatum> = { emptySequence() }
 ) : CoverageSender {
     private val scheduledThreadPool = Executors.newSingleThreadScheduledExecutor()
-
-    override fun setCoverageTransport(transport: CoverageTransport) {
-        coverageTransport = transport
-    }
-
+    private val destination = AgentMessageDestination("POST", "coverage")
+    private val logger = KotlinLogging.logger {}
 
     override fun startSendingCoverage() {
         scheduledThreadPool.scheduleAtFixedRate(
@@ -68,7 +54,12 @@ class IntervalCoverageSender(
 
     override fun stopSendingCoverage() {
         scheduledThreadPool.shutdown()
-        logger.debug { "Coverage sending job is stopped." }
+        if (!scheduledThreadPool.awaitTermination(5, TimeUnit.SECONDS)) {
+            logger.error("Failed to send some coverage data prior to shutdown")
+            scheduledThreadPool.shutdownNow();
+        }
+        sendProbes(collectProbes())
+        logger.info { "Coverage sending job is stopped." }
     }
 
     /**
@@ -76,40 +67,19 @@ class IntervalCoverageSender(
      * @return the function of sending test coverage
      * @features Coverage data sending
      */
-    private fun sendProbes(data: Sequence<ExecDatum>) {
-        val dataToSend = data
-            .map {
-                ExecClassData(
-                    id = it.id,
-                    className = it.name,
-                    probes = it.probes.values.toBitSet(),
-                    sessionId = it.sessionId,
-                    testId = it.testId,
-                )
-            }
-            .chunked(0xffff)
-            .map { chunk -> CoverDataPart(data = chunk) }
-            .map { message ->
-                ProtoBuf.encodeToByteArray(CoverMessage.serializer(), message)
-            }
-
-        if (coverageTransport.isAvailable()) {
-            val failedToSend = mutableListOf<ByteArray>()
-
-            val send = { message: ByteArray ->
-                val encoded = Base64.getEncoder().encodeToString(message)
-                try {
-                    coverageTransport.send(encoded)
-                } catch (e: Exception) {
-                    failedToSend.add(message)
-                }
-            }
-
-            dataToSend.forEach { send(it) }
-            inMemoryRetentionQueue.flush().forEach { send(it) }
-            if (failedToSend.size > 0) inMemoryRetentionQueue.addAll(failedToSend.asSequence())
-        } else {
-            inMemoryRetentionQueue.addAll(dataToSend)
-        }
+    private fun sendProbes(dataToSend: Sequence<ExecDatum>) {
+        dataToSend.map { ClassCoverage(classname = it.name, testId = it.testId, probes = it.probes.values.toBitSet()) }
+            .chunked(pageSize)
+            .forEach { sender.send(destination, CoveragePayload(instanceId, it)) }
     }
+
+}
+
+private class StubSender : AgentMessageSender<CoveragePayload> {
+    override fun send(destination: AgentMessageDestination, message: CoveragePayload) = StubResponseStatus()
+}
+
+private class StubResponseStatus : ResponseStatus {
+    override val success: Boolean = false
+    override val statusObject: Any? = null
 }
