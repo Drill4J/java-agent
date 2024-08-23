@@ -43,6 +43,7 @@ includeSharedLib("agent-instrumentation")
 includeSharedLib("jvmapi")
 includeSharedLib("knasm")
 includeSharedLib("konform")
+// FYI: Interceptor not patched for macOS ARM64 architecture.
 //includeSharedLib("interceptor-hook")
 //includeSharedLib("interceptor-http")
 includeSharedLib("interceptor-stub")
