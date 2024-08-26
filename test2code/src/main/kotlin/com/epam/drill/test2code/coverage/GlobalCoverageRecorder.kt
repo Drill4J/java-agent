@@ -34,18 +34,19 @@ class GlobalCoverageRecorder: ICoverageRecorder {
     }
 
     override fun pollRecorded(): Sequence<ExecDatum> {
-        var hasChanges = false
+        val unsentExecData = ExecData()
         globalExecData.forEach { (key, value) ->
             sentGlobalExecData.compute(key) { _, oldValue ->
                 if (oldValue?.equals(value) != true) {
-                    hasChanges = true
-                    value.copy(probes = AgentProbes(values = value.probes.values.copyOf()))
+                    val copiedValue = value.copy(probes = AgentProbes(values = value.probes.values.copyOf()))
+                    unsentExecData[key] = copiedValue
+                    copiedValue
                 } else
                     oldValue
             }
         }
-        return if (hasChanges) {
-            sentGlobalExecData.values.asSequence().filter { it.probes.containCovered() }
+        return if (unsentExecData.isNotEmpty()) {
+            unsentExecData.values.asSequence().filter { it.probes.containCovered() }
         } else
             emptySequence()
     }
