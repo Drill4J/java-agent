@@ -211,7 +211,7 @@ distributions {
             contents {
                 from(runtimeJarTask)
                 from(nativeAgentLinkTask) {
-                    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+                    duplicatesStrategy = DuplicatesStrategy.WARN
                     exclude("*.h")
                     exclude("*.def")
                 }

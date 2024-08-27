@@ -70,7 +70,7 @@ tasks {
         kotlinOptions.jvmTarget = "1.8"
     }
     jar {
-        duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+        duplicatesStrategy = DuplicatesStrategy.WARN
     }
 }
 
