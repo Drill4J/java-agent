@@ -13,8 +13,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.epam.drill.agent.instrument.servers
+package com.epam.drill.agent.instrument.jetty
 
 import com.epam.drill.agent.instrument.TransformerObject
 
-expect object NettyTransformer : TransformerObject
+expect object JettyHttpServerTransformer : TransformerObject

@@ -13,8 +13,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.epam.drill.agent.instrument.clients
+package com.epam.drill.agent.instrument.tomcat
 
 import com.epam.drill.agent.instrument.TransformerObject
 
-expect object WebClientTransformer : TransformerObject
+expect object TomcatHttpServerTransformer : TransformerObject

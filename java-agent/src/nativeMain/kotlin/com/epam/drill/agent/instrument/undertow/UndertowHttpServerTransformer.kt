@@ -13,11 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.epam.drill.agent.instrument.servers
+package com.epam.drill.agent.instrument.undertow
 
 import com.epam.drill.agent.instrument.AbstractTransformerObject
 import com.epam.drill.agent.instrument.TransformerObject
 
-actual object NettyTransformer : TransformerObject, AbstractTransformerObject() {
-    const val HANDLER_CONTEXT = "io/netty/channel/AbstractChannelHandlerContext"
-}
+actual object UndertowHttpServerTransformer : TransformerObject, AbstractTransformerObject()

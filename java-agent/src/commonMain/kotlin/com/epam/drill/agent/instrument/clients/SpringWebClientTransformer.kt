@@ -13,13 +13,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.epam.drill.agent.instrument.servers
+package com.epam.drill.agent.instrument.clients
 
-import com.epam.drill.agent.instrument.*
-import com.epam.drill.agent.request.HeadersRetriever
+import com.epam.drill.agent.instrument.TransformerObject
 
-actual object UndertowTransformer :
-    TransformerObject,
-    UndertowTransformerObject(HeadersRetriever),
-    HeadersProcessor by DefaultHeadersProcessor,
-    ClassPathProvider by RuntimeClassPathProvider
+expect object SpringWebClientTransformer : TransformerObject

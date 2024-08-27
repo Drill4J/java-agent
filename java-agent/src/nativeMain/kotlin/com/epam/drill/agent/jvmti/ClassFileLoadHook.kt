@@ -24,9 +24,13 @@ import com.epam.drill.agent.instrument.KAFKA_PRODUCER_INTERFACE
 import com.epam.drill.agent.instrument.clients.ApacheHttpClientTransformer
 import com.epam.drill.agent.instrument.clients.JavaHttpClientTransformer
 import com.epam.drill.agent.instrument.clients.OkHttp3ClientTransformer
-import com.epam.drill.agent.instrument.clients.WebClientTransformer
+import com.epam.drill.agent.instrument.clients.SpringWebClientTransformer
 import com.epam.drill.agent.instrument.servers.ReactorTransformer
 import com.epam.drill.agent.instrument.servers.*
+import com.epam.drill.agent.instrument.jetty.JettyHttpServerTransformer
+import com.epam.drill.agent.instrument.netty.NettyHttpServerTransformer
+import com.epam.drill.agent.instrument.tomcat.TomcatHttpServerTransformer
+import com.epam.drill.agent.instrument.undertow.UndertowHttpServerTransformer
 import com.epam.drill.agent.interceptor.HttpInterceptorConfigurer
 import com.epam.drill.agent.module.InstrumentationAgentModule
 import com.epam.drill.agent.module.JvmModuleStorage
@@ -49,7 +53,7 @@ object ClassFileLoadHook {
 
     private val strategies = listOf(
         JavaHttpClientTransformer, ApacheHttpClientTransformer, OkHttp3ClientTransformer,
-        ReactorTransformer, WebClientTransformer
+        ReactorTransformer, SpringWebClientTransformer
     )
 
     private val isAsyncApp = Configuration.parameters[ParameterDefinitions.IS_ASYNC_APP]
@@ -125,13 +129,13 @@ object ClassFileLoadHook {
             }
             if (!HttpInterceptorConfigurer.enabled) {
                 if (kClassName.startsWith("org/apache/catalina/core/ApplicationFilterChain")) {
-                    transformers += { bytes -> TomcatTransformer.transform(kClassName, bytes, loader, protectionDomain) }
+                    transformers += { bytes -> TomcatHttpServerTransformer.transform(kClassName, bytes, loader, protectionDomain) }
                 }
                 if (kClassName == "org/eclipse/jetty/server/handler/HandlerWrapper") {
-                    transformers += { bytes -> JettyTransformer.transform(kClassName, bytes, loader, protectionDomain) }
+                    transformers += { bytes -> JettyHttpServerTransformer.transform(kClassName, bytes, loader, protectionDomain) }
                 }
                 if (kClassName == "io/undertow/server/Connectors") {
-                    transformers += { bytes -> UndertowTransformer.transform(kClassName, bytes, loader, protectionDomain) }
+                    transformers += { bytes -> UndertowHttpServerTransformer.transform(kClassName, bytes, loader, protectionDomain) }
                 }
                 strategies.forEach { strategy ->
                     if (strategy.permit(classReader.className, classReader.superName, classReader.interfaces)) {
@@ -140,10 +144,10 @@ object ClassFileLoadHook {
                 }
             }
             // TODO Http hook does not work for Netty on linux system
-            if ('$' !in kClassName && kClassName.startsWith(NettyTransformer.HANDLER_CONTEXT)) {
-                logger.debug { "Starting transform Netty class kClassName $kClassName..." }
+            if ('$' !in kClassName && kClassName.startsWith(NettyHttpServerTransformer.HANDLER_CONTEXT)) {
+                logger.info { "Starting transform Netty class kClassName $kClassName..." }
                 transformers += { bytes ->
-                    NettyTransformer.transform(kClassName, bytes, loader, protectionDomain)
+                    NettyHttpServerTransformer.transform(kClassName, bytes, loader, protectionDomain)
                 }
             }
             if (transformers.any()) {

@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.epam.drill.agent.instrument.servers
+package com.epam.drill.agent.instrument.tomcat
 
 import com.epam.drill.agent.instrument.ClassPathProvider
 import com.epam.drill.agent.instrument.DefaultHeadersProcessor
@@ -22,8 +22,8 @@ import com.epam.drill.agent.instrument.RuntimeClassPathProvider
 import com.epam.drill.agent.instrument.TransformerObject
 import com.epam.drill.agent.request.HeadersRetriever
 
-actual object NettyTransformer :
+actual object TomcatHttpServerTransformer :
     TransformerObject,
-    NettyTransformerObject(HeadersRetriever),
+    TomcatHttpServerTransformerObject(HeadersRetriever),
     HeadersProcessor by DefaultHeadersProcessor,
     ClassPathProvider by RuntimeClassPathProvider

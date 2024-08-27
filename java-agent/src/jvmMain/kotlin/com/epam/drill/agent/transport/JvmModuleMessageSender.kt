@@ -64,7 +64,7 @@ actual object JvmModuleMessageSender : AgentMessageSender<AgentMessage> {
         val resolved = this.takeIf(File::exists)
             ?: this.takeUnless(File::isAbsolute)?.let(installationDir::resolve)
         logger.trace { "resolvePath: Resolved $path to ${resolved?.absolutePath}" }
-        resolved?.absolutePath ?: path
+        resolved?.takeUnless(File::isDirectory)?.absolutePath ?: path
     }
 
     private fun parseBytes(value: String): Long = value.run {
