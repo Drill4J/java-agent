@@ -146,9 +146,7 @@ kotlin {
                 from("src/native${it.compilationName.capitalize()}/kotlin")
                 into("src/${it.target.targetName}${it.compilationName.capitalize()}/kotlin/gen")
             }
-            named<KotlinCompile>("compileKotlinJvm") {
-                dependsOn(copyNativeClasses.get())
-            }
+            it.compileTaskProvider.get().dependsOn(copyNativeClasses.get())
         }
         val cleanNativeClassesTask: (KotlinCompilation<*>) -> Unit = {
             val taskName = "cleanNativeClasses${it.target.targetName.capitalize()}${it.compilationName.capitalize()}"
@@ -181,7 +179,6 @@ kotlin {
             "mu",
         )
         val runtimeJar by registering(ShadowJar::class) {
-            dependsOn(named<KotlinCompile>("compileKotlinJvm"))
             mergeServiceFiles()
             isZip64 = true
             archiveFileName.set("drill-runtime.jar")
@@ -197,6 +194,7 @@ kotlin {
                 exclude("/ch/qos/logback/classic/servlet/*")
             }
         }
+        runtimeJar.get().dependsOn(jvmMainCompilation.compileTaskProvider.get())
     }
 }
 
