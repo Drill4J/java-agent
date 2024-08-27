@@ -34,7 +34,6 @@ val includeSharedLib: Settings.(String) -> Unit = {
     project(":$it").projectDir = file(sharedLibsLocalPath).resolve(it)
 }
 
-includeSharedLib("logging-native")
 includeSharedLib("logging")
 includeSharedLib("common")
 includeSharedLib("agent-config")

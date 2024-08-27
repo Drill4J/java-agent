@@ -134,15 +134,6 @@ kotlin {
         val mingwX64Main by getting(configuration = configureNativeDependencies)
         val macosX64Main by getting(configuration = configureNativeDependencies)
         val macosArm64Main by getting(configuration = configureNativeDependencies)
-        mingwX64Main.dependencies {
-            implementation(project(":logging-native"))
-        }
-        macosX64Main.dependencies {
-            implementation(project(":logging-native"))
-        }
-        macosArm64Main.dependencies {
-            implementation(project(":logging-native"))
-        }
     }
     tasks {
         val filterOutCurrentPlatform: (KotlinNativeTarget) -> Boolean = {
