@@ -27,10 +27,10 @@ import com.epam.drill.agent.instrument.clients.OkHttp3ClientTransformer
 import com.epam.drill.agent.instrument.clients.SpringWebClientTransformer
 import com.epam.drill.agent.instrument.servers.ReactorTransformer
 import com.epam.drill.agent.instrument.servers.*
-import com.epam.drill.agent.instrument.jetty.JettyHttpServerTransformer
-import com.epam.drill.agent.instrument.netty.NettyHttpServerTransformer
-import com.epam.drill.agent.instrument.tomcat.TomcatHttpServerTransformer
-import com.epam.drill.agent.instrument.undertow.UndertowHttpServerTransformer
+import com.epam.drill.agent.instrument.jetty.*
+import com.epam.drill.agent.instrument.netty.*
+import com.epam.drill.agent.instrument.tomcat.*
+import com.epam.drill.agent.instrument.undertow.*
 import com.epam.drill.agent.interceptor.HttpInterceptorConfigurer
 import com.epam.drill.agent.module.InstrumentationAgentModule
 import com.epam.drill.agent.module.JvmModuleStorage
@@ -54,6 +54,22 @@ object ClassFileLoadHook {
     private val strategies = listOf(
         JavaHttpClientTransformer, ApacheHttpClientTransformer, OkHttp3ClientTransformer,
         ReactorTransformer, SpringWebClientTransformer
+    )
+    private val wsStrategies = listOf(
+        JettyWsClientTransformer,
+        JettyWsServerTransformer,
+        Jetty9WsMessagesTransformer,
+        Jetty10WsMessagesTransformer,
+        Jetty11WsMessagesTransformer,
+        NettyWsClientTransformer,
+        NettyWsServerTransformer,
+        NettyWsMessagesTransformer,
+        TomcatWsClientTransformer,
+        TomcatWsServerTransformer,
+        TomcatWsMessagesTransformer,
+        UndertowWsClientTransformer,
+        UndertowWsServerTransformer,
+        UndertowWsMessagesTransformer
     )
 
     private val isAsyncApp = Configuration.parameters[ParameterDefinitions.IS_ASYNC_APP]
@@ -139,7 +155,12 @@ object ClassFileLoadHook {
                 }
                 strategies.forEach { strategy ->
                     if (strategy.permit(classReader.className, classReader.superName, classReader.interfaces)) {
-                        transformers += { strategy.transform(kClassName, classBytes, loader, protectionDomain) }
+                        transformers += { bytes -> strategy.transform(kClassName, bytes, loader, protectionDomain) }
+                    }
+                }
+                wsStrategies.forEach { strategy ->
+                    if (strategy.permit(classReader.className, classReader.superName, classReader.interfaces)) {
+                        transformers += { bytes -> strategy.transform(kClassName, bytes, loader, protectionDomain) }
                     }
                 }
             }
