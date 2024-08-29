@@ -81,10 +81,6 @@ subprojects {
 
 @Suppress("UNUSED_VARIABLE")
 tasks {
-//    TODO disable build of interceptor-hook (build, assemble, check)
-//      1. investigate tree of gradle tasks (who call build of interceptor-hook)
-//      2. set-up if on that task. в зависимости от переменной nativeAgentHookEnabled скипать билд interceptor-hook и interceptor-http
-
     val filterDistTasks: (Task) -> Boolean = { it.name.endsWith("DistTar") || it.name.endsWith("DistZip") }
     val copyJavaAgentDist by registering(Copy::class) {
         from(project(":java-agent").tasks.filter(filterDistTasks))
