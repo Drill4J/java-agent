@@ -54,3 +54,64 @@ Problems before:
 - On Windows, we can't remove files(agent) while process is running
 
 Bootstrap solve these problems, now we can change dirs to java agent. After restart app we will use new java agent. 
+
+## Run in Alpine-linux
+
+Alpine-linux uses MUSL implementation of libc, so it imposes following restrictions:
+- Agent should be built without http-hook support (`nativeAgentHookEnabled = false`, in gradle.properties)
+- Additional configuration in Alpine linux should be performed before run agent:
+```
+apk add gcompat
+apk add libc6-compat
+apk add libgcc
+ln -s /lib/libc.so.6 /lib/libresolv.so.2 
+```
+
+## Adjusting k8s deployments to run agent
+
+Simplest and least invasive way to add agent into k8s application is to use init-containers.
+It this case no additional images or modifications of existing application images is required.
+
+There is an example of configuration for k8s and Helm:
+```
+apiVersion: apps/v1
+kind: Deployment
+...
+spec:
+  ...
+  template:
+    ...
+    spec:
+      ...
+      initContainers:
+      {{- if .Values.drill4j.enabled }}
+      - name: "install-drill4j-agent"
+        image: "busybox"
+        imagePullPolicy: "IfNotPresent"
+        command: [ 'sh', '-c', "wget https://github.com/Drill4J/java-agent/releases/download/v{{ .Values.drill4j.version }}/agent-linuxX64-{{ .Values.drill4j.version }}.zip -O /opt/drill4j-agent/agent-linuxX64-{{ .Values.drill4j.version }}.zip && unzip /opt/drill4j-agent/agent-linuxX64-{{ .Values.drill4j.version }}.zip -d /opt/drill4j-agent && rm /opt/drill4j-agent/agent-linuxX64-{{ .Values.drill4j.version }}.zip" ]
+        volumeMounts:
+          - name: drill4j-agent
+            mountPath: "/opt/drill4j-agent"
+      {{- end }}
+        ...
+      containers:
+        ...
+        {{- if .Values.drill4j.enabled }}
+        - name: JAVA_TOOL_OPTIONS
+          value: "-agentpath:/opt/drill4j-agent/linuxX64-{{ .Values.drill4j.version }}/libdrill_agent.so=adminAddress={{ .Values.drill4j.adminAddress }},agentId={{ .Values.drill4j.agentId }},groupId={{ .Values.drill4j.groupId }},packagePrefixes={{ .Values.drill4j.packagePrefixes }},buildVersion={{ .Values.sometag }}"
+        {{- end }}
+        ...
+        volumeMounts:
+          ...
+          {{- if .Values.drill4j.enabled }}
+          - name: drill4j-agent
+            mountPath: "/opt/drill4j-agent"
+          {{- end }}
+          ...
+      volumes:
+        ...
+        {{- if .Values.drill4j.serviceapi.enabled }}
+        - name: drill4j-agent
+          emptyDir: {}
+        {{- end }} 
+```
