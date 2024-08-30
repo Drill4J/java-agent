@@ -38,10 +38,10 @@ actual object JvmModuleMessageSender : AgentMessageSender<AgentMessage> {
         messageSender.send(destination, message)
 
     actual fun sendAgentMetadata() {
-        messageSender.send(Configuration.agentMetadata)
+        messageSender.send(AgentMessageDestination("PUT", "instances"), Configuration.agentMetadata)
     }
 
-    private fun messageSender(): QueuedAgentMessageMetadataSender<AgentMessage, ByteArray> {
+    private fun messageSender(): QueuedAgentMessageSender<AgentMessage, ByteArray> {
         val transport = HttpAgentMessageTransport(
             Configuration.parameters[ParameterDefinitions.DRILL_API_URL],
             Configuration.parameters[ParameterDefinitions.DRILL_API_KEY],
@@ -50,13 +50,12 @@ actual object JvmModuleMessageSender : AgentMessageSender<AgentMessage> {
         )
         val serializer = ProtoBufAgentMessageSerializer<AgentMessage>()
         val mapper = HttpAgentMessageDestinationMapper()
-        val metadataSender = RetryingAgentMetadataSender(transport, serializer, mapper)
         val queue = InMemoryAgentMessageQueue(
             serializer,
             Configuration.parameters[ParameterDefinitions.MESSAGE_QUEUE_LIMIT].let(::parseBytes)
         )
         val notifier = RetryingTransportStateNotifier(transport, serializer, queue)
-        return QueuedAgentMessageMetadataSender(transport, serializer, mapper, metadataSender, notifier, notifier, queue)
+        return QueuedAgentMessageSender(transport, serializer, mapper, notifier, notifier, queue)
     }
 
     private fun resolvePath(path: String) = File(path).run {
