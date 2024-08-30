@@ -15,4 +15,10 @@
  */
 package com.epam.drill.agent.instrument
 
-object DefaultPayloadProcessor : DrillRequestPayloadProcessor(true, DefaultHeadersProcessor)
+import com.epam.drill.agent.configuration.Configuration
+import com.epam.drill.agent.configuration.ParameterDefinitions
+
+object DefaultPayloadProcessor : DrillRequestPayloadProcessor(
+    Configuration.parameters[ParameterDefinitions.IS_WS_MESSAGES],
+    DefaultHeadersProcessor
+)
