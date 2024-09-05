@@ -21,7 +21,7 @@ import com.epam.drill.common.agent.request.HeadersRetriever
 
 actual object HeadersRetriever : HeadersRetriever {
 
-    private val adminAddress = Configuration.parameters[ParameterDefinitions.DRILL_API_URL]
+    private val adminAddress = Configuration.parameters[ParameterDefinitions.API_URL]
 
     private val agentIdHeader = Configuration.agentMetadata.groupId.takeIf(String::isNotEmpty)
         ?.let { "drill-group-id" to Configuration.agentMetadata.groupId }
