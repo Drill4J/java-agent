@@ -18,9 +18,9 @@ package com.epam.drill.agent.instrument.reactor.transformers
 import com.epam.drill.agent.instrument.ClassPathProvider
 import com.epam.drill.agent.instrument.RuntimeClassPathProvider
 import com.epam.drill.agent.instrument.TransformerObject
-import com.epam.drill.agent.request.RequestHolder
+import com.epam.drill.agent.request.DrillRequestHolder
 
 object ParallelFluxTransformer: TransformerObject,
     ParallelFluxTransformerObject(),
-    com.epam.drill.common.agent.request.RequestHolder by RequestHolder,
+    com.epam.drill.common.agent.request.RequestHolder by DrillRequestHolder,
     ClassPathProvider by RuntimeClassPathProvider
