@@ -72,7 +72,7 @@ class DrillInstrumenter(
 
         writer.toByteArray()
     } catch (e: Exception) {
-        logger.error { "Error while instrumenting $className: ${e.message}" }
+        logger.error { "Error instrumenting $className: ${e.message} ${e.stackTraceToString()}" }
         null
     }
 }
