@@ -34,7 +34,6 @@ val includeSharedLib: Settings.(String) -> Unit = {
     project(":$it").projectDir = file(sharedLibsLocalPath).resolve(it)
 }
 
-includeSharedLib("logging-native")
 includeSharedLib("logging")
 includeSharedLib("common")
 includeSharedLib("agent-config")
@@ -43,8 +42,9 @@ includeSharedLib("agent-instrumentation")
 includeSharedLib("jvmapi")
 includeSharedLib("knasm")
 includeSharedLib("konform")
-includeSharedLib("interceptor-hook")
-includeSharedLib("interceptor-http")
+// FYI: Interceptor not patched for macOS ARM64 architecture.
+//includeSharedLib("interceptor-hook")
+//includeSharedLib("interceptor-http")
 includeSharedLib("interceptor-stub")
 includeSharedLib("dsm-annotations")
 includeSharedLib("test2code-common")

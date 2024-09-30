@@ -24,7 +24,9 @@ import com.epam.drill.jvmapi.gen.jclass
 import com.epam.drill.jvmapi.gen.jobject
 import com.epam.drill.jvmapi.toByteArray
 import com.epam.drill.jvmapi.toJByteArray
+import kotlinx.cinterop.ExperimentalForeignApi
 
+@OptIn(ExperimentalForeignApi::class)
 class InstrumentationAgentModule(
     moduleId: String,
     moduleClass: jclass,

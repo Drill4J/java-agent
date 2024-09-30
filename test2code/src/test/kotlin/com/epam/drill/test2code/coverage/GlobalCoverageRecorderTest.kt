@@ -48,7 +48,7 @@ class GlobalCoverageRecorderTest {
     }
 
     @Test
-    fun `if there have new exec data since last poll, pollRecorded must return all exec data`() {
+    fun `if there have new exec data since last poll, pollRecorded must return new exec data`() {
         val recorder = GlobalCoverageRecorder()
         recorder.getContext().putProbes(100L, true)
 
@@ -56,20 +56,21 @@ class GlobalCoverageRecorderTest {
         recorder.getContext().putProbes(200L, true, false)
         val result = recorder.pollRecorded()
 
-        assertEquals(2, result.toList().size)
-        assertTrue(result.any { it.probesEquals(100L, true) })
+        assertEquals(1, result.toList().size)
         assertTrue(result.any { it.probesEquals(200L, true, false) })
     }
 
     @Test
-    fun `if there have been changes in probes since last poll, pollRecorded must return all exec data`() {
+    fun `if there have been changes in probes since last poll, pollRecorded must return changed exec data`() {
         val recorder = GlobalCoverageRecorder()
+        recorder.getContext().putProbes(100L, true, true)
         recorder.getContext().putProbes(123L, true, true, false)
 
         recorder.pollRecorded()
         recorder.getContext().putProbes(123L, true, true, true)
         val result = recorder.pollRecorded()
 
+        assertEquals(1, result.toList().size)
         assertTrue(result.any { it.probesEquals(123L, true, true, true) })
     }
 

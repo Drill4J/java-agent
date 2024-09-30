@@ -27,12 +27,12 @@ import com.epam.drill.konform.validation.ValidationResult
 object ParametersValidator {
 
     private class ValidatingParameters(parameters: AgentParameters) {
-        val classScanDelay = parameters[ParameterDefinitions.CLASS_SCAN_DELAY]
+        val scanClassDelay = parameters[ParameterDefinitions.SCAN_CLASS_DELAY]
         val scanClassPath = parameters[ParameterDefinitions.SCAN_CLASS_PATH]
     }
 
     private val softValidators = Validation<ValidatingParameters> {
-        ValidatingParameters::classScanDelay ifPresent {
+        ValidatingParameters::scanClassDelay ifPresent {
             minimum(Duration.ZERO)
         }
         ValidatingParameters::scanClassPath onEach {

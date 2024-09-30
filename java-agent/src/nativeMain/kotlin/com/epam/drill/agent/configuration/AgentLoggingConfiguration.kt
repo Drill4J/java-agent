@@ -21,6 +21,7 @@ import com.epam.drill.jvmapi.callObjectVoidMethod
 import com.epam.drill.jvmapi.callObjectVoidMethodWithInt
 import com.epam.drill.jvmapi.callObjectVoidMethodWithString
 import com.epam.drill.logging.LoggingConfiguration
+import kotlinx.cinterop.ExperimentalForeignApi
 
 object AgentLoggingConfiguration {
 
@@ -46,6 +47,7 @@ object AgentLoggingConfiguration {
         callObjectVoidMethod(LoggingConfiguration::class, LoggingConfiguration::readDefaultConfiguration)
     }
 
+    @OptIn(ExperimentalForeignApi::class)
     fun updateJvmLoggingConfiguration() {
         val logLevel = Configuration.parameters[ParameterDefinitions.LOG_LEVEL]
         val logFile = Configuration.parameters[ParameterDefinitions.LOG_FILE].takeIf(String::isNotEmpty)

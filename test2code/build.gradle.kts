@@ -7,7 +7,6 @@ plugins {
     kotlin("jvm")
     kotlin("plugin.noarg")
     kotlin("plugin.serialization")
-    id("kotlinx-atomicfu")
     id("com.github.hierynomus.license")
 }
 
@@ -18,7 +17,6 @@ val kotlinxCollectionsVersion: String by parent!!.extra
 val kotlinxCoroutinesVersion: String by parent!!.extra
 val kotlinxSerializationVersion: String by parent!!.extra
 val jacocoVersion: String by parent!!.extra
-val atomicfuVersion: String by parent!!.extra
 val bcelVersion: String by parent!!.extra
 val microutilsLoggingVersion: String by parent!!.extra
 val logbackVersion: String by parent!!.extra
@@ -34,8 +32,6 @@ java {
 }
 
 dependencies {
-
-    compileOnly("org.jetbrains.kotlinx:atomicfu:$atomicfuVersion")
 
     implementation("org.jetbrains.kotlinx:kotlinx-collections-immutable-jvm:$kotlinxCollectionsVersion")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:$kotlinxCoroutinesVersion")

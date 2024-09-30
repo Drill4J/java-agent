@@ -15,6 +15,7 @@ jobs:
           - {os: ubuntu-latest, preset: linuxX64}
           - {os: windows-latest, preset: mingwX64}
           - {os: macos-12, preset: macosX64}
+          - {os: macos-14, preset: macosArm64}
     runs-on: ${{ matrix.config.os }}
     steps:
       - uses: actions/checkout@v3
@@ -23,13 +24,13 @@ jobs:
           java-version: 8.0
           distribution: zulu
       - uses: gradle/wrapper-validation-action@v1
-      - if: matrix.config.preset == 'linuxX64' || matrix.config.preset == 'macosX64'
+      - if: matrix.config.preset == 'linuxX64' || matrix.config.preset == 'macosX64' || matrix.config.preset == 'macosArm64'
         run: chmod +x ${{ github.workspace }}/gradlew
-      - if: matrix.config.preset == 'linuxX64' || matrix.config.preset == 'macosX64'
+      - if: matrix.config.preset == 'linuxX64' || matrix.config.preset == 'macosX64' || matrix.config.preset == 'macosArm64'
         run: chmod +x ${{ github.workspace }}/setup-shared-libs.sh
       - if: matrix.config.preset == 'linuxX64'
         run: sudo apt-get install -y libtinfo5
-      - if: matrix.config.preset == 'linuxX64' || matrix.config.preset == 'macosX64'
+      - if: matrix.config.preset == 'linuxX64' || matrix.config.preset == 'macosX64' || matrix.config.preset == 'macosArm64'
         run: ${{ github.workspace }}/setup-shared-libs.sh
       - if: matrix.config.preset == 'mingwX64'
         run: ${{ github.workspace }}/setup-shared-libs.bat
@@ -78,6 +79,7 @@ jobs:
           - {os: ubuntu-latest, preset: linuxX64}
           - {os: windows-latest, preset: mingwX64}
           - {os: macos-12, preset: macosX64}
+          - {os: macos-14, preset: macosArm64}
     runs-on: ${{ matrix.config.os }}
     outputs:
       tag: ${{ needs.release.outputs.tag }}
@@ -90,13 +92,13 @@ jobs:
           java-version: 8.0
           distribution: zulu
       - uses: gradle/wrapper-validation-action@v1
-      - if: matrix.config.preset == 'linuxX64' || matrix.config.preset == 'macosX64'
+      - if: matrix.config.preset == 'linuxX64' || matrix.config.preset == 'macosX64' || matrix.config.preset == 'macosArm64'
         run: chmod +x ${{ github.workspace }}/gradlew
-      - if: matrix.config.preset == 'linuxX64' || matrix.config.preset == 'macosX64'
+      - if: matrix.config.preset == 'linuxX64' || matrix.config.preset == 'macosX64' || matrix.config.preset == 'macosArm64'
         run: chmod +x ${{ github.workspace }}/setup-shared-libs.sh
       - if: matrix.config.preset == 'linuxX64'
         run: sudo apt-get install -y libtinfo5
-      - if: matrix.config.preset == 'linuxX64' || matrix.config.preset == 'macosX64'
+      - if: matrix.config.preset == 'linuxX64' || matrix.config.preset == 'macosX64' || matrix.config.preset == 'macosArm64'
         run: ${{ github.workspace }}/setup-shared-libs.sh
       - if: matrix.config.preset == 'mingwX64'
         run: ${{ github.workspace }}/setup-shared-libs.bat

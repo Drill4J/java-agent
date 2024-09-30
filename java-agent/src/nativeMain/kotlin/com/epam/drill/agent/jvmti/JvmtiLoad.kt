@@ -36,9 +36,12 @@ import com.epam.drill.jvmapi.gen.jvmtiEnvVar
 import com.epam.drill.jvmapi.gen.jvmtiError
 import com.epam.drill.jvmapi.jvmti
 import com.epam.drill.jvmapi.vmGlobal
+import kotlinx.cinterop.ExperimentalForeignApi
+import kotlin.experimental.ExperimentalNativeApi
 
 @Suppress("unused_parameter")
 @CName("Agent_OnLoad")
+@OptIn(ExperimentalForeignApi::class, ExperimentalNativeApi::class)
 fun agentOnLoad(vmPointer: CPointer<JavaVMVar>, options: String, reservedPtr: Long): Int = memScoped {
     vmGlobal.value = vmPointer.freeze()
     val vm = vmPointer.pointed
@@ -50,16 +53,21 @@ fun agentOnLoad(vmPointer: CPointer<JavaVMVar>, options: String, reservedPtr: Lo
 
 @Suppress("unused_parameter")
 @CName("Agent_OnUnload")
+@OptIn(ExperimentalForeignApi::class, ExperimentalNativeApi::class)
 fun agentOnUnload(vmPointer: CPointer<JavaVMVar>) = Agent.agentOnUnload()
 
 @CName("checkEx")
+@OptIn(ExperimentalForeignApi::class, ExperimentalNativeApi::class)
 fun checkEx(errCode: jvmtiError, funName: String) = checkEx(errCode, funName)
 
+@OptIn(ExperimentalForeignApi::class, ExperimentalNativeApi::class)
 @CName("currentEnvs")
 fun currentEnvs() = env
 
+@OptIn(ExperimentalForeignApi::class, ExperimentalNativeApi::class)
 @CName("jvmtii")
 fun jvmtii() = jvmti.value
 
+@OptIn(ExperimentalForeignApi::class, ExperimentalNativeApi::class)
 @CName("getJvm")
 fun getJvm() = vmGlobal.value

@@ -27,8 +27,8 @@ object ParameterDefinitions {
         defaultValue = emptyList(),
         parser = { it.split(";") }
     )
-    val CLASS_SCAN_DELAY = AgentParameterDefinition.forType(
-        name = "classScanDelay",
+    val SCAN_CLASS_DELAY = AgentParameterDefinition.forType(
+        name = "scanClassDelay",
         defaultValue = Duration.ZERO,
         parser = { it.toLong().toDuration(DurationUnit.MILLISECONDS) }
     )
