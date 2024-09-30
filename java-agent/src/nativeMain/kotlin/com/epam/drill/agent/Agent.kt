@@ -33,7 +33,7 @@ import com.epam.drill.agent.jvmti.vmDeathEvent
 import com.epam.drill.agent.jvmti.vmInitEvent
 import com.epam.drill.agent.module.JvmModuleLoader
 import com.epam.drill.agent.request.HeadersRetriever
-import com.epam.drill.agent.request.RequestHolder
+import com.epam.drill.agent.request.DrillRequestHolder
 import com.epam.drill.agent.transport.JvmModuleMessageSender
 import com.epam.drill.jvmapi.gen.*
 import kotlinx.cinterop.ExperimentalForeignApi
@@ -84,8 +84,8 @@ object Agent {
         AgentLoggingConfiguration.updateJvmLoggingConfiguration()
         Configuration.initializeJvm()
 
-        RequestHolder.init(Configuration.parameters[ParameterDefinitions.IS_ASYNC_APP])
-        HttpInterceptorConfigurer(HeadersRetriever, RequestHolder)
+        DrillRequestHolder.init(Configuration.parameters[ParameterDefinitions.IS_ASYNC_APP])
+        HttpInterceptorConfigurer(HeadersRetriever, DrillRequestHolder)
 
         loadJvmModule("com.epam.drill.test2code.Test2Code")
         JvmModuleMessageSender.sendAgentMetadata()
