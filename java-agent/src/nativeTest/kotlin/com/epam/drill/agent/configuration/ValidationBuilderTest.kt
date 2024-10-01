@@ -111,6 +111,41 @@ class ValidationBuilderTest {
         assertTrue { validPackage.validate(SomeObject("123com/example")) is Invalid }
     }
 
+    @Test
+    fun `given empty string package validator must throw`() {
+        assertTrue { validPackage.validate(SomeObject("")) is Invalid }
+    }
+
+    @Test
+    fun `given single directory package validator must be valid`() {
+        assertTrue { validPackage.validate(SomeObject("com")) is Valid }
+    }
+
+    @Test
+    fun `given trailing slash package validator must be invalid`() {
+        assertTrue { validPackage.validate(SomeObject("com/example/")) is Invalid }
+    }
+
+    @Test
+    fun `given consecutive slashes package validator must be invalid`() {
+        assertTrue { validPackage.validate(SomeObject("com//example")) is Invalid }
+    }
+
+    @Test
+    fun `given invalid characters package validator must be invalid`() {
+        assertTrue { validPackage.validate(SomeObject("com/exa#mple")) is Invalid }
+    }
+
+    @Test
+    fun `given uppercase letters package validator must be valid`() {
+        assertTrue { validPackage.validate(SomeObject("Com/Example")) is Valid }
+    }
+
+    @Test
+    fun `given leading slash package validator must be invalid`() {
+        assertTrue { validPackage.validate(SomeObject("/com/example")) is Invalid }
+    }
+
     private val logLevel = Validation<SomeObject> {
         SomeObject::strToList onEach {
             isValidLogLevel()
