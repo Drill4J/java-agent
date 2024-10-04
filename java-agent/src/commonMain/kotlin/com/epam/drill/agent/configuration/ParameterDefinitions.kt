@@ -32,4 +32,7 @@ object ParameterDefinitions {
     val IS_CADENCE = AgentParameterDefinition.forBoolean(name = "isCadence")
     val IS_TLS_APP = AgentParameterDefinition.forBoolean(name = "isTlsApp")
     val IS_ASYNC_APP = AgentParameterDefinition.forBoolean(name = "isAsyncApp")
+    val IS_COMPATIBILITY_TESTS = AgentParameterDefinition.forBoolean(name = "isCompatibilityTests", defaultValue = false)
+    val USE_PROTOBUF_SERIALIZER = AgentParameterDefinition.forBoolean(name = "useProtobufSerializer", defaultValue = true)
+    val USE_GZIP_COMPRESSION = AgentParameterDefinition.forBoolean(name = "useGzipCompression", defaultValue = true)
 }

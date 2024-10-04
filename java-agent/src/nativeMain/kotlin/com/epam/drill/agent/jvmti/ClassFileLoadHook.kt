@@ -57,6 +57,7 @@ object ClassFileLoadHook {
     private val isWebApp = Configuration.parameters[ParameterDefinitions.IS_WEB_APP]
     private val isKafka = Configuration.parameters[ParameterDefinitions.IS_KAFKA]
     private val isCadence = Configuration.parameters[ParameterDefinitions.IS_CADENCE]
+    private val isCompatibilityTests = Configuration.parameters[ParameterDefinitions.IS_COMPATIBILITY_TESTS]
 
     private val totalTransformClass = AtomicInt(0)
 
@@ -115,6 +116,14 @@ object ClassFileLoadHook {
             if (isCadence) {
                 if (CADENCE_PRODUCER == kClassName || CADENCE_CONSUMER == kClassName) {
                     transformers += { bytes -> CadenceTransformer.transform(kClassName, bytes, loader, protectionDomain ) }
+                }
+            }
+            if (isCompatibilityTests) {
+                /**
+                 * Uses for compatibility tests https://github.com/Drill4J/internal-compatibility-matrix-tests.
+                 */
+                if (CompatibilityTestsTransformer.permit(classReader.className, classReader.superName, classReader.interfaces)) {
+                    transformers += { bytes -> CompatibilityTestsTransformer.transform(kClassName, bytes, loader, protectionDomain) }
                 }
             }
             val classSource = ClassSource(kClassName, classReader.superName ?: "", classBytes)
