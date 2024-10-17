@@ -43,12 +43,16 @@ actual object JvmModuleMessageSender : AgentMessageSender<AgentMessage> {
 
     private fun messageSender(): QueuedAgentMessageMetadataSender<AgentMessage, ByteArray> {
         val transport = HttpAgentMessageTransport(
-            Configuration.parameters[ParameterDefinitions.API_URL],
-            Configuration.parameters[ParameterDefinitions.API_KEY],
-            Configuration.parameters[ParameterDefinitions.SSL_TRUSTSTORE].takeIf(String::isNotEmpty)?.let(::resolvePath) ?: "",
-            Configuration.parameters[ParameterDefinitions.SSL_TRUSTSTORE_PASSWORD]
+            serverAddress = Configuration.parameters[ParameterDefinitions.API_URL],
+            apiKey = Configuration.parameters[ParameterDefinitions.API_KEY],
+            sslTruststore = Configuration.parameters[ParameterDefinitions.SSL_TRUSTSTORE].takeIf(String::isNotEmpty)
+                ?.let(::resolvePath) ?: "",
+            sslTruststorePass = Configuration.parameters[ParameterDefinitions.SSL_TRUSTSTORE_PASSWORD],
+            gzipCompression = Configuration.parameters[ParameterDefinitions.USE_GZIP_COMPRESSION],
         )
-        val serializer = ProtoBufAgentMessageSerializer<AgentMessage>()
+        val serializer = takeIf { Configuration.parameters[ParameterDefinitions.USE_PROTOBUF_SERIALIZER] }?.let {
+            ProtoBufAgentMessageSerializer<AgentMessage>()
+        } ?: JsonAgentMessageSerializer<AgentMessage>()
         val mapper = HttpAgentMessageDestinationMapper()
         val metadataSender = RetryingAgentMetadataSender(transport, serializer, mapper)
         val queue = InMemoryAgentMessageQueue(
@@ -56,7 +60,15 @@ actual object JvmModuleMessageSender : AgentMessageSender<AgentMessage> {
             Configuration.parameters[ParameterDefinitions.MESSAGE_QUEUE_LIMIT].let(::parseBytes)
         )
         val notifier = RetryingTransportStateNotifier(transport, serializer, queue)
-        return QueuedAgentMessageMetadataSender(transport, serializer, mapper, metadataSender, notifier, notifier, queue)
+        return QueuedAgentMessageMetadataSender(
+            transport,
+            serializer,
+            mapper,
+            metadataSender,
+            notifier,
+            notifier,
+            queue
+        )
     }
 
     private fun resolvePath(path: String) = File(path).run {
