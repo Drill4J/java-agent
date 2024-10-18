@@ -35,4 +35,5 @@ object ParameterDefinitions {
     val IS_COMPATIBILITY_TESTS = AgentParameterDefinition.forBoolean(name = "isCompatibilityTests", defaultValue = false)
     val USE_PROTOBUF_SERIALIZER = AgentParameterDefinition.forBoolean(name = "useProtobufSerializer", defaultValue = true)
     val USE_GZIP_COMPRESSION = AgentParameterDefinition.forBoolean(name = "useGzipCompression", defaultValue = true)
+    val IS_WS_MESSAGES = AgentParameterDefinition.forBoolean(name = "isWsMsg", defaultValue = true)
 }
