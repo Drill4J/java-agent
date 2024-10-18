@@ -19,8 +19,8 @@ import com.epam.drill.common.agent.configuration.AgentParameterDefinition
 
 object ParameterDefinitions {
 
-    val DRILL_API_URL = AgentParameterDefinition.forString(name = "drillApiUrl", parser = { if (!it.endsWith("/")) "$it/" else it } )
-    val DRILL_API_KEY = AgentParameterDefinition.forString(name = "drillApiKey")
+    val API_URL = AgentParameterDefinition.forString(name = "apiUrl", parser = { if (!it.endsWith("/")) "$it/" else it } )
+    val API_KEY = AgentParameterDefinition.forString(name = "apiKey")
     val MESSAGE_QUEUE_LIMIT = AgentParameterDefinition.forString(name = "coverageRetentionLimit", defaultValue = "512Mb")
     val SSL_TRUSTSTORE = AgentParameterDefinition.forString(name = "sslTruststore")
     val SSL_TRUSTSTORE_PASSWORD = AgentParameterDefinition.forString(name = "sslTruststorePassword")
@@ -32,6 +32,8 @@ object ParameterDefinitions {
     val IS_CADENCE = AgentParameterDefinition.forBoolean(name = "isCadence")
     val IS_TLS_APP = AgentParameterDefinition.forBoolean(name = "isTlsApp")
     val IS_ASYNC_APP = AgentParameterDefinition.forBoolean(name = "isAsyncApp")
+    val IS_COMPATIBILITY_TESTS = AgentParameterDefinition.forBoolean(name = "isCompatibilityTests", defaultValue = false)
+    val USE_PROTOBUF_SERIALIZER = AgentParameterDefinition.forBoolean(name = "useProtobufSerializer", defaultValue = true)
+    val USE_GZIP_COMPRESSION = AgentParameterDefinition.forBoolean(name = "useGzipCompression", defaultValue = true)
     val IS_WS_MESSAGES = AgentParameterDefinition.forBoolean(name = "isWsMsg")
-
 }

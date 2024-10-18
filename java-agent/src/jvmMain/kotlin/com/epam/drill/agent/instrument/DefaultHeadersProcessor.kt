@@ -16,6 +16,6 @@
 package com.epam.drill.agent.instrument
 
 import com.epam.drill.agent.request.HeadersRetriever
-import com.epam.drill.agent.request.RequestHolder
+import com.epam.drill.agent.request.DrillRequestHolder
 
-object DefaultHeadersProcessor : DrillRequestHeadersProcessor(HeadersRetriever, RequestHolder)
+object DefaultHeadersProcessor : DrillRequestHeadersProcessor(HeadersRetriever, DrillRequestHolder)

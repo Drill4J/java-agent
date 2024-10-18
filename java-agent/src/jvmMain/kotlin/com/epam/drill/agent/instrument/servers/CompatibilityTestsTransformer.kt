@@ -13,16 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.epam.drill.agent.request
+package com.epam.drill.agent.instrument.servers
 
-import com.epam.drill.common.agent.request.DrillRequest
-import com.epam.drill.common.agent.request.RequestHolder
+import com.epam.drill.agent.instrument.*
+import com.epam.drill.agent.instrument.test.CompatibilityTestsTransformerObject
+import com.epam.drill.agent.request.DrillRequestHolder
 
-expect object RequestHolder : RequestHolder {
-    override fun remove()
-    override fun retrieve(): DrillRequest?
-    override fun store(drillRequest: DrillRequest)
-    fun store(drillRequest: ByteArray)
-    fun dump(): ByteArray?
-    fun init(isAsync: Boolean)
-}
+actual object CompatibilityTestsTransformer :
+    TransformerObject,
+    com.epam.drill.common.agent.request.RequestHolder by DrillRequestHolder,
+    CompatibilityTestsTransformerObject(),
+    ClassPathProvider by RuntimeClassPathProvider

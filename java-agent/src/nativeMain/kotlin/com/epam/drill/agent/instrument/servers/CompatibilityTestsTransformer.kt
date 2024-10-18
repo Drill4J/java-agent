@@ -13,20 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.epam.drill.agent.request
+package com.epam.drill.agent.instrument.servers
 
-import com.epam.drill.agent.module.JvmModuleStorage
-import com.epam.drill.common.agent.request.RequestProcessor
+import com.epam.drill.agent.instrument.AbstractTransformerObject
+import com.epam.drill.agent.instrument.TransformerObject
 
-actual object RequestProcessor : RequestProcessor {
-
-    actual override fun processServerRequest() {
-        module().forEach { it.processServerRequest() }
-    }
-
-    actual override fun processServerResponse() {
-        module().forEach { it.processServerResponse() }
-    }
-
-    private fun module() = JvmModuleStorage.values().filterIsInstance<RequestProcessor>()
-}
+actual object CompatibilityTestsTransformer : TransformerObject, AbstractTransformerObject()
