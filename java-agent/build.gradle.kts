@@ -172,7 +172,6 @@ kotlin {
             "org.apache.bcel",
             "org.apache.commons",
             "org.apache.hc",
-            "org.eclipse.jetty",
             "org.intellij.lang.annotations",
             "org.jetbrains.annotations",
             "org.petitparser",
