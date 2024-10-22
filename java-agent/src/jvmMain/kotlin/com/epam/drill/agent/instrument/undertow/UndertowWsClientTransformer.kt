@@ -20,6 +20,6 @@ import com.epam.drill.agent.request.HeadersRetriever
 
 actual object UndertowWsClientTransformer :
     TransformerObject,
-    UndertowHttpServerTransformerObject(HeadersRetriever),
+    UndertowWsClientTransformerObject(),
     HeadersProcessor by DefaultHeadersProcessor,
     ClassPathProvider by RuntimeClassPathProvider
