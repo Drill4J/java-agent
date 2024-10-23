@@ -43,7 +43,8 @@ import io.ktor.utils.io.bits.*
 import kotlinx.cinterop.*
 import mu.KotlinLogging
 import org.objectweb.asm.ClassReader
-import kotlin.native.concurrent.AtomicInt
+import kotlin.concurrent.AtomicInt
+import kotlinx.cinterop.ExperimentalForeignApi
 
 object ClassFileLoadHook {
 
@@ -81,6 +82,7 @@ object ClassFileLoadHook {
 
     private val totalTransformClass = AtomicInt(0)
 
+    @OptIn(ExperimentalForeignApi::class)
     operator fun invoke(
         loader: jobject?,
         clsName: CPointer<ByteVar>?,
@@ -198,6 +200,7 @@ object ClassFileLoadHook {
         }
     }
 
+    @OptIn(ExperimentalForeignApi::class)
     private fun convertToNativePointers(
         instrumentedBytes: ByteArray,
         newData: CPointer<CPointerVar<UByteVar>>?,
@@ -212,9 +215,11 @@ object ClassFileLoadHook {
         newClassDataLen!!.pointed.value = instrumentedSize
     }
 
+    @OptIn(ExperimentalForeignApi::class)
     private fun isBootstrapClassLoading(loader: jobject?, protectionDomain: jobject?) =
         loader == null || protectionDomain == null
 
+    @OptIn(ExperimentalForeignApi::class)
     private fun isTTLCandidate(
         kClassName: String,
         superName: String,
