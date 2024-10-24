@@ -24,8 +24,10 @@ import org.jacoco.core.internal.instr.InstrSupport
 import org.objectweb.asm.Label
 import org.objectweb.asm.MethodVisitor
 import org.objectweb.asm.Type
+import org.objectweb.asm.AnnotationVisitor
 import org.objectweb.asm.tree.MethodNode
-
+import org.objectweb.asm.tree.AnnotationNode
+import com.sun.xml.internal.fastinfoset.util.StringArray
 
 open class ProbeCounter : ClassProbesVisitor() {
     var count = 0
@@ -46,11 +48,23 @@ class ClassProbeCounter(
     private val classname: String,
     val methods: List<AstMethod> = ArrayList()
 ) : ProbeCounter() {
+    private val annotations: MutableMap<String, List<String>> = mutableMapOf()
 
     override fun visitMethod(
         access: Int, name: String?, desc: String?, signature: String?, exceptions: Array<out String>?
     ): MethodProbesVisitor {
         return MethodProbeCounter(classname = classname, methods = methods as MutableList<AstMethod>)
+    }
+
+    override fun visitAnnotation(desc: String?, visible: Boolean): AnnotationVisitor? {
+        val annotationValues = mutableListOf<String>()
+        val annotationVisitor = object : AnnotationVisitor(api) {
+            override fun visit(name: String?, value: Any?) {
+                annotationValues.add(value.toString())
+            }
+        }
+        annotations[Type.getType(desc).className] = annotationValues
+        return annotationVisitor
     }
 }
 
@@ -73,7 +87,8 @@ class MethodProbeCounter(
             returnType = getReturnType(methodNode),
             bodyChecksum = "",
             probesStartPos = if (probes.size > 0) probes[0] else 0,
-            probesCount = probes.size
+            probesCount = probes.size,
+            annotations = getAnnotations(methodNode)
         )
         methods.add(method)
     }
@@ -124,3 +139,25 @@ private fun getReturnType(methodNode: MethodNode): String {
 private fun getParams(methodNode: MethodNode): List<String> = Type
     .getArgumentTypes(methodNode.desc)
     .map { it.className }
+
+    private fun getAnnotations(methodNode: MethodNode): Map<String, List<String>> {
+    // visibleAnnotations - set in code
+    // invisibleAnnotations - produced during build (e.g. Lombok-generated methods)
+    return (methodNode.visibleAnnotations.orEmpty() + methodNode.invisibleAnnotations.orEmpty())
+            .associateBy({ it.desc }, { getValuesOfAnnotation(it) })
+}
+
+private fun getValuesOfAnnotation(annotationNode: AnnotationNode): List<String> {
+    return annotationNode.values
+        .orEmpty()
+        .flatMap { annotationValue -> parseAnnotationValueToString(annotationValue) }
+}
+
+private fun parseAnnotationValueToString(annotationValue: Any?): List<String> {
+    return when (annotationValue) {
+        is StringArray -> annotationValue._array.map { it.toString() }
+        is List<*> -> annotationValue.flatMap { parseAnnotationValueToString(it) }
+        is AnnotationNode -> getValuesOfAnnotation(annotationValue)
+        else -> listOf(annotationValue.toString())
+    }
+}
