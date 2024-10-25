@@ -48,4 +48,60 @@ class ClassLoadersScannerTest {
         assertEquals(2, transferCount)
     }
 
+    @Test
+    fun `check class scan in one consumer call with empty package prefix`() {
+        var classCount = 0
+        val scanner = ClassLoadersScanner(
+            packagePrefixes = emptyList(),
+            classesBufferSize = 5,
+            transfer = { classes ->
+                classCount += classes.size
+            })
+        scanner.scanClasses()
+        assertEquals(0, classCount)
+    }
+
+    @Test
+    fun `check class scan with scan class paths`() {
+        var classCount = 0
+        val scanner = ClassLoadersScanner(
+            packagePrefixes = listOf("com/example/fixture/classloading/sub"),
+            classesBufferSize = 5,
+            scanClassPaths = listOf("build/classes/java/test"),
+            isScanClassLoaders = false,
+            transfer = { classes ->
+                classCount += classes.size
+            })
+        scanner.scanClasses()
+        assertEquals(2, classCount)
+    }
+
+    @Test
+    fun `check class scan with exclude class paths`() {
+        var classCount = 0
+        val scanner = ClassLoadersScanner(
+            packagePrefixes = listOf("com/example/fixture/classloading"),
+            classesBufferSize = 5,
+            scanClassPaths = listOf("!build/classes/java/test/"),
+            transfer = { classes ->
+                classCount += classes.size
+            })
+        scanner.scanClasses()
+        assertEquals(0, classCount)
+    }
+
+    @Test
+    fun `check class scan with exclude class paths in sub directory`() {
+        var classCount = 0
+        val scanner = ClassLoadersScanner(
+            packagePrefixes = listOf("com/example/fixture/classloading"),
+            classesBufferSize = 5,
+            scanClassPaths = listOf("!build/classes/java/test/com/example/fixture/classloading/sub"),
+            transfer = { classes ->
+                classCount += classes.size
+            })
+        scanner.scanClasses()
+        assertEquals(4, classCount)
+    }
+
 }
