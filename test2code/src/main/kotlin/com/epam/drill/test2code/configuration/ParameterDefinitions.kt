@@ -32,8 +32,8 @@ object ParameterDefinitions {
         defaultValue = Duration.ZERO,
         parser = { it.toLong().toDuration(DurationUnit.MILLISECONDS) }
     )
-    val IS_SCAN_CLASS_LOADERS = AgentParameterDefinition.forType(
-        name = "isScanClassLoaders",
+    val ENABLE_SCAN_CLASS_LOADERS = AgentParameterDefinition.forType(
+        name = "enableScanClassLoaders",
         defaultValue = true,
         parser = { it.toBoolean() }
     )

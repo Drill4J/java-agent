@@ -26,7 +26,7 @@ class ClassLoadersScanner(
     packagePrefixes: List<String>,
     classesBufferSize: Int,
     scanClassPaths: List<String> = emptyList(),
-    private val isScanClassLoaders: Boolean = true,
+    private val enableScanClassLoaders: Boolean = true,
     transfer: (Set<ClassSource>) -> Unit
 ) {
 
@@ -55,7 +55,7 @@ class ClassLoadersScanner(
     /**
      * Scan classes from all active JVM threads and return scanned classes count.
      */
-    private fun scanClassLoadersIfNecessary() = if (isScanClassLoaders)
+    private fun scanClassLoadersIfNecessary() = if (enableScanClassLoaders)
         scanClassLoadersURIs(scanClassLoaders())
     else
         emptySet()

@@ -68,7 +68,7 @@ class ClassLoadersScannerTest {
             packagePrefixes = listOf("com/example/fixture/classloading/sub"),
             classesBufferSize = 5,
             scanClassPaths = listOf("build/classes/java/test"),
-            isScanClassLoaders = false,
+            enableScanClassLoaders = false,
             transfer = { classes ->
                 classCount += classes.size
             })
