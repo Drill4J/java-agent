@@ -20,7 +20,7 @@ import kotlin.test.assertEquals
 
 class ClassLoadersScannerTest {
     @Test
-    fun `check class scan in one consumer call`() {
+    fun `given one consumer call, scanClasses should scan classes correctly`() {
         var classCount = 0
         val scanner = ClassLoadersScanner(
             packagePrefixes = listOf("com/example/fixture/classloading/sub"),
@@ -33,7 +33,7 @@ class ClassLoadersScannerTest {
     }
 
     @Test
-    fun `check class scan in several consumer call`() {
+    fun `given several consumer calls, scanClasses should scan classes correctly`() {
         var classCount = 0
         var transferCount = 0
         val scanner = ClassLoadersScanner(
@@ -49,7 +49,7 @@ class ClassLoadersScannerTest {
     }
 
     @Test
-    fun `check class scan in one consumer call with empty package prefix`() {
+    fun `given empty package prefix, scanClasses should not scan any classes`() {
         var classCount = 0
         val scanner = ClassLoadersScanner(
             packagePrefixes = emptyList(),
@@ -62,7 +62,7 @@ class ClassLoadersScannerTest {
     }
 
     @Test
-    fun `check class scan with scan class paths`() {
+    fun `given scan class paths, scanClasses should scan classes`() {
         var classCount = 0
         val scanner = ClassLoadersScanner(
             packagePrefixes = listOf("com/example/fixture/classloading/sub"),
@@ -77,7 +77,7 @@ class ClassLoadersScannerTest {
     }
 
     @Test
-    fun `check class scan with exclude class paths`() {
+    fun `given excluding class paths, scanClasses should not scan classes`() {
         var classCount = 0
         val scanner = ClassLoadersScanner(
             packagePrefixes = listOf("com/example/fixture/classloading"),
@@ -91,7 +91,7 @@ class ClassLoadersScannerTest {
     }
 
     @Test
-    fun `check class scan with exclude class paths in sub directory`() {
+    fun `given excluding class path in sub directory, scanClasses should not scan sub directory`() {
         var classCount = 0
         val scanner = ClassLoadersScanner(
             packagePrefixes = listOf("com/example/fixture/classloading"),
