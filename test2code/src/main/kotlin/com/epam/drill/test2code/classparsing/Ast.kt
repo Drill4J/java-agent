@@ -66,6 +66,10 @@ class ClassProbeCounter(
         annotations[Type.getType(desc).className] = annotationValues
         return annotationVisitor
     }
+
+    fun getAnnotations(): MutableMap<String, List<String>>? {
+        return annotations.takeIf { it.isNotEmpty() }
+    }
 }
 
 
@@ -119,10 +123,11 @@ fun parseAstClass(className: String, classBytes: ByteArray): List<AstMethod> {
     val counter = ClassProbeCounter(className)
     classReader.accept(DrillClassProbesAdapter(counter, false), 0)
     val astMethodsWithChecksum = calculateMethodsChecksums(classBytes, className)
-
+    val classAnnotations = counter.getAnnotations()
     return counter.methods.map {
         it.copy(
             bodyChecksum = astMethodsWithChecksum[it.classSignature()] ?: "",
+            classAnnotations = classAnnsotations
         )
     }
 }
@@ -140,11 +145,12 @@ private fun getParams(methodNode: MethodNode): List<String> = Type
     .getArgumentTypes(methodNode.desc)
     .map { it.className }
 
-    private fun getAnnotations(methodNode: MethodNode): Map<String, List<String>> {
+private fun getAnnotations(methodNode: MethodNode): Map<String, List<String>>? {
     // visibleAnnotations - set in code
     // invisibleAnnotations - produced during build (e.g. Lombok-generated methods)
-    return (methodNode.visibleAnnotations.orEmpty() + methodNode.invisibleAnnotations.orEmpty())
-            .associateBy({ it.desc }, { getValuesOfAnnotation(it) })
+    val annotations = (methodNode.visibleAnnotations.orEmpty() + methodNode.invisibleAnnotations.orEmpty())
+        .associateBy({ it.desc }, { getValuesOfAnnotation(it) })
+    return annotations.takeIf { it.isNotEmpty() }
 }
 
 private fun getValuesOfAnnotation(annotationNode: AnnotationNode): List<String> {
