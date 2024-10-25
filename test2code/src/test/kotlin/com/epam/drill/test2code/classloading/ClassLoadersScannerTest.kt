@@ -20,7 +20,7 @@ import kotlin.test.assertEquals
 
 class ClassLoadersScannerTest {
     @Test
-    fun `check class scan in one consumer call`() {
+    fun `given one consumer call, scanClasses should scan classes correctly`() {
         var classCount = 0
         val scanner = ClassLoadersScanner(
             packagePrefixes = listOf("com/example/fixture/classloading/sub"),
@@ -33,7 +33,7 @@ class ClassLoadersScannerTest {
     }
 
     @Test
-    fun `check class scan in several consumer call`() {
+    fun `given several consumer calls, scanClasses should scan classes correctly`() {
         var classCount = 0
         var transferCount = 0
         val scanner = ClassLoadersScanner(
@@ -46,6 +46,62 @@ class ClassLoadersScannerTest {
         scanner.scanClasses()
         assertEquals(6, classCount)
         assertEquals(2, transferCount)
+    }
+
+    @Test
+    fun `given empty package prefix, scanClasses should not scan any classes`() {
+        var classCount = 0
+        val scanner = ClassLoadersScanner(
+            packagePrefixes = emptyList(),
+            classesBufferSize = 5,
+            transfer = { classes ->
+                classCount += classes.size
+            })
+        scanner.scanClasses()
+        assertEquals(0, classCount)
+    }
+
+    @Test
+    fun `given scan class paths, scanClasses should scan classes`() {
+        var classCount = 0
+        val scanner = ClassLoadersScanner(
+            packagePrefixes = listOf("com/example/fixture/classloading/sub"),
+            classesBufferSize = 5,
+            scanClassPaths = listOf("build/classes/java/test"),
+            enableScanClassLoaders = false,
+            transfer = { classes ->
+                classCount += classes.size
+            })
+        scanner.scanClasses()
+        assertEquals(2, classCount)
+    }
+
+    @Test
+    fun `given excluding class paths, scanClasses should not scan classes`() {
+        var classCount = 0
+        val scanner = ClassLoadersScanner(
+            packagePrefixes = listOf("com/example/fixture/classloading"),
+            classesBufferSize = 5,
+            scanClassPaths = listOf("!build/classes/java/test/"),
+            transfer = { classes ->
+                classCount += classes.size
+            })
+        scanner.scanClasses()
+        assertEquals(0, classCount)
+    }
+
+    @Test
+    fun `given excluding class path in sub directory, scanClasses should not scan sub directory`() {
+        var classCount = 0
+        val scanner = ClassLoadersScanner(
+            packagePrefixes = listOf("com/example/fixture/classloading"),
+            classesBufferSize = 5,
+            scanClassPaths = listOf("!build/classes/java/test/com/example/fixture/classloading/sub"),
+            transfer = { classes ->
+                classCount += classes.size
+            })
+        scanner.scanClasses()
+        assertEquals(4, classCount)
     }
 
 }

@@ -32,6 +32,11 @@ object ParameterDefinitions {
         defaultValue = Duration.ZERO,
         parser = { it.toLong().toDuration(DurationUnit.MILLISECONDS) }
     )
+    val ENABLE_SCAN_CLASS_LOADERS = AgentParameterDefinition.forType(
+        name = "enableScanClassLoaders",
+        defaultValue = true,
+        parser = { it.toBoolean() }
+    )
     val COVERAGE_SEND_INTERVAL = AgentParameterDefinition.forLong(
         name = "coverageSendInterval",
         defaultValue = 2000L

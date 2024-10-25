@@ -26,4 +26,4 @@ fun ValidationBuilder<Duration>.minimum(minimumInclusive: Duration) = addConstra
 
 fun ValidationBuilder<String>.pathExists(): Constraint<String> = addConstraint(
     "must be an existing filepath, but was {value}",
-) { File(it).exists() }
+) { File(it.removePrefix("!")).exists() }

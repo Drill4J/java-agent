@@ -106,14 +106,21 @@ class Test2Code(
 
     override fun scanClasses(consumer: (Set<EntitySource>) -> Unit) {
         val packagePrefixes = configuration.agentMetadata.packagesPrefixes
-        val additionalPaths = configuration.parameters[ParameterDefinitions.SCAN_CLASS_PATH]
+        val scanClassPaths = configuration.parameters[ParameterDefinitions.SCAN_CLASS_PATH]
+        val enableScanClassLoaders = configuration.parameters[ParameterDefinitions.ENABLE_SCAN_CLASS_LOADERS]
         val scanClassDelay = configuration.parameters[ParameterDefinitions.SCAN_CLASS_DELAY]
-        if (scanClassDelay.isPositive()) {
+        if (enableScanClassLoaders && scanClassDelay.isPositive()) {
             logger.debug { "Waiting class scan delay ${scanClassDelay.inWholeMilliseconds} ms..." }
             runBlocking { delay(scanClassDelay) }
         }
         logger.info { "Scanning classes, package prefixes: $packagePrefixes... " }
-        ClassLoadersScanner(packagePrefixes, 50, consumer, additionalPaths).scanClasses()
+        ClassLoadersScanner(
+            packagePrefixes,
+            50,
+            scanClassPaths,
+            enableScanClassLoaders,
+            consumer
+        ).scanClasses()
     }
 
     /**

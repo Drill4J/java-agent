@@ -25,12 +25,18 @@ import com.epam.drill.common.classloading.ClassSource
 class ClassLoadersScanner(
     packagePrefixes: List<String>,
     classesBufferSize: Int,
-    transfer: (Set<ClassSource>) -> Unit,
-    private val additionalPaths: List<String> = emptyList()
+    scanClassPaths: List<String> = emptyList(),
+    private val enableScanClassLoaders: Boolean = true,
+    transfer: (Set<ClassSource>) -> Unit
 ) {
 
     private val logger = KotlinLogging.logger {}
-    private val classPathScanner = ClassPathScanner(packagePrefixes, classesBufferSize, transfer)
+    private val additionalPaths: List<URI> = scanClassPaths.filter { !it.startsWith("!") }
+        .map(::File).filter(File::exists).map(File::toURI)
+    private val excludePaths: List<URI> = scanClassPaths.filter { it.startsWith("!") }
+        .map { it.substring(1) }
+        .map(::File).map(File::toURI)
+    private val classPathScanner = ClassPathScanner(packagePrefixes, classesBufferSize, excludePaths, transfer)
 
     private val getOrLogFail: Result<URI>.() -> URI? = {
         this.onFailure { logger.warn { "ClassLoadersScanner: error handling classpath URI: ${it.message}" } }
@@ -43,9 +49,16 @@ class ClassLoadersScanner(
      *
      * @return scanned classes count
      */
-    fun scanClasses() = scanClassLoadersURIs(scanClassLoaders()).run {
-        scanClasses(this + additionalPaths.map(::File).filter(File::exists).map(File::toURI))
-    }
+    fun scanClasses() = scanClasses(scanClassLoadersIfNecessary() + additionalPaths)
+
+
+    /**
+     * Scan classes from all active JVM threads and return scanned classes count.
+     */
+    private fun scanClassLoadersIfNecessary() = if (enableScanClassLoaders)
+        scanClassLoadersURIs(scanClassLoaders())
+    else
+        emptySet()
 
     /**
      * Retrieve all classloaders from active threads.
@@ -70,7 +83,8 @@ class ClassLoadersScanner(
      * @param uris set of URI to scan
      * @return scanned classes count
      */
-    private fun scanClasses(uris: Set<URI>) = uris.fold(0, ::addClasses).apply { classPathScanner.transferBuffer() }
+    private fun scanClasses(uris: Set<URI>) =
+        uris.fold(0, ::addClasses).apply { classPathScanner.transferBuffer() }
 
     /**
      * Get classloader with parent classloaders and add them to accumulating set.
@@ -79,13 +93,14 @@ class ClassLoadersScanner(
      * @param classloader classloader to retrieve parents
      * @return accumulating set of classloaders
      */
-    private fun addClassLoaderWithParents(loaders: MutableSet<ClassLoader>, classloader: ClassLoader) = loaders.apply {
-        var current: ClassLoader? = classloader
-        while (current != null) {
-            if (this.add(current)) logger.debug { "ClassLoadersScanner: ClassLoader found: $current" }
-            current = current.parent
+    private fun addClassLoaderWithParents(loaders: MutableSet<ClassLoader>, classloader: ClassLoader) =
+        loaders.apply {
+            var current: ClassLoader? = classloader
+            while (current != null) {
+                if (this.add(current)) logger.debug { "ClassLoadersScanner: ClassLoader found: $current" }
+                current = current.parent
+            }
         }
-    }
 
     /**
      * Get classpath URIs from given classloader and add them to accumulating set.
@@ -124,8 +139,9 @@ class ClassLoadersScanner(
      *
      * @return system classpath
      */
-    private fun getSystemClassPath() = System.getProperty("java.class.path").split(File.pathSeparator).map(::File)
-        .filter(File::exists).map(File::toURI)
+    private fun getSystemClassPath() =
+        System.getProperty("java.class.path").split(File.pathSeparator).map(::File)
+            .filter(File::exists).map(File::toURI)
 
     /**
      * Normalize set of URI: calculate archive files paths, check existing files.
