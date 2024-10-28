@@ -21,7 +21,8 @@ class HttpAgentMessageDestinationMapper : AgentMessageDestinationMapper {
 
     private val dataIngestionPath = "data-ingest"
 
-    override fun map(destination: AgentMessageDestination): AgentMessageDestination =
-        destination.copy(target =
-        if (destination.target.isEmpty()) dataIngestionPath else "${dataIngestionPath}/${destination.target}")
+    override fun map(destination: AgentMessageDestination) = destination.copy(
+        target = if (destination.target.isEmpty()) dataIngestionPath else "${dataIngestionPath}/${destination.target}"
+    )
+
 }
