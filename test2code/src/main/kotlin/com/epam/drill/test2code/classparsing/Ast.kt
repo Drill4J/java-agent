@@ -127,7 +127,7 @@ fun parseAstClass(className: String, classBytes: ByteArray): List<AstMethod> {
     return counter.methods.map {
         it.copy(
             bodyChecksum = astMethodsWithChecksum[it.classSignature()] ?: "",
-            classAnnotations = classAnnsotations
+            classAnnotations = classAnnotations
         )
     }
 }
