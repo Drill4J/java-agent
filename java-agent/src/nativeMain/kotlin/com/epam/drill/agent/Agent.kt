@@ -33,9 +33,11 @@ import com.epam.drill.agent.jvmti.vmDeathEvent
 import com.epam.drill.agent.jvmti.vmInitEvent
 import com.epam.drill.agent.module.JvmModuleLoader
 import com.epam.drill.agent.request.HeadersRetriever
-import com.epam.drill.agent.request.RequestHolder
+import com.epam.drill.agent.request.DrillRequestHolder
 import com.epam.drill.agent.transport.JvmModuleMessageSender
 import com.epam.drill.jvmapi.gen.*
+import kotlinx.cinterop.ExperimentalForeignApi
+import kotlin.experimental.ExperimentalNativeApi
 
 object Agent {
 
@@ -52,6 +54,7 @@ object Agent {
 
     private val logger = KotlinLogging.logger("com.epam.drill.agent.Agent")
 
+    @OptIn(ExperimentalNativeApi::class, ExperimentalForeignApi::class)
     fun agentOnLoad(options: String): Int {
         println(logo)
         AgentLoggingConfiguration.defaultNativeLoggingConfiguration()
@@ -72,6 +75,7 @@ object Agent {
         logger.info { "agentOnUnload: Java Agent has been unloaded." }
     }
 
+    @OptIn(ExperimentalForeignApi::class)
     fun agentOnVmInit() {
         initRuntimeIfNeeded()
         SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_CLASS_FILE_LOAD_HOOK, null)
@@ -80,8 +84,8 @@ object Agent {
         AgentLoggingConfiguration.updateJvmLoggingConfiguration()
         Configuration.initializeJvm()
 
-        RequestHolder.init(Configuration.parameters[ParameterDefinitions.IS_ASYNC_APP])
-        HttpInterceptorConfigurer(HeadersRetriever, RequestHolder)
+        DrillRequestHolder.init(Configuration.parameters[ParameterDefinitions.IS_ASYNC_APP])
+        HttpInterceptorConfigurer(HeadersRetriever, DrillRequestHolder)
 
         loadJvmModule("com.epam.drill.test2code.Test2Code")
         JvmModuleMessageSender.sendAgentMetadata()
@@ -91,6 +95,7 @@ object Agent {
         logger.debug { "agentOnVmDeath" }
     }
 
+    @OptIn(ExperimentalForeignApi::class)
     private fun addCapabilities() = memScoped {
         val jvmtiCapabilities = alloc<jvmtiCapabilities>()
         jvmtiCapabilities.can_retransform_classes = 1.toUInt()
@@ -98,6 +103,7 @@ object Agent {
         AddCapabilities(jvmtiCapabilities.ptr)
     }
 
+    @OptIn(ExperimentalForeignApi::class)
     private fun setEventCallbacks() = memScoped {
         val alloc = alloc<jvmtiEventCallbacks>()
         alloc.VMInit = staticCFunction(::vmInitEvent)

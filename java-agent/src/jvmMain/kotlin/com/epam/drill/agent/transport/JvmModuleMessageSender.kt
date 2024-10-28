@@ -43,12 +43,16 @@ actual object JvmModuleMessageSender : AgentMessageSender<AgentMessage> {
 
     private fun messageSender(): QueuedAgentMessageSender<AgentMessage, ByteArray> {
         val transport = HttpAgentMessageTransport(
-            Configuration.parameters[ParameterDefinitions.DRILL_API_URL],
-            Configuration.parameters[ParameterDefinitions.DRILL_API_KEY],
-            Configuration.parameters[ParameterDefinitions.SSL_TRUSTSTORE].takeIf(String::isNotEmpty)?.let(::resolvePath) ?: "",
-            Configuration.parameters[ParameterDefinitions.SSL_TRUSTSTORE_PASSWORD]
+            serverAddress = Configuration.parameters[ParameterDefinitions.API_URL],
+            apiKey = Configuration.parameters[ParameterDefinitions.API_KEY],
+            sslTruststore = Configuration.parameters[ParameterDefinitions.SSL_TRUSTSTORE].takeIf(String::isNotEmpty)
+                ?.let(::resolvePath) ?: "",
+            sslTruststorePass = Configuration.parameters[ParameterDefinitions.SSL_TRUSTSTORE_PASSWORD],
+            gzipCompression = Configuration.parameters[ParameterDefinitions.USE_GZIP_COMPRESSION],
         )
-        val serializer = ProtoBufAgentMessageSerializer<AgentMessage>()
+        val serializer = takeIf { Configuration.parameters[ParameterDefinitions.USE_PROTOBUF_SERIALIZER] }?.let {
+            ProtoBufAgentMessageSerializer<AgentMessage>()
+        } ?: JsonAgentMessageSerializer<AgentMessage>()
         val mapper = HttpAgentMessageDestinationMapper()
         val queue = InMemoryAgentMessageQueue(
             serializer,
@@ -63,7 +67,7 @@ actual object JvmModuleMessageSender : AgentMessageSender<AgentMessage> {
         val resolved = this.takeIf(File::exists)
             ?: this.takeUnless(File::isAbsolute)?.let(installationDir::resolve)
         logger.trace { "resolvePath: Resolved $path to ${resolved?.absolutePath}" }
-        resolved?.absolutePath ?: path
+        resolved?.takeUnless(File::isDirectory)?.absolutePath ?: path
     }
 
     private fun parseBytes(value: String): Long = value.run {

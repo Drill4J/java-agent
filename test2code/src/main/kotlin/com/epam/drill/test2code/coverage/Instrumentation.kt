@@ -19,14 +19,14 @@ import com.epam.drill.common.agent.module.*
 import com.epam.drill.jacoco.*
 import com.epam.drill.jacoco.BooleanArrayProbeInserter.*
 import com.epam.drill.test2code.classparsing.ProbeCounter
-import kotlinx.atomicfu.*
 import org.jacoco.core.internal.data.CRC64
 import org.jacoco.core.internal.flow.*
 import org.jacoco.core.internal.instr.*
 import org.objectweb.asm.*
 import mu.KotlinLogging
+import java.util.concurrent.atomic.AtomicInteger
 
-private val classCounter = atomic(0)
+private val classCounter = AtomicInteger(0)
 
 class DrillInstrumenter(
     private val probesProxy: IProbesProxy,
@@ -72,7 +72,7 @@ class DrillInstrumenter(
 
         writer.toByteArray()
     } catch (e: Exception) {
-        logger.error { "Error while instrumenting $className: ${e.message}" }
+        logger.error { "Error instrumenting $className: ${e.message} ${e.stackTraceToString()}" }
         null
     }
 }

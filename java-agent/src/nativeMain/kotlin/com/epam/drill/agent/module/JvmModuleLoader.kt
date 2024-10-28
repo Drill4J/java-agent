@@ -22,9 +22,11 @@ import com.epam.drill.jvmapi.gen.GetObjectClass
 import com.epam.drill.jvmapi.gen.NewGlobalRef
 import com.epam.drill.jvmapi.gen.NewStringUTF
 import com.epam.drill.jvmapi.getObjectMethod
+import kotlinx.cinterop.ExperimentalForeignApi
 
 actual object JvmModuleLoader {
 
+    @OptIn(ExperimentalForeignApi::class)
     actual fun loadJvmModule(classname: String): AgentModule =
         callObjectAgentModuleMethodWithString(
             JvmModuleLoader::class,
@@ -36,6 +38,7 @@ actual object JvmModuleLoader {
             InstrumentationAgentModule(classname, moduleClass, moduleRef).also { JvmModuleStorage.add(it) }
         }
 
+    @OptIn(ExperimentalForeignApi::class)
     private fun callObjectAgentModuleMethodWithString(clazz: KClass<out Any>, method: String, string: String?) =
         getObjectMethod(clazz, method, "(Ljava/lang/String;)Lcom/epam/drill/common/agent/module/AgentModule;").run {
             CallObjectMethod(this.first, this.second, string?.let(::NewStringUTF))

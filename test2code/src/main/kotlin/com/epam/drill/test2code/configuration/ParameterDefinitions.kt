@@ -27,10 +27,15 @@ object ParameterDefinitions {
         defaultValue = emptyList(),
         parser = { it.split(";") }
     )
-    val CLASS_SCAN_DELAY = AgentParameterDefinition.forType(
-        name = "classScanDelay",
+    val SCAN_CLASS_DELAY = AgentParameterDefinition.forType(
+        name = "scanClassDelay",
         defaultValue = Duration.ZERO,
         parser = { it.toLong().toDuration(DurationUnit.MILLISECONDS) }
+    )
+    val ENABLE_SCAN_CLASS_LOADERS = AgentParameterDefinition.forType(
+        name = "enableScanClassLoaders",
+        defaultValue = true,
+        parser = { it.toBoolean() }
     )
     val COVERAGE_SEND_INTERVAL = AgentParameterDefinition.forLong(
         name = "coverageSendInterval",

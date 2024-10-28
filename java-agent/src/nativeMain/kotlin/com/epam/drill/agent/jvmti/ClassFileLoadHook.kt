@@ -24,9 +24,13 @@ import com.epam.drill.agent.instrument.KAFKA_PRODUCER_INTERFACE
 import com.epam.drill.agent.instrument.clients.ApacheHttpClientTransformer
 import com.epam.drill.agent.instrument.clients.JavaHttpClientTransformer
 import com.epam.drill.agent.instrument.clients.OkHttp3ClientTransformer
-import com.epam.drill.agent.instrument.clients.WebClientTransformer
+import com.epam.drill.agent.instrument.clients.SpringWebClientTransformer
 import com.epam.drill.agent.instrument.servers.ReactorTransformer
 import com.epam.drill.agent.instrument.servers.*
+import com.epam.drill.agent.instrument.jetty.*
+import com.epam.drill.agent.instrument.netty.*
+import com.epam.drill.agent.instrument.tomcat.*
+import com.epam.drill.agent.instrument.undertow.*
 import com.epam.drill.agent.interceptor.HttpInterceptorConfigurer
 import com.epam.drill.agent.module.InstrumentationAgentModule
 import com.epam.drill.agent.module.JvmModuleStorage
@@ -39,7 +43,8 @@ import io.ktor.utils.io.bits.*
 import kotlinx.cinterop.*
 import mu.KotlinLogging
 import org.objectweb.asm.ClassReader
-import kotlin.native.concurrent.AtomicInt
+import kotlin.concurrent.AtomicInt
+import kotlinx.cinterop.ExperimentalForeignApi
 
 object ClassFileLoadHook {
 
@@ -49,7 +54,23 @@ object ClassFileLoadHook {
 
     private val strategies = listOf(
         JavaHttpClientTransformer, ApacheHttpClientTransformer, OkHttp3ClientTransformer,
-        ReactorTransformer, WebClientTransformer
+        ReactorTransformer, SpringWebClientTransformer
+    )
+    private val wsStrategies = listOf(
+        JettyWsClientTransformer,
+        JettyWsServerTransformer,
+        Jetty9WsMessagesTransformer,
+        Jetty10WsMessagesTransformer,
+        Jetty11WsMessagesTransformer,
+        NettyWsClientTransformer,
+        NettyWsServerTransformer,
+        NettyWsMessagesTransformer,
+        TomcatWsClientTransformer,
+        TomcatWsServerTransformer,
+        TomcatWsMessagesTransformer,
+        UndertowWsClientTransformer,
+        UndertowWsServerTransformer,
+        UndertowWsMessagesTransformer
     )
 
     private val isAsyncApp = Configuration.parameters[ParameterDefinitions.IS_ASYNC_APP]
@@ -57,9 +78,11 @@ object ClassFileLoadHook {
     private val isWebApp = Configuration.parameters[ParameterDefinitions.IS_WEB_APP]
     private val isKafka = Configuration.parameters[ParameterDefinitions.IS_KAFKA]
     private val isCadence = Configuration.parameters[ParameterDefinitions.IS_CADENCE]
+    private val isCompatibilityTests = Configuration.parameters[ParameterDefinitions.IS_COMPATIBILITY_TESTS]
 
     private val totalTransformClass = AtomicInt(0)
 
+    @OptIn(ExperimentalForeignApi::class)
     operator fun invoke(
         loader: jobject?,
         clsName: CPointer<ByteVar>?,
@@ -117,6 +140,14 @@ object ClassFileLoadHook {
                     transformers += { bytes -> CadenceTransformer.transform(kClassName, bytes, loader, protectionDomain ) }
                 }
             }
+            if (isCompatibilityTests) {
+                /**
+                 * Uses for compatibility tests https://github.com/Drill4J/internal-compatibility-matrix-tests.
+                 */
+                if (CompatibilityTestsTransformer.permit(classReader.className, classReader.superName, classReader.interfaces)) {
+                    transformers += { bytes -> CompatibilityTestsTransformer.transform(kClassName, bytes, loader, protectionDomain) }
+                }
+            }
             val classSource = ClassSource(kClassName, classReader.superName ?: "", classBytes)
             if ('$' !in kClassName && classSource.prefixMatches(Configuration.agentMetadata.packagesPrefixes)) {
                 JvmModuleStorage.values().filterIsInstance<InstrumentationAgentModule>().forEach { plugin ->
@@ -125,25 +156,30 @@ object ClassFileLoadHook {
             }
             if (!HttpInterceptorConfigurer.enabled) {
                 if (kClassName.startsWith("org/apache/catalina/core/ApplicationFilterChain")) {
-                    transformers += { bytes -> TomcatTransformer.transform(kClassName, bytes, loader, protectionDomain) }
+                    transformers += { bytes -> TomcatHttpServerTransformer.transform(kClassName, bytes, loader, protectionDomain) }
                 }
                 if (kClassName == "org/eclipse/jetty/server/handler/HandlerWrapper") {
-                    transformers += { bytes -> JettyTransformer.transform(kClassName, bytes, loader, protectionDomain) }
+                    transformers += { bytes -> JettyHttpServerTransformer.transform(kClassName, bytes, loader, protectionDomain) }
                 }
                 if (kClassName == "io/undertow/server/Connectors") {
-                    transformers += { bytes -> UndertowTransformer.transform(kClassName, bytes, loader, protectionDomain) }
+                    transformers += { bytes -> UndertowHttpServerTransformer.transform(kClassName, bytes, loader, protectionDomain) }
                 }
                 strategies.forEach { strategy ->
                     if (strategy.permit(classReader.className, classReader.superName, classReader.interfaces)) {
-                        transformers += { strategy.transform(kClassName, classBytes, loader, protectionDomain) }
+                        transformers += { bytes -> strategy.transform(kClassName, bytes, loader, protectionDomain) }
+                    }
+                }
+                wsStrategies.forEach { strategy ->
+                    if (strategy.permit(classReader.className, classReader.superName, classReader.interfaces)) {
+                        transformers += { bytes -> strategy.transform(kClassName, bytes, loader, protectionDomain) }
                     }
                 }
             }
             // TODO Http hook does not work for Netty on linux system
-            if ('$' !in kClassName && kClassName.startsWith(NettyTransformer.HANDLER_CONTEXT)) {
-                logger.debug { "Starting transform Netty class kClassName $kClassName..." }
+            if ('$' !in kClassName && kClassName.startsWith(NettyHttpServerTransformer.HANDLER_CONTEXT)) {
+                logger.info { "Starting transform Netty class kClassName $kClassName..." }
                 transformers += { bytes ->
-                    NettyTransformer.transform(kClassName, bytes, loader, protectionDomain)
+                    NettyHttpServerTransformer.transform(kClassName, bytes, loader, protectionDomain)
                 }
             }
             if (transformers.any()) {
@@ -164,6 +200,7 @@ object ClassFileLoadHook {
         }
     }
 
+    @OptIn(ExperimentalForeignApi::class)
     private fun convertToNativePointers(
         instrumentedBytes: ByteArray,
         newData: CPointer<CPointerVar<UByteVar>>?,
@@ -178,9 +215,11 @@ object ClassFileLoadHook {
         newClassDataLen!!.pointed.value = instrumentedSize
     }
 
+    @OptIn(ExperimentalForeignApi::class)
     private fun isBootstrapClassLoading(loader: jobject?, protectionDomain: jobject?) =
         loader == null || protectionDomain == null
 
+    @OptIn(ExperimentalForeignApi::class)
     private fun isTTLCandidate(
         kClassName: String,
         superName: String,

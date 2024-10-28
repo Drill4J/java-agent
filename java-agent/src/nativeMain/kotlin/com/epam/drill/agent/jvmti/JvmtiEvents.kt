@@ -27,13 +27,17 @@ import com.epam.drill.jvmapi.gen.jintVar
 import com.epam.drill.jvmapi.gen.jobject
 import com.epam.drill.jvmapi.gen.jthread
 import com.epam.drill.jvmapi.gen.jvmtiEnvVar
+import kotlinx.cinterop.ExperimentalForeignApi
 
+@OptIn(ExperimentalForeignApi::class)
 @Suppress("unused_parameter")
 fun vmInitEvent(env: CPointer<jvmtiEnvVar>?, jniEnv: CPointer<JNIEnvVar>?, thread: jthread?) = Agent.agentOnVmInit()
 
+@OptIn(ExperimentalForeignApi::class)
 @Suppress("unused_parameter")
 fun vmDeathEvent(jvmtiEnv: CPointer<jvmtiEnvVar>?, jniEnv: CPointer<JNIEnvVar>?) = Agent.agentOnVmDeath()
 
+@OptIn(ExperimentalForeignApi::class)
 @Suppress("unused_parameter")
 fun classFileLoadHook(
     jvmtiEnv: CPointer<jvmtiEnvVar>?,

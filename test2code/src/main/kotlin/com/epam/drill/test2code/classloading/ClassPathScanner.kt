@@ -33,6 +33,7 @@ private const val JAR_BUFFER_SIZE = 256 * 1024
 class ClassPathScanner(
     private val packagePrefixes: List<String>,
     private val classesBufferSize: Int,
+    private val excludePaths: List<URI> = emptyList(),
     private val transfer: (Set<ClassSource>) -> Unit
 ) {
 
@@ -42,7 +43,9 @@ class ClassPathScanner(
     private val scannedBuffer = mutableSetOf<ClassSource>()
 
     private val getOrLogFail: Result<Int>.() -> Int = {
-        this.onFailure { logger.warn { "ClassPathScanner: error handling class file: ${it.message}" } }
+        this.onFailure {
+            logger.warn { "ClassPathScanner: error handling class file: ${it.message} ${it.stackTraceToString()}" }
+        }
         this.getOrDefault(0)
     }
 
@@ -65,7 +68,11 @@ class ClassPathScanner(
      * @param file file to scan
      * @return scanned classes count
      */
-    fun scanFile(file: File) = file.takeIf(File::isDirectory)?.let(::scanDirectory) ?: scanJarFile(file).getOrLogFail()
+    private fun scanFile(file: File) = when {
+        file.isDirectory -> scanDirectory(file)
+        !file.toURI().startsWithAnyOf(excludePaths) -> scanJarFile(file).getOrLogFail()
+        else -> 0
+    }
 
     /**
      * Scan classes from directory.
@@ -76,7 +83,11 @@ class ClassPathScanner(
     private fun scanDirectory(file: File) = file.run {
         val isClassFile: (File) -> Boolean = { it.isFile && it.extension == "class" }
         logger.debug { "scanDirectory: scanning directory: ${this.absolutePath}" }
-        this.walkTopDown().filter(isClassFile).sumOf { scanClassFile(it, this).getOrLogFail() }
+        this.walkTopDown()
+            .filter(isClassFile)
+            .filter {
+                !it.toURI().startsWithAnyOf(excludePaths)
+            }.sumOf { scanClassFile(it, this).getOrLogFail() }
     }
 
     /**
@@ -188,5 +199,13 @@ class ClassPathScanner(
         scannedBuffer.takeIf(isBufferFilled)?.also(transfer)?.clear()
         return 1
     }
+
+    /**
+     * Check if URI starts with any of provided paths.
+     *
+     * @param paths list of paths to check
+     * @return true if URI starts with any of provided paths
+     */
+    private fun URI.startsWithAnyOf(paths: List<URI>) = paths.any { this.path.startsWith(it.path) }
 
 }
