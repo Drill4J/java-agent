@@ -18,7 +18,6 @@ val kotlinxCoroutinesVersion: String by parent!!.extra
 val kotlinxSerializationVersion: String by parent!!.extra
 val jacocoVersion: String by parent!!.extra
 val bcelVersion: String by parent!!.extra
-val microutilsLoggingVersion: String by parent!!.extra
 val logbackVersion: String by parent!!.extra
 
 repositories {
@@ -39,7 +38,7 @@ dependencies {
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-protobuf:$kotlinxSerializationVersion")
     implementation("org.jacoco:org.jacoco.core:$jacocoVersion")
     implementation("org.apache.bcel:bcel:$bcelVersion")
-    implementation("io.github.microutils:kotlin-logging-jvm:$microutilsLoggingVersion")
+    implementation(project(":kotlin-logging"))
 
     implementation(project(":common"))
     implementation(project(":test2code-common"))

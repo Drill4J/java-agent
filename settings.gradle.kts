@@ -34,6 +34,7 @@ val includeSharedLib: Settings.(String) -> Unit = {
     project(":$it").projectDir = file(sharedLibsLocalPath).resolve(it)
 }
 
+includeSharedLib("kotlin-logging")
 includeSharedLib("logging")
 includeSharedLib("common")
 includeSharedLib("agent-config")
