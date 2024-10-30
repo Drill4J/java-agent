@@ -27,7 +27,6 @@ import org.objectweb.asm.Type
 import org.objectweb.asm.AnnotationVisitor
 import org.objectweb.asm.tree.MethodNode
 import org.objectweb.asm.tree.AnnotationNode
-import com.sun.xml.internal.fastinfoset.util.StringArray
 
 open class ProbeCounter : ClassProbesVisitor() {
     var count = 0
@@ -161,7 +160,6 @@ private fun getValuesOfAnnotation(annotationNode: AnnotationNode): List<String> 
 
 private fun parseAnnotationValueToString(annotationValue: Any?): List<String> {
     return when (annotationValue) {
-        is StringArray -> annotationValue._array.map { it.toString() }
         is List<*> -> annotationValue.flatMap { parseAnnotationValueToString(it) }
         is AnnotationNode -> getValuesOfAnnotation(annotationValue)
         else -> listOf(annotationValue.toString())
