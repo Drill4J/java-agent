@@ -34,7 +34,7 @@ import com.epam.drill.agent.instrument.undertow.*
 import com.epam.drill.agent.interceptor.HttpInterceptorConfigurer
 import com.epam.drill.agent.module.InstrumentationAgentModule
 import com.epam.drill.agent.module.JvmModuleStorage
-import com.epam.drill.common.classloading.ClassSource
+import com.epam.drill.agent.common.classloading.ClassSource
 import com.epam.drill.jvmapi.gen.Allocate
 import com.epam.drill.jvmapi.gen.jint
 import com.epam.drill.jvmapi.gen.jintVar

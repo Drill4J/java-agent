@@ -17,7 +17,7 @@ package com.epam.drill.agent.configuration
 
 import kotlin.reflect.KProperty
 import mu.KotlinLogging
-import com.epam.drill.common.agent.configuration.AgentParameterDefinition
+import com.epam.drill.agent.common.configuration.AgentParameterDefinition
 import com.epam.drill.konform.validation.Invalid
 import com.epam.drill.konform.validation.Validation
 import com.epam.drill.konform.validation.ValidationError

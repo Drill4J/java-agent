@@ -22,5 +22,5 @@ import com.epam.drill.agent.request.DrillRequestHolder
 
 object SchedulersTransformer: TransformerObject,
     SchedulersTransformerObject(),
-    com.epam.drill.common.agent.request.RequestHolder by DrillRequestHolder,
+    com.epam.drill.agent.common.request.RequestHolder by DrillRequestHolder,
     ClassPathProvider by RuntimeClassPathProvider

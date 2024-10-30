@@ -87,7 +87,7 @@ object Agent {
         DrillRequestHolder.init(Configuration.parameters[ParameterDefinitions.IS_ASYNC_APP])
         HttpInterceptorConfigurer(HeadersRetriever, DrillRequestHolder)
 
-        loadJvmModule("com.epam.drill.test2code.Test2Code")
+        loadJvmModule("com.epam.drill.agent.test2code.Test2Code")
         JvmModuleMessageSender.sendAgentMetadata()
     }
 

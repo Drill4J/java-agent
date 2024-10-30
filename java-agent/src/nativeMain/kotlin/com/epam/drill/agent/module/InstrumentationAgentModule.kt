@@ -16,7 +16,7 @@
 package com.epam.drill.agent.module
 
 import kotlinx.cinterop.memScoped
-import com.epam.drill.common.agent.module.Instrumenter
+import com.epam.drill.agent.common.module.Instrumenter
 import com.epam.drill.jvmapi.gen.CallObjectMethod
 import com.epam.drill.jvmapi.gen.GetMethodID
 import com.epam.drill.jvmapi.gen.NewStringUTF

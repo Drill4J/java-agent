@@ -16,7 +16,7 @@
 package com.epam.drill.agent.module
 
 import kotlin.reflect.KClass
-import com.epam.drill.common.agent.module.AgentModule
+import com.epam.drill.agent.common.module.AgentModule
 import com.epam.drill.jvmapi.gen.CallObjectMethod
 import com.epam.drill.jvmapi.gen.GetObjectClass
 import com.epam.drill.jvmapi.gen.NewGlobalRef

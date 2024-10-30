@@ -15,13 +15,13 @@
  */
 package com.epam.drill.agent.module
 
-import com.epam.drill.common.agent.AgentContext
-import com.epam.drill.common.agent.configuration.AgentConfiguration
-import com.epam.drill.common.agent.module.AgentModule
-import com.epam.drill.common.agent.request.RequestProcessor
-import com.epam.drill.common.agent.transport.AgentMessage
-import com.epam.drill.common.agent.transport.AgentMessageDestination
-import com.epam.drill.common.agent.transport.AgentMessageSender
+import com.epam.drill.agent.common.AgentContext
+import com.epam.drill.agent.common.configuration.AgentConfiguration
+import com.epam.drill.agent.common.module.AgentModule
+import com.epam.drill.agent.common.request.RequestProcessor
+import com.epam.drill.agent.common.transport.AgentMessage
+import com.epam.drill.agent.common.transport.AgentMessageDestination
+import com.epam.drill.agent.common.transport.AgentMessageSender
 import com.epam.drill.jvmapi.gen.CallVoidMethod
 import com.epam.drill.jvmapi.gen.GetMethodID
 import com.epam.drill.jvmapi.gen.jclass
@@ -53,7 +53,7 @@ open class GenericAgentModule(
 
     override fun processServerResponse() = processServerResponseMethod?.let { CallVoidMethod(moduleObject, it) } ?: Unit
 
-    private class NopAgentContext : AgentContext {
+    private class NopAgentContext : com.epam.drill.agent.common.AgentContext {
         override fun get(key: String) = throw NotImplementedError()
         override fun invoke() = throw NotImplementedError()
     }
