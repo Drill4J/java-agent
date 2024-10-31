@@ -17,8 +17,8 @@ package com.epam.drill.agent.test2code.configuration
 
 import kotlin.time.Duration
 import java.io.File
-import com.epam.drill.konform.validation.Constraint
-import com.epam.drill.konform.validation.ValidationBuilder
+import com.epam.drill.agent.konform.validation.Constraint
+import com.epam.drill.agent.konform.validation.ValidationBuilder
 
 fun ValidationBuilder<Duration>.minimum(minimumInclusive: Duration) = addConstraint(
     "must be at least '{0}' ms", minimumInclusive.inWholeMilliseconds.toString()

@@ -21,7 +21,7 @@ import kotlin.test.assertNotNull
 import kotlin.test.Test
 import com.epam.drill.agent.fixture.ast.CheckProbeRanges
 import com.epam.drill.agent.fixture.ast.SimpleClass
-import com.epam.drill.plugins.test2code.common.api.AstMethod
+import com.epam.drill.agent.test2code.common.api.AstMethod
 import kotlin.test.assertTrue
 
 class AstTest {

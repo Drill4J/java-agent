@@ -29,8 +29,8 @@ import com.epam.drill.agent.common.transport.AgentMessage
 import com.epam.drill.agent.common.transport.AgentMessageDestination
 import com.epam.drill.agent.common.transport.AgentMessageSender
 import com.epam.drill.agent.common.classloading.EntitySource
-import com.epam.drill.plugins.test2code.common.api.AstMethod
-import com.epam.drill.plugins.test2code.common.transport.ClassMetadata
+import com.epam.drill.agent.test2code.common.api.AstMethod
+import com.epam.drill.agent.test2code.common.transport.ClassMetadata
 import com.epam.drill.agent.test2code.classloading.ClassLoadersScanner
 import com.epam.drill.agent.test2code.classloading.ClassScanner
 import com.epam.drill.agent.test2code.classparsing.parseAstClass

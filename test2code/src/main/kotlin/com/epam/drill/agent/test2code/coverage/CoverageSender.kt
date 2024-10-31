@@ -22,9 +22,9 @@ import mu.KotlinLogging
 import com.epam.drill.agent.common.transport.AgentMessageDestination
 import com.epam.drill.agent.common.transport.AgentMessageSender
 import com.epam.drill.agent.common.transport.ResponseStatus
-import com.epam.drill.plugins.test2code.common.api.ClassCoverage
-import com.epam.drill.plugins.test2code.common.api.toBitSet
-import com.epam.drill.plugins.test2code.common.transport.CoveragePayload
+import com.epam.drill.agent.test2code.common.api.ClassCoverage
+import com.epam.drill.agent.test2code.common.api.toBitSet
+import com.epam.drill.agent.test2code.common.transport.CoveragePayload
 
 interface CoverageSender {
     fun startSendingCoverage()

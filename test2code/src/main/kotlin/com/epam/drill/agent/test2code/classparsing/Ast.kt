@@ -16,7 +16,7 @@
 package com.epam.drill.agent.test2code.classparsing
 
 import com.epam.drill.agent.jacoco.DrillClassProbesAdapter
-import com.epam.drill.plugins.test2code.common.api.AstMethod
+import com.epam.drill.agent.test2code.common.api.AstMethod
 import org.jacoco.core.internal.flow.ClassProbesVisitor
 import org.jacoco.core.internal.flow.IFrame
 import org.jacoco.core.internal.flow.MethodProbesVisitor

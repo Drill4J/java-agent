@@ -17,9 +17,9 @@ package com.epam.drill.agent.configuration
 
 import kotlin.test.Test
 import kotlin.test.assertTrue
-import com.epam.drill.konform.validation.Invalid
-import com.epam.drill.konform.validation.Valid
-import com.epam.drill.konform.validation.Validation
+import com.epam.drill.agent.konform.validation.Invalid
+import com.epam.drill.agent.konform.validation.Valid
+import com.epam.drill.agent.konform.validation.Validation
 
 class ValidationBuilderTest {
 

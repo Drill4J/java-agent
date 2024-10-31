@@ -18,11 +18,11 @@ package com.epam.drill.agent.test2code.configuration
 import kotlin.time.Duration
 import mu.KotlinLogging
 import com.epam.drill.agent.common.configuration.AgentParameters
-import com.epam.drill.konform.validation.Invalid
-import com.epam.drill.konform.validation.Validation
-import com.epam.drill.konform.validation.ValidationError
-import com.epam.drill.konform.validation.ValidationErrors
-import com.epam.drill.konform.validation.ValidationResult
+import com.epam.drill.agent.konform.validation.Invalid
+import com.epam.drill.agent.konform.validation.Validation
+import com.epam.drill.agent.konform.validation.ValidationError
+import com.epam.drill.agent.konform.validation.ValidationErrors
+import com.epam.drill.agent.konform.validation.ValidationResult
 
 object ParametersValidator {
 

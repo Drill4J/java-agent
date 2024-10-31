@@ -48,7 +48,7 @@ import kotlinx.cinterop.ExperimentalForeignApi
 
 object ClassFileLoadHook {
 
-    private const val DRILL_PACKAGE = "com/epam/drill"
+    private const val DRILL_PACKAGE = "com/epam/drill/agent"
 
     private val logger = KotlinLogging.logger("com.epam.drill.agent.jvmti.ClassFileLoadHook")
 

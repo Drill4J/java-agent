@@ -91,7 +91,7 @@ private class DrillProbeStrategy(
     override fun storeInstance(mv: MethodVisitor?, clinit: Boolean, variable: Int): Int = mv!!.run {
         val drillClassName = probesProxy.javaClass.name.replace('.', '/')
         visitFieldInsn(Opcodes.GETSTATIC, drillClassName, "INSTANCE", "L$drillClassName;")
-        // Stack[0]: Lcom/epam/drill/jacoco/Stuff;
+        // Stack[0]: Lcom/epam/drill/agent/jacoco/Stuff;
 
         visitLdcInsn(classId)
         visitLdcInsn(number)
