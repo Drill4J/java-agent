@@ -38,6 +38,7 @@ class ValidatedParametersProvider(
         val groupId by provider
         val buildVersion by provider
         val commitSha by provider
+        val envId by provider
         val packagePrefixes by provider
         val packagePrefixesAsList = packagePrefixes?.split(";") ?: emptyList()
         val drillInstallationDir by provider
@@ -78,6 +79,9 @@ class ValidatedParametersProvider(
         }
         ValidatingParameters::commitSha ifPresent {
             pattern("^[a-f0-9]{40}\$") hint "must be a valid full commit SHA"
+        }
+        ValidatingParameters::envId ifPresent {
+            minLength(1)
         }
         ValidatingParameters::apiKey ifPresent {
             minLength(1)
