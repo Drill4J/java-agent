@@ -40,7 +40,7 @@ actual object JvmModuleLoader {
 
     @OptIn(ExperimentalForeignApi::class)
     private fun callObjectAgentModuleMethodWithString(clazz: KClass<out Any>, method: String, string: String?) =
-        getObjectMethod(clazz, method, "(Ljava/lang/String;)Lcom/epam/drill/agent/common/agent/module/AgentModule;").run {
+        getObjectMethod(clazz, method, "(Ljava/lang/String;)Lcom/epam/drill/agent/common/module/AgentModule;").run {
             CallObjectMethod(this.first, this.second, string?.let(::NewStringUTF))
         }
 
