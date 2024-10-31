@@ -15,7 +15,7 @@
  */
 package com.epam.drill.agent.transport
 
-import com.epam.drill.jvmapi.callObjectVoidMethod
+import com.epam.drill.agent.jvmapi.callObjectVoidMethod
 
 actual object JvmModuleMessageSender {
 

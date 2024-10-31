@@ -19,7 +19,7 @@ import java.util.Locale
 import com.epam.drill.agent.request.DrillRequestHolder
 import com.epam.drill.agent.common.AgentContext
 
-object RequestAgentContext : com.epam.drill.agent.common.AgentContext {
+object RequestAgentContext : AgentContext {
     override operator fun invoke(): String? =
         DrillRequestHolder.retrieve()?.drillSessionId?.ifEmpty { null }
     override operator fun get(key: String): String? =

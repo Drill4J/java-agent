@@ -28,14 +28,14 @@ import kotlinx.cinterop.ptr
 import kotlinx.cinterop.reinterpret
 import kotlinx.cinterop.value
 import com.epam.drill.agent.Agent
-import com.epam.drill.jvmapi.checkEx
-import com.epam.drill.jvmapi.env
-import com.epam.drill.jvmapi.gen.JVMTI_VERSION
-import com.epam.drill.jvmapi.gen.JavaVMVar
-import com.epam.drill.jvmapi.gen.jvmtiEnvVar
-import com.epam.drill.jvmapi.gen.jvmtiError
-import com.epam.drill.jvmapi.jvmti
-import com.epam.drill.jvmapi.vmGlobal
+import com.epam.drill.agent.jvmapi.checkEx
+import com.epam.drill.agent.jvmapi.env
+import com.epam.drill.agent.jvmapi.gen.JVMTI_VERSION
+import com.epam.drill.agent.jvmapi.gen.JavaVMVar
+import com.epam.drill.agent.jvmapi.gen.jvmtiEnvVar
+import com.epam.drill.agent.jvmapi.gen.jvmtiError
+import com.epam.drill.agent.jvmapi.jvmti
+import com.epam.drill.agent.jvmapi.vmGlobal
 import kotlinx.cinterop.ExperimentalForeignApi
 import kotlin.experimental.ExperimentalNativeApi
 

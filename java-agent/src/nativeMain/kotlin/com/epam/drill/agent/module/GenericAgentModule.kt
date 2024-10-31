@@ -22,10 +22,10 @@ import com.epam.drill.agent.common.request.RequestProcessor
 import com.epam.drill.agent.common.transport.AgentMessage
 import com.epam.drill.agent.common.transport.AgentMessageDestination
 import com.epam.drill.agent.common.transport.AgentMessageSender
-import com.epam.drill.jvmapi.gen.CallVoidMethod
-import com.epam.drill.jvmapi.gen.GetMethodID
-import com.epam.drill.jvmapi.gen.jclass
-import com.epam.drill.jvmapi.gen.jobject
+import com.epam.drill.agent.jvmapi.gen.CallVoidMethod
+import com.epam.drill.agent.jvmapi.gen.GetMethodID
+import com.epam.drill.agent.jvmapi.gen.jclass
+import com.epam.drill.agent.jvmapi.gen.jobject
 import kotlinx.cinterop.ExperimentalForeignApi
 
 @OptIn(ExperimentalForeignApi::class)

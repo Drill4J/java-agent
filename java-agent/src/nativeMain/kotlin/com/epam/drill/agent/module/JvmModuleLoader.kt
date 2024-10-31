@@ -17,11 +17,11 @@ package com.epam.drill.agent.module
 
 import kotlin.reflect.KClass
 import com.epam.drill.agent.common.module.AgentModule
-import com.epam.drill.jvmapi.gen.CallObjectMethod
-import com.epam.drill.jvmapi.gen.GetObjectClass
-import com.epam.drill.jvmapi.gen.NewGlobalRef
-import com.epam.drill.jvmapi.gen.NewStringUTF
-import com.epam.drill.jvmapi.getObjectMethod
+import com.epam.drill.agent.jvmapi.gen.CallObjectMethod
+import com.epam.drill.agent.jvmapi.gen.GetObjectClass
+import com.epam.drill.agent.jvmapi.gen.NewGlobalRef
+import com.epam.drill.agent.jvmapi.gen.NewStringUTF
+import com.epam.drill.agent.jvmapi.getObjectMethod
 import kotlinx.cinterop.ExperimentalForeignApi
 
 actual object JvmModuleLoader {

@@ -35,7 +35,7 @@ import com.epam.drill.agent.module.JvmModuleLoader
 import com.epam.drill.agent.request.HeadersRetriever
 import com.epam.drill.agent.request.DrillRequestHolder
 import com.epam.drill.agent.transport.JvmModuleMessageSender
-import com.epam.drill.jvmapi.gen.*
+import com.epam.drill.agent.jvmapi.gen.*
 import kotlinx.cinterop.ExperimentalForeignApi
 import kotlin.experimental.ExperimentalNativeApi
 

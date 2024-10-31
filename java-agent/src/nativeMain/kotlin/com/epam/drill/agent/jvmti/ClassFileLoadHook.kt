@@ -35,10 +35,10 @@ import com.epam.drill.agent.interceptor.HttpInterceptorConfigurer
 import com.epam.drill.agent.module.InstrumentationAgentModule
 import com.epam.drill.agent.module.JvmModuleStorage
 import com.epam.drill.agent.common.classloading.ClassSource
-import com.epam.drill.jvmapi.gen.Allocate
-import com.epam.drill.jvmapi.gen.jint
-import com.epam.drill.jvmapi.gen.jintVar
-import com.epam.drill.jvmapi.gen.jobject
+import com.epam.drill.agent.jvmapi.gen.Allocate
+import com.epam.drill.agent.jvmapi.gen.jint
+import com.epam.drill.agent.jvmapi.gen.jintVar
+import com.epam.drill.agent.jvmapi.gen.jobject
 import io.ktor.utils.io.bits.*
 import kotlinx.cinterop.*
 import mu.KotlinLogging

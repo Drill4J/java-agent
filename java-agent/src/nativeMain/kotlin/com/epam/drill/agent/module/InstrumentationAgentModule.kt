@@ -17,13 +17,13 @@ package com.epam.drill.agent.module
 
 import kotlinx.cinterop.memScoped
 import com.epam.drill.agent.common.module.Instrumenter
-import com.epam.drill.jvmapi.gen.CallObjectMethod
-import com.epam.drill.jvmapi.gen.GetMethodID
-import com.epam.drill.jvmapi.gen.NewStringUTF
-import com.epam.drill.jvmapi.gen.jclass
-import com.epam.drill.jvmapi.gen.jobject
-import com.epam.drill.jvmapi.toByteArray
-import com.epam.drill.jvmapi.toJByteArray
+import com.epam.drill.agent.jvmapi.gen.CallObjectMethod
+import com.epam.drill.agent.jvmapi.gen.GetMethodID
+import com.epam.drill.agent.jvmapi.gen.NewStringUTF
+import com.epam.drill.agent.jvmapi.gen.jclass
+import com.epam.drill.agent.jvmapi.gen.jobject
+import com.epam.drill.agent.jvmapi.toByteArray
+import com.epam.drill.agent.jvmapi.toJByteArray
 import kotlinx.cinterop.ExperimentalForeignApi
 
 @OptIn(ExperimentalForeignApi::class)

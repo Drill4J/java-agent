@@ -15,12 +15,12 @@
  */
 package com.epam.drill.agent.configuration
 
-import com.epam.drill.jvmapi.callObjectIntMethod
-import com.epam.drill.jvmapi.callObjectStringMethod
-import com.epam.drill.jvmapi.callObjectVoidMethod
-import com.epam.drill.jvmapi.callObjectVoidMethodWithInt
-import com.epam.drill.jvmapi.callObjectVoidMethodWithString
-import com.epam.drill.logging.LoggingConfiguration
+import com.epam.drill.agent.jvmapi.callObjectIntMethod
+import com.epam.drill.agent.jvmapi.callObjectStringMethod
+import com.epam.drill.agent.jvmapi.callObjectVoidMethod
+import com.epam.drill.agent.jvmapi.callObjectVoidMethodWithInt
+import com.epam.drill.agent.jvmapi.callObjectVoidMethodWithString
+import com.epam.drill.agent.logging.LoggingConfiguration
 import kotlinx.cinterop.ExperimentalForeignApi
 
 object AgentLoggingConfiguration {

@@ -20,13 +20,13 @@ import kotlinx.cinterop.CPointer
 import kotlinx.cinterop.CPointerVar
 import kotlinx.cinterop.UByteVar
 import com.epam.drill.agent.Agent
-import com.epam.drill.jvmapi.gen.JNIEnvVar
-import com.epam.drill.jvmapi.gen.jclass
-import com.epam.drill.jvmapi.gen.jint
-import com.epam.drill.jvmapi.gen.jintVar
-import com.epam.drill.jvmapi.gen.jobject
-import com.epam.drill.jvmapi.gen.jthread
-import com.epam.drill.jvmapi.gen.jvmtiEnvVar
+import com.epam.drill.agent.jvmapi.gen.JNIEnvVar
+import com.epam.drill.agent.jvmapi.gen.jclass
+import com.epam.drill.agent.jvmapi.gen.jint
+import com.epam.drill.agent.jvmapi.gen.jintVar
+import com.epam.drill.agent.jvmapi.gen.jobject
+import com.epam.drill.agent.jvmapi.gen.jthread
+import com.epam.drill.agent.jvmapi.gen.jvmtiEnvVar
 import kotlinx.cinterop.ExperimentalForeignApi
 
 @OptIn(ExperimentalForeignApi::class)
