@@ -18,7 +18,7 @@ plugins {
     id("com.github.johnrengelman.shadow").apply(false)
 }
 
-group = "com.epam.drill"
+group = "com.epam.drill.agent"
 
 val kotlinVersion: String by extra
 val kotlinxCollectionsVersion: String by extra
