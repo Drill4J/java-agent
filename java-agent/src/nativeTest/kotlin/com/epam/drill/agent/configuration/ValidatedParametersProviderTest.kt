@@ -15,7 +15,7 @@
  */
 package com.epam.drill.agent.configuration
 
-import com.epam.drill.logging.LoggingConfiguration
+import com.epam.drill.agent.logging.LoggingConfiguration
 import kotlin.test.*
 
 class ValidatedParametersProviderTest {

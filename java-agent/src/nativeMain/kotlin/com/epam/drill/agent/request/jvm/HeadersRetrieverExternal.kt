@@ -16,10 +16,10 @@
 package com.epam.drill.agent.request.jvm
 
 import com.epam.drill.agent.request.HeadersRetriever
-import com.epam.drill.jvmapi.callNativeStringMethod
-import com.epam.drill.jvmapi.gen.JNIEnv
-import com.epam.drill.jvmapi.gen.jobject
-import com.epam.drill.jvmapi.gen.jstring
+import com.epam.drill.agent.jvmapi.callNativeStringMethod
+import com.epam.drill.agent.jvmapi.gen.JNIEnv
+import com.epam.drill.agent.jvmapi.gen.jobject
+import com.epam.drill.agent.jvmapi.gen.jstring
 import kotlinx.cinterop.ExperimentalForeignApi
 import kotlin.experimental.ExperimentalNativeApi
 

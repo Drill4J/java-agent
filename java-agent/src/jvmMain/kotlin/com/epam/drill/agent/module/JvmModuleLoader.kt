@@ -18,10 +18,10 @@ package com.epam.drill.agent.module
 import com.epam.drill.agent.RequestAgentContext
 import com.epam.drill.agent.configuration.Configuration
 import com.epam.drill.agent.transport.JvmModuleMessageSender
-import com.epam.drill.common.agent.AgentContext
-import com.epam.drill.common.agent.configuration.AgentConfiguration
-import com.epam.drill.common.agent.module.AgentModule
-import com.epam.drill.common.agent.transport.AgentMessageSender
+import com.epam.drill.agent.common.AgentContext
+import com.epam.drill.agent.common.configuration.AgentConfiguration
+import com.epam.drill.agent.common.module.AgentModule
+import com.epam.drill.agent.common.transport.AgentMessageSender
 
 actual object JvmModuleLoader {
 
@@ -30,7 +30,7 @@ actual object JvmModuleLoader {
         val jvmModuleClass = Class.forName(classname) as Class<out AgentModule>
         val constructor = jvmModuleClass.getConstructor(
             String::class.java,
-            AgentContext::class.java,
+            com.epam.drill.agent.common.AgentContext::class.java,
             AgentMessageSender::class.java,
             AgentConfiguration::class.java
         )

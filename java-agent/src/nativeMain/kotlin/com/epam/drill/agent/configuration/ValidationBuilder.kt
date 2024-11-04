@@ -17,8 +17,8 @@ package com.epam.drill.agent.configuration
 
 import platform.posix.F_OK
 import platform.posix.access
-import com.epam.drill.konform.validation.Constraint
-import com.epam.drill.konform.validation.ValidationBuilder
+import com.epam.drill.agent.konform.validation.Constraint
+import com.epam.drill.agent.konform.validation.ValidationBuilder
 
 val TRANSPORT_SCHEMES = setOf("http://", "https://")
 

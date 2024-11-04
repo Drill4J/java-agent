@@ -17,7 +17,7 @@ package com.epam.drill.agent
 
 import java.util.Locale
 import com.epam.drill.agent.request.DrillRequestHolder
-import com.epam.drill.common.agent.AgentContext
+import com.epam.drill.agent.common.AgentContext
 
 object RequestAgentContext : AgentContext {
     override operator fun invoke(): String? =

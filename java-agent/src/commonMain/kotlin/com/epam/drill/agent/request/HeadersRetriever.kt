@@ -15,7 +15,7 @@
  */
 package com.epam.drill.agent.request
 
-import com.epam.drill.common.agent.request.HeadersRetriever
+import com.epam.drill.agent.common.request.HeadersRetriever
 
 expect object HeadersRetriever : HeadersRetriever {
     override fun adminAddressHeader(): String

@@ -15,7 +15,7 @@
  */
 package com.epam.drill.agent.configuration
 
-import com.epam.drill.common.agent.configuration.AgentParameterDefinition
+import com.epam.drill.agent.common.configuration.AgentParameterDefinition
 
 object ParameterDefinitions {
 

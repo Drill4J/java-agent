@@ -16,12 +16,12 @@
 package com.epam.drill.agent.module
 
 import kotlin.reflect.KClass
-import com.epam.drill.common.agent.module.AgentModule
-import com.epam.drill.jvmapi.gen.CallObjectMethod
-import com.epam.drill.jvmapi.gen.GetObjectClass
-import com.epam.drill.jvmapi.gen.NewGlobalRef
-import com.epam.drill.jvmapi.gen.NewStringUTF
-import com.epam.drill.jvmapi.getObjectMethod
+import com.epam.drill.agent.common.module.AgentModule
+import com.epam.drill.agent.jvmapi.gen.CallObjectMethod
+import com.epam.drill.agent.jvmapi.gen.GetObjectClass
+import com.epam.drill.agent.jvmapi.gen.NewGlobalRef
+import com.epam.drill.agent.jvmapi.gen.NewStringUTF
+import com.epam.drill.agent.jvmapi.getObjectMethod
 import kotlinx.cinterop.ExperimentalForeignApi
 
 actual object JvmModuleLoader {
@@ -40,7 +40,7 @@ actual object JvmModuleLoader {
 
     @OptIn(ExperimentalForeignApi::class)
     private fun callObjectAgentModuleMethodWithString(clazz: KClass<out Any>, method: String, string: String?) =
-        getObjectMethod(clazz, method, "(Ljava/lang/String;)Lcom/epam/drill/common/agent/module/AgentModule;").run {
+        getObjectMethod(clazz, method, "(Ljava/lang/String;)Lcom/epam/drill/agent/common/module/AgentModule;").run {
             CallObjectMethod(this.first, this.second, string?.let(::NewStringUTF))
         }
 

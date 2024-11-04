@@ -15,7 +15,7 @@
  */
 package com.epam.drill.agent.transport
 
-import com.epam.drill.common.agent.transport.AgentMessageDestination
+import com.epam.drill.agent.common.transport.AgentMessageDestination
 
 class HttpAgentMessageDestinationMapper : AgentMessageDestinationMapper {
 

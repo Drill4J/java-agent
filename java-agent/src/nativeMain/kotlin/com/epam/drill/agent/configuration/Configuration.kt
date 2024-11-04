@@ -22,10 +22,10 @@ import com.epam.drill.agent.configuration.provider.AgentOptionsProvider
 import com.epam.drill.agent.configuration.provider.EnvironmentVariablesProvider
 import com.epam.drill.agent.configuration.provider.InstallationDirProvider
 import com.epam.drill.agent.configuration.provider.PropertiesFileProvider
-import com.epam.drill.common.agent.configuration.AgentConfiguration
-import com.epam.drill.common.agent.configuration.AgentMetadata
-import com.epam.drill.common.agent.configuration.AgentParameters
-import com.epam.drill.jvmapi.callObjectVoidMethodWithString
+import com.epam.drill.agent.common.configuration.AgentConfiguration
+import com.epam.drill.agent.common.configuration.AgentMetadata
+import com.epam.drill.agent.common.configuration.AgentParameters
+import com.epam.drill.agent.jvmapi.callObjectVoidMethodWithString
 
 actual object Configuration : AgentConfiguration {
 
