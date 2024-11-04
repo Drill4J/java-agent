@@ -36,7 +36,7 @@ object ParametersValidator {
             minimum(Duration.ZERO)
         }
         ValidatingParameters::scanClassPath onEach {
-            pathExists()
+            isNotBlank()
         }
     }
 
