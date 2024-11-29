@@ -15,13 +15,11 @@
  */
 package com.epam.drill.agent.test2code.coverage
 
-import kotlinx.coroutines.Runnable
 import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
 import mu.KotlinLogging
 import com.epam.drill.agent.common.transport.AgentMessageDestination
 import com.epam.drill.agent.common.transport.AgentMessageSender
-import com.epam.drill.agent.common.transport.ResponseStatus
 import com.epam.drill.agent.test2code.common.api.ClassCoverage
 import com.epam.drill.agent.test2code.common.api.toBitSet
 import com.epam.drill.agent.test2code.common.transport.CoveragePayload
@@ -59,6 +57,7 @@ class IntervalCoverageSender(
             scheduledThreadPool.shutdownNow();
         }
         sendProbes(collectProbes())
+        sender.shutdown()
         logger.info { "Coverage sending job is stopped." }
     }
 
@@ -76,10 +75,5 @@ class IntervalCoverageSender(
 }
 
 private class StubSender : AgentMessageSender<CoveragePayload> {
-    override fun send(destination: AgentMessageDestination, message: CoveragePayload) = StubResponseStatus()
-}
-
-private class StubResponseStatus : ResponseStatus {
-    override val success: Boolean = false
-    override val statusObject: Any? = null
+    override fun send(destination: AgentMessageDestination, message: CoveragePayload) {}
 }

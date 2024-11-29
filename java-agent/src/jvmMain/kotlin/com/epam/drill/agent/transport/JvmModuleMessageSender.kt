@@ -41,7 +41,7 @@ actual object JvmModuleMessageSender : AgentMessageSender<AgentMessage> {
         messageSender.send(AgentMessageDestination("PUT", "instances"), Configuration.agentMetadata)
     }
 
-    private fun messageSender(): QueuedAgentMessageSender<AgentMessage, ByteArray> {
+    private fun messageSender(): QueuedAgentMessageSender<AgentMessage> {
         val transport = HttpAgentMessageTransport(
             serverAddress = Configuration.parameters[ParameterDefinitions.API_URL],
             apiKey = Configuration.parameters[ParameterDefinitions.API_KEY],
@@ -55,11 +55,9 @@ actual object JvmModuleMessageSender : AgentMessageSender<AgentMessage> {
         } ?: JsonAgentMessageSerializer<AgentMessage>()
         val mapper = HttpAgentMessageDestinationMapper()
         val queue = InMemoryAgentMessageQueue(
-            serializer,
             Configuration.parameters[ParameterDefinitions.MESSAGE_QUEUE_LIMIT].let(::parseBytes)
         )
-        val notifier = RetryingTransportStateNotifier(transport, serializer, queue)
-        return QueuedAgentMessageSender(transport, serializer, mapper, notifier, notifier, queue)
+        return QueuedAgentMessageSender(transport, serializer, mapper, queue)
     }
 
     private fun resolvePath(path: String) = File(path).run {
