@@ -27,6 +27,7 @@ import com.epam.drill.agent.common.classloading.ClassSource
 
 private const val PREFIX_SPRING_BOOT = "BOOT-INF/classes/"
 private const val PREFIX_WEB_APP = "WEB-INF/classes/"
+private const val PREFIX_EAR_APP = ".jar/"
 private const val PACKAGE_DRILL = "com/epam/drill"
 private const val JAR_BUFFER_SIZE = 256 * 1024
 
@@ -151,9 +152,18 @@ class ClassPathScanner(
             it.copy(superName = superName, bytes = bytes)
         }
         logger.trace { "ClassPathScanner: scanning class file: ${this.toRelativeString(directory)}" }
-        this.toRelativeString(directory).replace(File.separatorChar, '/')
-            .removePrefix(PREFIX_WEB_APP).removePrefix(PREFIX_SPRING_BOOT).removeSuffix(".class").let(::ClassSource)
-            .takeIf(isClassAccepted)?.let(readClassSource)?.takeIf(isPrefixMatches)?.let(::addClassToScanned) ?: 0
+        this.toRelativeString(directory)
+            .replace(File.separatorChar, '/')
+            .removePrefix(PREFIX_WEB_APP)
+            .removePrefix(PREFIX_SPRING_BOOT)
+            .removeBefore(PREFIX_EAR_APP)
+            .removeSuffix(".class")
+            .let(::ClassSource)
+            .takeIf(isClassAccepted)
+            ?.let(readClassSource)
+            ?.takeIf(isPrefixMatches)
+            ?.let(::addClassToScanned)
+            ?: 0
     }
 
     /**
@@ -169,7 +179,11 @@ class ClassPathScanner(
             it.copy(superName = superName, bytes = bytes)
         }
         logger.trace { "ClassPathScanner: scanning class entry: $this" }
-        this.removePrefix(PREFIX_WEB_APP).removePrefix(PREFIX_SPRING_BOOT).removeSuffix(".class").let(::ClassSource)
+        this.removePrefix(PREFIX_WEB_APP)
+            .removePrefix(PREFIX_SPRING_BOOT)
+            .removeBefore(PREFIX_EAR_APP)
+            .removeSuffix(".class")
+            .let(::ClassSource)
             .takeIf(isClassAccepted)?.let(readClassSource)?.takeIf(isPrefixMatches)?.let(::addClassToScanned) ?: 0
     }
 
@@ -207,5 +221,10 @@ class ClassPathScanner(
      * @return true if URI starts with any of provided paths
      */
     private fun URI.startsWithAnyOf(paths: List<URI>) = paths.any { this.path.startsWith(it.path) }
+
+    private fun String.removeBefore(prefix: String): String {
+        val index = indexOf(prefix)
+        return if (index != -1) substring(index + prefix.length) else this
+    }
 
 }
