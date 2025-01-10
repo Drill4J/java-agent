@@ -27,7 +27,7 @@ import com.epam.drill.agent.common.classloading.ClassSource
 
 private const val PREFIX_SPRING_BOOT = "BOOT-INF/classes/"
 private const val PREFIX_WEB_APP = "WEB-INF/classes/"
-private const val PREFIX_EAR_APP = ".jar/"
+private const val PREFIX_JAR = ".jar/"
 private const val PACKAGE_DRILL = "com/epam/drill"
 private const val JAR_BUFFER_SIZE = 256 * 1024
 
@@ -156,7 +156,7 @@ class ClassPathScanner(
             .replace(File.separatorChar, '/')
             .removePrefix(PREFIX_WEB_APP)
             .removePrefix(PREFIX_SPRING_BOOT)
-            .removeBefore(PREFIX_EAR_APP)
+            .removeBefore(PREFIX_JAR)
             .removeSuffix(".class")
             .let(::ClassSource)
             .takeIf(isClassAccepted)
@@ -181,7 +181,7 @@ class ClassPathScanner(
         logger.trace { "ClassPathScanner: scanning class entry: $this" }
         this.removePrefix(PREFIX_WEB_APP)
             .removePrefix(PREFIX_SPRING_BOOT)
-            .removeBefore(PREFIX_EAR_APP)
+            .removeBefore(PREFIX_JAR)
             .removeSuffix(".class")
             .let(::ClassSource)
             .takeIf(isClassAccepted)?.let(readClassSource)?.takeIf(isPrefixMatches)?.let(::addClassToScanned) ?: 0
