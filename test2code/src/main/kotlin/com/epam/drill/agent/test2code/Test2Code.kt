@@ -57,6 +57,8 @@ class Test2Code(
     private val coverageManager = DrillCoverageManager
     private val instrumenter = DrillInstrumenter(coverageManager, coverageManager)
     private val coverageSender: CoverageSender = IntervalCoverageSender(
+        groupId= configuration.agentMetadata.groupId,
+        appId =  configuration.agentMetadata.appId,
         instanceId = configuration.agentMetadata.instanceId,
         intervalMs = configuration.parameters[ParameterDefinitions.COVERAGE_SEND_INTERVAL],
         pageSize = configuration.parameters[ParameterDefinitions.COVERAGE_SEND_PAGE_SIZE],
