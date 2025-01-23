@@ -30,6 +30,8 @@ interface CoverageSender {
 }
 
 class IntervalCoverageSender(
+    private val groupId: String,
+    private val appId: String,
     private val instanceId: String,
     private val intervalMs: Long,
     private val pageSize: Int,
@@ -69,7 +71,7 @@ class IntervalCoverageSender(
     private fun sendProbes(dataToSend: Sequence<ExecDatum>) {
         dataToSend.map { ClassCoverage(classname = it.name, testId = it.testId, probes = it.probes.values.toBitSet()) }
             .chunked(pageSize)
-            .forEach { sender.send(destination, CoveragePayload(instanceId, it)) }
+            .forEach { sender.send(destination, CoveragePayload(groupId, appId, instanceId, it)) }
     }
 
 }
