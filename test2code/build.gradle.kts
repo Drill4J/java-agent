@@ -22,7 +22,6 @@ val microutilsLoggingVersion: String by parent!!.extra
 val logbackVersion: String by parent!!.extra
 
 repositories {
-    mavenLocal()
     mavenCentral()
 }
 
