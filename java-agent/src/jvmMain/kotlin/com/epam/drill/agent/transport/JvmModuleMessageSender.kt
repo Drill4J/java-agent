@@ -41,6 +41,10 @@ actual object JvmModuleMessageSender : AgentMessageSender<AgentMessage> {
         messageSender.send(AgentMessageDestination("PUT", "instances"), Configuration.agentMetadata)
     }
 
+    override fun shutdown() {
+        messageSender.shutdown()
+    }
+
     private fun messageSender(): QueuedAgentMessageSender<AgentMessage> {
         val transport = HttpAgentMessageTransport(
             serverAddress = Configuration.parameters[ParameterDefinitions.API_URL],
@@ -55,9 +59,12 @@ actual object JvmModuleMessageSender : AgentMessageSender<AgentMessage> {
         } ?: JsonAgentMessageSerializer<AgentMessage>()
         val mapper = HttpAgentMessageDestinationMapper()
         val queue = InMemoryAgentMessageQueue(
-            Configuration.parameters[ParameterDefinitions.MESSAGE_QUEUE_LIMIT].let(::parseBytes)
+            capacity = Configuration.parameters[ParameterDefinitions.MESSAGE_QUEUE_LIMIT].let(::parseBytes),
         )
-        return QueuedAgentMessageSender(transport, serializer, mapper, queue)
+        return QueuedAgentMessageSender(
+            transport, serializer, mapper, queue,
+            maxRetries = Configuration.parameters[ParameterDefinitions.MESSAGE_MAX_RETRIES]
+        )
     }
 
     private fun resolvePath(path: String) = File(path).run {
