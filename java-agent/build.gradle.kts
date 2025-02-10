@@ -37,7 +37,6 @@ val macosLd64: String by parent!!.extra
 val bytebuddyVersion: String by parent!!.extra
 
 repositories {
-    mavenLocal()
     mavenCentral()
 }
 

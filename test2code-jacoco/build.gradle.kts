@@ -14,7 +14,6 @@ version = rootProject.version
 val jacocoVersion: String by parent!!.extra
 
 repositories {
-    mavenLocal()
     mavenCentral()
 }
 
