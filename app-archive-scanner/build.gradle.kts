@@ -114,3 +114,38 @@ launch4j {
     mainClassName.set(application.mainClass.get())
     bundledJrePath.set(null as String?)
 }
+tasks.register<Zip>("packageZipWindows") {
+    dependsOn("createExe")
+    from(layout.buildDirectory.dir("launch4j"))
+    destinationDirectory.set(layout.buildDirectory.dir("dist"))
+    archiveFileName.set("appArchiveScanner-mingwX64-${rootProject.version}.zip")
+}
+
+val jpackageImageDir = layout.buildDirectory.dir("jpackageImage")
+
+tasks.register<Exec>("buildLinuxExecutable") {
+    val fatJar = tasks.named<Jar>("jar").flatMap { it.archiveFile }
+    dependsOn(fatJar)
+
+    doFirst {
+        jpackageImageDir.get().asFile.deleteRecursively()
+    }
+
+    commandLine = listOf(
+        "jpackage",
+        "--type", "app-image",
+        "--input", fatJar.get().asFile.parent,
+        "--main-jar", fatJar.get().asFile.name,
+        "--main-class", application.mainClass.get(),
+        "--name", "appArchiveScanner",
+        "--dest", jpackageImageDir.get().asFile.absolutePath
+    )
+}
+
+tasks.register<Zip>("packageZipLinux") {
+    dependsOn("buildLinuxExecutable")
+    val appDir = jpackageImageDir.map { it.dir("appArchiveScanner") }
+    from(appDir)
+    destinationDirectory.set(layout.buildDirectory.dir("dist"))
+    archiveFileName.set("appArchiveScanner-linuxX64-${project.version}.zip")
+}
