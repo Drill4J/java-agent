@@ -111,23 +111,27 @@ fun main(args: Array<String>) {
 
     val packagePrefixes = packagePrefixesStr.split(";")
 
-    val apiKey = System.getenv("DRILL_API_KEY")
+    if (!apiKeyFromCmd.isNullOrBlank()) {
+        println("Using API key from command line argument. It is recommended to set it with DRILL_API_KEY env variable instead")
+    }
+
+    val apiKey = apiKeyFromCmd?.takeIf { !it.isNullOrBlank() } ?:
+        System.getProperty("DRILL_API_KEY")?.takeIf { !it.isNullOrBlank() }
 
     if (apiKey.isNullOrBlank()) {
         throw IllegalStateException("DRILL_API_KEY environment variable is either not set or set to a blank value")
     }
-println("""
-    scanPaths=${listOf(scanPaths)},
-    packagePrefixes=$packagePrefixes,
-    verbose=$verbose,
-    apiUrl=$apiUrl,
-    apiKey=$apiKey,
-    groupId=$groupId,
-    appId=$appId,
-    buildVersion=$buildVersion,
-    commitSha=$commitSha,
-    envId=$envId
-""".trimIndent())
+    println("""
+        scanPaths=${listOf(scanPaths)},
+        packagePrefixes=$packagePrefixes,
+        verbose=$verbose,
+        apiUrl=$apiUrl,
+        groupId=$groupId,
+        appId=$appId,
+        buildVersion=$buildVersion,
+        commitSha=$commitSha,
+        envId=$envId
+    """.trimIndent())
 
     run(
         scanPaths = listOf(scanPaths),
