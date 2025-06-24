@@ -31,7 +31,7 @@ fun main(args: Array<String>) {
 
     val scanPaths by parser.option(
         ArgType.String,
-        fullName = "appArchivePath",
+        fullName = "scanClassPath",
         description = "Path to JAR/WAR/EAR to scan"
     ).required()
 
