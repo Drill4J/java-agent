@@ -91,7 +91,7 @@ class Test2Code(
     override fun processServerRequest() {
         val sessionId = context()
         val testId = context[DRILL_TEST_ID_HEADER]
-        if (sessionId == null || testId == null) return
+        if (sessionId == null && testId == null) return
         coverageManager.startRecording(sessionId, testId)
     }
 
@@ -102,7 +102,7 @@ class Test2Code(
     override fun processServerResponse() {
         val sessionId = context()
         val testId = context[DRILL_TEST_ID_HEADER]
-        if (sessionId == null || testId == null) return
+        if (sessionId == null && testId == null) return
         coverageManager.stopRecording(sessionId, testId)
     }
 

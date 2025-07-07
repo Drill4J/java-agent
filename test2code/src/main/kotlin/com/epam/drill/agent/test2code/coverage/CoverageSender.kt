@@ -69,7 +69,12 @@ class IntervalCoverageSender(
      * @features Coverage data sending
      */
     private fun sendProbes(dataToSend: Sequence<ExecDatum>) {
-        dataToSend.map { ClassCoverage(classname = it.name, testId = it.testId, probes = it.probes.values.toBitSet()) }
+        dataToSend
+            .map { ClassCoverage(
+                classname = it.name,
+                testSessionId = it.sessionId,
+                testId = it.testId,
+                probes = it.probes.values.toBitSet()) }
             .chunked(pageSize)
             .forEach { sender.send(destination, CoveragePayload(groupId, appId, instanceId, it)) }
     }
