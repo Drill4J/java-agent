@@ -72,8 +72,8 @@ class IntervalCoverageSender(
         dataToSend
             .map { ClassCoverage(
                 classname = it.name,
-                testSessionId = it.sessionId,
                 testId = it.testId,
+                testSessionId = it.sessionId,
                 probes = it.probes.values.toBitSet()) }
             .chunked(pageSize)
             .forEach { sender.send(destination, CoveragePayload(groupId, appId, instanceId, it)) }
