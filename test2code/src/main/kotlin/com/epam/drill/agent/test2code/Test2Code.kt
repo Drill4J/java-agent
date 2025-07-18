@@ -46,7 +46,7 @@ private const val DRILL_TEST_ID_HEADER = "drill-test-id"
 @Suppress("unused")
 class Test2Code(
     id: String,
-    agentContext: com.epam.drill.agent.common.AgentContext,
+    agentContext: AgentContext,
     sender: AgentMessageSender<AgentMessage>,
     configuration: AgentConfiguration
 ) : AgentModule(id, agentContext, sender, configuration), Instrumenter, ClassScanner, RequestProcessor {
@@ -128,7 +128,7 @@ class Test2Code(
     /**
      * Scan, parse and send metadata classes to the admin side
      */
-    private fun scanAndSendMetadataClasses() {
+    fun scanAndSendMetadataClasses() {
         var classCount = 0
         var methodCount = 0
         scanClasses { classes ->
