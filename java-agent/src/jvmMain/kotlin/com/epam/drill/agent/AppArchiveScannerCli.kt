@@ -18,6 +18,7 @@ package com.epam.drill.agent
 import com.epam.drill.agent.common.configuration.AgentConfiguration
 import com.epam.drill.agent.common.transport.AgentMessage
 import com.epam.drill.agent.common.transport.AgentMessageDestination
+import com.epam.drill.agent.configuration.AgentMetadataValidator
 import com.epam.drill.agent.configuration.DefaultAgentConfiguration
 import com.epam.drill.agent.configuration.DefaultParameterDefinitions
 import com.epam.drill.agent.configuration.ParameterDefinitions
@@ -41,6 +42,7 @@ fun main(args: Array<String>) {
             key to value
         }.filter { it.value.isNotEmpty() }
     val configuration = DefaultAgentConfiguration(argsMap)
+    AgentMetadataValidator.validate(configuration.parameters)
     ParametersValidator.validate(configuration.parameters)
 
     configuration.parameters[ParameterDefinitions.LOG_LEVEL].takeIf { it.isNotEmpty() }
