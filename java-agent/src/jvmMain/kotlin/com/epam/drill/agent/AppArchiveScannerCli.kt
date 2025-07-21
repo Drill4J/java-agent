@@ -49,6 +49,12 @@ fun main(args: Array<String>) {
     AgentMetadataValidator.validate(configuration.parameters)
     ParametersValidator.validate(configuration.parameters)
 
+    val commitSha = configuration.parameters[DefaultParameterDefinitions.COMMIT_SHA]
+    val buildVersion = configuration.parameters[DefaultParameterDefinitions.BUILD_VERSION]
+    if (commitSha == null && buildVersion == null) {
+        throw IllegalArgumentException("Either commitSha or buildVersion must be provided")
+    }
+
     configuration.parameters[ParameterDefinitions.LOG_LEVEL].takeIf { it.isNotEmpty() }
         ?.let(LoggingConfiguration::setLoggingLevels)
     configuration.parameters[ParameterDefinitions.LOG_FILE].takeIf { it.isNotEmpty() }
@@ -78,7 +84,7 @@ fun main(args: Array<String>) {
 
 //TODO: duplicate with JvmModuleMessageSender
 private fun resolvePath(configuration: AgentConfiguration, path: String) = File(path).run {
-    val installationDir = File(configuration.parameters[DefaultParameterDefinitions.INSTALLATION_DIR])
+    val installationDir = File(configuration.parameters[DefaultParameterDefinitions.INSTALLATION_DIR] ?: "")
     val resolved = this.takeIf(File::exists)
         ?: this.takeUnless(File::isAbsolute)?.let(installationDir::resolve)
     resolved?.takeUnless(File::isDirectory)?.absolutePath ?: path
