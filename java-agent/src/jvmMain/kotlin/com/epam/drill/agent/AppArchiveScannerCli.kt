@@ -41,7 +41,11 @@ fun main(args: Array<String>) {
             val (key, value) = it.removePrefix("--").split("=", limit = 2)
             key to value
         }.filter { it.value.isNotEmpty() }
-    val configuration = DefaultAgentConfiguration(argsMap)
+    val envMap = System.getenv()
+        .filterKeys { it.startsWith("DRILL_") }
+        .filterValues { !it.isNullOrEmpty() }
+        .mapKeys { toParameterName(it) }
+    val configuration = DefaultAgentConfiguration(envMap + argsMap)
     AgentMetadataValidator.validate(configuration.parameters)
     ParametersValidator.validate(configuration.parameters)
 
@@ -79,3 +83,11 @@ private fun resolvePath(configuration: AgentConfiguration, path: String) = File(
         ?: this.takeUnless(File::isAbsolute)?.let(installationDir::resolve)
     resolved?.takeUnless(File::isDirectory)?.absolutePath ?: path
 }
+
+//TODO: duplicate from ValidatedParametersProvider
+internal fun toParameterName(entry: Map.Entry<String, String>) = entry.key
+    .removePrefix("DRILL_")
+    .lowercase()
+    .split("_")
+    .joinToString("") { it.replaceFirstChar(Char::uppercase) }
+    .replaceFirstChar(Char::lowercase)
