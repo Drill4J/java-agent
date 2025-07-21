@@ -15,8 +15,6 @@
  */
 package com.epam.drill.agent.configuration
 
-import platform.posix.F_OK
-import platform.posix.access
 import com.epam.drill.agent.konform.validation.Constraint
 import com.epam.drill.agent.konform.validation.ValidationBuilder
 
@@ -29,10 +27,6 @@ fun ValidationBuilder<String>.validTransportUrl() = addConstraint(
 fun ValidationBuilder<String>.identifier() = addConstraint(
     "must contain only lowercase latin characters",
 ) { it.matches("^[a-z0-9_-]+\$".toRegex()) }
-
-fun ValidationBuilder<String>.pathExists(): Constraint<String> = addConstraint(
-    "must be an existing filepath, but was {value}",
-) { access(it, F_OK) == 0 }
 
 fun ValidationBuilder<String>.isValidPackage(): Constraint<String> = addConstraint(
     "must have a valid Java package delimited by a forward slash, e.g. 'com/example', but was '{value}'"
