@@ -18,6 +18,7 @@ plugins {
     kotlin("plugin.serialization")
     id("com.github.johnrengelman.shadow")
     id("com.github.hierynomus.license")
+    application
 }
 
 group = "com.epam.drill.agent"
@@ -35,6 +36,7 @@ val nativeAgentLibName: String by parent!!.extra
 val nativeAgentHookEnabled: String by parent!!.extra
 val macosLd64: String by parent!!.extra
 val bytebuddyVersion: String by parent!!.extra
+val kotlinxCliVersion: String by parent!!.extra
 
 repositories {
     mavenCentral()
@@ -95,6 +97,7 @@ kotlin {
                 implementation(project(":common"))
                 implementation(project(":agent-config"))
                 implementation(project(":agent-instrumentation"))
+                implementation(project(":konform"))
             }
         }
         val commonTest by getting {
@@ -109,9 +112,15 @@ kotlin {
                 implementation("com.alibaba:transmittable-thread-local:$transmittableThreadLocalVersion")
                 implementation("io.aesy:datasize:$aesyDatasizeVersion")
                 implementation("net.bytebuddy:byte-buddy:$bytebuddyVersion")
+                implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:${kotlinxCoroutinesVersion}")
+                implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:${kotlinxSerializationVersion}")
+                implementation("org.jetbrains.kotlinx:kotlinx-serialization-protobuf:${kotlinxSerializationVersion}")
+                implementation("org.jetbrains.kotlinx:kotlinx-cli:${kotlinxCliVersion}")
+                implementation(project(":common"))
                 implementation(project(":agent-transport"))
                 implementation(project(":agent-instrumentation"))
-                runtimeOnly(project(":test2code"))
+                implementation(project(":test2code"))
+                implementation(project(":test2code-common"))
             }
         }
         val configureNativeDependencies: KotlinSourceSet.() -> Unit = {
@@ -178,7 +187,13 @@ kotlin {
             "net.bytebuddy",
             "mu",
         )
+        project.setProperty("mainClassName", "com.epam.drill.agent.AppArchiveScannerCliKt")
         val runtimeJar by registering(ShadowJar::class) {
+            manifest {
+                attributes(mapOf(
+                    "Main-Class" to "com.epam.drill.agent.AppArchiveScannerCliKt"
+                ))
+            }
             mergeServiceFiles()
             isZip64 = true
             archiveFileName.set("drill-runtime.jar")
@@ -219,6 +234,10 @@ distributions {
             }
         }
     }
+}
+
+application {
+    mainClass.set("com.epam.drill.agent.AppArchiveScannerCliKt")
 }
 
 @Suppress("UNUSED_VARIABLE")
