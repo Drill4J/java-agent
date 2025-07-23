@@ -29,13 +29,13 @@ import com.epam.drill.agent.common.transport.AgentMessage
 import com.epam.drill.agent.common.transport.AgentMessageDestination
 import com.epam.drill.agent.common.transport.AgentMessageSender
 import com.epam.drill.agent.common.classloading.EntitySource
+import com.epam.drill.agent.configuration.AgentParametersValidator
 import com.epam.drill.agent.test2code.common.api.AstMethod
 import com.epam.drill.agent.test2code.common.transport.ClassMetadata
 import com.epam.drill.agent.test2code.classloading.ClassLoadersScanner
 import com.epam.drill.agent.test2code.classloading.ClassScanner
 import com.epam.drill.agent.test2code.classparsing.parseAstClass
-import com.epam.drill.agent.test2code.configuration.ParameterDefinitions
-import com.epam.drill.agent.test2code.configuration.ParametersValidator
+import com.epam.drill.agent.test2code.configuration.Test2CodeParameterDefinitions
 import com.epam.drill.agent.test2code.coverage.*
 
 private const val DRILL_TEST_ID_HEADER = "drill-test-id"
@@ -46,7 +46,7 @@ private const val DRILL_TEST_ID_HEADER = "drill-test-id"
 @Suppress("unused")
 class Test2Code(
     id: String,
-    agentContext: com.epam.drill.agent.common.AgentContext,
+    agentContext: AgentContext,
     sender: AgentMessageSender<AgentMessage>,
     configuration: AgentConfiguration
 ) : AgentModule(id, agentContext, sender, configuration), Instrumenter, ClassScanner, RequestProcessor {
@@ -57,11 +57,11 @@ class Test2Code(
     private val coverageManager = DrillCoverageManager
     private val instrumenter = DrillInstrumenter(coverageManager, coverageManager)
     private val coverageSender: CoverageSender = IntervalCoverageSender(
-        groupId= configuration.agentMetadata.groupId,
-        appId =  configuration.agentMetadata.appId,
+        groupId = configuration.agentMetadata.groupId,
+        appId = configuration.agentMetadata.appId,
         instanceId = configuration.agentMetadata.instanceId,
-        intervalMs = configuration.parameters[ParameterDefinitions.COVERAGE_SEND_INTERVAL],
-        pageSize = configuration.parameters[ParameterDefinitions.COVERAGE_SEND_PAGE_SIZE],
+        intervalMs = configuration.parameters[Test2CodeParameterDefinitions.COVERAGE_SEND_INTERVAL],
+        pageSize = configuration.parameters[Test2CodeParameterDefinitions.COVERAGE_SEND_PAGE_SIZE],
         sender = sender,
         collectProbes = { coverageManager.pollRecorded() }
     )
@@ -74,8 +74,10 @@ class Test2Code(
     ): ByteArray? = instrumenter.instrument(className, initialBytes)
 
     override fun load() {
-        ParametersValidator.validate(configuration.parameters)
-        logger.debug { "load: Waiting for transport availability for class metadata scanning" }
+        AgentParametersValidator(configuration.parameters).validate(
+            Test2CodeParameterDefinitions.SCAN_CLASS_PATH,
+            Test2CodeParameterDefinitions.SCAN_CLASS_DELAY
+        )
         thread {
             scanAndSendMetadataClasses()
         }
@@ -108,9 +110,9 @@ class Test2Code(
 
     override fun scanClasses(consumer: (Set<EntitySource>) -> Unit) {
         val packagePrefixes = configuration.agentMetadata.packagesPrefixes
-        val scanClassPaths = configuration.parameters[ParameterDefinitions.SCAN_CLASS_PATH]
-        val enableScanClassLoaders = configuration.parameters[ParameterDefinitions.ENABLE_SCAN_CLASS_LOADERS]
-        val scanClassDelay = configuration.parameters[ParameterDefinitions.SCAN_CLASS_DELAY]
+        val scanClassPaths = configuration.parameters[Test2CodeParameterDefinitions.SCAN_CLASS_PATH] as List<String>
+        val enableScanClassLoaders = configuration.parameters[Test2CodeParameterDefinitions.ENABLE_SCAN_CLASS_LOADERS]
+        val scanClassDelay = configuration.parameters[Test2CodeParameterDefinitions.SCAN_CLASS_DELAY]
         if (enableScanClassLoaders && scanClassDelay.isPositive()) {
             logger.debug { "Waiting class scan delay ${scanClassDelay.inWholeMilliseconds} ms..." }
             runBlocking { delay(scanClassDelay) }
@@ -128,7 +130,7 @@ class Test2Code(
     /**
      * Scan, parse and send metadata classes to the admin side
      */
-    private fun scanAndSendMetadataClasses() {
+    fun scanAndSendMetadataClasses() {
         var classCount = 0
         var methodCount = 0
         scanClasses { classes ->
@@ -136,7 +138,7 @@ class Test2Code(
                 .also { classCount += it.size }
                 .flatMap { parseAstClass(it.entityName(), it.bytes()) }
                 .also { methodCount += it.size }
-                .chunked(configuration.parameters[ParameterDefinitions.METHODS_SEND_PAGE_SIZE])
+                .chunked(configuration.parameters[Test2CodeParameterDefinitions.METHODS_SEND_PAGE_SIZE])
                 .forEach(::sendClassMetadata)
         }
         logger.info { "Scanned $classCount classes with $methodCount methods" }

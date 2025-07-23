@@ -41,6 +41,7 @@ dependencies {
     implementation("io.github.microutils:kotlin-logging-jvm:$microutilsLoggingVersion")
 
     implementation(project(":common"))
+    implementation(project(":agent-config"))
     implementation(project(":test2code-common"))
     implementation(project(":test2code-jacoco"))
     implementation(project(":konform"))

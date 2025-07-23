@@ -31,7 +31,7 @@ object AgentLoggingConfiguration {
 
     fun updateNativeLoggingConfiguration() {
         val logLevel = Configuration.parameters[ParameterDefinitions.LOG_LEVEL]
-        val logFile = Configuration.parameters[ParameterDefinitions.LOG_FILE].takeIf(String::isNotEmpty)
+        val logFile = Configuration.parameters[ParameterDefinitions.LOG_FILE]
         val logLimit = Configuration.parameters[ParameterDefinitions.LOG_LIMIT]
 
         LoggingConfiguration.setLoggingLevels(logLevel)
@@ -50,7 +50,7 @@ object AgentLoggingConfiguration {
     @OptIn(ExperimentalForeignApi::class)
     fun updateJvmLoggingConfiguration() {
         val logLevel = Configuration.parameters[ParameterDefinitions.LOG_LEVEL]
-        val logFile = Configuration.parameters[ParameterDefinitions.LOG_FILE].takeIf(String::isNotEmpty)
+        val logFile = Configuration.parameters[ParameterDefinitions.LOG_FILE]
         val logLimit = Configuration.parameters[ParameterDefinitions.LOG_LIMIT]
 
         callObjectVoidMethodWithString(LoggingConfiguration::class, "setLoggingLevels", logLevel)
