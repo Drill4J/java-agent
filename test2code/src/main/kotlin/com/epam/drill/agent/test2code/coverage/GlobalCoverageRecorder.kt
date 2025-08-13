@@ -21,11 +21,11 @@ class GlobalCoverageRecorder: ICoverageRecorder {
     private val globalExecData: ExecData = ExecData()
     private val sentGlobalExecData: ExecData = ExecData()
 
-    override fun startRecording(sessionId: String, testId: String) {
+    override fun startRecording(sessionId: String?, testId: String?) {
         // do nothing
     }
 
-    override fun stopRecording(sessionId: String, testId: String) {
+    override fun stopRecording(sessionId: String?, testId: String?) {
         // do nothing
     }
 
