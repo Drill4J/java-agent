@@ -16,20 +16,24 @@
 package com.epam.drill.agent
 
 import com.epam.drill.agent.common.configuration.AgentConfiguration
+import com.epam.drill.agent.common.configuration.AgentParameterDefinitionCollection
+import com.epam.drill.agent.common.configuration.BaseAgentParameterDefinition
 import com.epam.drill.agent.common.transport.AgentMessage
 import com.epam.drill.agent.common.transport.AgentMessageDestination
-import com.epam.drill.agent.configuration.AgentMetadataValidator
+import com.epam.drill.agent.configuration.AgentParameterValidationError
+import com.epam.drill.agent.configuration.AgentParametersValidator
 import com.epam.drill.agent.configuration.DefaultAgentConfiguration
 import com.epam.drill.agent.configuration.DefaultParameterDefinitions
 import com.epam.drill.agent.configuration.ParameterDefinitions
 import com.epam.drill.agent.logging.LoggingConfiguration
 import com.epam.drill.agent.test2code.Test2Code
-import com.epam.drill.agent.test2code.configuration.ParametersValidator
+import com.epam.drill.agent.test2code.configuration.Test2CodeParameterDefinitions
 import com.epam.drill.agent.transport.HttpAgentMessageDestinationMapper
 import com.epam.drill.agent.transport.JsonAgentMessageSerializer
 import com.epam.drill.agent.transport.SimpleAgentMessageSender
 import com.epam.drill.agent.transport.http.HttpAgentMessageTransport
 import java.io.File
+import kotlin.system.exitProcess
 import kotlin.takeIf
 
 fun main(args: Array<String>) {
@@ -46,8 +50,18 @@ fun main(args: Array<String>) {
         .filterValues { !it.isNullOrEmpty() }
         .mapKeys { toParameterName(it) }
     val configuration = DefaultAgentConfiguration(envMap + argsMap)
-    AgentMetadataValidator.validate(configuration.parameters)
-    ParametersValidator.validate(configuration.parameters)
+    val definitions = collectAgentParameterDefinitions(
+        DefaultParameterDefinitions,
+        ParameterDefinitions,
+        Test2CodeParameterDefinitions
+    )
+    val validator = AgentParametersValidator(configuration.parameters)
+    try {
+        validator.validate(*definitions.toTypedArray()) }
+    catch (e: AgentParameterValidationError) {
+        println(e.message)
+        exitProcess(1)
+    }
 
     val commitSha = configuration.parameters[DefaultParameterDefinitions.COMMIT_SHA]
     val buildVersion = configuration.parameters[DefaultParameterDefinitions.BUILD_VERSION]
@@ -55,18 +69,18 @@ fun main(args: Array<String>) {
         throw IllegalArgumentException("Either commitSha or buildVersion must be provided")
     }
 
-    configuration.parameters[ParameterDefinitions.LOG_LEVEL].takeIf { it.isNotEmpty() }
-        ?.let(LoggingConfiguration::setLoggingLevels)
-    configuration.parameters[ParameterDefinitions.LOG_FILE].takeIf { it.isNotEmpty() }
+    configuration.parameters[ParameterDefinitions.LOG_LEVEL]
+        .let(LoggingConfiguration::setLoggingLevels)
+    configuration.parameters[ParameterDefinitions.LOG_FILE]
         ?.let(LoggingConfiguration::setLoggingFilename)
     configuration.parameters[ParameterDefinitions.LOG_LIMIT].let(LoggingConfiguration::setLogMessageLimit)
 
     val transport = HttpAgentMessageTransport(
         serverAddress = configuration.parameters[ParameterDefinitions.API_URL],
-        apiKey = configuration.parameters[ParameterDefinitions.API_KEY],
-        sslTruststore = configuration.parameters[ParameterDefinitions.SSL_TRUSTSTORE].takeIf(String::isNotEmpty)
+        apiKey = configuration.parameters[ParameterDefinitions.API_KEY] ?: "",
+        sslTruststore = configuration.parameters[ParameterDefinitions.SSL_TRUSTSTORE]
             ?.let { resolvePath(configuration, it) } ?: "",
-        sslTruststorePass = configuration.parameters[ParameterDefinitions.SSL_TRUSTSTORE_PASSWORD],
+        sslTruststorePass = configuration.parameters[ParameterDefinitions.SSL_TRUSTSTORE_PASSWORD] ?: "",
         gzipCompression = configuration.parameters[ParameterDefinitions.USE_GZIP_COMPRESSION],
     )
     val serializer = JsonAgentMessageSerializer<AgentMessage>()
@@ -97,3 +111,8 @@ internal fun toParameterName(entry: Map.Entry<String, String>) = entry.key
     .split("_")
     .joinToString("") { it.replaceFirstChar(Char::uppercase) }
     .replaceFirstChar(Char::lowercase)
+
+private fun collectAgentParameterDefinitions(vararg collections: AgentParameterDefinitionCollection): List<BaseAgentParameterDefinition<*>> {
+    return collections.flatMap { it.getAll() }
+
+}

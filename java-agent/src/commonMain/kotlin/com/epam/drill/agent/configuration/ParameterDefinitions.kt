@@ -16,25 +16,36 @@
 package com.epam.drill.agent.configuration
 
 import com.epam.drill.agent.common.configuration.AgentParameterDefinition
+import com.epam.drill.agent.common.configuration.AgentParameterDefinitionCollection
+import com.epam.drill.agent.common.configuration.NullableAgentParameterDefinition
 
-object ParameterDefinitions {
+object ParameterDefinitions: AgentParameterDefinitionCollection() {
 
-    val API_URL = AgentParameterDefinition.forString(name = "apiUrl", parser = { if (!it.endsWith("/")) "$it/" else it } )
-    val API_KEY = AgentParameterDefinition.forString(name = "apiKey")
-    val MESSAGE_QUEUE_LIMIT = AgentParameterDefinition.forString(name = "messageQueueLimit", defaultValue = "512Mb")
-    val MESSAGE_MAX_RETRIES = AgentParameterDefinition.forInt(name = "messageMaxRetries", defaultValue = Int.MAX_VALUE)
-    val SSL_TRUSTSTORE = AgentParameterDefinition.forString(name = "sslTruststore")
-    val SSL_TRUSTSTORE_PASSWORD = AgentParameterDefinition.forString(name = "sslTruststorePassword")
-    val LOG_LEVEL = AgentParameterDefinition.forString(name = "logLevel", defaultValue = "INFO")
-    val LOG_FILE = AgentParameterDefinition.forString(name = "logFile")
-    val LOG_LIMIT = AgentParameterDefinition.forInt(name = "logLimit", defaultValue = 512)
-    val IS_WEB_APP = AgentParameterDefinition.forBoolean(name = "isWebApp")
-    val IS_KAFKA = AgentParameterDefinition.forBoolean(name = "isKafka")
-    val IS_CADENCE = AgentParameterDefinition.forBoolean(name = "isCadence")
-    val IS_TLS_APP = AgentParameterDefinition.forBoolean(name = "isTlsApp")
-    val IS_ASYNC_APP = AgentParameterDefinition.forBoolean(name = "isAsyncApp")
-    val IS_COMPATIBILITY_TESTS = AgentParameterDefinition.forBoolean(name = "isCompatibilityTests", defaultValue = false)
-    val USE_PROTOBUF_SERIALIZER = AgentParameterDefinition.forBoolean(name = "useProtobufSerializer", defaultValue = true)
-    val USE_GZIP_COMPRESSION = AgentParameterDefinition.forBoolean(name = "useGzipCompression", defaultValue = true)
-    val IS_WS_MESSAGES = AgentParameterDefinition.forBoolean(name = "isWsMsg", defaultValue = true)
+    val API_URL = AgentParameterDefinition.forString(
+        name = "apiUrl",
+        description = "URL to Drill4J Backend /api endpoint. Example: http://localhost:8090/api",
+        parser = { if (!it.endsWith("/")) "$it/" else it  },
+        validator = { validTransportUrl() }).register()
+    val API_KEY = NullableAgentParameterDefinition.forString(
+        name = "apiKey",
+        description = "Drill4J API key. It is recommended to set it with DRILL_API_KEY env variable, rather than using command line argument"
+    ).register()
+    val MESSAGE_QUEUE_LIMIT = AgentParameterDefinition.forString(name = "messageQueueLimit", defaultValue = "512Mb").register()
+    val MESSAGE_MAX_RETRIES = AgentParameterDefinition.forInt(name = "messageMaxRetries", defaultValue = Int.MAX_VALUE).register()
+    val SSL_TRUSTSTORE = NullableAgentParameterDefinition.forString(name = "sslTruststore").register()
+    val SSL_TRUSTSTORE_PASSWORD = NullableAgentParameterDefinition.forString(name = "sslTruststorePassword").register()
+    val LOG_LEVEL = AgentParameterDefinition.forString(name = "logLevel", defaultValue = "INFO").register()
+    val LOG_FILE = NullableAgentParameterDefinition.forString(name = "logFile").register()
+    val LOG_LIMIT = AgentParameterDefinition.forInt(name = "logLimit", defaultValue = 512).register()
+    val IS_WEB_APP = AgentParameterDefinition.forBoolean(name = "isWebApp", defaultValue = false).register()
+    val IS_KAFKA = AgentParameterDefinition.forBoolean(name = "isKafka", defaultValue = false).register()
+    val IS_CADENCE = AgentParameterDefinition.forBoolean(name = "isCadence", defaultValue = false).register()
+    val IS_TLS_APP = AgentParameterDefinition.forBoolean(name = "isTlsApp", defaultValue = false).register()
+    val IS_ASYNC_APP = AgentParameterDefinition.forBoolean(name = "isAsyncApp", defaultValue = false).register()
+    val IS_COMPATIBILITY_TESTS =
+        AgentParameterDefinition.forBoolean(name = "isCompatibilityTests", defaultValue = false).register()
+    val USE_PROTOBUF_SERIALIZER =
+        AgentParameterDefinition.forBoolean(name = "useProtobufSerializer", defaultValue = true).register()
+    val USE_GZIP_COMPRESSION = AgentParameterDefinition.forBoolean(name = "useGzipCompression", defaultValue = true).register()
+    val IS_WS_MESSAGES = AgentParameterDefinition.forBoolean(name = "isWsMsg", defaultValue = true).register()
 }

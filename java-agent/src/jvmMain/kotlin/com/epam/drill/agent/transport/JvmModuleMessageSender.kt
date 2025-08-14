@@ -48,10 +48,10 @@ actual object JvmModuleMessageSender : AgentMessageSender<AgentMessage> {
     private fun messageSender(): QueuedAgentMessageSender<AgentMessage> {
         val transport = HttpAgentMessageTransport(
             serverAddress = Configuration.parameters[ParameterDefinitions.API_URL],
-            apiKey = Configuration.parameters[ParameterDefinitions.API_KEY],
-            sslTruststore = Configuration.parameters[ParameterDefinitions.SSL_TRUSTSTORE].takeIf(String::isNotEmpty)
+            apiKey = Configuration.parameters[ParameterDefinitions.API_KEY] ?: "",
+            sslTruststore = Configuration.parameters[ParameterDefinitions.SSL_TRUSTSTORE]
                 ?.let(::resolvePath) ?: "",
-            sslTruststorePass = Configuration.parameters[ParameterDefinitions.SSL_TRUSTSTORE_PASSWORD],
+            sslTruststorePass = Configuration.parameters[ParameterDefinitions.SSL_TRUSTSTORE_PASSWORD] ?: "",
             gzipCompression = Configuration.parameters[ParameterDefinitions.USE_GZIP_COMPRESSION],
         )
         val serializer = takeIf { Configuration.parameters[ParameterDefinitions.USE_PROTOBUF_SERIALIZER] }?.let {

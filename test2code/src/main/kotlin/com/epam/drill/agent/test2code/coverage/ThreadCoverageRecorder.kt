@@ -24,7 +24,7 @@ class ThreadCoverageRecorder(
     private val context: ThreadLocal<ContextKey?> = ThreadLocal()
     private val execData: ThreadLocal<ExecData?> = ThreadLocal()
 
-    override fun startRecording(sessionId: String, testId: String) {
+    override fun startRecording(sessionId: String?, testId: String?) {
         val ctx = ContextKey(sessionId, testId)
         context.set(ctx)
         execData.set(execDataPool.getOrPut(
@@ -34,7 +34,7 @@ class ThreadCoverageRecorder(
         logger.trace { "Test recording started (sessionId = $sessionId, testId = $testId, threadId = ${Thread.currentThread().id})." }
     }
 
-    override fun stopRecording(sessionId: String, testId: String) {
+    override fun stopRecording(sessionId: String?, testId: String?) {
         execDataPool.release(ContextKey(sessionId, testId), execData.get() ?: ExecData())
         execData.remove()
         context.remove()
