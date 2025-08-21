@@ -1,0 +1,42 @@
+name: Publish Docker Image
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    env:
+      IMAGE_NAME: ghcr.io/drill4j/java-agent
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Determine current tag
+        id: get_tag
+        run: |
+          TAG=$(git describe --exact-match --tags $(git rev-parse HEAD) 2>/dev/null || true)
+          if [ -z "$TAG" ]; then
+            echo "ERROR: Current commit is not tagged"
+            exit 1
+          fi
+          # Strip leading 'v' if present
+          VERSION=${TAG#v}
+          echo "DRILL_AGENT_VERSION=$VERSION" >> $GITHUB_ENV
+          echo "Tag detected: $TAG -> Docker tag: $VERSION"
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v2
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build agent image
+        run: |
+          echo "Building Drill agent version $DRILL_AGENT_VERSION"
+          docker build --build-arg DRILL_AGENT_VERSION=$DRILL_AGENT_VERSION -t $IMAGE_NAME:$DRILL_AGENT_VERSION .
+
+      - name: Push agent image
+        run: |
+          docker push $IMAGE_NAME:$DRILL_AGENT_VERSION
