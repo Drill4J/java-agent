@@ -121,7 +121,6 @@ jobs:
         with:
           java-version: 8.0
           distribution: zulu
-      - uses: gradle/wrapper-validation-action@v1
       - run: chmod +x ${{ github.workspace }}/gradlew
       - run: chmod +x ${{ github.workspace }}/setup-shared-libs.sh
       - run: ${{ github.workspace }}/setup-shared-libs.sh
