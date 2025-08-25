@@ -41,6 +41,7 @@ includeSharedLib("agent-instrumentation")
 includeSharedLib("jvmapi")
 includeSharedLib("knasm")
 includeSharedLib("konform")
+includeSharedLib("transmittable-thread-local")
 // FYI: Interceptor not patched for macOS ARM64 architecture.
 //includeSharedLib("interceptor-hook")
 //includeSharedLib("interceptor-http")
@@ -50,3 +51,4 @@ includeSharedLib("test2code-common")
 include("test2code-jacoco")
 include("test2code")
 include("java-agent")
+

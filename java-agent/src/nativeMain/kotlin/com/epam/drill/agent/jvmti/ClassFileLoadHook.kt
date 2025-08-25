@@ -94,8 +94,11 @@ object ClassFileLoadHook {
     ) {
         initRuntimeIfNeeded()
         val kClassName = clsName?.toKString() ?: return
-        if (isBootstrapClassLoading(loader, protectionDomain) && !isTlsApp && !isAsyncApp
-            && !kClassName.contains("Http") // raw hack for http(s) classes
+        if (isBootstrapClassLoading(loader, protectionDomain) && !when {
+                kClassName.contains("Http") -> true // raw hack for Http(s) URL Connection classes
+                kClassName in TTLTransformer.directTtlClasses -> true
+                else -> false
+            }
         ) return
         if (classData == null || kClassName.startsWith(DRILL_PACKAGE)) return
         try {
