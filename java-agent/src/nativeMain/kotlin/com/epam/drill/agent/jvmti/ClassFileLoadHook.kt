@@ -154,34 +154,34 @@ object ClassFileLoadHook {
                     transformers += { bytes -> plugin.instrument(kClassName, bytes) }
                 }
             }
-            if (!HttpInterceptorConfigurer.enabled) {
-                if (kClassName.startsWith("org/apache/catalina/core/ApplicationFilterChain")) {
-                    transformers += { bytes -> TomcatHttpServerTransformer.transform(kClassName, bytes, loader, protectionDomain) }
-                }
-                if (kClassName == "org/eclipse/jetty/server/handler/HandlerWrapper") {
-                    transformers += { bytes -> JettyHttpServerTransformer.transform(kClassName, bytes, loader, protectionDomain) }
-                }
-                if (kClassName == "io/undertow/server/Connectors") {
-                    transformers += { bytes -> UndertowHttpServerTransformer.transform(kClassName, bytes, loader, protectionDomain) }
-                }
-                strategies.forEach { strategy ->
-                    if (strategy.permit(classReader.className, classReader.superName, classReader.interfaces)) {
-                        transformers += { bytes -> strategy.transform(kClassName, bytes, loader, protectionDomain) }
-                    }
-                }
-                wsStrategies.forEach { strategy ->
-                    if (strategy.permit(classReader.className, classReader.superName, classReader.interfaces)) {
-                        transformers += { bytes -> strategy.transform(kClassName, bytes, loader, protectionDomain) }
-                    }
-                }
-            }
-            // TODO Http hook does not work for Netty on linux system
-            if ('$' !in kClassName && kClassName.startsWith(NettyHttpServerTransformer.HANDLER_CONTEXT)) {
-                logger.info { "Starting transform Netty class kClassName $kClassName..." }
-                transformers += { bytes ->
-                    NettyHttpServerTransformer.transform(kClassName, bytes, loader, protectionDomain)
-                }
-            }
+//            if (!HttpInterceptorConfigurer.enabled) {
+//                if (kClassName.startsWith("org/apache/catalina/core/ApplicationFilterChain")) {
+//                    transformers += { bytes -> TomcatHttpServerTransformer.transform(kClassName, bytes, loader, protectionDomain) }
+//                }
+//                if (kClassName == "org/eclipse/jetty/server/handler/HandlerWrapper") {
+//                    transformers += { bytes -> JettyHttpServerTransformer.transform(kClassName, bytes, loader, protectionDomain) }
+//                }
+//                if (kClassName == "io/undertow/server/Connectors") {
+//                    transformers += { bytes -> UndertowHttpServerTransformer.transform(kClassName, bytes, loader, protectionDomain) }
+//                }
+//                strategies.forEach { strategy ->
+//                    if (strategy.permit(classReader.className, classReader.superName, classReader.interfaces)) {
+//                        transformers += { bytes -> strategy.transform(kClassName, bytes, loader, protectionDomain) }
+//                    }
+//                }
+//                wsStrategies.forEach { strategy ->
+//                    if (strategy.permit(classReader.className, classReader.superName, classReader.interfaces)) {
+//                        transformers += { bytes -> strategy.transform(kClassName, bytes, loader, protectionDomain) }
+//                    }
+//                }
+//            }
+//            // TODO Http hook does not work for Netty on linux system
+//            if ('$' !in kClassName && kClassName.startsWith(NettyHttpServerTransformer.HANDLER_CONTEXT)) {
+//                logger.info { "Starting transform Netty class kClassName $kClassName..." }
+//                transformers += { bytes ->
+//                    NettyHttpServerTransformer.transform(kClassName, bytes, loader, protectionDomain)
+//                }
+//            }
             if (transformers.any()) {
                 transformers.fold(classBytes) { bytes, transformer ->
                     transformer(bytes) ?: bytes
