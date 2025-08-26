@@ -109,7 +109,6 @@ kotlin {
             dependencies {
                 implementation("org.jetbrains.kotlinx:kotlinx-serialization-protobuf:$kotlinxSerializationVersion")
                 implementation("org.javassist:javassist:$javassistVersion")
-                implementation("com.alibaba:transmittable-thread-local:$transmittableThreadLocalVersion")
                 implementation("io.aesy:datasize:$aesyDatasizeVersion")
                 implementation("net.bytebuddy:byte-buddy:$bytebuddyVersion")
                 implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:${kotlinxCoroutinesVersion}")
@@ -174,7 +173,6 @@ kotlin {
             "javassist",
             "ch.qos.logback",
             "io.aesy.datasize",
-            "com.alibaba",
             "org.slf4j",
             "org.jacoco",
             "org.objectweb.asm",
