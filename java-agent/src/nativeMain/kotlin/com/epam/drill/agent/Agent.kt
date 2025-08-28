@@ -84,7 +84,6 @@ object Agent {
         AgentLoggingConfiguration.updateJvmLoggingConfiguration()
         Configuration.initializeJvm()
 
-        DrillRequestHolder.init(Configuration.parameters[ParameterDefinitions.IS_ASYNC_APP])
         HttpInterceptorConfigurer(HeadersRetriever, DrillRequestHolder)
 
         loadJvmModule("com.epam.drill.agent.test2code.Test2Code")

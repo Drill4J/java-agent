@@ -73,9 +73,6 @@ object ClassFileLoadHook {
         UndertowWsMessagesTransformer
     )
 
-    private val isAsyncApp = Configuration.parameters[ParameterDefinitions.IS_ASYNC_APP]
-    private val isTlsApp = Configuration.parameters[ParameterDefinitions.IS_TLS_APP]
-    private val isWebApp = Configuration.parameters[ParameterDefinitions.IS_WEB_APP]
     private val isKafka = Configuration.parameters[ParameterDefinitions.IS_KAFKA]
     private val isCadence = Configuration.parameters[ParameterDefinitions.IS_CADENCE]
     private val isCompatibilityTests = Configuration.parameters[ParameterDefinitions.IS_COMPATIBILITY_TESTS]
@@ -109,21 +106,19 @@ object ClassFileLoadHook {
             val classReader = ClassReader(classBytes)
             val superName = classReader.superName ?: ""
             val interfaces = classReader.interfaces.filterNotNull()
-            //TODO needs refactoring EPMDJ-8528
-            if (isAsyncApp || isWebApp) {
-                if (isAsyncApp && isTTLCandidate(kClassName, superName, interfaces)) {
-                    transformers += { bytes ->
-                        TTLTransformer.transform(
-                            kClassName,
-                            bytes,
-                            loader,
-                            protectionDomain
-                        )
-                    }
+
+            if (isTTLCandidate(kClassName, superName, interfaces)) {
+                transformers += { bytes ->
+                    TTLTransformer.transform(
+                        kClassName,
+                        bytes,
+                        loader,
+                        protectionDomain
+                    )
                 }
-                if (superName == SSLEngineTransformer.SSL_ENGINE_CLASS_NAME) {
-                    transformers += { bytes -> SSLEngineTransformer.transform(kClassName, bytes, loader, protectionDomain) }
-                }
+            }
+            if (superName == SSLEngineTransformer.SSL_ENGINE_CLASS_NAME) {
+                transformers += { bytes -> SSLEngineTransformer.transform(kClassName, bytes, loader, protectionDomain) }
             }
 
             if (isKafka) {
@@ -178,7 +173,6 @@ object ClassFileLoadHook {
                     }
                 }
             }
-            // TODO Http hook does not work for Netty on linux system
             if ('$' !in kClassName && kClassName.startsWith(NettyHttpServerTransformer.HANDLER_CONTEXT)) {
                 logger.info { "Starting transform Netty class kClassName $kClassName..." }
                 transformers += { bytes ->
