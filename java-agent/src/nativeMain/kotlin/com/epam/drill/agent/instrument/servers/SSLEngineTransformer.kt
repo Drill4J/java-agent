@@ -15,9 +15,15 @@
  */
 package com.epam.drill.agent.instrument.servers
 
-import com.epam.drill.agent.instrument.AbstractTransformerObject
+import com.epam.drill.agent.instrument.JvmTransformerObject
+import com.epam.drill.agent.instrument.SSL_ENGINE_CLASS_NAME
 import com.epam.drill.agent.instrument.TransformerObject
 
-actual object SSLEngineTransformer : TransformerObject, AbstractTransformerObject() {
-    const val SSL_ENGINE_CLASS_NAME = "javax/net/ssl/SSLEngine"
+actual object SSLEngineTransformer : TransformerObject, JvmTransformerObject() {
+
+    override fun permit(
+        className: String,
+        superName: String?,
+        interfaces: Array<String?>
+    ): Boolean = superName == SSL_ENGINE_CLASS_NAME
 }

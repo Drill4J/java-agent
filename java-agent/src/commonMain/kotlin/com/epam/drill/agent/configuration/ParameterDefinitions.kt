@@ -37,10 +37,6 @@ object ParameterDefinitions: AgentParameterDefinitionCollection() {
     val LOG_LEVEL = AgentParameterDefinition.forString(name = "logLevel", defaultValue = "INFO").register()
     val LOG_FILE = NullableAgentParameterDefinition.forString(name = "logFile").register()
     val LOG_LIMIT = AgentParameterDefinition.forInt(name = "logLimit", defaultValue = 512).register()
-    val IS_KAFKA = AgentParameterDefinition.forBoolean(name = "isKafka", defaultValue = false).register()
-    val IS_CADENCE = AgentParameterDefinition.forBoolean(name = "isCadence", defaultValue = false).register()
-    val IS_COMPATIBILITY_TESTS =
-        AgentParameterDefinition.forBoolean(name = "isCompatibilityTests", defaultValue = false).register()
     val USE_PROTOBUF_SERIALIZER =
         AgentParameterDefinition.forBoolean(name = "useProtobufSerializer", defaultValue = true).register()
     val USE_GZIP_COMPRESSION = AgentParameterDefinition.forBoolean(name = "useGzipCompression", defaultValue = true).register()

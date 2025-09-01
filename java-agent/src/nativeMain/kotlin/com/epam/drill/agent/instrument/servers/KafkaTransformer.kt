@@ -15,7 +15,14 @@
  */
 package com.epam.drill.agent.instrument.servers
 
-import com.epam.drill.agent.instrument.AbstractTransformerObject
+import com.epam.drill.agent.configuration.Configuration
+import com.epam.drill.agent.configuration.ParameterDefinitions
+import com.epam.drill.agent.instrument.JvmTransformerObject
+import com.epam.drill.agent.instrument.KAFKA_CONSUMER_SPRING
+import com.epam.drill.agent.instrument.KAFKA_PRODUCER_INTERFACE
 import com.epam.drill.agent.instrument.TransformerObject
 
-actual object KafkaTransformer : TransformerObject, AbstractTransformerObject()
+actual object KafkaTransformer : TransformerObject, JvmTransformerObject() {
+    override fun permit(className: String, superName: String?, interfaces: Array<String?>) =
+        KAFKA_CONSUMER_SPRING == className || interfaces.contains(KAFKA_PRODUCER_INTERFACE)
+}

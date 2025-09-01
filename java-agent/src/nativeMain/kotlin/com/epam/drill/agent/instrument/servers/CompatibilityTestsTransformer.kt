@@ -15,7 +15,9 @@
  */
 package com.epam.drill.agent.instrument.servers
 
-import com.epam.drill.agent.instrument.AbstractTransformerObject
+import com.epam.drill.agent.configuration.Configuration
+import com.epam.drill.agent.configuration.ParameterDefinitions
+import com.epam.drill.agent.instrument.JvmTransformerObject
 import com.epam.drill.agent.instrument.TransformerObject
 
-actual object CompatibilityTestsTransformer : TransformerObject, AbstractTransformerObject()
+actual object CompatibilityTestsTransformer : TransformerObject, JvmTransformerObject()

@@ -15,7 +15,11 @@
  */
 package com.epam.drill.agent.instrument.undertow
 
-import com.epam.drill.agent.instrument.AbstractTransformerObject
+import com.epam.drill.agent.instrument.JvmTransformerObject
 import com.epam.drill.agent.instrument.TransformerObject
+import com.epam.drill.agent.instrument.UNDERTOW_SERVER_CONNECTORS
 
-actual object UndertowHttpServerTransformer : TransformerObject, AbstractTransformerObject()
+actual object UndertowHttpServerTransformer : TransformerObject, JvmTransformerObject() {
+    override fun permit(className: String, superName: String?, interfaces: Array<String?>) =
+        UNDERTOW_SERVER_CONNECTORS == className
+}

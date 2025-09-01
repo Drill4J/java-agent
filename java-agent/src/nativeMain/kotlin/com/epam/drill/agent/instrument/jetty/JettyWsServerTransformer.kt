@@ -15,7 +15,7 @@
  */
 package com.epam.drill.agent.instrument.jetty
 
-import com.epam.drill.agent.instrument.AbstractTransformerObject
+import com.epam.drill.agent.instrument.JvmTransformerObject
 import com.epam.drill.agent.instrument.TransformerObject
 
-actual object JettyWsServerTransformer : TransformerObject, AbstractTransformerObject()
+actual object JettyWsServerTransformer : TransformerObject, JvmTransformerObject()

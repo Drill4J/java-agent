@@ -15,12 +15,6 @@
  */
 package com.epam.drill.agent.jvmti
 
-import com.epam.drill.agent.configuration.Configuration
-import com.epam.drill.agent.configuration.ParameterDefinitions
-import com.epam.drill.agent.instrument.CADENCE_CONSUMER
-import com.epam.drill.agent.instrument.CADENCE_PRODUCER
-import com.epam.drill.agent.instrument.KAFKA_CONSUMER_SPRING
-import com.epam.drill.agent.instrument.KAFKA_PRODUCER_INTERFACE
 import com.epam.drill.agent.instrument.clients.ApacheHttpClientTransformer
 import com.epam.drill.agent.instrument.clients.JavaHttpClientTransformer
 import com.epam.drill.agent.instrument.clients.OkHttp3ClientTransformer
@@ -31,10 +25,7 @@ import com.epam.drill.agent.instrument.jetty.*
 import com.epam.drill.agent.instrument.netty.*
 import com.epam.drill.agent.instrument.tomcat.*
 import com.epam.drill.agent.instrument.undertow.*
-import com.epam.drill.agent.interceptor.HttpInterceptorConfigurer
-import com.epam.drill.agent.module.InstrumentationAgentModule
-import com.epam.drill.agent.module.JvmModuleStorage
-import com.epam.drill.agent.common.classloading.ClassSource
+import com.epam.drill.agent.instrument.ApplicationClassTransformer
 import com.epam.drill.agent.jvmapi.gen.Allocate
 import com.epam.drill.agent.jvmapi.gen.jint
 import com.epam.drill.agent.jvmapi.gen.jintVar
@@ -52,11 +43,21 @@ object ClassFileLoadHook {
 
     private val logger = KotlinLogging.logger("com.epam.drill.agent.jvmti.ClassFileLoadHook")
 
-    private val strategies = listOf(
-        JavaHttpClientTransformer, ApacheHttpClientTransformer, OkHttp3ClientTransformer,
-        ReactorTransformer, SpringWebClientTransformer
-    )
-    private val wsStrategies = listOf(
+    private val allTransformers = listOf(
+        ApplicationClassTransformer,
+        TomcatHttpServerTransformer,
+        JettyHttpServerTransformer,
+        UndertowHttpServerTransformer,
+        NettyHttpServerTransformer,
+        JavaHttpClientTransformer,
+        ApacheHttpClientTransformer,
+        OkHttp3ClientTransformer,
+        SpringWebClientTransformer,
+        KafkaTransformer,
+        CadenceTransformer,
+        TTLTransformer,
+        ReactorTransformer,
+        SSLEngineTransformer,
         JettyWsClientTransformer,
         JettyWsServerTransformer,
         Jetty9WsMessagesTransformer,
@@ -70,12 +71,10 @@ object ClassFileLoadHook {
         TomcatWsMessagesTransformer,
         UndertowWsClientTransformer,
         UndertowWsServerTransformer,
-        UndertowWsMessagesTransformer
+        UndertowWsMessagesTransformer,
+        CompatibilityTestsTransformer,
     )
 
-    private val isKafka = Configuration.parameters[ParameterDefinitions.IS_KAFKA]
-    private val isCadence = Configuration.parameters[ParameterDefinitions.IS_CADENCE]
-    private val isCompatibilityTests = Configuration.parameters[ParameterDefinitions.IS_COMPATIBILITY_TESTS]
 
     private val totalTransformClass = AtomicInt(0)
 
@@ -91,109 +90,46 @@ object ClassFileLoadHook {
     ) {
         initRuntimeIfNeeded()
         val kClassName = clsName?.toKString() ?: return
-        if (isBootstrapClassLoading(loader, protectionDomain) && !when {
-                kClassName.contains("Http") -> true // raw hack for Http(s) URL Connection classes
-                kClassName in TTLTransformer.directTtlClasses -> true
-                else -> false
-            }
-        ) return
-        if (classData == null || kClassName.startsWith(DRILL_PACKAGE)) return
-        try {
+        val kClassData = classData ?: return
+
+        val precheckedTransformers = allTransformers
+            .filter { it.enabled() }
+            .filterNot { kClassName.startsWith(DRILL_PACKAGE) }
+            .filter { it.precheck(kClassName, loader, protectionDomain) }
+            .takeIf { it.any() }
+            ?: return
+
+        val (oldClassBytes, reader) = runCatching {
             val classBytes = ByteArray(classDataLen).apply {
-                Memory.of(classData, classDataLen).loadByteArray(0, this)
+                Memory.of(kClassData, classDataLen).loadByteArray(0, this)
             }
-            val transformers = mutableListOf<(ByteArray) -> ByteArray?>()
-            val classReader = ClassReader(classBytes)
-            val superName = classReader.superName ?: ""
-            val interfaces = classReader.interfaces.filterNotNull()
+            classBytes to ClassReader(classBytes)
+        }.onFailure {
+            logger.error(it) { "Can't read class: $kClassName" }
+        }.getOrNull() ?: return
 
-            if (isTTLCandidate(kClassName, superName, interfaces)) {
-                transformers += { bytes ->
-                    TTLTransformer.transform(
-                        kClassName,
-                        bytes,
-                        loader,
-                        protectionDomain
-                    )
-                }
-            }
-            if (superName == SSLEngineTransformer.SSL_ENGINE_CLASS_NAME) {
-                transformers += { bytes -> SSLEngineTransformer.transform(kClassName, bytes, loader, protectionDomain) }
-            }
+        val permittedTransformers = precheckedTransformers.filter {
+            it.permit(
+                kClassName,
+                reader.superName,
+                reader.interfaces
+            )
+        }
 
-            if (isKafka) {
-                if (KAFKA_PRODUCER_INTERFACE in interfaces) {
-                    transformers += { bytes ->
-                        KafkaTransformer.transform(KAFKA_PRODUCER_INTERFACE, bytes, loader, protectionDomain)
-                    }
-                }
-                if (kClassName == KAFKA_CONSUMER_SPRING) {
-                    transformers += { bytes ->
-                        KafkaTransformer.transform(KAFKA_CONSUMER_SPRING, bytes, loader, protectionDomain)
-                    }
-                }
+        val newClassBytes = permittedTransformers.fold(oldClassBytes) { bytes, transformer ->
+            runCatching {
+                transformer.transform(kClassName, bytes, loader, protectionDomain)
+            }.onFailure {
+                logger.error(it) { "Can't transform class: $kClassName with ${transformer::class}" }
+            }.getOrDefault(bytes)
+        }
+
+        if (newClassBytes !== oldClassBytes) {
+            logger.debug { "$kClassName transformed" }
+            totalTransformClass.addAndGet(1).takeIf { it % 100 == 0 }?.let {
+                logger.debug { "At least $it classes were transformed" }
             }
-            if (isCadence) {
-                if (CADENCE_PRODUCER == kClassName || CADENCE_CONSUMER == kClassName) {
-                    transformers += { bytes -> CadenceTransformer.transform(kClassName, bytes, loader, protectionDomain ) }
-                }
-            }
-            if (isCompatibilityTests) {
-                /**
-                 * Uses for compatibility tests https://github.com/Drill4J/internal-compatibility-matrix-tests.
-                 */
-                if (CompatibilityTestsTransformer.permit(classReader.className, classReader.superName, classReader.interfaces)) {
-                    transformers += { bytes -> CompatibilityTestsTransformer.transform(kClassName, bytes, loader, protectionDomain) }
-                }
-            }
-            val classSource = ClassSource(kClassName, classReader.superName ?: "", classBytes)
-            if ('$' !in kClassName && classSource.prefixMatches(Configuration.agentMetadata.packagesPrefixes)) {
-                JvmModuleStorage.values().filterIsInstance<InstrumentationAgentModule>().forEach { plugin ->
-                    transformers += { bytes -> plugin.instrument(kClassName, bytes) }
-                }
-            }
-            if (!HttpInterceptorConfigurer.enabled) {
-                if (kClassName.startsWith("org/apache/catalina/core/ApplicationFilterChain")) {
-                    transformers += { bytes -> TomcatHttpServerTransformer.transform(kClassName, bytes, loader, protectionDomain) }
-                }
-                if (kClassName == "org/eclipse/jetty/server/handler/HandlerWrapper") {
-                    transformers += { bytes -> JettyHttpServerTransformer.transform(kClassName, bytes, loader, protectionDomain) }
-                }
-                if (kClassName == "io/undertow/server/Connectors") {
-                    transformers += { bytes -> UndertowHttpServerTransformer.transform(kClassName, bytes, loader, protectionDomain) }
-                }
-                strategies.forEach { strategy ->
-                    if (strategy.permit(classReader.className, classReader.superName, classReader.interfaces)) {
-                        transformers += { bytes -> strategy.transform(kClassName, bytes, loader, protectionDomain) }
-                    }
-                }
-                wsStrategies.forEach { strategy ->
-                    if (strategy.permit(classReader.className, classReader.superName, classReader.interfaces)) {
-                        transformers += { bytes -> strategy.transform(kClassName, bytes, loader, protectionDomain) }
-                    }
-                }
-            }
-            if ('$' !in kClassName && kClassName.startsWith(NettyHttpServerTransformer.HANDLER_CONTEXT)) {
-                logger.info { "Starting transform Netty class kClassName $kClassName..." }
-                transformers += { bytes ->
-                    NettyHttpServerTransformer.transform(kClassName, bytes, loader, protectionDomain)
-                }
-            }
-            if (transformers.any()) {
-                transformers.fold(classBytes) { bytes, transformer ->
-                    transformer(bytes) ?: bytes
-                }.takeIf { it !== classBytes }?.let { newBytes ->
-                    logger.trace { "$kClassName transformed" }
-                    totalTransformClass.addAndGet(1).takeIf { it % 100 == 0 }?.let {
-                        logger.trace { "$it classes are transformed" }
-                    }
-                    convertToNativePointers(newBytes, newData, newClassDataLen)
-                }
-            }
-        } catch (throwable: Throwable) {
-            logger.error(throwable) {
-                "Can't retransform class: $kClassName, ${classData.readBytes(classDataLen).contentToString()}"
-            }
+            convertToNativePointers(newClassBytes, newData, newClassDataLen)
         }
     }
 

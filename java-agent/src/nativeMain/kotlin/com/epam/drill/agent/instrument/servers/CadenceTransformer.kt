@@ -15,7 +15,15 @@
  */
 package com.epam.drill.agent.instrument.servers
 
-import com.epam.drill.agent.instrument.AbstractTransformerObject
+import com.epam.drill.agent.configuration.Configuration
+import com.epam.drill.agent.configuration.ParameterDefinitions
+import com.epam.drill.agent.instrument.JvmTransformerObject
 import com.epam.drill.agent.instrument.TransformerObject
+import com.epam.drill.agent.instrument.CADENCE_CONSUMER
+import com.epam.drill.agent.instrument.CADENCE_PRODUCER
 
-actual object CadenceTransformer : TransformerObject, AbstractTransformerObject()
+
+actual object CadenceTransformer : TransformerObject, JvmTransformerObject() {
+    override fun permit(className: String, superName: String?, interfaces: Array<String?>) =
+        CADENCE_PRODUCER == className || CADENCE_CONSUMER == className
+}

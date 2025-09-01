@@ -15,12 +15,13 @@
  */
 package com.epam.drill.agent.instrument.reactor.transformers
 
+import com.epam.drill.agent.configuration.Configuration
 import com.epam.drill.agent.instrument.ClassPathProvider
 import com.epam.drill.agent.instrument.RuntimeClassPathProvider
 import com.epam.drill.agent.instrument.TransformerObject
 import com.epam.drill.agent.request.DrillRequestHolder
 
 object FluxTransformer: TransformerObject,
-    FluxTransformerObject(),
+    FluxTransformerObject(Configuration.parameters),
     com.epam.drill.agent.common.request.RequestHolder by DrillRequestHolder,
     ClassPathProvider by RuntimeClassPathProvider

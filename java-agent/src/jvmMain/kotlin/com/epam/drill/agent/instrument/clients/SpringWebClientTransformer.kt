@@ -15,10 +15,11 @@
  */
 package com.epam.drill.agent.instrument.clients
 
+import com.epam.drill.agent.configuration.Configuration
 import com.epam.drill.agent.instrument.*
 
 actual object SpringWebClientTransformer:
     TransformerObject,
-    SpringWebClientTransformerObject(),
+    SpringWebClientTransformerObject(Configuration.parameters),
     HeadersProcessor by DefaultHeadersProcessor,
     ClassPathProvider by RuntimeClassPathProvider

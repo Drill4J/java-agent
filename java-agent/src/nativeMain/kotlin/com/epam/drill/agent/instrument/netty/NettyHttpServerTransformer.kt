@@ -15,9 +15,15 @@
  */
 package com.epam.drill.agent.instrument.netty
 
-import com.epam.drill.agent.instrument.AbstractTransformerObject
+import com.epam.drill.agent.instrument.JvmTransformerObject
+import com.epam.drill.agent.instrument.NETTY_CHANNEL_HANDLER_CONTEXT
 import com.epam.drill.agent.instrument.TransformerObject
 
-actual object NettyHttpServerTransformer : TransformerObject, AbstractTransformerObject() {
-    const val HANDLER_CONTEXT = "io/netty/channel/AbstractChannelHandlerContext"
+actual object NettyHttpServerTransformer : TransformerObject, JvmTransformerObject() {
+
+    override fun permit(
+        className: String,
+        superName: String?,
+        interfaces: Array<String?>
+    ): Boolean = '$' !in className && className.startsWith(NETTY_CHANNEL_HANDLER_CONTEXT)
 }
