@@ -34,5 +34,5 @@ private val reactorTransformers = setOf<AbstractTransformerObject>(
 
 actual object ReactorTransformer :
     TransformerObject,
-    ReactorTransformerObject(reactorTransformers, Configuration.parameters),
+    ReactorTransformerObject(reactorTransformers, Configuration),
     ClassPathProvider by RuntimeClassPathProvider

@@ -24,6 +24,6 @@ import com.epam.drill.agent.instrument.TransformerObject
 
 actual object CadenceTransformer :
     TransformerObject,
-    CadenceTransformerObject(Configuration.parameters),
+    CadenceTransformerObject(Configuration),
     HeadersProcessor by DefaultHeadersProcessor,
     ClassPathProvider by RuntimeClassPathProvider

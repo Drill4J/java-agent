@@ -26,7 +26,7 @@ import com.epam.drill.agent.instrument.TransformerObject
 
 actual object TomcatWsMessagesTransformer :
     TransformerObject,
-    TomcatWsMessagesTransformerObject(Configuration.parameters),
+    TomcatWsMessagesTransformerObject(Configuration),
     HeadersProcessor by DefaultHeadersProcessor,
     PayloadProcessor by DefaultPayloadProcessor,
     ClassPathProvider by RuntimeClassPathProvider

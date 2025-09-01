@@ -24,6 +24,6 @@ import com.epam.drill.agent.instrument.TransformerObject
 
 actual object TomcatWsServerTransformer :
     TransformerObject,
-    TomcatWsServerTransformerObject(Configuration.parameters),
+    TomcatWsServerTransformerObject(Configuration),
     HeadersProcessor by DefaultHeadersProcessor,
     ClassPathProvider by RuntimeClassPathProvider

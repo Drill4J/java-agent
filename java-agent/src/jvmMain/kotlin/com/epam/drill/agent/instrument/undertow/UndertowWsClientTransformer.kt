@@ -21,6 +21,6 @@ import com.epam.drill.agent.request.HeadersRetriever
 
 actual object UndertowWsClientTransformer :
     TransformerObject,
-    UndertowWsClientTransformerObject(Configuration.parameters),
+    UndertowWsClientTransformerObject(Configuration),
     HeadersProcessor by DefaultHeadersProcessor,
     ClassPathProvider by RuntimeClassPathProvider

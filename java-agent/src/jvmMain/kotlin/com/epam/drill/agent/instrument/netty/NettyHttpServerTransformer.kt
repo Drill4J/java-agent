@@ -25,6 +25,6 @@ import com.epam.drill.agent.request.HeadersRetriever
 
 actual object NettyHttpServerTransformer :
     TransformerObject,
-    NettyHttpServerTransformerObject(HeadersRetriever, Configuration.parameters),
+    NettyHttpServerTransformerObject(HeadersRetriever, Configuration),
     HeadersProcessor by DefaultHeadersProcessor,
     ClassPathProvider by RuntimeClassPathProvider

@@ -21,6 +21,6 @@ import com.epam.drill.agent.request.HeadersRetriever
 
 actual object JettyHttpServerTransformer :
     TransformerObject,
-    JettyHttpServerTransformerObject(HeadersRetriever, Configuration.parameters),
+    JettyHttpServerTransformerObject(HeadersRetriever, Configuration),
     HeadersProcessor by DefaultHeadersProcessor,
     ClassPathProvider by RuntimeClassPathProvider

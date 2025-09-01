@@ -22,6 +22,6 @@ import com.epam.drill.agent.instrument.TransformerObject
 import com.epam.drill.agent.request.DrillRequestHolder
 
 object ParallelFluxTransformer: TransformerObject,
-    ParallelFluxTransformerObject(Configuration.parameters),
+    ParallelFluxTransformerObject(Configuration),
     com.epam.drill.agent.common.request.RequestHolder by DrillRequestHolder,
     ClassPathProvider by RuntimeClassPathProvider

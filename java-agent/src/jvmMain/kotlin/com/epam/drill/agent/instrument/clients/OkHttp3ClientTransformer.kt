@@ -24,6 +24,6 @@ import com.epam.drill.agent.instrument.TransformerObject
 
 actual object OkHttp3ClientTransformer :
     TransformerObject,
-    OkHttp3ClientTransformerObject(Configuration.parameters),
+    OkHttp3ClientTransformerObject(Configuration),
     HeadersProcessor by DefaultHeadersProcessor,
     ClassPathProvider by RuntimeClassPathProvider

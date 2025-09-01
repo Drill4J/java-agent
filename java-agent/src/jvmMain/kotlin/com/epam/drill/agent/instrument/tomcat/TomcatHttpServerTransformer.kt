@@ -25,6 +25,6 @@ import com.epam.drill.agent.request.HeadersRetriever
 
 actual object TomcatHttpServerTransformer :
     TransformerObject,
-    TomcatHttpServerTransformerObject(HeadersRetriever, Configuration.parameters),
+    TomcatHttpServerTransformerObject(HeadersRetriever, Configuration),
     HeadersProcessor by DefaultHeadersProcessor,
     ClassPathProvider by RuntimeClassPathProvider

@@ -22,6 +22,6 @@ import com.epam.drill.agent.instrument.TransformerObject
 import com.epam.drill.agent.request.DrillRequestHolder
 
 object FluxTransformer: TransformerObject,
-    FluxTransformerObject(Configuration.parameters),
+    FluxTransformerObject(Configuration),
     com.epam.drill.agent.common.request.RequestHolder by DrillRequestHolder,
     ClassPathProvider by RuntimeClassPathProvider

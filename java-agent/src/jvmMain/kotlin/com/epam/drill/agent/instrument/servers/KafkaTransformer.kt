@@ -24,6 +24,6 @@ import com.epam.drill.agent.instrument.TransformerObject
 
 actual object KafkaTransformer :
     TransformerObject,
-    KafkaTransformerObject(Configuration.parameters),
+    KafkaTransformerObject(Configuration),
     HeadersProcessor by DefaultHeadersProcessor,
     ClassPathProvider by RuntimeClassPathProvider

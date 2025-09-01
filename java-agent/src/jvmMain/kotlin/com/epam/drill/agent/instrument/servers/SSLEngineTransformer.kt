@@ -25,6 +25,6 @@ import com.epam.drill.agent.request.HeadersRetriever
 
 actual object SSLEngineTransformer :
     TransformerObject,
-    SSLEngineTransformerObject(HeadersRetriever, Configuration.parameters),
+    SSLEngineTransformerObject(HeadersRetriever, Configuration),
     HeadersProcessor by DefaultHeadersProcessor,
     ClassPathProvider by RuntimeClassPathProvider

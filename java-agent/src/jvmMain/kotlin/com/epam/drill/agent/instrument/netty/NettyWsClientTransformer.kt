@@ -24,6 +24,6 @@ import com.epam.drill.agent.instrument.TransformerObject
 
 actual object NettyWsClientTransformer :
     TransformerObject,
-    NettyWsClientTransformerObject(Configuration.parameters),
+    NettyWsClientTransformerObject(Configuration),
     HeadersProcessor by DefaultHeadersProcessor,
     ClassPathProvider by RuntimeClassPathProvider

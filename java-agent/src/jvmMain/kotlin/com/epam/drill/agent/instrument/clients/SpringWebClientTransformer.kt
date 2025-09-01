@@ -20,6 +20,6 @@ import com.epam.drill.agent.instrument.*
 
 actual object SpringWebClientTransformer:
     TransformerObject,
-    SpringWebClientTransformerObject(Configuration.parameters),
+    SpringWebClientTransformerObject(Configuration),
     HeadersProcessor by DefaultHeadersProcessor,
     ClassPathProvider by RuntimeClassPathProvider

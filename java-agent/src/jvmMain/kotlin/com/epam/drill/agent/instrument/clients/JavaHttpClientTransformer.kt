@@ -24,6 +24,6 @@ import com.epam.drill.agent.instrument.TransformerObject
 
 actual object JavaHttpClientTransformer :
     TransformerObject,
-    JavaHttpClientTransformerObject(Configuration.parameters),
+    JavaHttpClientTransformerObject(Configuration),
     HeadersProcessor by DefaultHeadersProcessor,
     ClassPathProvider by RuntimeClassPathProvider

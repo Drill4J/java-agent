@@ -22,6 +22,6 @@ import com.epam.drill.agent.instrument.RuntimeClassPathProvider
 import com.epam.drill.agent.request.DrillRequestHolder
 
 object SchedulersTransformer: TransformerObject,
-    SchedulersTransformerObject(Configuration.parameters),
+    SchedulersTransformerObject(Configuration),
     com.epam.drill.agent.common.request.RequestHolder by DrillRequestHolder,
     ClassPathProvider by RuntimeClassPathProvider

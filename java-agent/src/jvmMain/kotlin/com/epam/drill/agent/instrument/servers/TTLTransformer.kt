@@ -22,5 +22,5 @@ import com.epam.drill.agent.instrument.TransformerObject
 
 actual object TTLTransformer :
     TransformerObject,
-    TTLTransformerObject(Configuration.parameters),
+    TTLTransformerObject(Configuration),
     ClassPathProvider by RuntimeClassPathProvider
