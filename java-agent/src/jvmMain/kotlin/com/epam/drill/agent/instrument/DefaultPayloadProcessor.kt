@@ -19,6 +19,6 @@ import com.epam.drill.agent.configuration.Configuration
 import com.epam.drill.agent.configuration.ParameterDefinitions
 
 object DefaultPayloadProcessor : DrillRequestPayloadProcessor(
-    { Configuration.parameters[ParameterDefinitions.IS_WS_MESSAGES] },
+    { true },
     DefaultHeadersProcessor
 )

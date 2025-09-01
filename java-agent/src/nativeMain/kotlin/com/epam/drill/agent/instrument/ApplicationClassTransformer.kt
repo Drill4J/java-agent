@@ -17,13 +17,14 @@ package com.epam.drill.agent.instrument
 
 import com.epam.drill.agent.common.classloading.ClassSource
 import com.epam.drill.agent.configuration.Configuration
+import com.epam.drill.agent.configuration.ParameterDefinitions.COVERAGE_COLLECTION_ENABLED
 import com.epam.drill.agent.module.InstrumentationAgentModule
 import com.epam.drill.agent.module.JvmModuleStorage
 
 object ApplicationClassTransformer : Transformer {
 
     override fun enabled(): Boolean {
-        return super.enabled()
+        return Configuration.parameters[COVERAGE_COLLECTION_ENABLED]
     }
 
     override fun precheck(

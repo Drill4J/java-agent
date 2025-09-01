@@ -15,11 +15,11 @@
  */
 package com.epam.drill.agent.instrument.jetty
 
-import com.epam.drill.agent.instrument.JvmTransformerObject
+import com.epam.drill.agent.instrument.AbstractHttpTransformerObject
 import com.epam.drill.agent.instrument.JETTY_SERVER_HANDLER
 import com.epam.drill.agent.instrument.TransformerObject
 
-actual object JettyHttpServerTransformer : TransformerObject, JvmTransformerObject() {
+actual object JettyHttpServerTransformer : TransformerObject, AbstractHttpTransformerObject() {
     override fun permit(className: String, superName: String?, interfaces: Array<String?>) =
         JETTY_SERVER_HANDLER == className
 }

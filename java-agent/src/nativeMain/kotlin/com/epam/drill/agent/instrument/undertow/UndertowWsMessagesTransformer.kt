@@ -15,7 +15,8 @@
  */
 package com.epam.drill.agent.instrument.undertow
 
+import com.epam.drill.agent.instrument.AbstractWsTransformerObject
 import com.epam.drill.agent.instrument.JvmTransformerObject
 import com.epam.drill.agent.instrument.TransformerObject
 
-actual object UndertowWsMessagesTransformer : TransformerObject, JvmTransformerObject()
+actual object UndertowWsMessagesTransformer : TransformerObject, AbstractWsTransformerObject()

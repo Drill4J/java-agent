@@ -15,7 +15,11 @@
  */
 package com.epam.drill.agent.instrument.clients
 
-import com.epam.drill.agent.instrument.JvmTransformerObject
+import com.epam.drill.agent.configuration.Configuration
+import com.epam.drill.agent.instrument.AbstractTransformerObject
+import com.epam.drill.agent.instrument.InstrumentationParameterDefinitions.INSTRUMENTATION_OK_HTTP_CLIENT_ENABLED
 import com.epam.drill.agent.instrument.TransformerObject
 
-actual object OkHttp3ClientTransformer : TransformerObject, JvmTransformerObject()
+actual object OkHttp3ClientTransformer : TransformerObject, AbstractTransformerObject() {
+    override fun enabled() = super<AbstractTransformerObject>.enabled() && Configuration.parameters[INSTRUMENTATION_OK_HTTP_CLIENT_ENABLED]
+}

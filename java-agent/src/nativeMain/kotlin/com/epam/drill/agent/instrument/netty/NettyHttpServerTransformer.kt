@@ -15,11 +15,12 @@
  */
 package com.epam.drill.agent.instrument.netty
 
+import com.epam.drill.agent.instrument.AbstractHttpTransformerObject
 import com.epam.drill.agent.instrument.JvmTransformerObject
 import com.epam.drill.agent.instrument.NETTY_CHANNEL_HANDLER_CONTEXT
 import com.epam.drill.agent.instrument.TransformerObject
 
-actual object NettyHttpServerTransformer : TransformerObject, JvmTransformerObject() {
+actual object NettyHttpServerTransformer : TransformerObject, AbstractHttpTransformerObject() {
 
     override fun permit(
         className: String,
