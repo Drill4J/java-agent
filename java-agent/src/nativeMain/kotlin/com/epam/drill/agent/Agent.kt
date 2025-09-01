@@ -26,8 +26,6 @@ import mu.KotlinLogging
 import com.epam.drill.agent.configuration.AgentLoggingConfiguration
 import com.epam.drill.agent.configuration.Configuration
 import com.epam.drill.agent.configuration.DefaultParameterDefinitions.INSTALLATION_DIR
-import com.epam.drill.agent.configuration.ParameterDefinitions
-import com.epam.drill.agent.interceptor.HttpInterceptorConfigurer
 import com.epam.drill.agent.jvmti.classFileLoadHook
 import com.epam.drill.agent.jvmti.vmDeathEvent
 import com.epam.drill.agent.jvmti.vmInitEvent
@@ -84,7 +82,6 @@ object Agent {
         AgentLoggingConfiguration.updateJvmLoggingConfiguration()
         Configuration.initializeJvm()
 
-        HttpInterceptorConfigurer(HeadersRetriever, DrillRequestHolder)
 
         loadJvmModule("com.epam.drill.agent.test2code.Test2Code")
         JvmModuleMessageSender.sendAgentMetadata()
