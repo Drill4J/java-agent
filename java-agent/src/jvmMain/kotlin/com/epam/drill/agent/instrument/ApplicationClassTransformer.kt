@@ -16,17 +16,20 @@
 package com.epam.drill.agent.instrument
 
 import com.epam.drill.agent.common.classloading.ClassSource
+import com.epam.drill.agent.common.module.Instrumenter
 import com.epam.drill.agent.configuration.Configuration
-import com.epam.drill.agent.module.InstrumentationAgentModule
 import com.epam.drill.agent.module.JvmModuleStorage
+import javassist.CtClass
+import mu.KLogger
+import mu.KotlinLogging
 
-actual object ApplicationClassTransformer : TransformerObject, AbstractTransformerObject() {
+actual object ApplicationClassTransformer :
+    TransformerObject,
+    AbstractTransformerObject(Configuration),
+    HeadersProcessor by DefaultHeadersProcessor,
+    ClassPathProvider by RuntimeClassPathProvider {
 
-    override fun precheck(
-        className: String,
-        loader: Any?,
-        protectionDomain: Any?
-    ): Boolean = loader != null && protectionDomain != null && '$' !in className
+    override val logger: KLogger = KotlinLogging.logger {}
 
     override fun permit(
         className: String,
@@ -41,8 +44,12 @@ actual object ApplicationClassTransformer : TransformerObject, AbstractTransform
         loader: Any?,
         protectionDomain: Any?
     ): ByteArray = JvmModuleStorage.values()
-        .filterIsInstance<InstrumentationAgentModule>()
+        .filterIsInstance<Instrumenter>()
         .fold(classFileBuffer) { bytes, plugin ->
             plugin.instrument(className, bytes) ?: bytes
         }
+
+    override fun transform(className: String, ctClass: CtClass) {
+        throw UnsupportedOperationException("Use transform with ByteArray")
+    }
 }

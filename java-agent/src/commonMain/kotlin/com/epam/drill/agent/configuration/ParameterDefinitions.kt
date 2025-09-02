@@ -40,5 +40,4 @@ object ParameterDefinitions: AgentParameterDefinitionCollection() {
     val USE_PROTOBUF_SERIALIZER =
         AgentParameterDefinition.forBoolean(name = "useProtobufSerializer", defaultValue = true).register()
     val USE_GZIP_COMPRESSION = AgentParameterDefinition.forBoolean(name = "useGzipCompression", defaultValue = true).register()
-    val COVERAGE_COLLECTION_ENABLED = AgentParameterDefinition.forBoolean(name = "coverageCollectionEnabled", defaultValue = true).register()
 }
