@@ -26,16 +26,44 @@ import mu.KotlinLogging
 import com.epam.drill.agent.configuration.AgentLoggingConfiguration
 import com.epam.drill.agent.configuration.Configuration
 import com.epam.drill.agent.configuration.DefaultParameterDefinitions.INSTALLATION_DIR
+import com.epam.drill.agent.instrument.ApplicationClassTransformer
 import com.epam.drill.agent.jvmti.classFileLoadHook
 import com.epam.drill.agent.jvmti.vmDeathEvent
 import com.epam.drill.agent.jvmti.vmInitEvent
 import com.epam.drill.agent.module.JvmModuleLoader
-import com.epam.drill.agent.request.HeadersRetriever
-import com.epam.drill.agent.request.DrillRequestHolder
 import com.epam.drill.agent.transport.JvmModuleMessageSender
 import com.epam.drill.agent.jvmapi.gen.*
 import kotlinx.cinterop.ExperimentalForeignApi
 import kotlin.experimental.ExperimentalNativeApi
+import com.epam.drill.agent.instrument.TransformerRegistrar
+import com.epam.drill.agent.instrument.clients.ApacheHttpClientTransformer
+import com.epam.drill.agent.instrument.clients.JavaHttpClientTransformer
+import com.epam.drill.agent.instrument.clients.OkHttp3ClientTransformer
+import com.epam.drill.agent.instrument.clients.SpringWebClientTransformer
+import com.epam.drill.agent.instrument.jetty.Jetty10WsMessagesTransformer
+import com.epam.drill.agent.instrument.jetty.Jetty11WsMessagesTransformer
+import com.epam.drill.agent.instrument.jetty.Jetty9WsMessagesTransformer
+import com.epam.drill.agent.instrument.jetty.JettyHttpServerTransformer
+import com.epam.drill.agent.instrument.jetty.JettyWsClientTransformer
+import com.epam.drill.agent.instrument.jetty.JettyWsServerTransformer
+import com.epam.drill.agent.instrument.netty.NettyHttpServerTransformer
+import com.epam.drill.agent.instrument.netty.NettyWsClientTransformer
+import com.epam.drill.agent.instrument.netty.NettyWsMessagesTransformer
+import com.epam.drill.agent.instrument.netty.NettyWsServerTransformer
+import com.epam.drill.agent.instrument.servers.CadenceTransformer
+import com.epam.drill.agent.instrument.servers.CompatibilityTestsTransformer
+import com.epam.drill.agent.instrument.servers.KafkaTransformer
+import com.epam.drill.agent.instrument.servers.ReactorTransformer
+import com.epam.drill.agent.instrument.servers.SSLEngineTransformer
+import com.epam.drill.agent.instrument.servers.TTLTransformer
+import com.epam.drill.agent.instrument.tomcat.TomcatHttpServerTransformer
+import com.epam.drill.agent.instrument.tomcat.TomcatWsClientTransformer
+import com.epam.drill.agent.instrument.tomcat.TomcatWsMessagesTransformer
+import com.epam.drill.agent.instrument.tomcat.TomcatWsServerTransformer
+import com.epam.drill.agent.instrument.undertow.UndertowHttpServerTransformer
+import com.epam.drill.agent.instrument.undertow.UndertowWsClientTransformer
+import com.epam.drill.agent.instrument.undertow.UndertowWsMessagesTransformer
+import com.epam.drill.agent.instrument.undertow.UndertowWsServerTransformer
 
 object Agent {
 
@@ -51,6 +79,37 @@ object Agent {
         """.trimIndent()
 
     private val logger = KotlinLogging.logger("com.epam.drill.agent.Agent")
+    private val transformers = setOf(
+        ApplicationClassTransformer,
+        TomcatHttpServerTransformer,
+        JettyHttpServerTransformer,
+        UndertowHttpServerTransformer,
+        NettyHttpServerTransformer,
+        JavaHttpClientTransformer,
+        ApacheHttpClientTransformer,
+        OkHttp3ClientTransformer,
+        SpringWebClientTransformer,
+        KafkaTransformer,
+        CadenceTransformer,
+        TTLTransformer,
+        ReactorTransformer,
+        SSLEngineTransformer,
+        JettyWsClientTransformer,
+        JettyWsServerTransformer,
+        Jetty9WsMessagesTransformer,
+        Jetty10WsMessagesTransformer,
+        Jetty11WsMessagesTransformer,
+        NettyWsClientTransformer,
+        NettyWsServerTransformer,
+        NettyWsMessagesTransformer,
+        TomcatWsClientTransformer,
+        TomcatWsServerTransformer,
+        TomcatWsMessagesTransformer,
+        UndertowWsClientTransformer,
+        UndertowWsServerTransformer,
+        UndertowWsMessagesTransformer,
+        CompatibilityTestsTransformer,
+    )
 
     @OptIn(ExperimentalNativeApi::class, ExperimentalForeignApi::class)
     fun agentOnLoad(options: String): Int {
@@ -58,6 +117,7 @@ object Agent {
         AgentLoggingConfiguration.defaultNativeLoggingConfiguration()
         Configuration.initializeNative(options)
         AgentLoggingConfiguration.updateNativeLoggingConfiguration()
+        TransformerRegistrar.initialize(transformers)
 
         addCapabilities()
         setEventCallbacks()

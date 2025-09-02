@@ -131,6 +131,7 @@ kotlin {
                 implementation(project(":jvmapi"))
                 implementation(project(":knasm"))
                 implementation(project(":konform"))
+                implementation(project(":agent-instrumentation"))
                 if (nativeAgentHookEnabled == "true")
                     implementation(project(":interceptor-http"))
                 else

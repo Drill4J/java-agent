@@ -15,17 +15,8 @@
  */
 package com.epam.drill.agent.jvmti
 
-import com.epam.drill.agent.instrument.clients.ApacheHttpClientTransformer
-import com.epam.drill.agent.instrument.clients.JavaHttpClientTransformer
-import com.epam.drill.agent.instrument.clients.OkHttp3ClientTransformer
-import com.epam.drill.agent.instrument.clients.SpringWebClientTransformer
-import com.epam.drill.agent.instrument.servers.ReactorTransformer
 import com.epam.drill.agent.instrument.servers.*
-import com.epam.drill.agent.instrument.jetty.*
-import com.epam.drill.agent.instrument.netty.*
-import com.epam.drill.agent.instrument.tomcat.*
-import com.epam.drill.agent.instrument.undertow.*
-import com.epam.drill.agent.instrument.ApplicationClassTransformer
+import com.epam.drill.agent.instrument.TransformerRegistrar
 import com.epam.drill.agent.jvmapi.gen.Allocate
 import com.epam.drill.agent.jvmapi.gen.jint
 import com.epam.drill.agent.jvmapi.gen.jintVar
@@ -42,40 +33,6 @@ object ClassFileLoadHook {
     private const val DRILL_PACKAGE = "com/epam/drill/agent"
 
     private val logger = KotlinLogging.logger("com.epam.drill.agent.jvmti.ClassFileLoadHook")
-
-    private val allTransformers = listOf(
-        ApplicationClassTransformer,
-        TomcatHttpServerTransformer,
-        JettyHttpServerTransformer,
-        UndertowHttpServerTransformer,
-        NettyHttpServerTransformer,
-        JavaHttpClientTransformer,
-        ApacheHttpClientTransformer,
-        OkHttp3ClientTransformer,
-        SpringWebClientTransformer,
-        KafkaTransformer,
-        CadenceTransformer,
-        TTLTransformer,
-        ReactorTransformer,
-        SSLEngineTransformer,
-        JettyWsClientTransformer,
-        JettyWsServerTransformer,
-        Jetty9WsMessagesTransformer,
-        Jetty10WsMessagesTransformer,
-        Jetty11WsMessagesTransformer,
-        NettyWsClientTransformer,
-        NettyWsServerTransformer,
-        NettyWsMessagesTransformer,
-        TomcatWsClientTransformer,
-        TomcatWsServerTransformer,
-        TomcatWsMessagesTransformer,
-        UndertowWsClientTransformer,
-        UndertowWsServerTransformer,
-        UndertowWsMessagesTransformer,
-        CompatibilityTestsTransformer,
-    )
-
-
     private val totalTransformClass = AtomicInt(0)
 
     @OptIn(ExperimentalForeignApi::class)
@@ -92,8 +49,9 @@ object ClassFileLoadHook {
         val kClassName = clsName?.toKString() ?: return
         val kClassData = classData ?: return
 
-        val precheckedTransformers = allTransformers
-            .filter { it.enabled() }
+
+
+        val precheckedTransformers = TransformerRegistrar.enabledTransformers
             .filterNot { kClassName.startsWith(DRILL_PACKAGE) }
             .filter { it.precheck(kClassName, loader, protectionDomain) }
             .takeIf { it.any() }
