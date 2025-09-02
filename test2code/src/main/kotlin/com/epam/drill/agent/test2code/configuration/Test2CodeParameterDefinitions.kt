@@ -60,6 +60,12 @@ object Test2CodeParameterDefinitions : AgentParameterDefinitionCollection() {
     ).register()
     val COVERAGE_COLLECTION_ENABLED = AgentParameterDefinition.forBoolean(
         name = "coverageCollectionEnabled",
+        description = "Enable/disable application code coverage collection",
+        defaultValue = true
+    ).register()
+    val CLASS_SCANNING_ENABLED = AgentParameterDefinition.forBoolean(
+        name = "classScanningEnabled",
+        description = "Enable/disable application classes scanning",
         defaultValue = true
     ).register()
 

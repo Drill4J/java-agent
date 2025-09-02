@@ -67,6 +67,7 @@ class Test2Code(
         collectProbes = { coverageManager.pollRecorded() }
     )
     private val coverageCollectionEnabled = configuration.parameters[COVERAGE_COLLECTION_ENABLED]
+    private val classScanningEnabled = configuration.parameters[Test2CodeParameterDefinitions.CLASS_SCANNING_ENABLED]
 
     override fun onConnect() {}
 
@@ -139,6 +140,10 @@ class Test2Code(
      * Scan, parse and send metadata classes to the admin side
      */
     fun scanAndSendMetadataClasses() {
+        if (!classScanningEnabled) {
+            logger.info { "Class scanning is disabled" }
+            return
+        }
         var classCount = 0
         var methodCount = 0
         scanClasses { classes ->
