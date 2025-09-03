@@ -146,6 +146,11 @@ class ValidationBuilderTest {
         assertTrue { validPackage.validate(SomeObject("/com/example")) is Invalid }
     }
 
+    @Test
+    fun `given exclamation sign ahead of package validator must be valid`() {
+        assertTrue { validPackage.validate(SomeObject("!com/example")) is Valid }
+    }
+
     private val logLevel = Validation<SomeObject> {
         SomeObject::strToList onEach {
             isValidLogLevel()
