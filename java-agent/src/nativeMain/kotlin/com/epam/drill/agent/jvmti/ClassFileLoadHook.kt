@@ -49,8 +49,6 @@ object ClassFileLoadHook {
         val kClassName = clsName?.toKString() ?: return
         val kClassData = classData ?: return
 
-
-
         val precheckedTransformers = TransformerRegistrar.enabledTransformers
             .filterNot { kClassName.startsWith(DRILL_PACKAGE) }
             .filter { it.precheck(kClassName, loader, protectionDomain) }
@@ -78,12 +76,15 @@ object ClassFileLoadHook {
             runCatching {
                 transformer.transform(kClassName, bytes, loader, protectionDomain)
             }.onFailure {
-                logger.error(it) { "Can't transform class: $kClassName with ${transformer::class}" }
-            }.getOrDefault(bytes)
+                logger.warn(it) { "Can't transform class: $kClassName with ${transformer::class.simpleName}" }
+            }.getOrNull()
+                ?.takeIf { it !== bytes }
+                ?.also {
+                    logger.debug { "$kClassName was transformed by ${transformer::class.simpleName}" }
+                } ?: bytes
         }
 
         if (newClassBytes !== oldClassBytes) {
-            logger.debug { "$kClassName transformed" }
             totalTransformClass.addAndGet(1).takeIf { it % 100 == 0 }?.let {
                 logger.debug { "At least $it classes were transformed" }
             }
