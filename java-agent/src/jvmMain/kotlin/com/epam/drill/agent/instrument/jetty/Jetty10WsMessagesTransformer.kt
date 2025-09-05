@@ -15,11 +15,13 @@
  */
 package com.epam.drill.agent.instrument.jetty
 
+import com.epam.drill.agent.common.configuration.AgentParameters
+import com.epam.drill.agent.configuration.Configuration
 import com.epam.drill.agent.instrument.*
 
 actual object Jetty10WsMessagesTransformer :
     TransformerObject,
-    Jetty10WsMessagesTransformerObject(),
+    Jetty10WsMessagesTransformerObject(Configuration),
     HeadersProcessor by DefaultHeadersProcessor,
     PayloadProcessor by DefaultPayloadProcessor,
     ClassPathProvider by RuntimeClassPathProvider

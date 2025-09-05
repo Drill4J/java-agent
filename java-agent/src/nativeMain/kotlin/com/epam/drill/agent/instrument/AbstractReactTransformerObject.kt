@@ -13,10 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.epam.drill.agent.instrument.netty
+package com.epam.drill.agent.instrument
 
-import com.epam.drill.agent.instrument.AbstractWsTransformerObject
-import com.epam.drill.agent.instrument.JvmTransformerObject
-import com.epam.drill.agent.instrument.TransformerObject
+import com.epam.drill.agent.configuration.Configuration
+import com.epam.drill.agent.instrument.InstrumentationParameterDefinitions.INSTRUMENTATION_REACTOR_ENABLED
 
-actual object NettyWsServerTransformer : TransformerObject, AbstractWsTransformerObject()
+abstract class AbstractReactTransformerObject: AbstractTransformerObject() {
+    override fun enabled() = super<AbstractTransformerObject>.enabled() && Configuration.parameters[INSTRUMENTATION_REACTOR_ENABLED]
+}

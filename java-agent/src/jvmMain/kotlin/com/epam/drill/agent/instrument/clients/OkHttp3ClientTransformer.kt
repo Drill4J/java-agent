@@ -15,6 +15,7 @@
  */
 package com.epam.drill.agent.instrument.clients
 
+import com.epam.drill.agent.configuration.Configuration
 import com.epam.drill.agent.instrument.ClassPathProvider
 import com.epam.drill.agent.instrument.DefaultHeadersProcessor
 import com.epam.drill.agent.instrument.HeadersProcessor
@@ -23,6 +24,6 @@ import com.epam.drill.agent.instrument.TransformerObject
 
 actual object OkHttp3ClientTransformer :
     TransformerObject,
-    OkHttp3ClientTransformerObject(),
+    OkHttp3ClientTransformerObject(Configuration),
     HeadersProcessor by DefaultHeadersProcessor,
     ClassPathProvider by RuntimeClassPathProvider

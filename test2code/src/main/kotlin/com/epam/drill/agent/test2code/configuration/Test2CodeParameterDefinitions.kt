@@ -23,7 +23,7 @@ import com.epam.drill.agent.common.configuration.ValidationType
 import com.epam.drill.agent.configuration.isNotBlank
 import com.epam.drill.agent.configuration.minDuration
 
-object Test2CodeParameterDefinitions: AgentParameterDefinitionCollection() {
+object Test2CodeParameterDefinitions : AgentParameterDefinitionCollection() {
 
     val SCAN_CLASS_PATH = AgentParameterDefinition.forList(
         name = "scanClassPath",
@@ -57,6 +57,16 @@ object Test2CodeParameterDefinitions: AgentParameterDefinitionCollection() {
     val METHODS_SEND_PAGE_SIZE = AgentParameterDefinition.forInt(
         name = "methodsSendPageSize",
         defaultValue = 1000
+    ).register()
+    val COVERAGE_COLLECTION_ENABLED = AgentParameterDefinition.forBoolean(
+        name = "coverageCollectionEnabled",
+        description = "Enable/disable application code coverage collection",
+        defaultValue = true
+    ).register()
+    val CLASS_SCANNING_ENABLED = AgentParameterDefinition.forBoolean(
+        name = "classScanningEnabled",
+        description = "Enable/disable application classes scanning",
+        defaultValue = true
     ).register()
 
 }

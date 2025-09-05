@@ -15,10 +15,11 @@
  */
 package com.epam.drill.agent.instrument.jetty
 
+import com.epam.drill.agent.configuration.Configuration
 import com.epam.drill.agent.instrument.*
 
 actual object JettyWsClientTransformer :
     TransformerObject,
-    JettyWsClientTransformerObject(),
+    JettyWsClientTransformerObject(Configuration),
     HeadersProcessor by DefaultHeadersProcessor,
     ClassPathProvider by RuntimeClassPathProvider

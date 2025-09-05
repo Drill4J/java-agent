@@ -36,6 +36,7 @@ import com.epam.drill.agent.test2code.classloading.ClassLoadersScanner
 import com.epam.drill.agent.test2code.classloading.ClassScanner
 import com.epam.drill.agent.test2code.classparsing.parseAstClass
 import com.epam.drill.agent.test2code.configuration.Test2CodeParameterDefinitions
+import com.epam.drill.agent.test2code.configuration.Test2CodeParameterDefinitions.COVERAGE_COLLECTION_ENABLED
 import com.epam.drill.agent.test2code.coverage.*
 
 private const val DRILL_TEST_ID_HEADER = "drill-test-id"
@@ -65,13 +66,17 @@ class Test2Code(
         sender = sender,
         collectProbes = { coverageManager.pollRecorded() }
     )
+    private val coverageCollectionEnabled = configuration.parameters[COVERAGE_COLLECTION_ENABLED]
+    private val classScanningEnabled = configuration.parameters[Test2CodeParameterDefinitions.CLASS_SCANNING_ENABLED]
 
     override fun onConnect() {}
 
     override fun instrument(
         className: String,
         initialBytes: ByteArray,
-    ): ByteArray? = instrumenter.instrument(className, initialBytes)
+    ): ByteArray? = takeIf { coverageCollectionEnabled }?.let {
+        instrumenter.instrument(className, initialBytes)
+    }
 
     override fun load() {
         AgentParametersValidator(configuration.parameters).validate(
@@ -81,8 +86,12 @@ class Test2Code(
         thread {
             scanAndSendMetadataClasses()
         }
-        coverageSender.startSendingCoverage()
-        Runtime.getRuntime().addShutdownHook(Thread { coverageSender.stopSendingCoverage() })
+        if (coverageCollectionEnabled) {
+            coverageSender.startSendingCoverage()
+            Runtime.getRuntime().addShutdownHook(Thread { coverageSender.stopSendingCoverage() })
+        } else {
+            logger.info { "Coverage collection is disabled" }
+        }
     }
 
     /**
@@ -131,6 +140,10 @@ class Test2Code(
      * Scan, parse and send metadata classes to the admin side
      */
     fun scanAndSendMetadataClasses() {
+        if (!classScanningEnabled) {
+            logger.info { "Class scanning is disabled" }
+            return
+        }
         var classCount = 0
         var methodCount = 0
         scanClasses { classes ->
