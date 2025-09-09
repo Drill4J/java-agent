@@ -16,9 +16,9 @@
 package com.epam.drill.agent
 
 import com.epam.drill.agent.common.configuration.AgentConfiguration
+import com.epam.drill.agent.common.configuration.AgentMetadata
 import com.epam.drill.agent.common.configuration.AgentParameterDefinitionCollection
 import com.epam.drill.agent.common.configuration.BaseAgentParameterDefinition
-import com.epam.drill.agent.common.transport.AgentMessage
 import com.epam.drill.agent.common.transport.AgentMessageDestination
 import com.epam.drill.agent.configuration.AgentParameterValidationError
 import com.epam.drill.agent.configuration.AgentParametersValidator
@@ -83,7 +83,7 @@ fun main(args: Array<String>) {
         sslTruststorePass = configuration.parameters[ParameterDefinitions.SSL_TRUSTSTORE_PASSWORD] ?: "",
         gzipCompression = configuration.parameters[ParameterDefinitions.USE_GZIP_COMPRESSION],
     )
-    val serializer = JsonAgentMessageSerializer<AgentMessage>()
+    val serializer = JsonAgentMessageSerializer()
     val mapper = HttpAgentMessageDestinationMapper()
     val sender = SimpleAgentMessageSender(transport, serializer, mapper)
     val test2Code = Test2Code(
@@ -92,7 +92,7 @@ fun main(args: Array<String>) {
         sender = sender,
         configuration = configuration
     )
-    sender.send(AgentMessageDestination("PUT", "builds"), configuration.agentMetadata)
+    sender.send(AgentMessageDestination("PUT", "builds"), configuration.agentMetadata, AgentMetadata.serializer())
     test2Code.scanAndSendMetadataClasses()
 }
 

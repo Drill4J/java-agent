@@ -27,6 +27,7 @@ import com.epam.drill.agent.jvmapi.gen.GetMethodID
 import com.epam.drill.agent.jvmapi.gen.jclass
 import com.epam.drill.agent.jvmapi.gen.jobject
 import kotlinx.cinterop.ExperimentalForeignApi
+import kotlinx.serialization.KSerializer
 
 @OptIn(ExperimentalForeignApi::class)
 open class GenericAgentModule(
@@ -58,8 +59,8 @@ open class GenericAgentModule(
         override fun invoke() = throw NotImplementedError()
     }
 
-    private class NopMessageSender : AgentMessageSender<AgentMessage> {
-        override fun send(destination: AgentMessageDestination, message: AgentMessage) = throw NotImplementedError()
+    private class NopMessageSender : AgentMessageSender {
+        override fun <T> send(destination: AgentMessageDestination, message: T, serializer: KSerializer<T>) = throw NotImplementedError()
     }
 
     private class NopConfiguration : AgentConfiguration {

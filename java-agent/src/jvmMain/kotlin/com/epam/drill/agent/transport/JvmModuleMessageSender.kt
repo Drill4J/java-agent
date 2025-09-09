@@ -15,6 +15,7 @@
  */
 package com.epam.drill.agent.transport
 
+import com.epam.drill.agent.common.configuration.AgentMetadata
 import java.io.File
 import io.aesy.datasize.ByteUnit
 import io.aesy.datasize.DataSize
@@ -26,26 +27,29 @@ import com.epam.drill.agent.transport.http.HttpAgentMessageTransport
 import com.epam.drill.agent.common.transport.AgentMessage
 import com.epam.drill.agent.common.transport.AgentMessageDestination
 import com.epam.drill.agent.common.transport.AgentMessageSender
+import kotlinx.serialization.InternalSerializationApi
+import kotlinx.serialization.KSerializer
 
-actual object JvmModuleMessageSender : AgentMessageSender<AgentMessage> {
+actual object JvmModuleMessageSender : AgentMessageSender {
 
     private const val QUEUE_DEFAULT_SIZE: Long = 512L * 1024 * 1024
 
     private val logger = KotlinLogging.logger {}
     private val messageSender = messageSender()
 
-    override fun send(destination: AgentMessageDestination, message: AgentMessage) =
-        messageSender.send(destination, message)
+    override fun <T> send(destination: AgentMessageDestination, message: T, serializer: KSerializer<T>) =
+        messageSender.send(destination, message, serializer)
 
     actual fun sendAgentMetadata() {
-        messageSender.send(AgentMessageDestination("PUT", "instances"), Configuration.agentMetadata)
+        messageSender.send(AgentMessageDestination("PUT", "instances"), Configuration.agentMetadata, AgentMetadata.serializer())
     }
 
     override fun shutdown() {
         messageSender.shutdown()
     }
 
-    private fun messageSender(): QueuedAgentMessageSender<AgentMessage> {
+    @OptIn(InternalSerializationApi::class)
+    private fun messageSender(): QueuedAgentMessageSender {
         val transport = HttpAgentMessageTransport(
             serverAddress = Configuration.parameters[ParameterDefinitions.API_URL],
             apiKey = Configuration.parameters[ParameterDefinitions.API_KEY] ?: "",
@@ -55,8 +59,8 @@ actual object JvmModuleMessageSender : AgentMessageSender<AgentMessage> {
             gzipCompression = Configuration.parameters[ParameterDefinitions.USE_GZIP_COMPRESSION],
         )
         val serializer = takeIf { Configuration.parameters[ParameterDefinitions.USE_PROTOBUF_SERIALIZER] }?.let {
-            ProtoBufAgentMessageSerializer<AgentMessage>()
-        } ?: JsonAgentMessageSerializer<AgentMessage>()
+            ProtoBufAgentMessageSerializer()
+        } ?: JsonAgentMessageSerializer()
         val mapper = HttpAgentMessageDestinationMapper()
         val queue = InMemoryAgentMessageQueue(
             capacity = Configuration.parameters[ParameterDefinitions.MESSAGE_QUEUE_LIMIT].let(::parseBytes),

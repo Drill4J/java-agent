@@ -23,6 +23,7 @@ import com.epam.drill.agent.common.transport.AgentMessageSender
 import com.epam.drill.agent.test2code.common.api.ClassCoverage
 import com.epam.drill.agent.test2code.common.api.toBitSet
 import com.epam.drill.agent.test2code.common.transport.CoveragePayload
+import kotlinx.serialization.KSerializer
 
 interface CoverageSender {
     fun startSendingCoverage()
@@ -35,7 +36,7 @@ class IntervalCoverageSender(
     private val instanceId: String,
     private val intervalMs: Long,
     private val pageSize: Int,
-    private val sender: AgentMessageSender<in CoveragePayload> = StubSender(),
+    private val sender: AgentMessageSender = StubSender(),
     private val collectProbes: () -> Sequence<ExecDatum> = { emptySequence() }
 ) : CoverageSender {
     private val scheduledThreadPool = Executors.newSingleThreadScheduledExecutor()
@@ -76,11 +77,11 @@ class IntervalCoverageSender(
                 testSessionId = it.sessionId,
                 probes = it.probes.values.toBitSet()) }
             .chunked(pageSize)
-            .forEach { sender.send(destination, CoveragePayload(groupId, appId, instanceId, it)) }
+            .forEach { sender.send(destination, CoveragePayload(groupId, appId, instanceId, it), CoveragePayload.serializer()) }
     }
 
 }
 
-private class StubSender : AgentMessageSender<CoveragePayload> {
-    override fun send(destination: AgentMessageDestination, message: CoveragePayload) {}
+private class StubSender : AgentMessageSender {
+    override fun <T> send(destination: AgentMessageDestination, message: T, serializer: KSerializer<T>) {}
 }
