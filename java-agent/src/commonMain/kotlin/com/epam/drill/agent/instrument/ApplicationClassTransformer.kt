@@ -13,10 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.epam.drill.agent.instrument.netty
+package com.epam.drill.agent.instrument
 
-import com.epam.drill.agent.instrument.AbstractWsTransformerObject
-import com.epam.drill.agent.instrument.JvmTransformerObject
-import com.epam.drill.agent.instrument.TransformerObject
-
-actual object NettyWsServerTransformer : TransformerObject, AbstractWsTransformerObject()
+expect object ApplicationClassTransformer: TransformerObject

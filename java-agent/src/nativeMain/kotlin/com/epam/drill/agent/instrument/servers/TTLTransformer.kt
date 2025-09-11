@@ -15,7 +15,11 @@
  */
 package com.epam.drill.agent.instrument.servers
 
+import com.epam.drill.agent.configuration.Configuration
 import com.epam.drill.agent.instrument.AbstractTransformerObject
+import com.epam.drill.agent.instrument.InstrumentationParameterDefinitions.INSTRUMENTATION_TTL_ENABLED
+import com.epam.drill.agent.instrument.InstrumentationParameterDefinitions.INSTRUMENTATION_WS_ENABLED
+import com.epam.drill.agent.instrument.JvmTransformerObject
 import com.epam.drill.agent.instrument.TransformerObject
 
 actual object TTLTransformer : TransformerObject, AbstractTransformerObject() {
@@ -29,4 +33,21 @@ actual object TTLTransformer : TransformerObject, AbstractTransformerObject() {
     const val runnableInterface = "java/lang/Runnable"
     const val poolExecutor = "java/util/concurrent/ThreadPoolExecutor"
     const val jdkInternal = "jdk/internal"
+
+    override fun enabled() = super<AbstractTransformerObject>.enabled() && Configuration.parameters[INSTRUMENTATION_TTL_ENABLED]
+    override fun precheck(
+        className: String,
+        loader: Any?,
+        protectionDomain: Any?
+    ): Boolean = loader != null && protectionDomain != null || className in directTtlClasses
+
+    override fun permit(
+        className: String,
+        superName: String?,
+        interfaces: Array<String?>
+    ): Boolean = className in directTtlClasses
+            || (className != timerTaskClass
+            && (runnableInterface in interfaces.filterNotNull()
+            || superName == poolExecutor))
+            && !className.startsWith(jdkInternal)
 }

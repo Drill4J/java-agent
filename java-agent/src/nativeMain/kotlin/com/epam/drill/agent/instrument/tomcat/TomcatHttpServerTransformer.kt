@@ -15,7 +15,12 @@
  */
 package com.epam.drill.agent.instrument.tomcat
 
-import com.epam.drill.agent.instrument.AbstractTransformerObject
+import com.epam.drill.agent.instrument.AbstractHttpTransformerObject
+import com.epam.drill.agent.instrument.JvmTransformerObject
+import com.epam.drill.agent.instrument.TOMCAT_HTTP_FILTER
 import com.epam.drill.agent.instrument.TransformerObject
 
-actual object TomcatHttpServerTransformer : TransformerObject, AbstractTransformerObject()
+actual object TomcatHttpServerTransformer : TransformerObject, AbstractHttpTransformerObject() {
+    override fun permit(className: String, superName: String?, interfaces: Array<String?>) =
+        TOMCAT_HTTP_FILTER == className
+}

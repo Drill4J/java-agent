@@ -15,11 +15,12 @@
  */
 package com.epam.drill.agent.instrument.undertow
 
+import com.epam.drill.agent.configuration.Configuration
 import com.epam.drill.agent.instrument.*
 import com.epam.drill.agent.request.HeadersRetriever
 
 actual object UndertowWsServerTransformer :
     TransformerObject,
-    UndertowWsServerTransformerObject(HeadersRetriever),
+    UndertowWsServerTransformerObject(HeadersRetriever, Configuration),
     HeadersProcessor by DefaultHeadersProcessor,
     ClassPathProvider by RuntimeClassPathProvider

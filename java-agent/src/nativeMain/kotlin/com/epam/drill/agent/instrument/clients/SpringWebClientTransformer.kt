@@ -15,7 +15,13 @@
  */
 package com.epam.drill.agent.instrument.clients
 
+import com.epam.drill.agent.configuration.Configuration
 import com.epam.drill.agent.instrument.AbstractTransformerObject
+import com.epam.drill.agent.instrument.InstrumentationParameterDefinitions.INSTRUMENTATION_APACHE_HTTP_CLIENT_ENABLED
+import com.epam.drill.agent.instrument.InstrumentationParameterDefinitions.INSTRUMENTATION_SPRING_WEB_CLIENT_ENABLED
+import com.epam.drill.agent.instrument.JvmTransformerObject
 import com.epam.drill.agent.instrument.TransformerObject
 
-actual object SpringWebClientTransformer : TransformerObject, AbstractTransformerObject()
+actual object SpringWebClientTransformer : TransformerObject, AbstractTransformerObject() {
+    override fun enabled() = super<AbstractTransformerObject>.enabled() && Configuration.parameters[INSTRUMENTATION_SPRING_WEB_CLIENT_ENABLED]
+}

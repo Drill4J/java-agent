@@ -50,7 +50,7 @@ class IntervalCoverageSender(
             intervalMs,
             TimeUnit.MILLISECONDS
         )
-        logger.debug { "Coverage sending job is started." }
+        logger.info { "Coverage sending job is started." }
     }
 
     override fun stopSendingCoverage() {

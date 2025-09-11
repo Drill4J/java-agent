@@ -15,11 +15,12 @@
  */
 package com.epam.drill.agent.instrument.jetty
 
+import com.epam.drill.agent.configuration.Configuration
 import com.epam.drill.agent.instrument.*
 import com.epam.drill.agent.request.HeadersRetriever
 
 actual object JettyHttpServerTransformer :
     TransformerObject,
-    JettyHttpServerTransformerObject(HeadersRetriever),
+    JettyHttpServerTransformerObject(HeadersRetriever, Configuration),
     HeadersProcessor by DefaultHeadersProcessor,
     ClassPathProvider by RuntimeClassPathProvider

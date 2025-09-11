@@ -15,7 +15,8 @@
  */
 package com.epam.drill.agent.instrument.tomcat
 
-import com.epam.drill.agent.instrument.AbstractTransformerObject
+import com.epam.drill.agent.instrument.AbstractWsTransformerObject
+import com.epam.drill.agent.instrument.JvmTransformerObject
 import com.epam.drill.agent.instrument.TransformerObject
 
-actual object TomcatWsMessagesTransformer : TransformerObject, AbstractTransformerObject()
+actual object TomcatWsMessagesTransformer : TransformerObject, AbstractWsTransformerObject()
