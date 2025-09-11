@@ -25,7 +25,6 @@ import com.epam.drill.agent.common.configuration.AgentConfiguration
 import com.epam.drill.agent.common.module.AgentModule
 import com.epam.drill.agent.common.module.Instrumenter
 import com.epam.drill.agent.common.request.RequestProcessor
-import com.epam.drill.agent.common.transport.AgentMessage
 import com.epam.drill.agent.common.transport.AgentMessageDestination
 import com.epam.drill.agent.common.transport.AgentMessageSender
 import com.epam.drill.agent.common.classloading.EntitySource
@@ -48,7 +47,7 @@ private const val DRILL_TEST_ID_HEADER = "drill-test-id"
 class Test2Code(
     id: String,
     agentContext: AgentContext,
-    sender: AgentMessageSender<AgentMessage>,
+    sender: AgentMessageSender,
     configuration: AgentConfiguration
 ) : AgentModule(id, agentContext, sender, configuration), Instrumenter, ClassScanner, RequestProcessor {
 
@@ -169,7 +168,7 @@ class Test2Code(
             methods = methods
         )
         logger.debug { "sendClassMetadata: Sending methods: $message" }
-        sender.send(classMetadataDestination, message)
+        sender.send(classMetadataDestination, message, ClassMetadata.serializer())
     }
 
 }
