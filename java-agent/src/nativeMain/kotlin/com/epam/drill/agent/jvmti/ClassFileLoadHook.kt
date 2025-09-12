@@ -45,51 +45,51 @@ object ClassFileLoadHook {
         newClassDataLen: CPointer<jintVar>?,
         newData: CPointer<CPointerVar<UByteVar>>?,
     ) {
-        initRuntimeIfNeeded()
+//        initRuntimeIfNeeded()
         val kClassName = clsName?.toKString() ?: return
         val kClassData = classData ?: return
-
-        val precheckedTransformers = TransformerRegistrar.enabledTransformers
-            .filterNot { kClassName.startsWith(DRILL_PACKAGE) }
-            .filter { it.precheck(kClassName, loader, protectionDomain) }
-            .takeIf { it.any() }
-            ?: return
-
-        val (oldClassBytes, reader) = runCatching {
-            val classBytes = ByteArray(classDataLen).apply {
-                Memory.of(kClassData, classDataLen).loadByteArray(0, this)
-            }
-            classBytes to ClassReader(classBytes)
-        }.onFailure {
-            logger.error(it) { "Can't read class: $kClassName" }
-        }.getOrNull() ?: return
-
-        val permittedTransformers = precheckedTransformers.filter {
-            it.permit(
-                kClassName,
-                reader.superName,
-                reader.interfaces
-            )
-        }
-
-        val newClassBytes = permittedTransformers.fold(oldClassBytes) { bytes, transformer ->
-            runCatching {
-                transformer.transform(kClassName, bytes, loader, protectionDomain)
-            }.onFailure {
-                logger.warn(it) { "Can't transform class: $kClassName with ${transformer::class.simpleName}" }
-            }.getOrNull()
-                ?.takeIf { it !== bytes }
-                ?.also {
-                    logger.debug { "$kClassName was transformed by ${transformer::class.simpleName}" }
-                } ?: bytes
-        }
-
-        if (newClassBytes !== oldClassBytes) {
-            totalTransformClass.addAndGet(1).takeIf { it % 100 == 0 }?.let {
-                logger.debug { "At least $it classes were transformed" }
-            }
-            convertToNativePointers(newClassBytes, newData, newClassDataLen)
-        }
+        println("!!! ClassFileLoadHook: $kClassName")
+//        val precheckedTransformers = TransformerRegistrar.enabledTransformers
+//            .filterNot { kClassName.startsWith(DRILL_PACKAGE) }
+//            .filter { it.precheck(kClassName, loader, protectionDomain) }
+//            .takeIf { it.any() }
+//            ?: return
+//
+//        val (oldClassBytes, reader) = runCatching {
+//            val classBytes = ByteArray(classDataLen).apply {
+//                Memory.of(kClassData, classDataLen).loadByteArray(0, this)
+//            }
+//            classBytes to ClassReader(classBytes)
+//        }.onFailure {
+//            logger.error(it) { "Can't read class: $kClassName" }
+//        }.getOrNull() ?: return
+//
+//        val permittedTransformers = precheckedTransformers.filter {
+//            it.permit(
+//                kClassName,
+//                reader.superName,
+//                reader.interfaces
+//            )
+//        }
+//
+//        val newClassBytes = permittedTransformers.fold(oldClassBytes) { bytes, transformer ->
+//            runCatching {
+//                transformer.transform(kClassName, bytes, loader, protectionDomain)
+//            }.onFailure {
+//                logger.warn(it) { "Can't transform class: $kClassName with ${transformer::class.simpleName}" }
+//            }.getOrNull()
+//                ?.takeIf { it !== bytes }
+//                ?.also {
+//                    logger.debug { "$kClassName was transformed by ${transformer::class.simpleName}" }
+//                } ?: bytes
+//        }
+//
+//        if (newClassBytes !== oldClassBytes) {
+//            totalTransformClass.addAndGet(1).takeIf { it % 100 == 0 }?.let {
+//                logger.debug { "At least $it classes were transformed" }
+//            }
+//            convertToNativePointers(newClassBytes, newData, newClassDataLen)
+//        }
     }
 
     @OptIn(ExperimentalForeignApi::class)

@@ -120,9 +120,9 @@ object Agent {
 //        AgentLoggingConfiguration.updateNativeLoggingConfiguration()
 //        TransformerRegistrar.initialize(transformers)
 //
-//        addCapabilities()
+        addCapabilities()
         setEventCallbacks()
-//        setUnhandledExceptionHook({ error: Throwable -> logger.error(error) { "Unhandled event: $error" }}.freeze())
+        setUnhandledExceptionHook({ error: Throwable -> logger.error(error) { "Unhandled event: $error" }}.freeze())
         println("!!! AddToBootstrapClassLoaderSearch(\"${Configuration.parameters[INSTALLATION_DIR]}/drill-runtime.jar\")")
         AddToBootstrapClassLoaderSearch("${Configuration.parameters[INSTALLATION_DIR]}/drill-runtime.jar")
 
@@ -138,38 +138,33 @@ object Agent {
     @OptIn(ExperimentalForeignApi::class)
     fun agentOnVmInit() {
         initRuntimeIfNeeded()
-//        SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_CLASS_FILE_LOAD_HOOK, null)
+        SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_CLASS_FILE_LOAD_HOOK, null)
 //
 //        AgentLoggingConfiguration.defaultJvmLoggingConfiguration()
 //        AgentLoggingConfiguration.updateJvmLoggingConfiguration()
-        println("!!! Configuration.initializeJvm()")
         Configuration.initializeJvm()
-//
-//
-        println("!!! loadJvmModule(\"com.epam.drill.agent.test2code.Test2Code\")")
         loadJvmModule("com.epam.drill.agent.test2code.Test2Code")
-//        println("!!! JvmModuleMessageSender.sendAgentMetadata()")
-//        JvmModuleMessageSender.sendAgentMetadata()
+        JvmModuleMessageSender.sendAgentMetadata()
     }
 
     fun agentOnVmDeath() {
         logger.debug { "agentOnVmDeath" }
     }
 
-//    @OptIn(ExperimentalForeignApi::class)
-//    private fun addCapabilities() = memScoped {
-//        val jvmtiCapabilities = alloc<jvmtiCapabilities>()
-//        jvmtiCapabilities.can_retransform_classes = 1.toUInt()
-//        jvmtiCapabilities.can_maintain_original_method_order = 1.toUInt()
-//        AddCapabilities(jvmtiCapabilities.ptr)
-//    }
+    @OptIn(ExperimentalForeignApi::class)
+    private fun addCapabilities() = memScoped {
+        val jvmtiCapabilities = alloc<jvmtiCapabilities>()
+        jvmtiCapabilities.can_retransform_classes = 1.toUInt()
+        jvmtiCapabilities.can_maintain_original_method_order = 1.toUInt()
+        AddCapabilities(jvmtiCapabilities.ptr)
+    }
 
     @OptIn(ExperimentalForeignApi::class)
     private fun setEventCallbacks() = memScoped {
         val alloc = alloc<jvmtiEventCallbacks>()
         alloc.VMInit = staticCFunction(::vmInitEvent)
         alloc.VMDeath = staticCFunction(::vmDeathEvent)
-//        alloc.ClassFileLoadHook = staticCFunction(::classFileLoadHook)
+        alloc.ClassFileLoadHook = staticCFunction(::classFileLoadHook)
         SetEventCallbacks(alloc.ptr, sizeOf<jvmtiEventCallbacks>().toInt())
         SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_VM_INIT, null)
     }
@@ -177,7 +172,6 @@ object Agent {
     private fun loadJvmModule(clazz: String) = runCatching { JvmModuleLoader.loadJvmModule(clazz).load() }
         .onFailure {
             logger.error(it) { "loadJvmModule: Fatal error: id=${clazz}" }
-            println("!!! loadJvmModule: Fatal error: id=${clazz}")
         }
 
 }
