@@ -78,7 +78,7 @@ object Agent {
          Java Agent (v${agentVersion})
         """.trimIndent()
 
-//    private val logger = KotlinLogging.logger("com.epam.drill.agent.Agent")
+    private val logger = KotlinLogging.logger("com.epam.drill.agent.Agent")
 //    private val transformers = setOf(
 //        ApplicationClassTransformer,
 //        TomcatHttpServerTransformer,
@@ -115,40 +115,45 @@ object Agent {
     fun agentOnLoad(options: String): Int {
         println(logo)
 //        AgentLoggingConfiguration.defaultNativeLoggingConfiguration()
-//        Configuration.initializeNative(options)
+        println("!!! Configuration.initializeNative(options)")
+        Configuration.initializeNative(options)
 //        AgentLoggingConfiguration.updateNativeLoggingConfiguration()
 //        TransformerRegistrar.initialize(transformers)
 //
 //        addCapabilities()
-//        setEventCallbacks()
+        setEventCallbacks()
 //        setUnhandledExceptionHook({ error: Throwable -> logger.error(error) { "Unhandled event: $error" }}.freeze())
-//        AddToBootstrapClassLoaderSearch("${Configuration.parameters[INSTALLATION_DIR]}/drill-runtime.jar")
+        println("!!! AddToBootstrapClassLoaderSearch(\"${Configuration.parameters[INSTALLATION_DIR]}/drill-runtime.jar\")")
+        AddToBootstrapClassLoaderSearch("${Configuration.parameters[INSTALLATION_DIR]}/drill-runtime.jar")
 
-//        logger.info { "agentOnLoad: Java Agent has been loaded. Pid is: " + getpid() }
+        logger.info { "agentOnLoad: Java Agent has been loaded. Pid is: " + getpid() }
 
         return JNI_OK
     }
 
     fun agentOnUnload() {
-//        logger.info { "agentOnUnload: Java Agent has been unloaded." }
+        logger.info { "agentOnUnload: Java Agent has been unloaded." }
     }
 
     @OptIn(ExperimentalForeignApi::class)
     fun agentOnVmInit() {
-//        initRuntimeIfNeeded()
+        initRuntimeIfNeeded()
 //        SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_CLASS_FILE_LOAD_HOOK, null)
 //
 //        AgentLoggingConfiguration.defaultJvmLoggingConfiguration()
 //        AgentLoggingConfiguration.updateJvmLoggingConfiguration()
-//        Configuration.initializeJvm()
+        println("!!! Configuration.initializeJvm()")
+        Configuration.initializeJvm()
 //
 //
-//        loadJvmModule("com.epam.drill.agent.test2code.Test2Code")
+        println("!!! loadJvmModule(\"com.epam.drill.agent.test2code.Test2Code\")")
+        loadJvmModule("com.epam.drill.agent.test2code.Test2Code")
+//        println("!!! JvmModuleMessageSender.sendAgentMetadata()")
 //        JvmModuleMessageSender.sendAgentMetadata()
     }
 
     fun agentOnVmDeath() {
-//        logger.debug { "agentOnVmDeath" }
+        logger.debug { "agentOnVmDeath" }
     }
 
 //    @OptIn(ExperimentalForeignApi::class)
@@ -159,17 +164,20 @@ object Agent {
 //        AddCapabilities(jvmtiCapabilities.ptr)
 //    }
 
-//    @OptIn(ExperimentalForeignApi::class)
-//    private fun setEventCallbacks() = memScoped {
-//        val alloc = alloc<jvmtiEventCallbacks>()
-//        alloc.VMInit = staticCFunction(::vmInitEvent)
-//        alloc.VMDeath = staticCFunction(::vmDeathEvent)
+    @OptIn(ExperimentalForeignApi::class)
+    private fun setEventCallbacks() = memScoped {
+        val alloc = alloc<jvmtiEventCallbacks>()
+        alloc.VMInit = staticCFunction(::vmInitEvent)
+        alloc.VMDeath = staticCFunction(::vmDeathEvent)
 //        alloc.ClassFileLoadHook = staticCFunction(::classFileLoadHook)
-//        SetEventCallbacks(alloc.ptr, sizeOf<jvmtiEventCallbacks>().toInt())
-//        SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_VM_INIT, null)
-//    }
+        SetEventCallbacks(alloc.ptr, sizeOf<jvmtiEventCallbacks>().toInt())
+        SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_VM_INIT, null)
+    }
 
-//    private fun loadJvmModule(clazz: String) = runCatching { JvmModuleLoader.loadJvmModule(clazz).load() }
-//        .onFailure { logger.error(it) { "loadJvmModule: Fatal error: id=${clazz}" } }
+    private fun loadJvmModule(clazz: String) = runCatching { JvmModuleLoader.loadJvmModule(clazz).load() }
+        .onFailure {
+            logger.error(it) { "loadJvmModule: Fatal error: id=${clazz}" }
+            println("!!! loadJvmModule: Fatal error: id=${clazz}")
+        }
 
 }
