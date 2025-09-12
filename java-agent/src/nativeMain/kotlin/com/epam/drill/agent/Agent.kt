@@ -79,51 +79,48 @@ object Agent {
         """.trimIndent()
 
     private val logger = KotlinLogging.logger("com.epam.drill.agent.Agent")
-//    private val transformers = setOf(
-//        ApplicationClassTransformer,
-//        TomcatHttpServerTransformer,
-//        JettyHttpServerTransformer,
-//        UndertowHttpServerTransformer,
-//        NettyHttpServerTransformer,
-//        JavaHttpClientTransformer,
-//        ApacheHttpClientTransformer,
-//        OkHttp3ClientTransformer,
-//        SpringWebClientTransformer,
-//        KafkaTransformer,
-//        CadenceTransformer,
-//        TTLTransformer,
-//        ReactorTransformer,
-//        SSLEngineTransformer,
-//        JettyWsClientTransformer,
-//        JettyWsServerTransformer,
-//        Jetty9WsMessagesTransformer,
-//        Jetty10WsMessagesTransformer,
-//        Jetty11WsMessagesTransformer,
-//        NettyWsClientTransformer,
-//        NettyWsServerTransformer,
-//        NettyWsMessagesTransformer,
-//        TomcatWsClientTransformer,
-//        TomcatWsServerTransformer,
-//        TomcatWsMessagesTransformer,
-//        UndertowWsClientTransformer,
-//        UndertowWsServerTransformer,
-//        UndertowWsMessagesTransformer,
-//        CompatibilityTestsTransformer,
-//    )
+    private val transformers = setOf(
+        ApplicationClassTransformer,
+        TomcatHttpServerTransformer,
+        JettyHttpServerTransformer,
+        UndertowHttpServerTransformer,
+        NettyHttpServerTransformer,
+        JavaHttpClientTransformer,
+        ApacheHttpClientTransformer,
+        OkHttp3ClientTransformer,
+        SpringWebClientTransformer,
+        KafkaTransformer,
+        CadenceTransformer,
+        TTLTransformer,
+        ReactorTransformer,
+        SSLEngineTransformer,
+        JettyWsClientTransformer,
+        JettyWsServerTransformer,
+        Jetty9WsMessagesTransformer,
+        Jetty10WsMessagesTransformer,
+        Jetty11WsMessagesTransformer,
+        NettyWsClientTransformer,
+        NettyWsServerTransformer,
+        NettyWsMessagesTransformer,
+        TomcatWsClientTransformer,
+        TomcatWsServerTransformer,
+        TomcatWsMessagesTransformer,
+        UndertowWsClientTransformer,
+        UndertowWsServerTransformer,
+        UndertowWsMessagesTransformer,
+        CompatibilityTestsTransformer,
+    )
 
     @OptIn(ExperimentalNativeApi::class, ExperimentalForeignApi::class)
     fun agentOnLoad(options: String): Int {
         println(logo)
-//        AgentLoggingConfiguration.defaultNativeLoggingConfiguration()
-        println("!!! Configuration.initializeNative(options)")
+        AgentLoggingConfiguration.defaultNativeLoggingConfiguration()
         Configuration.initializeNative(options)
-//        AgentLoggingConfiguration.updateNativeLoggingConfiguration()
-//        TransformerRegistrar.initialize(transformers)
-//
+        AgentLoggingConfiguration.updateNativeLoggingConfiguration()
+        TransformerRegistrar.initialize(transformers)
         addCapabilities()
         setEventCallbacks()
         setUnhandledExceptionHook({ error: Throwable -> logger.error(error) { "Unhandled event: $error" }}.freeze())
-        println("!!! AddToBootstrapClassLoaderSearch(\"${Configuration.parameters[INSTALLATION_DIR]}/drill-runtime.jar\")")
         AddToBootstrapClassLoaderSearch("${Configuration.parameters[INSTALLATION_DIR]}/drill-runtime.jar")
 
         logger.info { "agentOnLoad: Java Agent has been loaded. Pid is: " + getpid() }
@@ -139,9 +136,9 @@ object Agent {
     fun agentOnVmInit() {
         initRuntimeIfNeeded()
         SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_CLASS_FILE_LOAD_HOOK, null)
-//
-//        AgentLoggingConfiguration.defaultJvmLoggingConfiguration()
-//        AgentLoggingConfiguration.updateJvmLoggingConfiguration()
+
+        AgentLoggingConfiguration.defaultJvmLoggingConfiguration()
+        AgentLoggingConfiguration.updateJvmLoggingConfiguration()
         Configuration.initializeJvm()
         loadJvmModule("com.epam.drill.agent.test2code.Test2Code")
         JvmModuleMessageSender.sendAgentMetadata()

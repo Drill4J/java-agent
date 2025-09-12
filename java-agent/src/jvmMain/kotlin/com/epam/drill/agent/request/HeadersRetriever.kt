@@ -16,11 +16,28 @@
 package com.epam.drill.agent.request
 
 import com.epam.drill.agent.common.request.HeadersRetriever
+import com.epam.drill.agent.configuration.Configuration
+import com.epam.drill.agent.configuration.ParameterDefinitions
+import kotlin.text.isNotEmpty
 
 actual object HeadersRetriever : HeadersRetriever {
-    actual external override fun adminAddressHeader(): String
-    actual external override fun adminAddressValue(): String
-    actual external override fun sessionHeader(): String
-    actual external override fun agentIdHeader(): String
-    actual external override fun agentIdHeaderValue(): String
+
+    private val adminAddress by lazy { Configuration.parameters[ParameterDefinitions.API_URL] }
+
+    private val agentIdHeader by lazy {
+        Configuration.agentMetadata.groupId.takeIf(String::isNotEmpty)
+            ?.let { "drill-group-id" to Configuration.agentMetadata.groupId }
+            ?: let { "drill-agent-id" to Configuration.agentMetadata.appId }
+    }
+
+    actual override fun adminAddressHeader() = "drill-admin-url"
+
+    actual override fun adminAddressValue() = adminAddress
+
+    actual override fun sessionHeader() = "drill-session-id"
+
+    actual override fun agentIdHeader() = agentIdHeader.first
+
+    actual override fun agentIdHeaderValue() = agentIdHeader.second
+
 }
