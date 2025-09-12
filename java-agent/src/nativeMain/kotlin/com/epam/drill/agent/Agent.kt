@@ -120,7 +120,7 @@ object Agent {
 //        AgentLoggingConfiguration.updateNativeLoggingConfiguration()
 //        TransformerRegistrar.initialize(transformers)
 //
-        addCapabilities()
+//        addCapabilities()
         setEventCallbacks()
         setUnhandledExceptionHook({ error: Throwable -> logger.error(error) { "Unhandled event: $error" }}.freeze())
         println("!!! AddToBootstrapClassLoaderSearch(\"${Configuration.parameters[INSTALLATION_DIR]}/drill-runtime.jar\")")
@@ -151,13 +151,13 @@ object Agent {
         logger.debug { "agentOnVmDeath" }
     }
 
-    @OptIn(ExperimentalForeignApi::class)
-    private fun addCapabilities() = memScoped {
-        val jvmtiCapabilities = alloc<jvmtiCapabilities>()
-        jvmtiCapabilities.can_retransform_classes = 1.toUInt()
-        jvmtiCapabilities.can_maintain_original_method_order = 1.toUInt()
-        AddCapabilities(jvmtiCapabilities.ptr)
-    }
+//    @OptIn(ExperimentalForeignApi::class)
+//    private fun addCapabilities() = memScoped {
+//        val jvmtiCapabilities = alloc<jvmtiCapabilities>()
+//        jvmtiCapabilities.can_retransform_classes = 1.toUInt()
+//        jvmtiCapabilities.can_maintain_original_method_order = 1.toUInt()
+//        AddCapabilities(jvmtiCapabilities.ptr)
+//    }
 
     @OptIn(ExperimentalForeignApi::class)
     private fun setEventCallbacks() = memScoped {
