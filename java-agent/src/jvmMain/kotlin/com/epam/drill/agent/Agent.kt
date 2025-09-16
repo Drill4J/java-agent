@@ -90,7 +90,7 @@ private val transformers = setOf(
     CadenceTransformer,
     TTLTransformer,
     ReactorTransformer,
-//    SSLEngineTransformer,
+//    SSLEngineTransformer, TODO does not work in JVM due to too early initialization of HeadersRetriever
     JettyWsClientTransformer,
     JettyWsServerTransformer,
     Jetty9WsMessagesTransformer,
@@ -113,7 +113,7 @@ fun premain(agentArgs: String?, inst: Instrumentation) {
         // init
         println(logo)
         LoggingConfiguration.readDefaultConfiguration()
-        Configuration.initializeJvm(agentArgs ?: "")
+        Configuration.initializeNative(agentArgs ?: "")
         updateJvmLoggingConfiguration()
         TransformerRegistrar.initialize(transformers)
         inst.addTransformer(DrillClassLoadTransformer, true)
