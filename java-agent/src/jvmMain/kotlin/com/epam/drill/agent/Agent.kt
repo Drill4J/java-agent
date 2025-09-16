@@ -34,7 +34,9 @@ import com.epam.drill.agent.instrument.undertow.UndertowHttpServerTransformer
 import com.epam.drill.agent.instrument.undertow.UndertowWsClientTransformer
 import com.epam.drill.agent.instrument.undertow.UndertowWsMessagesTransformer
 import com.epam.drill.agent.instrument.undertow.UndertowWsServerTransformer
+import com.epam.drill.agent.logging.LoggingConfiguration
 import com.epam.drill.agent.module.JvmModuleLoader
+import com.epam.drill.agent.module.JvmModuleStorage
 import com.epam.drill.agent.test2code.Test2Code
 import com.epam.drill.agent.transport.HttpAgentMessageDestinationMapper
 import com.epam.drill.agent.transport.JsonAgentMessageSerializer
@@ -93,11 +95,27 @@ private val transformers = setOf(
 
 fun premain(agentArgs: String?, inst: Instrumentation) {
     println(logo)
+    LoggingConfiguration.readDefaultConfiguration()
     Configuration.initializeJvm(agentArgs ?: "")
+    updateJvmLoggingConfiguration()
     TransformerRegistrar.initialize(transformers)
     inst.addTransformer(DrillClassLoadTransformer, true)
     JvmModuleMessageSender.sendAgentMetadata()
-    JvmModuleLoader.loadJvmModule(Test2Code::class.java.name)
+    JvmModuleLoader.loadJvmModule(Test2Code::class.java.name).load()
+}
+
+private fun updateJvmLoggingConfiguration() {
+    val logLevel = Configuration.parameters[ParameterDefinitions.LOG_LEVEL]
+    val logFile = Configuration.parameters[ParameterDefinitions.LOG_FILE]
+    val logLimit = Configuration.parameters[ParameterDefinitions.LOG_LIMIT]
+
+    LoggingConfiguration.setLoggingLevels(logLevel)
+    if (LoggingConfiguration.getLoggingFilename() != logFile) {
+        LoggingConfiguration.setLoggingFilename(logFile)
+    }
+    if (LoggingConfiguration.getLogMessageLimit() != logLimit) {
+        LoggingConfiguration.setLogMessageLimit(logLimit)
+    }
 }
 
 object DrillClassLoadTransformer : ClassFileTransformer {

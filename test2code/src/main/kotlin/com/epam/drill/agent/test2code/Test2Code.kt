@@ -78,7 +78,6 @@ class Test2Code(
     }
 
     override fun load() {
-        println("!!! loaded")
         AgentParametersValidator(configuration.parameters).validate(
             Test2CodeParameterDefinitions.SCAN_CLASS_PATH,
             Test2CodeParameterDefinitions.SCAN_CLASS_DELAY
