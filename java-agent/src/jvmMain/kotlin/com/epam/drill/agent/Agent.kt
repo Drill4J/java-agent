@@ -1,3 +1,18 @@
+/**
+ * Copyright 2020 - 2022 EPAM Systems
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package com.epam.drill.agent
 
 import com.epam.drill.agent.common.configuration.AgentMetadata
@@ -94,14 +109,19 @@ private val transformers = setOf(
     )
 
 fun premain(agentArgs: String?, inst: Instrumentation) {
-    println(logo)
-    LoggingConfiguration.readDefaultConfiguration()
-    Configuration.initializeJvm(agentArgs ?: "")
-    updateJvmLoggingConfiguration()
-    TransformerRegistrar.initialize(transformers)
-    inst.addTransformer(DrillClassLoadTransformer, true)
-    JvmModuleMessageSender.sendAgentMetadata()
-    JvmModuleLoader.loadJvmModule(Test2Code::class.java.name).load()
+    try {
+        // init
+        println(logo)
+        LoggingConfiguration.readDefaultConfiguration()
+        Configuration.initializeJvm(agentArgs ?: "")
+        updateJvmLoggingConfiguration()
+        TransformerRegistrar.initialize(transformers)
+        inst.addTransformer(DrillClassLoadTransformer, true)
+        JvmModuleMessageSender.sendAgentMetadata()
+        JvmModuleLoader.loadJvmModule(Test2Code::class.java.name).load()
+    } catch (e: Throwable) {
+        e.printStackTrace();
+    }
 }
 
 private fun updateJvmLoggingConfiguration() {
