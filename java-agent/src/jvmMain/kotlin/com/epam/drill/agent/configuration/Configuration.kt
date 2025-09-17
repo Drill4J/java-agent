@@ -57,14 +57,8 @@ actual object Configuration : AgentConfiguration {
         logger.debug { "initializeNative: Found environment variables: ${environmentVariablesProvider.configuration}" }
         val agentOptionsProvider = AgentOptionsProvider(agentOptions)
         logger.debug { "initializeNative: Found agent options: ${agentOptionsProvider.configuration}" }
-        val validatedParametersProvider = ValidatedParametersProvider(setOf(
-            environmentVariablesProvider,
-            agentOptionsProvider
-        ))
         val runtimeParametersProvider = RuntimeParametersProvider()
-
         val inputParameters = inputParameters(setOf(
-            validatedParametersProvider,
             environmentVariablesProvider,
             agentOptionsProvider,
             runtimeParametersProvider

@@ -17,7 +17,11 @@ package com.epam.drill.agent
 
 import com.epam.drill.agent.common.configuration.AgentMetadata
 import com.epam.drill.agent.common.transport.AgentMessageDestination
+import com.epam.drill.agent.configuration.AgentParameterValidationError
+import com.epam.drill.agent.configuration.AgentParametersValidator
 import com.epam.drill.agent.configuration.Configuration
+import com.epam.drill.agent.configuration.DefaultAgentConfiguration
+import com.epam.drill.agent.configuration.DefaultParameterDefinitions
 import com.epam.drill.agent.configuration.ParameterDefinitions
 import com.epam.drill.agent.instrument.ApplicationClassTransformer
 import com.epam.drill.agent.instrument.TransformerRegistrar
@@ -39,7 +43,6 @@ import com.epam.drill.agent.instrument.servers.CadenceTransformer
 import com.epam.drill.agent.instrument.servers.CompatibilityTestsTransformer
 import com.epam.drill.agent.instrument.servers.KafkaTransformer
 import com.epam.drill.agent.instrument.servers.ReactorTransformer
-import com.epam.drill.agent.instrument.servers.SSLEngineTransformer
 import com.epam.drill.agent.instrument.servers.TTLTransformer
 import com.epam.drill.agent.instrument.tomcat.TomcatHttpServerTransformer
 import com.epam.drill.agent.instrument.tomcat.TomcatWsClientTransformer
@@ -51,8 +54,8 @@ import com.epam.drill.agent.instrument.undertow.UndertowWsMessagesTransformer
 import com.epam.drill.agent.instrument.undertow.UndertowWsServerTransformer
 import com.epam.drill.agent.logging.LoggingConfiguration
 import com.epam.drill.agent.module.JvmModuleLoader
-import com.epam.drill.agent.module.JvmModuleStorage
 import com.epam.drill.agent.test2code.Test2Code
+import com.epam.drill.agent.test2code.configuration.Test2CodeParameterDefinitions
 import com.epam.drill.agent.transport.HttpAgentMessageDestinationMapper
 import com.epam.drill.agent.transport.JsonAgentMessageSerializer
 import com.epam.drill.agent.transport.JvmModuleMessageSender
@@ -62,6 +65,7 @@ import jdk.internal.org.objectweb.asm.ClassReader
 import mu.KotlinLogging
 import java.lang.instrument.ClassFileTransformer
 import java.lang.instrument.Instrumentation
+import kotlin.system.exitProcess
 
 private val logo = """
           ____    ____                 _       _          _  _                _      
@@ -106,23 +110,65 @@ private val transformers = setOf(
     UndertowWsServerTransformer,
     UndertowWsMessagesTransformer,
     CompatibilityTestsTransformer,
-    )
+)
 
 fun premain(agentArgs: String?, inst: Instrumentation) {
     try {
-        // init
         println(logo)
         LoggingConfiguration.readDefaultConfiguration()
         Configuration.initializeNative(agentArgs ?: "")
         updateJvmLoggingConfiguration()
+        validateConfiguration()
         TransformerRegistrar.initialize(transformers)
-        inst.addTransformer(DrillClassLoadTransformer, true)
+        inst.addTransformer(DrillClassFileTransformer, true)
         JvmModuleMessageSender.sendAgentMetadata()
         JvmModuleLoader.loadJvmModule(Test2Code::class.java.name).load()
     } catch (e: Throwable) {
-        e.printStackTrace();
+        println("Drill4J Initialization Error:\n${e.message ?: e::class.java.name}")
     }
 }
+
+fun main(args: Array<String>) {
+    try {
+        println(logo)
+        LoggingConfiguration.readDefaultConfiguration()
+        Configuration.initializeNative(args.convertToAgentArgs())
+        updateJvmLoggingConfiguration()
+        validateConfiguration()
+
+        val commitSha = Configuration.parameters[DefaultParameterDefinitions.COMMIT_SHA]
+        val buildVersion = Configuration.parameters[DefaultParameterDefinitions.BUILD_VERSION]
+        if (commitSha == null && buildVersion == null)
+            throw AgentParameterValidationError("Either commitSha or buildVersion must be provided")
+
+        JvmModuleMessageSender.sendBuildMetadata()
+        val test2Code = JvmModuleLoader.loadJvmModule(Test2Code::class.java.name) as Test2Code
+        test2Code.scanAndSendMetadataClasses()
+        Runtime.getRuntime().addShutdownHook(Thread { JvmModuleMessageSender.shutdown() })
+        exitProcess(0)
+    } catch (e: Throwable) {
+        println("Drill4J Initialization Error:\n${e.message ?: e::class.java.name}")
+        exitProcess(1)
+    }
+}
+
+private fun validateConfiguration() {
+    val validator = AgentParametersValidator(Configuration.parameters)
+    validator.validate(
+        DefaultParameterDefinitions,
+        ParameterDefinitions,
+        Test2CodeParameterDefinitions
+    )
+}
+
+private fun Array<String>.convertToAgentArgs(): String = this
+    .filter { it.startsWith("--") && it.contains("=") }
+    .associate {
+        val (key, value) = it.removePrefix("--").split("=", limit = 2)
+        key to value
+    }.filter { it.value.isNotEmpty() }
+    .map { "${it.key}=${it.value}" }
+    .joinToString(",")
 
 private fun updateJvmLoggingConfiguration() {
     val logLevel = Configuration.parameters[ParameterDefinitions.LOG_LEVEL]
@@ -138,7 +184,7 @@ private fun updateJvmLoggingConfiguration() {
     }
 }
 
-object DrillClassLoadTransformer : ClassFileTransformer {
+object DrillClassFileTransformer : ClassFileTransformer {
     override fun transform(
         loader: ClassLoader?,
         className: String?,
@@ -146,7 +192,6 @@ object DrillClassLoadTransformer : ClassFileTransformer {
         protectionDomain: java.security.ProtectionDomain?,
         classfileBuffer: ByteArray?
     ): ByteArray? {
-        // Implement transformation logic here if needed
         val kClassName = className ?: return null
         val kClassBytes = classfileBuffer ?: return null
         val precheckedTransformers = TransformerRegistrar.enabledTransformers

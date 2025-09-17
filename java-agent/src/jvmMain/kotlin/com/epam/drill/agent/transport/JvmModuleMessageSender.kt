@@ -44,6 +44,10 @@ actual object JvmModuleMessageSender : AgentMessageSender {
         messageSender.send(AgentMessageDestination("PUT", "instances"), Configuration.agentMetadata, AgentMetadata.serializer())
     }
 
+    fun sendBuildMetadata() {
+        messageSender.send(AgentMessageDestination("PUT", "builds"), Configuration.agentMetadata, AgentMetadata.serializer())
+    }
+
     override fun shutdown() {
         messageSender.shutdown()
     }
