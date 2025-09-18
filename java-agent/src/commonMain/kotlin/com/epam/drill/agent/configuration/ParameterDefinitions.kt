@@ -30,6 +30,10 @@ object ParameterDefinitions: AgentParameterDefinitionCollection() {
         name = "apiKey",
         description = "Drill4J API key. It is recommended to set it with DRILL_API_KEY env variable, rather than using command line argument"
     ).register()
+    val MESSAGE_SENDING_MODE = AgentParameterDefinition.forString(
+        name = "messageSendingMode",
+        description = "Message sending mode. Possible values: DIRECT, QUEUED",
+        defaultValue = "QUEUED").register()
     val MESSAGE_QUEUE_LIMIT = AgentParameterDefinition.forString(name = "messageQueueLimit", defaultValue = "512Mb").register()
     val MESSAGE_MAX_RETRIES = AgentParameterDefinition.forInt(name = "messageMaxRetries", defaultValue = Int.MAX_VALUE).register()
     val SSL_TRUSTSTORE = NullableAgentParameterDefinition.forString(name = "sslTruststore").register()

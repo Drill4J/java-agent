@@ -15,12 +15,9 @@
  */
 package com.epam.drill.agent
 
-import com.epam.drill.agent.common.configuration.AgentMetadata
-import com.epam.drill.agent.common.transport.AgentMessageDestination
 import com.epam.drill.agent.configuration.AgentParameterValidationError
 import com.epam.drill.agent.configuration.AgentParametersValidator
 import com.epam.drill.agent.configuration.Configuration
-import com.epam.drill.agent.configuration.DefaultAgentConfiguration
 import com.epam.drill.agent.configuration.DefaultParameterDefinitions
 import com.epam.drill.agent.configuration.ParameterDefinitions
 import com.epam.drill.agent.instrument.ApplicationClassTransformer
@@ -56,11 +53,7 @@ import com.epam.drill.agent.logging.LoggingConfiguration
 import com.epam.drill.agent.module.JvmModuleLoader
 import com.epam.drill.agent.test2code.Test2Code
 import com.epam.drill.agent.test2code.configuration.Test2CodeParameterDefinitions
-import com.epam.drill.agent.transport.HttpAgentMessageDestinationMapper
-import com.epam.drill.agent.transport.JsonAgentMessageSerializer
 import com.epam.drill.agent.transport.JvmModuleMessageSender
-import com.epam.drill.agent.transport.SimpleAgentMessageSender
-import com.epam.drill.agent.transport.http.HttpAgentMessageTransport
 import jdk.internal.org.objectweb.asm.ClassReader
 import mu.KotlinLogging
 import java.lang.instrument.ClassFileTransformer
