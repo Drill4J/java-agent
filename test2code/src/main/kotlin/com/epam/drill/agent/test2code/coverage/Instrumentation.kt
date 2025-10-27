@@ -33,7 +33,6 @@ private val classCounter = AtomicInteger(0)
 
 class DrillInstrumenter(
     private val probesProxy: IProbesProxy,
-    private val classDescriptorsStorage: IClassDescriptorStorage
 ) : Instrumenter {
 
     private val logger = KotlinLogging.logger {}
@@ -64,15 +63,6 @@ class DrillInstrumenter(
             InstrSupport.needsFrames(version)
         )
         reader.accept(visitor, ClassReader.EXPAND_FRAMES)
-
-        classDescriptorsStorage.add(
-            ClassDescriptor(
-                id = classId,
-                name = className,
-                probeCount = probeCount
-            )
-        )
-
         writer.toByteArray()
     } catch (e: Exception) {
         logger.error { "Error instrumenting $className: ${e.message} ${e.stackTraceToString()}" }

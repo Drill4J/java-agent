@@ -55,7 +55,7 @@ class Test2Code(
     internal val json = Json { encodeDefaults = true }
 
     private val coverageManager = DrillCoverageManager
-    private val instrumenter = DrillInstrumenter(coverageManager, coverageManager)
+    private val instrumenter = DrillInstrumenter(coverageManager)
     private val coverageSender: CoverageSender = IntervalCoverageSender(
         groupId = configuration.agentMetadata.groupId,
         appId = configuration.agentMetadata.appId,

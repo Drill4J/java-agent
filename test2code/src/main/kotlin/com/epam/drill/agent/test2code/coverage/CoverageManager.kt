@@ -18,11 +18,9 @@ package com.epam.drill.agent.test2code.coverage
 import com.epam.drill.agent.jacoco.AgentProbes
 
 open class CoverageManager(
-    private val classDescriptorsManager: IClassDescriptorsManager = ConcurrentClassDescriptorsManager(),
     private val threadCoverageRecorder: ICoverageRecorder = ThreadCoverageRecorder(),
     private val globalCoverageRecorder: GlobalCoverageRecorder = GlobalCoverageRecorder(),
 ) : IProbesProxy,
-    IClassDescriptorStorage by classDescriptorsManager,
     ICoverageRecorder by threadCoverageRecorder {
 
     override fun invoke(
@@ -34,11 +32,10 @@ open class CoverageManager(
         val coverage: ContextCoverage = threadCoverageRecorder.getContext()
             ?: globalCoverageRecorder.getContext()
         val execDatum = coverage.execData.getOrPut(id) {
-            val classDescriptor = classDescriptorsManager.get(id)
             ExecDatum(
-                id = classDescriptor.id,
-                name = classDescriptor.name,
-                probes = AgentProbes(classDescriptor.probeCount),
+                id = id,
+                name = name,
+                probes = AgentProbes(probeCount),
                 sessionId = coverage.context.sessionId,
                 testId = coverage.context.testId
             )
