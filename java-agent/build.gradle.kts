@@ -186,11 +186,14 @@ kotlin {
             "net.bytebuddy",
             "mu",
         )
-        project.setProperty("mainClassName", "com.epam.drill.agent.AppArchiveScannerCliKt")
+        project.setProperty("mainClassName", "com.epam.drill.agent.AgentKt")
         val runtimeJar by registering(ShadowJar::class) {
             manifest {
                 attributes(mapOf(
-                    "Main-Class" to "com.epam.drill.agent.AppArchiveScannerCliKt"
+                    "Main-Class" to "com.epam.drill.agent.AgentKt",
+                    "Premain-Class" to "com.epam.drill.agent.AgentKt",
+                    "Can-Redefine-Classes" to "true",
+                    "Can-Retransform-Classes" to "true"
                 ))
             }
             mergeServiceFiles()

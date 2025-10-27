@@ -48,7 +48,6 @@ object ClassFileLoadHook {
         initRuntimeIfNeeded()
         val kClassName = clsName?.toKString() ?: return
         val kClassData = classData ?: return
-
         val precheckedTransformers = TransformerRegistrar.enabledTransformers
             .filterNot { kClassName.startsWith(DRILL_PACKAGE) }
             .filter { it.precheck(kClassName, loader, protectionDomain) }

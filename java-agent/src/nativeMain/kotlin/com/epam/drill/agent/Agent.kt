@@ -118,7 +118,6 @@ object Agent {
         Configuration.initializeNative(options)
         AgentLoggingConfiguration.updateNativeLoggingConfiguration()
         TransformerRegistrar.initialize(transformers)
-
         addCapabilities()
         setEventCallbacks()
         setUnhandledExceptionHook({ error: Throwable -> logger.error(error) { "Unhandled event: $error" }}.freeze())
@@ -141,8 +140,6 @@ object Agent {
         AgentLoggingConfiguration.defaultJvmLoggingConfiguration()
         AgentLoggingConfiguration.updateJvmLoggingConfiguration()
         Configuration.initializeJvm()
-
-
         loadJvmModule("com.epam.drill.agent.test2code.Test2Code")
         JvmModuleMessageSender.sendAgentMetadata()
     }
@@ -170,6 +167,8 @@ object Agent {
     }
 
     private fun loadJvmModule(clazz: String) = runCatching { JvmModuleLoader.loadJvmModule(clazz).load() }
-        .onFailure { logger.error(it) { "loadJvmModule: Fatal error: id=${clazz}" } }
+        .onFailure {
+            logger.error(it) { "loadJvmModule: Fatal error: id=${clazz}" }
+        }
 
 }

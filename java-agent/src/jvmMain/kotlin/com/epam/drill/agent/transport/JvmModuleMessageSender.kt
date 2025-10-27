@@ -35,13 +35,25 @@ actual object JvmModuleMessageSender : AgentMessageSender {
     private const val QUEUE_DEFAULT_SIZE: Long = 512L * 1024 * 1024
 
     private val logger = KotlinLogging.logger {}
-    private val messageSender = messageSender()
+    private val messageSender by lazy { messageSender() }
 
     override fun <T> send(destination: AgentMessageDestination, message: T, serializer: KSerializer<T>) =
         messageSender.send(destination, message, serializer)
 
     actual fun sendAgentMetadata() {
-        messageSender.send(AgentMessageDestination("PUT", "instances"), Configuration.agentMetadata, AgentMetadata.serializer())
+        messageSender.send(
+            AgentMessageDestination("PUT", "instances"),
+            Configuration.agentMetadata,
+            AgentMetadata.serializer()
+        )
+    }
+
+    fun sendBuildMetadata() {
+        messageSender.send(
+            AgentMessageDestination("PUT", "builds"),
+            Configuration.agentMetadata,
+            AgentMetadata.serializer()
+        )
     }
 
     override fun shutdown() {
@@ -49,7 +61,7 @@ actual object JvmModuleMessageSender : AgentMessageSender {
     }
 
     @OptIn(InternalSerializationApi::class)
-    private fun messageSender(): QueuedAgentMessageSender {
+    private fun messageSender(): AgentMessageSender {
         val transport = HttpAgentMessageTransport(
             serverAddress = Configuration.parameters[ParameterDefinitions.API_URL],
             apiKey = Configuration.parameters[ParameterDefinitions.API_KEY] ?: "",
@@ -65,10 +77,25 @@ actual object JvmModuleMessageSender : AgentMessageSender {
         val queue = InMemoryAgentMessageQueue(
             capacity = Configuration.parameters[ParameterDefinitions.MESSAGE_QUEUE_LIMIT].let(::parseBytes),
         )
-        return QueuedAgentMessageSender(
-            transport, serializer, mapper, queue,
-            maxRetries = Configuration.parameters[ParameterDefinitions.MESSAGE_MAX_RETRIES]
-        )
+        return when (Configuration.parameters[ParameterDefinitions.MESSAGE_SENDING_MODE].uppercase()) {
+            "DIRECT" -> SimpleAgentMessageSender(transport, serializer, mapper).also {
+                logger.info { "Using DIRECT message sending mode." }
+            }
+            "QUEUED" -> QueuedAgentMessageSender(
+                transport, serializer, mapper, queue,
+                maxRetries = Configuration.parameters[ParameterDefinitions.MESSAGE_MAX_RETRIES]
+            ).also {
+                logger.info { "Using QUEUED message sending mode." }
+            }
+
+            else -> SimpleAgentMessageSender(transport, serializer, mapper).also {
+                logger.warn {
+                    "Unknown message sending mode: ${Configuration.parameters[ParameterDefinitions.MESSAGE_SENDING_MODE]}. " +
+                            "Falling back to DIRECT mode."
+
+                }
+            }
+        }
     }
 
     private fun resolvePath(path: String) = File(path).run {

@@ -19,11 +19,32 @@ import mu.KotlinLogging
 import com.epam.drill.agent.common.configuration.AgentConfiguration
 import com.epam.drill.agent.common.configuration.AgentMetadata
 import com.epam.drill.agent.common.configuration.AgentParameters
+import com.epam.drill.agent.configuration.provider.AgentOptionsProvider
+import com.epam.drill.agent.configuration.provider.EnvironmentVariablesProvider
 
 actual object Configuration : AgentConfiguration {
 
     private val logger = KotlinLogging.logger {}
     private lateinit var configuration: DefaultAgentConfiguration
+
+    private fun inputParameters(configurationProviders: Set<AgentConfigurationProvider>) = configurationProviders
+        .sortedBy(AgentConfigurationProvider::priority)
+        .map(AgentConfigurationProvider::configuration)
+        .reduce { acc, map -> acc + map }
+
+    private fun defineDefaults(agentParameters: AgentParameters)  {
+        agentParameters.define(
+            DefaultParameterDefinitions.APP_ID,
+            DefaultParameterDefinitions.INSTANCE_ID,
+            DefaultParameterDefinitions.BUILD_VERSION,
+            DefaultParameterDefinitions.GROUP_ID,
+            DefaultParameterDefinitions.COMMIT_SHA,
+            DefaultParameterDefinitions.ENV_ID,
+            DefaultParameterDefinitions.INSTALLATION_DIR,
+            DefaultParameterDefinitions.CONFIG_PATH
+        )
+        agentParameters.define(DefaultParameterDefinitions.PACKAGE_PREFIXES)
+    }
 
     actual override val agentMetadata: AgentMetadata
         get() = configuration.agentMetadata
@@ -31,7 +52,21 @@ actual object Configuration : AgentConfiguration {
     actual override val parameters: AgentParameters
         get() = configuration.parameters
 
-    actual fun initializeNative(agentOptions: String): Unit = throw NotImplementedError()
+    actual fun initializeNative(agentOptions: String) {
+        val environmentVariablesProvider = EnvironmentVariablesProvider()
+        logger.debug { "initializeNative: Found environment variables: ${environmentVariablesProvider.configuration}" }
+        val agentOptionsProvider = AgentOptionsProvider(agentOptions)
+        logger.debug { "initializeNative: Found agent options: ${agentOptionsProvider.configuration}" }
+        val runtimeParametersProvider = RuntimeParametersProvider()
+        val inputParameters = inputParameters(setOf(
+            environmentVariablesProvider,
+            agentOptionsProvider,
+            runtimeParametersProvider
+        ))
+        configuration = DefaultAgentConfiguration(inputParameters)
+        defineDefaults(configuration.parameters)
+        logger.debug { "initializeNative: Final input parameters: ${configuration.inputParameters}" }
+    }
 
     actual fun initializeJvm(inputParameters: String) {
         val parameters = inputParameters.split(",")
