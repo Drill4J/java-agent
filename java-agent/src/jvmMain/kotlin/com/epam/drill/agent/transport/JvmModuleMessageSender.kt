@@ -29,6 +29,7 @@ import com.epam.drill.agent.common.transport.AgentMessageDestination
 import com.epam.drill.agent.common.transport.AgentMessageSender
 import kotlinx.serialization.InternalSerializationApi
 import kotlinx.serialization.KSerializer
+import kotlinx.serialization.Serializable
 
 actual object JvmModuleMessageSender : AgentMessageSender {
 
@@ -43,16 +44,28 @@ actual object JvmModuleMessageSender : AgentMessageSender {
     actual fun sendAgentMetadata() {
         messageSender.send(
             AgentMessageDestination("PUT", "instances"),
-            Configuration.agentMetadata,
-            AgentMetadata.serializer()
+            InstancePayload(
+                groupId = Configuration.agentMetadata.groupId,
+                appId = Configuration.agentMetadata.appId,
+                instanceId = Configuration.agentMetadata.instanceId,
+                commitSha = Configuration.agentMetadata.commitSha,
+                buildVersion = Configuration.agentMetadata.buildVersion,
+                envId = Configuration.agentMetadata.envId
+            ),
+            InstancePayload.serializer()
         )
     }
 
     fun sendBuildMetadata() {
         messageSender.send(
             AgentMessageDestination("PUT", "builds"),
-            Configuration.agentMetadata,
-            AgentMetadata.serializer()
+            BuildPayload(
+                groupId = Configuration.agentMetadata.groupId,
+                appId = Configuration.agentMetadata.appId,
+                commitSha = Configuration.agentMetadata.commitSha,
+                buildVersion = Configuration.agentMetadata.buildVersion
+            ),
+            BuildPayload.serializer()
         )
     }
 
@@ -81,6 +94,7 @@ actual object JvmModuleMessageSender : AgentMessageSender {
             "DIRECT" -> SimpleAgentMessageSender(transport, serializer, mapper).also {
                 logger.info { "Using DIRECT message sending mode." }
             }
+
             "QUEUED" -> QueuedAgentMessageSender(
                 transport, serializer, mapper, queue,
                 maxRetries = Configuration.parameters[ParameterDefinitions.MESSAGE_MAX_RETRIES]
