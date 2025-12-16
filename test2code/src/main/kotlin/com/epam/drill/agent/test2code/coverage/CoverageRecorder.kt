@@ -20,6 +20,7 @@ interface ICoverageRecorder {
     fun stopRecording(sessionId: String?, testId: String?)
     fun getContext(): ContextCoverage?
     fun pollRecorded(): Sequence<ExecDatum>
+    fun getUnreleased(): Sequence<ExecDatum> = emptySequence()
 }
 
 data class ContextCoverage(val context: ContextKey, val execData: ExecData)

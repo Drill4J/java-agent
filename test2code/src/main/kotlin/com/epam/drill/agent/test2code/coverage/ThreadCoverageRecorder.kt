@@ -17,6 +17,8 @@ package com.epam.drill.agent.test2code.coverage
 
 import com.epam.drill.agent.ttl.TransmittableThreadLocal
 import mu.KotlinLogging
+import kotlin.sequences.filter
+import kotlin.sequences.flatMap
 
 class ThreadCoverageRecorder(
     private val execDataPool: DataPool<ContextKey, ExecData> = ConcurrentDataPool()
@@ -49,6 +51,10 @@ class ThreadCoverageRecorder(
             .pollReleased()
             .flatMap { it.values }
             .filter { it.probes.containCovered() }
+    }
+
+    override fun getUnreleased(): Sequence<ExecDatum> {
+        return execDataPool.getAll().values.flatMap { it.values }.filter { it.probes.containCovered() }.asSequence()
     }
 
     override fun getContext(): ContextCoverage? {

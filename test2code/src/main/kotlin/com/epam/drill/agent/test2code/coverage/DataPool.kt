@@ -40,6 +40,12 @@ interface DataPool<K: Any, V> {
     fun get(key: K): V?
 
     /**
+     * Get all objects from the pool
+     * @return a map of all objects in the pool
+     */
+    fun getAll(): Map<K, V>
+
+    /**
      * Release the used object by key and move it into the released queue
      * @param key a key
      * @param value a used object
@@ -72,6 +78,10 @@ class ConcurrentDataPool<K : Any, V> : DataPool<K, V> {
 
     override fun get(key: K): V? {
         return dataMap[key]
+    }
+
+    override fun getAll(): Map<K, V> {
+        return dataMap.toMap()
     }
 
     override fun pollReleased(): Sequence<V> {
