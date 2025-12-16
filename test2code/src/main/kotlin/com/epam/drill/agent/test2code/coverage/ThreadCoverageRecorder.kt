@@ -15,14 +15,15 @@
  */
 package com.epam.drill.agent.test2code.coverage
 
+import com.epam.drill.agent.ttl.TransmittableThreadLocal
 import mu.KotlinLogging
 
 class ThreadCoverageRecorder(
     private val execDataPool: DataPool<ContextKey, ExecData> = ConcurrentDataPool()
 ) : ICoverageRecorder {
     private val logger = KotlinLogging.logger {}
-    private val context: ThreadLocal<ContextKey?> = ThreadLocal()
-    private val execData: ThreadLocal<ExecData?> = ThreadLocal()
+    private val context: ThreadLocal<ContextKey?> = TransmittableThreadLocal()
+    private val execData: ThreadLocal<ExecData?> = TransmittableThreadLocal()
 
     override fun startRecording(sessionId: String?, testId: String?) {
         stopRecording(context.get()?.sessionId, context.get()?.testId)
