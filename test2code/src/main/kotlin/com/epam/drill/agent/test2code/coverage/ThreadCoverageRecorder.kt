@@ -15,14 +15,17 @@
  */
 package com.epam.drill.agent.test2code.coverage
 
+import com.epam.drill.agent.ttl.TransmittableThreadLocal
 import mu.KotlinLogging
+import kotlin.sequences.filter
+import kotlin.sequences.flatMap
 
 class ThreadCoverageRecorder(
     private val execDataPool: DataPool<ContextKey, ExecData> = ConcurrentDataPool()
 ) : ICoverageRecorder {
     private val logger = KotlinLogging.logger {}
-    private val context: ThreadLocal<ContextKey?> = ThreadLocal()
-    private val execData: ThreadLocal<ExecData?> = ThreadLocal()
+    private val context: ThreadLocal<ContextKey?> = TransmittableThreadLocal()
+    private val execData: ThreadLocal<ExecData?> = TransmittableThreadLocal()
 
     override fun startRecording(sessionId: String?, testId: String?) {
         stopRecording(context.get()?.sessionId, context.get()?.testId)
@@ -48,6 +51,10 @@ class ThreadCoverageRecorder(
             .pollReleased()
             .flatMap { it.values }
             .filter { it.probes.containCovered() }
+    }
+
+    override fun getUnreleased(): Sequence<ExecDatum> {
+        return execDataPool.getAll().values.flatMap { it.values }.filter { it.probes.containCovered() }.asSequence()
     }
 
     override fun getContext(): ContextCoverage? {

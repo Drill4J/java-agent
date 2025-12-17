@@ -45,6 +45,7 @@ dependencies {
     implementation(project(":test2code-common"))
     implementation(project(":test2code-jacoco"))
     implementation(project(":konform"))
+    implementation(project(":transmittable-thread-local"))
 
     testImplementation(kotlin("test-junit"))
 }

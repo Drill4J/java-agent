@@ -37,7 +37,8 @@ class IntervalCoverageSender(
     private val intervalMs: Long,
     private val pageSize: Int,
     private val sender: AgentMessageSender = StubSender(),
-    private val collectProbes: () -> Sequence<ExecDatum> = { emptySequence() }
+    private val collectReleasedProbes: () -> Sequence<ExecDatum> = { emptySequence() },
+    private val collectUnreleasedProbes: () -> Sequence<ExecDatum> = { emptySequence() }
 ) : CoverageSender {
     private val scheduledThreadPool = Executors.newSingleThreadScheduledExecutor()
     private val destination = AgentMessageDestination("POST", "coverage")
@@ -45,7 +46,7 @@ class IntervalCoverageSender(
 
     override fun startSendingCoverage() {
         scheduledThreadPool.scheduleAtFixedRate(
-            Runnable { sendProbes(collectProbes()) },
+            Runnable { sendProbes(collectReleasedProbes()) },
             0,
             intervalMs,
             TimeUnit.MILLISECONDS
@@ -59,7 +60,8 @@ class IntervalCoverageSender(
             logger.error("Failed to send some coverage data prior to shutdown")
             scheduledThreadPool.shutdownNow();
         }
-        sendProbes(collectProbes())
+        sendProbes(collectReleasedProbes())
+        sendProbes(collectUnreleasedProbes())
         sender.shutdown()
         logger.info { "Coverage sending job is stopped." }
     }
