@@ -239,7 +239,7 @@ distributions {
 }
 
 application {
-    mainClass.set("com.epam.drill.agent.AppArchiveScannerCliKt")
+    mainClass.set("com.epam.drill.agent.AgentKt")
 }
 
 @Suppress("UNUSED_VARIABLE")
