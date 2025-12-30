@@ -22,6 +22,7 @@ import com.epam.drill.agent.instrument.InstrumentationParameterDefinitions.INSTR
 import com.epam.drill.agent.instrument.TransformerObject
 import com.epam.drill.agent.test.instrument.AbstractTestTransformerObject
 import javassist.*
+import mu.KLogger
 import java.io.*
 import mu.KotlinLogging
 import java.security.ProtectionDomain
@@ -39,18 +40,21 @@ actual object SeleniumTransformer : TransformerObject, AbstractTestTransformerOb
     private const val EXTENSION_NAME = "header-transmitter.xpi"
     private val FirefoxDriver = "org.openqa.selenium.firefox.FirefoxDriver"
 
-    private val extensionFile: String
+    private var extensionFile: String? = null
 
     internal const val addDrillCookiesMethod = "addDrillCookies"
     private const val isFirefoxBrowser = "isFirefoxBrowser"
-
-    override val logger = KotlinLogging.logger {}
+    override val logger: KLogger = KotlinLogging.logger {}
 
     init {
         val extension = this::class.java.getResource("/$EXTENSION_NAME")
-        File(System.getProperty("java.io.tmpdir")).resolve(EXTENSION_NAME).apply {
-            extensionFile = absolutePath
-            writeBytes(extension.readBytes())
+        if (extension != null) {
+            File(System.getProperty("java.io.tmpdir")).resolve(EXTENSION_NAME).apply {
+                extensionFile = absolutePath
+                writeBytes(extension.readBytes())
+            }
+        } else {
+            logger.warn { "Failed to load extension file: $EXTENSION_NAME" }
         }
     }
 
@@ -193,7 +197,7 @@ actual object SeleniumTransformer : TransformerObject, AbstractTestTransformerOb
                     try {
                         if (this instanceof $FirefoxDriver) {
                             java.util.HashMap hashMapq = new java.util.HashMap();
-                            hashMapq.put("path", "${extensionFile.replace("\\", "\\\\")}");
+                            hashMapq.put("path", "${extensionFile?.replace("\\", "\\\\")}");
                             hashMapq.put("temporary", Boolean.TRUE);
                             this.execute("installExtension", hashMapq).getValue();
                         }

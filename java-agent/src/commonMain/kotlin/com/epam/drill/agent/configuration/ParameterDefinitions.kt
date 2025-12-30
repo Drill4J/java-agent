@@ -51,7 +51,7 @@ object ParameterDefinitions: AgentParameterDefinitionCollection() {
     val PROXY_ADDRESS = AgentParameterDefinition.forString(name = "browserProxyAddress", defaultValue = "").register()
     val DEVTOOLS_PROXY_ADDRESS = AgentParameterDefinition.forString(
         name = "devToolsProxyAddress",
-        defaultValue = "http://localhost:9222",//TODO
+        defaultValue = "http://localhost:9222",
         parser = { it.trim().takeIf(String::isBlank) ?: it.takeIf(URL_SCHEME_REGEX::matches) ?: "http://$it"}
     ).register()
     val DEVTOOLS_REPLACE_LOCALHOST = AgentParameterDefinition.forString(name = "devtoolsAddressReplaceLocalhost", defaultValue = "").register()
