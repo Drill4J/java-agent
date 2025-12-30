@@ -44,4 +44,40 @@ object ParameterDefinitions: AgentParameterDefinitionCollection() {
     val USE_PROTOBUF_SERIALIZER =
         AgentParameterDefinition.forBoolean(name = "useProtobufSerializer", defaultValue = true).register()
     val USE_GZIP_COMPRESSION = AgentParameterDefinition.forBoolean(name = "useGzipCompression", defaultValue = true).register()
+
+    val TEST_AGENT_ENABLED = AgentParameterDefinition.forBoolean(name = "testAgentEnabled", defaultValue = false).register()
+
+    val WITH_JS_COVERAGE = AgentParameterDefinition.forBoolean(name = "withJsCoverage", defaultValue = false).register()
+    val PROXY_ADDRESS = AgentParameterDefinition.forString(name = "browserProxyAddress", defaultValue = "").register()
+    val DEVTOOLS_PROXY_ADDRESS = AgentParameterDefinition.forString(
+        name = "devToolsProxyAddress",
+        defaultValue = "http://localhost:9222",//TODO
+        parser = { it.trim().takeIf(String::isBlank) ?: it.takeIf(URL_SCHEME_REGEX::matches) ?: "http://$it"}
+    ).register()
+    val DEVTOOLS_REPLACE_LOCALHOST = AgentParameterDefinition.forString(name = "devtoolsAddressReplaceLocalhost", defaultValue = "").register()
+    val SESSION_ID = NullableAgentParameterDefinition.forString(name = "sessionId").register()
+    val LAUNCH_TYPE = AgentParameterDefinition.forString(name = "launchType", defaultValue = "").register()
+    val FRAMEWORK_PLUGINS = AgentParameterDefinition.forType(
+        name = "rawFrameworkPlugins",
+        defaultValue = emptyList(),
+        parser = { it.split(";") }
+    ).register()
+
+    private val URL_SCHEME_REGEX = Regex("\\w+://.+")
+
+    val JS_AGENT_BUILD_VERSION = NullableAgentParameterDefinition.forString(name = "jsAgentBuildVersion").register()
+    val JS_AGENT_ID = NullableAgentParameterDefinition.forString(name = "jsAgentId").register()
+
+    val TEST_TASK_ID = AgentParameterDefinition.forString(name = "testTaskId", defaultValue = "").register()
+    val RECOMMENDED_TESTS_ENABLED = AgentParameterDefinition.forBoolean(name = "recommendedTestsEnabled", defaultValue = false).register()
+    val RECOMMENDED_TESTS_COVERAGE_PERIOD_DAYS = AgentParameterDefinition.forInt(name = "recommendedTestsCoveragePeriodDays", defaultValue = 0).register()
+    val RECOMMENDED_TESTS_TARGET_APP_ID = AgentParameterDefinition.forString(name = "recommendedTestsTargetAppId", defaultValue = "").register()
+    val RECOMMENDED_TESTS_TARGET_COMMIT_SHA = AgentParameterDefinition.forString(name = "recommendedTestsTargetCommitSha", defaultValue = "").register()
+    val RECOMMENDED_TESTS_TARGET_BUILD_VERSION = AgentParameterDefinition.forString(name = "recommendedTestsTargetBuildVersion", defaultValue = "").register()
+    val RECOMMENDED_TESTS_BASELINE_COMMIT_SHA = AgentParameterDefinition.forString(name = "recommendedTestsBaselineCommitSha", defaultValue = "").register()
+    val RECOMMENDED_TESTS_BASELINE_BUILD_VERSION = AgentParameterDefinition.forString(name = "recommendedTestsBaselineBuildVersion", defaultValue = "").register()
+    val RECOMMENDED_TESTS_USE_MATERIALIZED_VIEWS = AgentParameterDefinition.forString(name = "recommendedTestsUseMaterializedViews", defaultValue = "").register()
+
+    val TEST_TRACING_ENABLED = AgentParameterDefinition.forBoolean(name = "testTracingEnabled", defaultValue = true).register()
+    val TEST_LAUNCH_METADATA_SENDING_ENABLED = AgentParameterDefinition.forBoolean(name = "testLaunchMetadataSendingEnabled", defaultValue = true).register()
 }

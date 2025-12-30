@@ -64,6 +64,20 @@ import com.epam.drill.agent.instrument.undertow.UndertowHttpServerTransformer
 import com.epam.drill.agent.instrument.undertow.UndertowWsClientTransformer
 import com.epam.drill.agent.instrument.undertow.UndertowWsMessagesTransformer
 import com.epam.drill.agent.instrument.undertow.UndertowWsServerTransformer
+import com.epam.drill.agent.test.instrument.cucumber.Cucumber4Transformer
+import com.epam.drill.agent.test.instrument.cucumber.Cucumber5Transformer
+import com.epam.drill.agent.test.instrument.cucumber.Cucumber6Transformer
+import com.epam.drill.agent.test.instrument.jmeter.JMeterTransformer
+import com.epam.drill.agent.test.instrument.junit.JUnit4PrioritizingTransformer
+import com.epam.drill.agent.test.instrument.junit.JUnit4Transformer
+import com.epam.drill.agent.test.instrument.junit.JUnit5Transformer
+import com.epam.drill.agent.test.instrument.junit.JUnitPlatformPrioritizingTransformer
+import com.epam.drill.agent.test.instrument.selenium.SeleniumTransformer
+import com.epam.drill.agent.test.instrument.testng.TestNG6PrioritizingTransformer
+import com.epam.drill.agent.test.instrument.testng.TestNG6Transformer
+import com.epam.drill.agent.test.instrument.testng.TestNG7PrioritizingTransformer
+import com.epam.drill.agent.test.instrument.testng.TestNG7Transformer
+import com.epam.drill.agent.test.session.SessionController
 
 object Agent {
 
@@ -109,6 +123,19 @@ object Agent {
         UndertowWsServerTransformer,
         UndertowWsMessagesTransformer,
         CompatibilityTestsTransformer,
+        JUnit4Transformer,
+        JUnit5Transformer,
+        TestNG6Transformer,
+        TestNG7Transformer,
+        Cucumber4Transformer,
+        Cucumber5Transformer,
+        Cucumber6Transformer,
+        SeleniumTransformer,
+        JMeterTransformer,
+        JUnit4PrioritizingTransformer,
+        JUnitPlatformPrioritizingTransformer,
+        TestNG6PrioritizingTransformer,
+        TestNG7PrioritizingTransformer,
     )
 
     @OptIn(ExperimentalNativeApi::class, ExperimentalForeignApi::class)
@@ -142,6 +169,8 @@ object Agent {
         Configuration.initializeJvm()
         loadJvmModule("com.epam.drill.agent.test2code.Test2Code")
         JvmModuleMessageSender.sendAgentMetadata()
+
+        SessionController.startSession()
     }
 
     fun agentOnVmDeath() {
