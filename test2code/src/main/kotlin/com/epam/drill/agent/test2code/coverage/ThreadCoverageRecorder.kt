@@ -28,8 +28,8 @@ class ThreadCoverageRecorder(
     private val execData: ThreadLocal<ExecData?> = TransmittableThreadLocal()
 
     override fun startRecording(sessionId: String?, testId: String?) {
-        stopRecording(context.get()?.sessionId, context.get()?.testId)
-        val ctx = ContextKey(sessionId, testId)
+        stopRecording(context.get()?.sessionId ?: SESSION_CONTEXT_NONE, context.get()?.testId ?: TEST_CONTEXT_NONE)
+        val ctx = ContextKey(sessionId ?: SESSION_CONTEXT_NONE, testId ?: TEST_CONTEXT_NONE)
         context.set(ctx)
         execData.set(execDataPool.getOrPut(
             ctx,
@@ -39,9 +39,11 @@ class ThreadCoverageRecorder(
     }
 
     override fun stopRecording(sessionId: String?, testId: String?) {
-        if (execData.get() == null) return
-        execDataPool.release(ContextKey(sessionId, testId), execData.get() ?: ExecData())
-        execData.remove()
+        execData.get()?.let { data ->
+            execDataPool.release(ContextKey(sessionId ?: SESSION_CONTEXT_NONE, testId ?: TEST_CONTEXT_NONE), data)
+            execData.remove()
+        }
+        context.get()?.clear()
         context.remove()
         logger.trace { "Test recording stopped (sessionId = $sessionId, testId = $testId, threadId = ${Thread.currentThread().id})." }
     }
@@ -58,7 +60,7 @@ class ThreadCoverageRecorder(
     }
 
     override fun getContext(): ContextCoverage? {
-        return context.get()?.let { ctx -> execData.get()?.let { ContextCoverage(ctx, it) } }
+        return context.get()?.takeIf { !it.isSessionEmpty() }?.let { ctx -> execData.get()?.let { ContextCoverage(ctx, it) } }
     }
 }
 
