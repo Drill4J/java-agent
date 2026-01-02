@@ -28,11 +28,15 @@ const val TEST_CONTEXT_NONE = "TEST_CONTEXT_NONE"
 const val SESSION_CONTEXT_AMBIENT = "GLOBAL"
 
 data class ContextKey(
-    private val _sessionId: SessionId? = null, // TODO there must be a better way to avoid nullability and assign defaults
-    private val _testId: TestId? = null
+    var sessionId: SessionId,
+    var testId: TestId
 ) {
-    val sessionId: SessionId = _sessionId ?: SESSION_CONTEXT_NONE
-    val testId: TestId = _testId ?: TEST_CONTEXT_NONE
+    fun clear() {
+        sessionId = SESSION_CONTEXT_NONE
+        testId = TEST_CONTEXT_NONE
+    }
+    fun isSessionEmpty() = sessionId == SESSION_CONTEXT_NONE
+    fun isSessionGlobal() = sessionId == SESSION_CONTEXT_AMBIENT
 }
 
-internal val CONTEXT_AMBIENT = ContextKey(SESSION_CONTEXT_AMBIENT)
+internal val CONTEXT_AMBIENT = ContextKey(SESSION_CONTEXT_AMBIENT, TEST_CONTEXT_NONE)

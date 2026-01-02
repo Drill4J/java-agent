@@ -51,6 +51,20 @@ import com.epam.drill.agent.instrument.undertow.UndertowWsMessagesTransformer
 import com.epam.drill.agent.instrument.undertow.UndertowWsServerTransformer
 import com.epam.drill.agent.logging.LoggingConfiguration
 import com.epam.drill.agent.module.JvmModuleLoader
+import com.epam.drill.agent.test.instrument.cucumber.Cucumber4Transformer
+import com.epam.drill.agent.test.instrument.cucumber.Cucumber5Transformer
+import com.epam.drill.agent.test.instrument.cucumber.Cucumber6Transformer
+import com.epam.drill.agent.test.instrument.jmeter.JMeterTransformer
+import com.epam.drill.agent.test.instrument.junit.JUnit4PrioritizingTransformer
+import com.epam.drill.agent.test.instrument.junit.JUnit4Transformer
+import com.epam.drill.agent.test.instrument.junit.JUnit5Transformer
+import com.epam.drill.agent.test.instrument.junit.JUnitPlatformPrioritizingTransformer
+import com.epam.drill.agent.test.instrument.selenium.SeleniumTransformer
+import com.epam.drill.agent.test.instrument.testng.TestNG6PrioritizingTransformer
+import com.epam.drill.agent.test.instrument.testng.TestNG6Transformer
+import com.epam.drill.agent.test.instrument.testng.TestNG7PrioritizingTransformer
+import com.epam.drill.agent.test.instrument.testng.TestNG7Transformer
+import com.epam.drill.agent.test.session.SessionController
 import com.epam.drill.agent.test2code.Test2Code
 import com.epam.drill.agent.test2code.configuration.Test2CodeParameterDefinitions
 import com.epam.drill.agent.transport.JvmModuleMessageSender
@@ -103,6 +117,19 @@ private val transformers = setOf(
     UndertowWsServerTransformer,
     UndertowWsMessagesTransformer,
     CompatibilityTestsTransformer,
+    JUnit4Transformer,
+    JUnit5Transformer,
+    TestNG6Transformer,
+    TestNG7Transformer,
+    Cucumber4Transformer,
+    Cucumber5Transformer,
+    Cucumber6Transformer,
+    SeleniumTransformer,
+    JMeterTransformer,
+    JUnit4PrioritizingTransformer,
+    JUnitPlatformPrioritizingTransformer,
+    TestNG6PrioritizingTransformer,
+    TestNG7PrioritizingTransformer,
 )
 
 fun premain(agentArgs: String?, inst: Instrumentation) {
@@ -116,6 +143,8 @@ fun premain(agentArgs: String?, inst: Instrumentation) {
         inst.addTransformer(DrillClassFileTransformer, true)
         JvmModuleMessageSender.sendAgentMetadata()
         JvmModuleLoader.loadJvmModule(Test2Code::class.java.name).load()
+
+        SessionController.startSession()
     } catch (e: Throwable) {
         println("Drill4J Initialization Error:\n${e.message ?: e::class.java.name}")
     }
