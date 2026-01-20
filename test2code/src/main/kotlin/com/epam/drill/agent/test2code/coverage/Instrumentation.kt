@@ -48,7 +48,7 @@ class DrillInstrumenter(
         reader.accept(DrillClassProbesAdapter(counter, false), 0)
 
         probesProxy.addProbePositions(classId, counter.methods.associate { m ->
-            "${m.classname}:${m.name}:${m.params}:${m.returnType}" to Pair(m.probesCount, m.probesStartPos)
+            "${m.classname}:${m.name}:${m.params}:${m.returnType}" to Pair(m.probesStartPos, m.probesCount)
         })
 
         val genId = classCounter.incrementAndGet()
