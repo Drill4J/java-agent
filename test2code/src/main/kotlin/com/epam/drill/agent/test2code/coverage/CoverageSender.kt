@@ -20,7 +20,7 @@ import java.util.concurrent.TimeUnit
 import mu.KotlinLogging
 import com.epam.drill.agent.common.transport.AgentMessageDestination
 import com.epam.drill.agent.common.transport.AgentMessageSender
-import com.epam.drill.agent.test2code.common.api.ClassCoverage
+import com.epam.drill.agent.test2code.common.api.MethodCoverage
 import com.epam.drill.agent.test2code.common.api.toBitSet
 import com.epam.drill.agent.test2code.common.transport.CoveragePayload
 import kotlinx.serialization.KSerializer
@@ -73,11 +73,13 @@ class IntervalCoverageSender(
      */
     private fun sendProbes(dataToSend: Sequence<ExecDatum>) {
         dataToSend
-            .map { ClassCoverage(
+            .flatMap { it.probePositions.map { (signature, positions) -> MethodCoverage(
                 classname = it.name,
+                signature = signature,
                 testId = it.testId,
                 testSessionId = it.sessionId,
-                probes = it.probes.values.toBitSet()) }
+                probes = it.probes.values.copyOfRange(positions.first, positions.first + positions.second).toBitSet()
+            ) } }
             .chunked(pageSize)
             .forEach { sender.send(destination, CoveragePayload(groupId, appId, instanceId, it), CoveragePayload.serializer()) }
     }

@@ -21,6 +21,7 @@ import com.epam.drill.agent.jacoco.BooleanArrayProbeInserter.*
 import com.epam.drill.agent.jacoco.DrillClassProbesAdapter
 import com.epam.drill.agent.jacoco.DrillDuplicateFrameEliminator
 import com.epam.drill.agent.jacoco.DrillMethodInstrumenter
+import com.epam.drill.agent.test2code.classparsing.ClassProbeCounter
 import com.epam.drill.agent.test2code.classparsing.ProbeCounter
 import org.jacoco.core.internal.data.CRC64
 import org.jacoco.core.internal.flow.*
@@ -42,9 +43,13 @@ class DrillInstrumenter(
         val classId = CRC64.classId(initialBytes)
 
         //count probes before transformation
-        val counter = ProbeCounter()
         val reader = InstrSupport.classReaderFor(initialBytes)
+        val counter = ClassProbeCounter(className)
         reader.accept(DrillClassProbesAdapter(counter, false), 0)
+
+        probesProxy.addProbePositions(classId, counter.methods.associate { m ->
+            "${m.classname}:${m.name}:${m.params}:${m.returnType}" to Pair(m.probesCount, m.probesStartPos)
+        })
 
         val genId = classCounter.incrementAndGet()
         val probeCount = counter.count
