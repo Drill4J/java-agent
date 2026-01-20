@@ -92,7 +92,8 @@ class GlobalCoverageRecorderTest {
             name = "foo",
             sessionId = SESSION_CONTEXT_AMBIENT,
             probes = AgentProbes(initialSize = probes.size, values = booleanArrayOf(*probes)),
-            testId = TEST_CONTEXT_NONE
+            testId = TEST_CONTEXT_NONE,
+            probePositions = emptyMap()
         )
     }
 
