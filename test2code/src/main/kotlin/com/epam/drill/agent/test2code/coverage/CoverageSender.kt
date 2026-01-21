@@ -77,7 +77,6 @@ class IntervalCoverageSender(
                 val methodProbes = it.probes.values.copyOfRange(positions.first, positions.first + positions.second).toBitSet()
                 if (!methodProbes.isEmpty) null
                 else MethodCoverage(
-                        classname = it.name,
                         signature = signature,
                         testId = it.testId,
                         testSessionId = it.sessionId,

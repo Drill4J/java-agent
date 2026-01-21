@@ -37,7 +37,6 @@ open class CoverageManager(
         val execDatum = coverage.execData.getOrPut(id) {
             ExecDatum(
                 id = id,
-                name = name,
                 probes = AgentProbes(probeCount),
                 sessionId = coverage.context.sessionId,
                 testId = coverage.context.testId,
