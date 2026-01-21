@@ -73,13 +73,17 @@ class IntervalCoverageSender(
      */
     private fun sendProbes(dataToSend: Sequence<ExecDatum>) {
         dataToSend
-            .flatMap { it.probePositions.map { (signature, positions) -> MethodCoverage(
-                classname = it.name,
-                signature = signature,
-                testId = it.testId,
-                testSessionId = it.sessionId,
-                probes = it.probes.values.copyOfRange(positions.first, positions.first + positions.second).toBitSet()
-            ) } }
+            .flatMap { it.probePositions.mapNotNull { (signature, positions) ->
+                val methodProbes = it.probes.values.copyOfRange(positions.first, positions.first + positions.second).toBitSet()
+                if (!methodProbes.isEmpty) null
+                else MethodCoverage(
+                        classname = it.name,
+                        signature = signature,
+                        testId = it.testId,
+                        testSessionId = it.sessionId,
+                        probes = methodProbes
+                    )
+            }}
             .chunked(pageSize)
             .forEach { sender.send(destination, CoveragePayload(groupId, appId, instanceId, it), CoveragePayload.serializer()) }
     }
