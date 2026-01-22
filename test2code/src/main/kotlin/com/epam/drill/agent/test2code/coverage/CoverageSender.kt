@@ -33,6 +33,8 @@ interface CoverageSender {
 class IntervalCoverageSender(
     private val groupId: String,
     private val appId: String,
+    private val commitSha: String?,
+    private val buildVersion: String?,
     private val instanceId: String,
     private val intervalMs: Long,
     private val pageSize: Int,
@@ -84,7 +86,14 @@ class IntervalCoverageSender(
                     )
             }}
             .chunked(pageSize)
-            .forEach { sender.send(destination, CoveragePayload(groupId, appId, instanceId, it), CoveragePayload.serializer()) }
+            .forEach { sender.send(destination, CoveragePayload(
+                groupId = groupId,
+                appId = appId,
+                instanceId = instanceId,
+                commitSha = commitSha,
+                buildVersion = buildVersion,
+                coverage = it
+            ), CoveragePayload.serializer()) }
     }
 
 }

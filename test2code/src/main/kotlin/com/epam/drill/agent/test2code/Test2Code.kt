@@ -60,6 +60,8 @@ class Test2Code(
         groupId = configuration.agentMetadata.groupId,
         appId = configuration.agentMetadata.appId,
         instanceId = configuration.agentMetadata.instanceId,
+        commitSha = configuration.agentMetadata.commitSha,
+        buildVersion = configuration.agentMetadata.buildVersion,
         intervalMs = configuration.parameters[Test2CodeParameterDefinitions.COVERAGE_SEND_INTERVAL],
         pageSize = configuration.parameters[Test2CodeParameterDefinitions.COVERAGE_SEND_PAGE_SIZE],
         sender = sender,
