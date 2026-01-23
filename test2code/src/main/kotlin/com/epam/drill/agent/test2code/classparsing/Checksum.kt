@@ -21,6 +21,7 @@ import org.apache.bcel.classfile.ClassParser
 import org.apache.bcel.classfile.Method
 import org.jacoco.core.internal.data.CRC64
 import java.io.ByteArrayInputStream
+import java.io.File
 
 val logger = KotlinLogging.logger { }
 
@@ -39,6 +40,15 @@ internal fun calculateMethodsChecksums(
 fun Method.classSignature() =
     "${name}/${argumentTypes.asSequence().map { type -> type.toString() }.joinToString(separator = ",")}/${returnType}"
 
+private val dumpClasses: Set<String> =
+    System.getenv("DUMP_CLASS")
+        ?.split(";")
+        ?.map { it.trim() }
+        ?.filter { it.isNotEmpty() }
+        ?.toSet()
+        ?: emptySet()
+
+
 private fun calculateChecksum(
     method: Method,
     className: String
@@ -47,6 +57,19 @@ private fun calculateChecksum(
         val codeText = method.code.run {
             codeToString(code, constantPool, length, false)
         }
+        val safeClassName = className.replace(Regex("[\\\\/:*?\"<>|]"), "_")
+        println("normalizedClassName $safeClassName")
+        println("dumpClasses $dumpClasses")
+
+        if (dumpClasses.contains(safeClassName)) {
+            val safeMethodName = method.name
+                .replace(Regex("[\\\\/:*?\"<>|]"), "_")
+
+            val fileName = "${safeClassName}_${safeMethodName}.txt"
+            println("class $className method $method codeToString: $codeText")
+            File(fileName).writeText(codeText)
+        }
+
         return CRC64.classId(codeText.toByteArray()).toString(Character.MAX_RADIX)
     } catch (ex: CodeToStringException) {
         logger.error { "Failed to calculate method checksum. Class: $className. Method: ${method.name}. Opcode: ${ex.opcode}. Error: ${ex.error}. Stacktrace: ${ex.stackTraceToString()}" }
