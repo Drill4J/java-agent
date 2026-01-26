@@ -48,7 +48,6 @@ private val dumpClasses: Set<String> =
         ?.toSet()
         ?: emptySet()
 
-
 private fun calculateChecksum(
     method: Method,
     className: String
@@ -58,15 +57,15 @@ private fun calculateChecksum(
             codeToString(code, constantPool, length, false)
         }
         val safeClassName = className.replace(Regex("[\\\\/:*?\"<>|]"), "_")
-        println("normalizedClassName $safeClassName")
-        println("dumpClasses $dumpClasses")
+        logger.debug("normalizedClassName $safeClassName")
+        logger.debug("dumpClasses $dumpClasses")
 
         if (dumpClasses.contains(safeClassName)) {
             val safeMethodName = method.name
                 .replace(Regex("[\\\\/:*?\"<>|]"), "_")
 
             val fileName = "${safeClassName}_${safeMethodName}.txt"
-            println("class $className method $method codeToString: $codeText")
+            logger.debug("class $className method $method codeToString: $codeText")
             File(fileName).writeText(codeText)
         }
 
