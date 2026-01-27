@@ -57,8 +57,6 @@ private fun calculateChecksum(
             codeToString(code, constantPool, length, false)
         }
         val safeClassName = className.replace(Regex("[\\\\/:*?\"<>|]"), "_")
-        logger.debug("normalizedClassName $safeClassName")
-        logger.debug("dumpClasses $dumpClasses")
 
         if (dumpClasses.contains(safeClassName)) {
             val safeMethodName = method.name
