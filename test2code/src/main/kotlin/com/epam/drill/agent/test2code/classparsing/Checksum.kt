@@ -63,7 +63,7 @@ private fun calculateChecksum(
                 .replace(Regex("[\\\\/:*?\"<>|]"), "_")
 
             val fileName = "${safeClassName}_${safeMethodName}.txt"
-            logger.debug("class $className method $method codeToString: $codeText")
+            println("class $className method $method codeToString: $codeText")
             File(fileName).writeText(codeText)
         }
 
