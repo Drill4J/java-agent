@@ -21,6 +21,7 @@ import org.apache.bcel.classfile.ClassParser
 import org.apache.bcel.classfile.Method
 import org.jacoco.core.internal.data.CRC64
 import java.io.ByteArrayInputStream
+import java.io.File
 
 val logger = KotlinLogging.logger { }
 
@@ -47,6 +48,14 @@ private fun calculateChecksum(
         val codeText = method.code.run {
             codeToString(code, constantPool, length, false)
         }
+
+        val safeMethodName = listOf(className, method.classSignature())
+            .joinToString("_") // separator between elements
+            .replace(Regex("[\\\\/:*?\"<>|]"), "_")
+
+        val debugDir = File("drill-debug").apply { mkdirs() }
+        File(debugDir, safeMethodName).writeText(codeText)
+
         return CRC64.classId(codeText.toByteArray()).toString(Character.MAX_RADIX)
     } catch (ex: CodeToStringException) {
         logger.error { "Failed to calculate method checksum. Class: $className. Method: ${method.name}. Opcode: ${ex.opcode}. Error: ${ex.error}. Stacktrace: ${ex.stackTraceToString()}" }
