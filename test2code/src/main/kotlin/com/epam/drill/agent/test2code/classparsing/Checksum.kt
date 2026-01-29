@@ -24,7 +24,7 @@ import java.io.ByteArrayInputStream
 
 val logger = KotlinLogging.logger { }
 
-internal fun calculateMethodsChecksums(
+fun calculateMethodsChecksums(
     classBytes: ByteArray,
     className: String
 ): Map<String, String> = ClassParser(ByteArrayInputStream(classBytes), className)
@@ -32,12 +32,11 @@ internal fun calculateMethodsChecksums(
     .methods
 //    Filter needed for skipping interfaces, which have no opcodes for calculating checksum
     .filter { it.code != null }
-    .map { method -> method.classSignature() to calculateChecksum(method, className) }
+    .map { method -> method.classSignature(className) to calculateChecksum(method, className) }
     .filter { it.second != "" }
     .associate { it.first to it.second }
 
-fun Method.classSignature() =
-    "${name}/${argumentTypes.asSequence().map { type -> type.toString() }.joinToString(separator = ",")}/${returnType}"
+fun Method.classSignature(className: String) = "${className}:${name}:${argumentTypes.asSequence().map { type -> type.toString() }.joinToString(separator = ",")}:${returnType}"
 
 private fun calculateChecksum(
     method: Method,

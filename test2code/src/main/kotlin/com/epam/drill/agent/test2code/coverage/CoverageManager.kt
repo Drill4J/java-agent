@@ -24,7 +24,7 @@ open class CoverageManager(
 ) : IProbesProxy,
     ICoverageRecorder by threadCoverageRecorder {
 
-    private val classProbePositions: ConcurrentHashMap<Long, Map<String, Pair<Int, Int>>> = ConcurrentHashMap()
+    private val classMethodsMetadata: ConcurrentHashMap<Long, ClassMethodsMetadata> = ConcurrentHashMap()
 
     override fun invoke(
         id: Long,
@@ -40,14 +40,14 @@ open class CoverageManager(
                 probes = AgentProbes(probeCount),
                 sessionId = coverage.context.sessionId,
                 testId = coverage.context.testId,
-                probePositions = classProbePositions[id]!! // TODO do not throw
+                methodsMetadata = classMethodsMetadata[id]!! // TODO do not throw
             )
         }
         return execDatum.probes
     }
 
-    override fun addProbePositions(classId: Long, probePositions: Map<String, Pair<Int, Int>>) {
-        classProbePositions[classId] = probePositions
+    override fun addClassMethodsMetadata(classId: Long, methodsMetadata: ClassMethodsMetadata) {
+        classMethodsMetadata[classId] = methodsMetadata
     }
 
     override fun pollRecorded(): Sequence<ExecDatum> {

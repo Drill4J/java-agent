@@ -24,8 +24,15 @@ import com.epam.drill.agent.jacoco.AgentProbes
 
 interface IProbesProxy {
     fun invoke(id: ClassId, num: Int, name: String, probeCount: Int): AgentProbes
-    fun addProbePositions(classId: Long, probePositions: Map<String, Pair<Int,Int>>)
+    fun addClassMethodsMetadata(classId: Long, methodsMetadata: ClassMethodsMetadata)
 }
+
+typealias ClassMethodsMetadata = Map<String, ClassMethodMetadata>
+data class ClassMethodMetadata(
+    val probesStartPos: Int,
+    val probesCount: Int,
+    val bodyChecksum: String
+)
 
 const val SESSION_CONTEXT_NONE = "SESSION_CONTEXT_NONE"
 const val TEST_CONTEXT_NONE = "TEST_CONTEXT_NONE"
