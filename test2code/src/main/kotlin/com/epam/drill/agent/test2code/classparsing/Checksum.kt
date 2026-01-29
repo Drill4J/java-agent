@@ -44,21 +44,56 @@ private fun calculateChecksum(
     method: Method,
     className: String
 ): String {
-    try {
-        val codeText = method.code.run {
+    val codeText = try {
+        method.code.run {
             codeToString(code, constantPool, length, false)
         }
-
-        val safeMethodName = listOf(className, method.classSignature())
-            .joinToString("_") // separator between elements
-            .replace(Regex("[\\\\/:*?\"<>|]"), "_")
-
-        val debugDir = File("drill-debug").apply { mkdirs() }
-        File(debugDir, safeMethodName).writeText(codeText)
-
-        return CRC64.classId(codeText.toByteArray()).toString(Character.MAX_RADIX)
     } catch (ex: CodeToStringException) {
-        logger.error { "Failed to calculate method checksum. Class: $className. Method: ${method.name}. Opcode: ${ex.opcode}. Error: ${ex.error}. Stacktrace: ${ex.stackTraceToString()}" }
+        logger.error {
+            "Failed to calculate method checksum. " +
+                    "Class: $className. " +
+                    "Method: ${method.name}. " +
+                    "Opcode: ${ex.opcode}. " +
+                    "Error: ${ex.error}. " +
+                    "Stacktrace: ${ex.stackTraceToString()}"
+        }
         return ""
     }
+
+    try {
+        val debugDir = File("drill-debug").apply { mkdirs() }
+        val fullSignature = method.classSignature()
+        val methodId = CRC64.classId(
+            "$className::$fullSignature".toByteArray()
+        ).toString(Character.MAX_RADIX)
+
+        val safeClassName = className
+            .replace(Regex("[\\\\/:*?\"<>|]"), "_")
+            .take(60)
+
+        val fileName = "${safeClassName}_$methodId.txt"
+
+        File(debugDir, fileName).writeText(codeText)
+        File(debugDir, "index.tsv").appendText(
+            listOf(
+                methodId,
+                className,
+                method.name,
+                fullSignature,
+                fileName
+            ).joinToString("\t") + "\n"
+        )
+    } catch (ex: CodeToStringException) {
+        logger.error {
+            "Failed to write method bytecode to file. " +
+                    "Class: $className. " +
+                    "Method: ${method.name}. " +
+                    "Opcode: ${ex.opcode}. " +
+                    "Error: ${ex.error}. " +
+                    "Stacktrace: ${ex.stackTraceToString()}"
+        }
+    }
+
+    return  CRC64.classId(codeText.toByteArray())
+        .toString(Character.MAX_RADIX)
 }
