@@ -40,7 +40,7 @@ open class CoverageManager(
                 probes = AgentProbes(probeCount),
                 sessionId = coverage.context.sessionId,
                 testId = coverage.context.testId,
-                probePositions = classProbePositions[id]!! // TODO do not throw
+                probePositions = classProbePositions[id] ?: emptyMap(),
             )
         }
         return execDatum.probes
