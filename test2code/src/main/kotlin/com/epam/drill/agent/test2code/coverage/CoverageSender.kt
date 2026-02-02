@@ -77,7 +77,7 @@ class IntervalCoverageSender(
         dataToSend
             .flatMap { it.probePositions.mapNotNull { (signature, positions) ->
                 val methodProbes = it.probes.values.copyOfRange(positions.first, positions.first + positions.second).toBitSet()
-                if (!methodProbes.isEmpty) null
+                if (methodProbes.isEmpty) null
                 else MethodCoverage(
                         signature = signature,
                         testId = it.testId,
