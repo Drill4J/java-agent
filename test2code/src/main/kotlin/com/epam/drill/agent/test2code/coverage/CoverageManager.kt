@@ -24,7 +24,7 @@ open class CoverageManager(
 ) : IProbesProxy,
     ICoverageRecorder by threadCoverageRecorder {
 
-    private val classProbePositions: ConcurrentHashMap<Long, Map<String, Pair<Int, Int>>> = ConcurrentHashMap()
+    val classProbePositions: ConcurrentHashMap<Long, Map<String, Pair<Int, Int>>> = ConcurrentHashMap()
 
     override fun invoke(
         id: Long,
@@ -40,7 +40,6 @@ open class CoverageManager(
                 probes = AgentProbes(probeCount),
                 sessionId = coverage.context.sessionId,
                 testId = coverage.context.testId,
-                probePositions = classProbePositions[id] ?: emptyMap(),
             )
         }
         return execDatum.probes

@@ -24,6 +24,7 @@ import com.epam.drill.agent.test2code.common.api.MethodCoverage
 import com.epam.drill.agent.test2code.common.api.toBitSet
 import com.epam.drill.agent.test2code.common.transport.CoveragePayload
 import kotlinx.serialization.KSerializer
+import java.util.concurrent.ConcurrentHashMap
 
 interface CoverageSender {
     fun startSendingCoverage()
@@ -40,7 +41,8 @@ class IntervalCoverageSender(
     private val pageSize: Int,
     private val sender: AgentMessageSender = StubSender(),
     private val collectReleasedProbes: () -> Sequence<ExecDatum> = { emptySequence() },
-    private val collectUnreleasedProbes: () -> Sequence<ExecDatum> = { emptySequence() }
+    private val collectUnreleasedProbes: () -> Sequence<ExecDatum> = { emptySequence() },
+    private val classProbePositions: ConcurrentHashMap<Long, Map<String, Pair<Int, Int>>>
 ) : CoverageSender {
     private val scheduledThreadPool = Executors.newSingleThreadScheduledExecutor()
     private val destination = AgentMessageDestination("POST", "coverage")
@@ -75,16 +77,30 @@ class IntervalCoverageSender(
      */
     private fun sendProbes(dataToSend: Sequence<ExecDatum>) {
         dataToSend
-            .flatMap { it.probePositions.mapNotNull { (signature, positions) ->
-                val methodProbes = it.probes.values.copyOfRange(positions.first, positions.first + positions.second).toBitSet()
-                if (methodProbes.isEmpty) null
-                else MethodCoverage(
+            .mapNotNull {
+                classProbePositions[it.id]?.let { positionsByMethod ->
+                    it to positionsByMethod
+                } ?: run {
+                    logger.warn("No probe positions for class id=${it.id}")
+                    null
+                }
+            }
+            .flatMap { (datum, positionsByMethod) ->
+                positionsByMethod.mapNotNull { (signature, positions) ->
+                    val methodProbes =
+                        datum.probes.values
+                            .copyOfRange(positions.first, positions.first + positions.second)
+                            .toBitSet()
+
+                    if (methodProbes.isEmpty) null
+                    else MethodCoverage(
                         signature = signature,
-                        testId = it.testId,
-                        testSessionId = it.sessionId,
+                        testId = datum.testId,
+                        testSessionId = datum.sessionId,
                         probes = methodProbes
                     )
-            }}
+                }
+            }
             .chunked(pageSize)
             .forEach { sender.send(destination, CoveragePayload(
                 groupId = groupId,
