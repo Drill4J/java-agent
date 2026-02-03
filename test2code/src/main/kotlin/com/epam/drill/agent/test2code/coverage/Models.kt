@@ -30,6 +30,5 @@ data class ExecDatum(
     val id: ClassId,
     val probes: AgentProbes,
     val sessionId: String,
-    val testId: String,
-    val methodsMetadata: ClassMethodsMetadata
+    val testId: String
 )

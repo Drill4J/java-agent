@@ -24,6 +24,7 @@ import com.epam.drill.agent.test2code.common.api.MethodCoverage
 import com.epam.drill.agent.test2code.common.api.toBitSet
 import com.epam.drill.agent.test2code.common.transport.CoveragePayload
 import kotlinx.serialization.KSerializer
+import java.util.concurrent.ConcurrentHashMap
 
 interface CoverageSender {
     fun startSendingCoverage()
@@ -40,7 +41,8 @@ class IntervalCoverageSender(
     private val pageSize: Int,
     private val sender: AgentMessageSender = StubSender(),
     private val collectReleasedProbes: () -> Sequence<ExecDatum> = { emptySequence() },
-    private val collectUnreleasedProbes: () -> Sequence<ExecDatum> = { emptySequence() }
+    private val collectUnreleasedProbes: () -> Sequence<ExecDatum> = { emptySequence() },
+    private val classMethodsMetadata: ConcurrentHashMap<Long, ClassMethodsMetadata>
 ) : CoverageSender {
     private val scheduledThreadPool = Executors.newSingleThreadScheduledExecutor()
     private val destination = AgentMessageDestination("POST", "coverage")
@@ -75,7 +77,8 @@ class IntervalCoverageSender(
      */
     private fun sendProbes(dataToSend: Sequence<ExecDatum>) {
         dataToSend
-            .flatMap { it.methodsMetadata.mapNotNull { (signature, metadata) ->
+            .flatMap {
+                classMethodsMetadata[it.id]!!.mapNotNull { (signature, metadata) ->
                 val methodProbes = it.probes.values.copyOfRange(
                     metadata.probesStartPos,
                     metadata.probesStartPos + metadata.probesCount

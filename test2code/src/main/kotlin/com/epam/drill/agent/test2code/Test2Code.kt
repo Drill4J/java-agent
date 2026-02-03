@@ -66,7 +66,8 @@ class Test2Code(
         pageSize = configuration.parameters[Test2CodeParameterDefinitions.COVERAGE_SEND_PAGE_SIZE],
         sender = sender,
         collectReleasedProbes = { coverageManager.pollRecorded() },
-        collectUnreleasedProbes = { coverageManager.getUnreleased() }
+        collectUnreleasedProbes = { coverageManager.getUnreleased() },
+        classMethodsMetadata = coverageManager.classMethodsMetadata
     )
     private val coverageCollectionEnabled = configuration.parameters[COVERAGE_COLLECTION_ENABLED]
     private val classScanningEnabled = configuration.parameters[Test2CodeParameterDefinitions.CLASS_SCANNING_ENABLED]
