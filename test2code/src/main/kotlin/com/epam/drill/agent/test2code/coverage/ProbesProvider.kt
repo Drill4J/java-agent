@@ -21,7 +21,11 @@ import com.epam.drill.agent.jacoco.AgentProbes
  * Provides boolean array for the probe.
  * Implementations must be kotlin singleton objects.
  */
-typealias IProbesProxy = (ClassId, Int, String, Int) -> AgentProbes
+
+interface IProbesProxy {
+    fun invoke(id: ClassId, num: Int, name: String, probeCount: Int): AgentProbes
+    fun addProbePositions(classId: Long, probePositions: Map<String, Pair<Int,Int>>)
+}
 
 const val SESSION_CONTEXT_NONE = "SESSION_CONTEXT_NONE"
 const val TEST_CONTEXT_NONE = "TEST_CONTEXT_NONE"

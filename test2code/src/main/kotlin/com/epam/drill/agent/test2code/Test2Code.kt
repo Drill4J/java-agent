@@ -60,11 +60,14 @@ class Test2Code(
         groupId = configuration.agentMetadata.groupId,
         appId = configuration.agentMetadata.appId,
         instanceId = configuration.agentMetadata.instanceId,
+        commitSha = configuration.agentMetadata.commitSha,
+        buildVersion = configuration.agentMetadata.buildVersion,
         intervalMs = configuration.parameters[Test2CodeParameterDefinitions.COVERAGE_SEND_INTERVAL],
         pageSize = configuration.parameters[Test2CodeParameterDefinitions.COVERAGE_SEND_PAGE_SIZE],
         sender = sender,
         collectReleasedProbes = { coverageManager.pollRecorded() },
-        collectUnreleasedProbes = { coverageManager.getUnreleased() }
+        collectUnreleasedProbes = { coverageManager.getUnreleased() },
+        classProbePositions = coverageManager.classProbePositions
     )
     private val coverageCollectionEnabled = configuration.parameters[COVERAGE_COLLECTION_ENABLED]
     private val classScanningEnabled = configuration.parameters[Test2CodeParameterDefinitions.CLASS_SCANNING_ENABLED]

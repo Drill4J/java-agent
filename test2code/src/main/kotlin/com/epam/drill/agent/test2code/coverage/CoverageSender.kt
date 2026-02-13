@@ -20,10 +20,11 @@ import java.util.concurrent.TimeUnit
 import mu.KotlinLogging
 import com.epam.drill.agent.common.transport.AgentMessageDestination
 import com.epam.drill.agent.common.transport.AgentMessageSender
-import com.epam.drill.agent.test2code.common.api.ClassCoverage
+import com.epam.drill.agent.test2code.common.api.MethodCoverage
 import com.epam.drill.agent.test2code.common.api.toBitSet
 import com.epam.drill.agent.test2code.common.transport.CoveragePayload
 import kotlinx.serialization.KSerializer
+import java.util.concurrent.ConcurrentHashMap
 
 interface CoverageSender {
     fun startSendingCoverage()
@@ -33,12 +34,15 @@ interface CoverageSender {
 class IntervalCoverageSender(
     private val groupId: String,
     private val appId: String,
+    private val commitSha: String?,
+    private val buildVersion: String?,
     private val instanceId: String,
     private val intervalMs: Long,
     private val pageSize: Int,
     private val sender: AgentMessageSender = StubSender(),
     private val collectReleasedProbes: () -> Sequence<ExecDatum> = { emptySequence() },
-    private val collectUnreleasedProbes: () -> Sequence<ExecDatum> = { emptySequence() }
+    private val collectUnreleasedProbes: () -> Sequence<ExecDatum> = { emptySequence() },
+    private val classProbePositions: ConcurrentHashMap<Long, Map<String, Pair<Int, Int>>>
 ) : CoverageSender {
     private val scheduledThreadPool = Executors.newSingleThreadScheduledExecutor()
     private val destination = AgentMessageDestination("POST", "coverage")
@@ -73,13 +77,39 @@ class IntervalCoverageSender(
      */
     private fun sendProbes(dataToSend: Sequence<ExecDatum>) {
         dataToSend
-            .map { ClassCoverage(
-                classname = it.name,
-                testId = it.testId,
-                testSessionId = it.sessionId,
-                probes = it.probes.values.toBitSet()) }
+            .mapNotNull {
+                classProbePositions[it.id]?.let { positionsByMethod ->
+                    it to positionsByMethod
+                } ?: run {
+                    logger.warn("No probe positions for class id=${it.id}")
+                    null
+                }
+            }
+            .flatMap { (datum, positionsByMethod) ->
+                positionsByMethod.mapNotNull { (signature, positions) ->
+                    val methodProbes =
+                        datum.probes.values
+                            .copyOfRange(positions.first, positions.first + positions.second)
+                            .toBitSet()
+
+                    if (methodProbes.isEmpty) null
+                    else MethodCoverage(
+                        signature = signature,
+                        testId = datum.testId,
+                        testSessionId = datum.sessionId,
+                        probes = methodProbes
+                    )
+                }
+            }
             .chunked(pageSize)
-            .forEach { sender.send(destination, CoveragePayload(groupId, appId, instanceId, it), CoveragePayload.serializer()) }
+            .forEach { sender.send(destination, CoveragePayload(
+                groupId = groupId,
+                appId = appId,
+                instanceId = instanceId,
+                commitSha = commitSha,
+                buildVersion = buildVersion,
+                coverage = it
+            ), CoveragePayload.serializer()) }
     }
 
 }

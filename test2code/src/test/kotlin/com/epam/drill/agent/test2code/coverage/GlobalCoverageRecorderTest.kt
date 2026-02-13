@@ -89,10 +89,9 @@ class GlobalCoverageRecorderTest {
     private fun ContextCoverage.putProbes(classId: Long, vararg probes: Boolean) {
         execData[classId] = ExecDatum(
             id = classId,
-            name = "foo",
             sessionId = SESSION_CONTEXT_AMBIENT,
             probes = AgentProbes(initialSize = probes.size, values = booleanArrayOf(*probes)),
-            testId = TEST_CONTEXT_NONE
+            testId = TEST_CONTEXT_NONE,
         )
     }
 

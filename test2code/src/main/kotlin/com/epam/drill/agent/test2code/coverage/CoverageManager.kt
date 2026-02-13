@@ -16,12 +16,15 @@
 package com.epam.drill.agent.test2code.coverage
 
 import com.epam.drill.agent.jacoco.AgentProbes
+import java.util.concurrent.ConcurrentHashMap
 
 open class CoverageManager(
     private val threadCoverageRecorder: ICoverageRecorder = ThreadCoverageRecorder(),
     private val globalCoverageRecorder: GlobalCoverageRecorder = GlobalCoverageRecorder(),
 ) : IProbesProxy,
     ICoverageRecorder by threadCoverageRecorder {
+
+    val classProbePositions: ConcurrentHashMap<Long, Map<String, Pair<Int, Int>>> = ConcurrentHashMap()
 
     override fun invoke(
         id: Long,
@@ -34,13 +37,16 @@ open class CoverageManager(
         val execDatum = coverage.execData.getOrPut(id) {
             ExecDatum(
                 id = id,
-                name = name,
                 probes = AgentProbes(probeCount),
                 sessionId = coverage.context.sessionId,
-                testId = coverage.context.testId
+                testId = coverage.context.testId,
             )
         }
         return execDatum.probes
+    }
+
+    override fun addProbePositions(classId: Long, probePositions: Map<String, Pair<Int, Int>>) {
+        classProbePositions[classId] = probePositions
     }
 
     override fun pollRecorded(): Sequence<ExecDatum> {

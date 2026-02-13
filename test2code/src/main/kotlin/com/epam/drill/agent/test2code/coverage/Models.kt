@@ -28,7 +28,6 @@ typealias ExecData = ConcurrentHashMap<ClassId, ExecDatum>
  */
 data class ExecDatum(
     val id: ClassId,
-    val name: String,
     val probes: AgentProbes,
     val sessionId: String,
     val testId: String,
