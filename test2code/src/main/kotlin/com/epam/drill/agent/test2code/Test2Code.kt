@@ -148,8 +148,8 @@ class Test2Code(
             return
         }
         var classCount = 0
-        var methodCount = 0
-        var filteredMethods = 0
+        var totalMethodsCount = 0
+        var filteredMethodsCount = 0
 
         val excludeMethodsByAnnotationPackage =
             configuration.parameters[Test2CodeParameterDefinitions.EXCLUDE_METHODS_BY_ANNOTATION_PACKAGE]  as List<String>
@@ -160,24 +160,20 @@ class Test2Code(
                 .also { classCount += it.size }
                 .asSequence()
                 .flatMap { parseAstClass(it.entityName(), it.bytes()).asSequence() }
+                .onEach { totalMethodsCount++ }
                 .filter { method ->
-                    val keepMethod = !hasAnnotationsExclusions ||
+                    !hasAnnotationsExclusions ||
                             method.annotations?.keys?.none { key ->
                                 excludeMethodsByAnnotationPackage.any { key.contains(it) }
                             } ?: false
-                    if (keepMethod) {
-                        methodCount++
-                    } else {
-                        filteredMethods++
-                    }
-                    keepMethod
                 }
+                .onEach { filteredMethodsCount++ }
                 .chunkedLazy(configuration.parameters[Test2CodeParameterDefinitions.METHODS_SEND_PAGE_SIZE])
                 .forEach(::sendClassMetadata)
         }
-        logger.info { """Scanned $classCount classes with $methodCount methods
-            | total methods: ${methodCount + filteredMethods};
-            | methods excluded by annotations: $filteredMethods
+        logger.info { """Scanned $classCount classes with $filteredMethodsCount methods
+            | total methods: ${totalMethodsCount + filteredMethodsCount};
+            | methods excluded by annotations: ${totalMethodsCount - filteredMethodsCount}
             | packages for annotations-based exclusion are specified in ${Test2CodeParameterDefinitions.EXCLUDE_METHODS_BY_ANNOTATION_PACKAGE.name} parameter """.trimMargin() }
     }
 
