@@ -149,6 +149,7 @@ class Test2Code(
         }
         var classCount = 0
         var methodCount = 0
+        var filteredMethods = 0
 
         val excludeMethodsByAnnotationPackage =
             configuration.parameters[Test2CodeParameterDefinitions.EXCLUDE_METHODS_BY_ANNOTATION_PACKAGE]  as List<String>
@@ -160,18 +161,23 @@ class Test2Code(
                 .asSequence()
                 .flatMap { parseAstClass(it.entityName(), it.bytes()).asSequence() }
                 .filter { method ->
-                    !hasAnnotationsExclusions ||
-                    method.annotations?.keys?.none { key ->
-                        excludeMethodsByAnnotationPackage.any { key.contains(it) }
+                    val keepMethod = !hasAnnotationsExclusions ||
+                            method.annotations?.keys?.none { key ->
+                                excludeMethodsByAnnotationPackage.any { key.contains(it) }
+                            } ?: false
+                    if (keepMethod) {
+                        methodCount++
+                    } else {
+                        filteredMethods++
                     }
-                    ?: false
+                    keepMethod
                 }
-                .toList()
-                .also { methodCount += it.size }
-                .chunked(configuration.parameters[Test2CodeParameterDefinitions.METHODS_SEND_PAGE_SIZE])
+                .chunkedLazy(configuration.parameters[Test2CodeParameterDefinitions.METHODS_SEND_PAGE_SIZE])
                 .forEach(::sendClassMetadata)
         }
-        logger.info { "Scanned $classCount classes with $methodCount methods" }
+        logger.info { """Scanned $classCount classes with $methodCount methods
+            | total methods: ${methodCount + filteredMethods}, but $filteredMethods methods were excluded by annotations
+            | from packages specified in ${Test2CodeParameterDefinitions.EXCLUDE_METHODS_BY_ANNOTATION_PACKAGE.name} parameter""".trimMargin() }
     }
 
     private val classMetadataDestination = AgentMessageDestination("PUT", "methods")
@@ -188,5 +194,16 @@ class Test2Code(
         logger.debug { "sendClassMetadata: Sending methods: $message" }
         sender.send(classMetadataDestination, message, ClassMetadata.serializer())
     }
+}
 
+private fun <T> Sequence<T>.chunkedLazy(size: Int): Sequence<List<T>> = sequence {
+    val buffer = mutableListOf<T>()
+    for (item in this@chunkedLazy) {
+        buffer += item
+        if (buffer.size == size) {
+            yield(buffer.toList())
+            buffer.clear()
+        }
+    }
+    if (buffer.isNotEmpty()) yield(buffer.toList())
 }
