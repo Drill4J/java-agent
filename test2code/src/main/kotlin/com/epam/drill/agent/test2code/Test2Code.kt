@@ -176,8 +176,9 @@ class Test2Code(
                 .forEach(::sendClassMetadata)
         }
         logger.info { """Scanned $classCount classes with $methodCount methods
-            | total methods: ${methodCount + filteredMethods}, but $filteredMethods methods were excluded by annotations
-            | from packages specified in ${Test2CodeParameterDefinitions.EXCLUDE_METHODS_BY_ANNOTATION_PACKAGE.name} parameter""".trimMargin() }
+            | total methods: ${methodCount + filteredMethods};
+            | methods excluded by annotations: $filteredMethods
+            | packages for annotations-based exclusion are specified in ${Test2CodeParameterDefinitions.EXCLUDE_METHODS_BY_ANNOTATION_PACKAGE.name} parameter """.trimMargin() }
     }
 
     private val classMetadataDestination = AgentMessageDestination("PUT", "methods")
