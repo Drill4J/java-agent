@@ -149,10 +149,24 @@ class Test2Code(
         }
         var classCount = 0
         var methodCount = 0
+
+        val excludeMethodsByAnnotationPackage =
+            configuration.parameters[Test2CodeParameterDefinitions.EXCLUDE_METHODS_BY_ANNOTATION_PACKAGE]  as List<String>
+        val hasAnnotationsExclusions = excludeMethodsByAnnotationPackage.isNotEmpty()
+
         scanClasses { classes ->
             classes
                 .also { classCount += it.size }
-                .flatMap { parseAstClass(it.entityName(), it.bytes()) }
+                .asSequence()
+                .flatMap { parseAstClass(it.entityName(), it.bytes()).asSequence() }
+                .filter { method ->
+                    !hasAnnotationsExclusions ||
+                    method.annotations?.keys?.none { key ->
+                        excludeMethodsByAnnotationPackage.any { key.contains(it) }
+                    }
+                    ?: false
+                }
+                .toList()
                 .also { methodCount += it.size }
                 .chunked(configuration.parameters[Test2CodeParameterDefinitions.METHODS_SEND_PAGE_SIZE])
                 .forEach(::sendClassMetadata)
