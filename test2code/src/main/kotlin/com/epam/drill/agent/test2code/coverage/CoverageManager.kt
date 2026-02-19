@@ -24,6 +24,7 @@ open class CoverageManager(
 ) : IProbesProxy,
     ICoverageRecorder by threadCoverageRecorder {
 
+    // TODO doesn't make much sense to store it here, if we use it only in coverage sender
     val classMethodsMetadata: ConcurrentHashMap<Long, ClassMethodsMetadata> = ConcurrentHashMap()
 
     override fun invoke(
