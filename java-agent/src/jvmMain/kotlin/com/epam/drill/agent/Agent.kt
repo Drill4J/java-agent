@@ -54,7 +54,7 @@ import com.epam.drill.agent.module.JvmModuleLoader
 import com.epam.drill.agent.test2code.Test2Code
 import com.epam.drill.agent.test2code.configuration.Test2CodeParameterDefinitions
 import com.epam.drill.agent.transport.JvmModuleMessageSender
-import jdk.internal.org.objectweb.asm.ClassReader
+import org.objectweb.asm.ClassReader
 import mu.KotlinLogging
 import java.lang.instrument.ClassFileTransformer
 import java.lang.instrument.Instrumentation

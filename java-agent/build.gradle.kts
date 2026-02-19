@@ -115,6 +115,7 @@ kotlin {
                 implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:${kotlinxSerializationVersion}")
                 implementation("org.jetbrains.kotlinx:kotlinx-serialization-protobuf:${kotlinxSerializationVersion}")
                 implementation("org.jetbrains.kotlinx:kotlinx-cli:${kotlinxCliVersion}")
+                implementation("org.ow2.asm:asm:9.8")
                 implementation(project(":common"))
                 implementation(project(":agent-transport"))
                 implementation(project(":agent-instrumentation"))
