@@ -67,7 +67,7 @@ class Test2Code(
         sender = sender,
         collectReleasedProbes = { coverageManager.pollRecorded() },
         collectUnreleasedProbes = { coverageManager.getUnreleased() },
-        classProbePositions = coverageManager.classProbePositions
+        classMethodsMetadata = coverageManager.classMethodsMetadata
     )
     private val coverageCollectionEnabled = configuration.parameters[COVERAGE_COLLECTION_ENABLED]
     private val classScanningEnabled = configuration.parameters[Test2CodeParameterDefinitions.CLASS_SCANNING_ENABLED]

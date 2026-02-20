@@ -20,132 +20,134 @@ import kotlin.test.assertNotEquals
 import kotlin.test.Test
 import com.epam.drill.agent.fixture.ast.*
 import com.epam.drill.agent.fixture.ast.OverrideTest
-// TODO
-//  -make test cases independent (split fixture class into multiple classes)
-//  -rewrite tests cases testing change ("Build1" and "Build2")
+
+// TODO these are bad tests: lots of repetition, poorly prepared test data (Build1.java, Build2.java)
+//  rewrite to actually test cases handled in codeToString
 class ChecksumTest {
 
     private val checksumsBuild1 = calculateMethodsChecksums(Build1::class.readBytes(), Build1::class.getFullName())
     private val checksumsBuild2 = calculateMethodsChecksums(Build2::class.readBytes(), Build2::class.getFullName())
 
     @Test
-    fun `lambda with different context should have other checksum`() {
-        val methodName = "lambda\$differentContextChangeAtLambda\$1/java.lang.String/java.lang.String"
-        // Lambdas should have different value, because they contain different context
-        assertChecksum(methodName, checksumsBuild1, checksumsBuild2)
-    }
-
-    @Test
-    fun `constant lambda hash calculation`() {
-        val methodName = "lambda\$constantLambdaHashCalculation\$6/java.lang.String/java.lang.String"
+    fun `lambda with no changes to body should have matching checksums`() {
+        val methodSignatureBuild1 = "com/epam/drill/agent/fixture/ast/Build1:lambda\$constantLambdaHashCalculation\$6:java.lang.String:java.lang.String"
+        val methodSignatureBuild2 = "com/epam/drill/agent/fixture/ast/Build2:lambda\$constantLambdaHashCalculation\$6:java.lang.String:java.lang.String"
         assertEquals(
-            checksumsBuild1[methodName],
-            checksumsBuild2[methodName]
+            checksumsBuild1[methodSignatureBuild1],
+            checksumsBuild2[methodSignatureBuild2]
         )
     }
 
     @Test
-    fun `method with lambda should have the same checksum`() {
-        val methodName = "theSameMethodBody"
-        //Methods, which contain lambda with different context, should not have difference in checksum
+    fun `difference in nested lambdas should not change method body checksum`() {
+        val methodSignatureBuild1 = "com/epam/drill/agent/fixture/ast/Build1:theSameMethodBody:java.util.List:void"
+        val methodSignatureBuild2 = "com/epam/drill/agent/fixture/ast/Build2:theSameMethodBody:java.util.List:void"
         assertEquals(
-            checksumsBuild1[methodName],
-            checksumsBuild2[methodName]
+            checksumsBuild1[methodSignatureBuild1],
+            checksumsBuild2[methodSignatureBuild2]
         )
     }
 
     @Test
-    fun `test on different context at inner lambda`() {
-        val methodName = "lambda\$null\$2/java.lang.String/java.lang.String"
-        assertChecksum(methodName, checksumsBuild1, checksumsBuild2)
+    fun `changing lambda body should change it's checksum`() {
+        val methodSignatureBuild1 = "com/epam/drill/agent/fixture/ast/Build1:lambda\$null\$2:java.lang.String:java.lang.String"
+        val methodSignatureBuild2 = "com/epam/drill/agent/fixture/ast/Build2:lambda\$null\$2:java.lang.String:java.lang.String"
+        assertNotEquals(
+            checksumsBuild1[methodSignatureBuild1],
+            checksumsBuild2[methodSignatureBuild2]
+        )
     }
 
+    // TODO this test actually performs check on a different _object_ and not just the method called by reference
     @Test
     fun `should have different checksum for reference call`() {
-        val methodName = "referenceMethodCall/java.util.List/void"
-        assertChecksum(methodName, checksumsBuild1, checksumsBuild2)
-    }
-
-    @Test
-    fun `should have different checksum for array`() {
-        val methodName = "multiANewArrayInsnNode//void"
-        assertChecksum(methodName, checksumsBuild1, checksumsBuild2)
-    }
-
-    @Test
-    fun `should have different checksum for switch table`() {
-        val methodName = "tableSwitchMethodTest/int/void"
-        assertChecksum(methodName, checksumsBuild1, checksumsBuild2)
-    }
-
-    @Test
-    fun `should have different checksum for look up switch`() {
-        val methodName = "lookupSwitchMethodTest/java.lang.Integer/void"
-        assertChecksum(methodName, checksumsBuild1, checksumsBuild2)
-    }
-
-    @Test
-    fun `method with different instance type`() {
-        val methodName = "differentInstanceType//void"
-        assertChecksum(methodName, checksumsBuild1, checksumsBuild2)
-    }
-
-    @Test
-    fun `method call other method`() {
-        val methodName = "callOtherMethod//void"
-        assertChecksum(methodName, checksumsBuild1, checksumsBuild2)
-    }
-//    Do we need to cover that case?
-//    @Test
-//    fun `method with different params`() {
-//        val methodName = "methodWithDifferentParams"
-//        assertChecksum(methodName)
-//    }
-
-    @Test
-    fun `method with incremented value`() {
-        val methodName = "methodWithIteratedValue/java.lang.Integer/void"
-        assertChecksum(methodName, checksumsBuild1, checksumsBuild2)
-    }
-
-//   Do we need to cover that case?
-//    @Test
-//    fun `change name of local var`() {
-//        val methodName = "changeLocalVarName"
-//        assertChecksum(methodName)
-//    }
-
-}
-
-class ConstructorTest {
-
-    private val checksumsBuild1 =
-        calculateMethodsChecksums(ConstructorTestBuild1::class.readBytes(), ConstructorTestBuild1::class.getFullName())
-    private val checksumsBuild2 =
-        calculateMethodsChecksums(ConstructorTestBuild2::class.readBytes(), ConstructorTestBuild2::class.getFullName())
-
-    @Test
-    fun `class with more that one constructor should have two different checksum`() {
-        val constructorName =
-            "<init>/java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String/void"
-        val defaultConstructorName = "<init>//void"
-        assertChecksum(constructorName, checksumsBuild1, checksumsBuild2)
-        assertEquals(
-            checksumsBuild1[defaultConstructorName],
-            checksumsBuild2[defaultConstructorName]
+        val methodSignatureBuild1 = "com/epam/drill/agent/fixture/ast/Build1:referenceMethodCall:java.util.List:void"
+        val methodSignatureBuild2 = "com/epam/drill/agent/fixture/ast/Build2:referenceMethodCall:java.util.List:void"
+        assertNotEquals(
+            checksumsBuild1[methodSignatureBuild1],
+            checksumsBuild2[methodSignatureBuild2]
         )
     }
+
+    // TODO this test changes so much in the method, I'm not sure what exactly are we testing here
+    //   either rewrite or remove it
+    @Test
+    fun `should have different checksum for array`() {
+        val methodSignatureBuild1 = "com/epam/drill/agent/fixture/ast/Build1:multiANewArrayInsnNode::void"
+        val methodSignatureBuild2 = "com/epam/drill/agent/fixture/ast/Build2:multiANewArrayInsnNode::void"
+        assertNotEquals(
+            checksumsBuild1[methodSignatureBuild1],
+            checksumsBuild2[methodSignatureBuild2]
+        )
+    }
+
+    // TODO this test and the next one test arguably the same behavior
+    @Test
+    fun `changing rule in look up switch should change checksum`() {
+        val methodSignatureBuild1 = "com/epam/drill/agent/fixture/ast/Build1:tableSwitchMethodTest:int:void"
+        val methodSignatureBuild2 = "com/epam/drill/agent/fixture/ast/Build2:tableSwitchMethodTest:int:void"
+        assertNotEquals(
+            checksumsBuild1[methodSignatureBuild1],
+            checksumsBuild2[methodSignatureBuild2]
+        )
+    }
+
+    @Test
+    fun `changing rule in look up switch should change checksum 2`() {
+        val methodSignatureBuild1 = "com/epam/drill/agent/fixture/ast/Build1:lookupSwitchMethodTest:java.lang.Integer:void"
+        val methodSignatureBuild2 = "com/epam/drill/agent/fixture/ast/Build2:lookupSwitchMethodTest:java.lang.Integer:void"
+        assertNotEquals(
+            checksumsBuild1[methodSignatureBuild1],
+            checksumsBuild2[methodSignatureBuild2]
+        )
+    }
+
+    @Test
+    fun `changing local variable type should change checksum`() {
+        val methodSignatureBuild1 = "com/epam/drill/agent/fixture/ast/Build1:differentInstanceType::void"
+        val methodSignatureBuild2 = "com/epam/drill/agent/fixture/ast/Build2:differentInstanceType::void"
+        assertNotEquals(
+            checksumsBuild1[methodSignatureBuild1],
+            checksumsBuild2[methodSignatureBuild2]
+        )
+    }
+
+    // TODO no idea why these checksums should be different
+    @Test
+    fun `method call other method`() {
+        val methodSignatureBuild1 = "com/epam/drill/agent/fixture/ast/Build1:callOtherMethod::void"
+        val methodSignatureBuild2 = "com/epam/drill/agent/fixture/ast/Build2:callOtherMethod::void"
+        assertNotEquals(
+            checksumsBuild1[methodSignatureBuild1],
+            checksumsBuild2[methodSignatureBuild2]
+        )
+    }
+
+    // TODO not sure it _should_ work like that, but that's what our codeToString implementation does
+    @Test
+    fun `changing operator ++ to += should change checksum`() {
+        val methodSignatureBuild1 = "com/epam/drill/agent/fixture/ast/Build1:methodWithIteratedValue:java.lang.Integer:void"
+        val methodSignatureBuild2 = "com/epam/drill/agent/fixture/ast/Build2:methodWithIteratedValue:java.lang.Integer:void"
+        assertNotEquals(
+            checksumsBuild1[methodSignatureBuild1],
+            checksumsBuild2[methodSignatureBuild2]
+        )
+    }
+
 }
+
 
 class OverrideTest {
 
     private val methodsBuild =
         calculateMethodsChecksums(OverrideTest::class.readBytes(), OverrideTest::class.getFullName())
 
+    // TODO I really doubt that - OverrideTest changes method _body_
+    //  it has very little to do with methods being virtual/overwritten
     @Test
-    fun `class with override methods should have different checksum`() {
-        val methodNameReal = "call//java.lang.String"
-        val methodNameVirtual = "call//java.lang.Object"
+    fun `virtual and overwritten method should have different body checksums`() {
+        val methodNameReal = "com/epam/drill/agent/fixture/ast/OverrideTest:call::java.lang.String"
+        val methodNameVirtual = "com/epam/drill/agent/fixture/ast/OverrideTest:call::java.lang.Object"
         assertEquals(3, methodsBuild.size)
         //Compare checksum of virtual method and method with override annotation
         assertNotEquals(
@@ -155,13 +157,3 @@ class OverrideTest {
     }
 }
 
-private fun assertChecksum(
-    methodName: String,
-    build1: Map<String, String>,
-    build2: Map<String, String>
-) {
-    assertNotEquals(
-        build1[methodName],
-        build2[methodName]
-    )
-}
