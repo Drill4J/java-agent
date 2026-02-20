@@ -24,7 +24,6 @@ import com.epam.drill.agent.jvmapi.gen.jobject
 import io.ktor.utils.io.bits.*
 import kotlinx.cinterop.*
 import mu.KotlinLogging
-import org.objectweb.asm.ClassReader
 import kotlin.concurrent.AtomicInt
 import kotlinx.cinterop.ExperimentalForeignApi
 
@@ -54,26 +53,18 @@ object ClassFileLoadHook {
             .takeIf { it.any() }
             ?: return
 
-        val (oldClassBytes, reader) = runCatching {
+        val oldClassBytes = runCatching {
             val classBytes = ByteArray(classDataLen).apply {
                 Memory.of(kClassData, classDataLen).loadByteArray(0, this)
             }
-            classBytes to ClassReader(classBytes)
+            classBytes
         }.onFailure {
             logger.error(it) { "Can't read class: $kClassName" }
         }.getOrNull() ?: return
 
-        val permittedTransformers = precheckedTransformers.filter {
-            it.permit(
-                kClassName,
-                reader.superName,
-                reader.interfaces
-            )
-        }
-
-        val newClassBytes = permittedTransformers.fold(oldClassBytes) { bytes, transformer ->
+        val newClassBytes = precheckedTransformers.fold(oldClassBytes) { bytes, transformer ->
             runCatching {
-                transformer.transform(kClassName, bytes, loader, protectionDomain)
+                transformer.checkAndTransform(kClassName, bytes, loader, protectionDomain)
             }.onFailure {
                 logger.warn(it) { "Can't transform class: $kClassName with ${transformer::class.simpleName}" }
             }.getOrNull()

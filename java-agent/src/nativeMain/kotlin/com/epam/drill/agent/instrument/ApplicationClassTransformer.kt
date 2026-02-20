@@ -45,4 +45,14 @@ actual object ApplicationClassTransformer : TransformerObject, AbstractTransform
         .fold(classFileBuffer) { bytes, plugin ->
             plugin.instrument(className, bytes) ?: bytes
         }
+
+    override fun checkAndTransform(
+        className: String,
+        classFileBuffer: ByteArray,
+        loader: Any?,
+        protectionDomain: Any?
+    ): ByteArray {
+        if (!permit(className, null, emptyArray())) return classFileBuffer
+        return transform(className, classFileBuffer, loader, protectionDomain)
+    }
 }
