@@ -78,21 +78,25 @@ class IntervalCoverageSender(
     private fun sendProbes(dataToSend: Sequence<ExecDatum>) {
         dataToSend
             .flatMap {
-                classMethodsMetadata[it.id]!!.mapNotNull { (signature, metadata) ->
-                val methodProbes = it.probes.values.copyOfRange(
-                    metadata.probesStartPos,
-                    metadata.probesStartPos + metadata.probesCount
-                ).toBitSet()
+                classMethodsMetadata[it.id]
+                    ?.mapNotNull { (signature, metadata) ->
+                        val methodProbes = it.probes.values.copyOfRange(
+                            metadata.probesStartPos,
+                            metadata.probesStartPos + metadata.probesCount
+                        ).toBitSet()
 
-                if (methodProbes.isEmpty) null
-                else MethodCoverage(
-                        signature = signature,
-                        bodyChecksum = metadata.bodyChecksum,
-                        testId = it.testId,
-                        testSessionId = it.sessionId,
-                        probes = methodProbes
-                    )
-            }}
+                        if (methodProbes.isEmpty) null
+                        else MethodCoverage(
+                            signature = signature,
+                            bodyChecksum = metadata.bodyChecksum,
+                            testId = it.testId,
+                            testSessionId = it.sessionId,
+                            probes = methodProbes
+                        )
+                    }
+                    ?.asSequence()
+                    ?: emptySequence()
+            }
             .chunked(pageSize)
             .forEach { sender.send(destination, CoveragePayload(
                 groupId = groupId,
