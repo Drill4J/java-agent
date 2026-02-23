@@ -19,7 +19,7 @@ private const val SUBCLASS_OF = "!subclassOf:"
 
 data class ClassSource(
     private val entityName: String,
-    private val superName: String = "",
+    private val superName: String? = null,
     private val bytes: ByteArray = byteArrayOf(),
 ) : EntitySource {
 
@@ -41,7 +41,7 @@ data class ClassSource(
             prefixes.none { it.startsWith('!') && entityName.regionMatches(offset, it, 1, it.length - 1) }
         }
         val isNotSubclass: () -> Boolean = {
-            prefixes.none {
+            superName != null && prefixes.none {
                 it.startsWith(SUBCLASS_OF) &&
                         superName.isNotBlank() &&
                         superName.regionMatches(offset, it, SUBCLASS_OF.length, it.length - SUBCLASS_OF.length)

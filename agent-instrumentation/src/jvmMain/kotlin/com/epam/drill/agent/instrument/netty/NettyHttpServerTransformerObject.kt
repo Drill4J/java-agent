@@ -45,7 +45,7 @@ abstract class NettyHttpServerTransformerObject(
     ): Boolean = '$' !in className && className.startsWith(NETTY_CHANNEL_HANDLER_CONTEXT)
 
     override fun transform(className: String, ctClass: CtClass) {
-        val invokeChannelReadMethod = ctClass.getMethod("invokeChannelRead", "(Ljava/lang/Object;)V")
+        val invokeChannelReadMethod = ctClass.getMethod("fireChannelRead", "(Ljava/lang/Object;)Lio/netty/channel/ChannelHandlerContext;")
         invokeChannelReadMethod.insertCatching(
             CtBehavior::insertBefore,
             """

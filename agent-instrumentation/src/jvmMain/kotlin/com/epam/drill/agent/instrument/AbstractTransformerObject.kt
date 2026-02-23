@@ -33,9 +33,6 @@ abstract class AbstractTransformerObject(protected val agentConfiguration: Agent
         return agentConfiguration.parameters[INSTRUMENTATION_ENABLED]
     }
 
-    override fun permit(className: String, superName: String?, interfaces: String?) =
-        permit(className, superName, interfaces?.split(";")?.toTypedArray() ?: emptyArray())
-
     override fun transform(
         className: String,
         classFileBuffer: ByteArray,
@@ -61,21 +58,6 @@ abstract class AbstractTransformerObject(protected val agentConfiguration: Agent
     }
 
     abstract fun transform(className: String, ctClass: CtClass)
-
-    override fun checkAndTransform(
-        className: String,
-        classFileBuffer: ByteArray,
-        loader: Any?,
-        protectionDomain: Any?
-    ): ByteArray {
-        val (oldClassBytes, reader) = runCatching {
-            classFileBuffer to ClassReader(classFileBuffer)
-        }.onFailure {
-            logger.error(it) { "Can't read class: $classFileBuffer" }
-        }.getOrNull() ?: return classFileBuffer
-        permit(className, reader.superName, reader.interfaces.joinToString(";")) || return oldClassBytes
-        return transform(className, oldClassBytes, loader, protectionDomain)
-    }
 
     open fun logInjectingHeaders(headers: Map<String, String>) =
         logger.trace { "logInjectingHeaders: Adding headers: $headers" }
