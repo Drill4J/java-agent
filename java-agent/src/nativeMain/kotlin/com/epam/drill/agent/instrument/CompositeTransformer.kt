@@ -13,8 +13,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.epam.drill.agent.instrument.servers
+package com.epam.drill.agent.instrument
 
-import com.epam.drill.agent.instrument.Transformer
-
-expect object ReactorTransformer: Transformer
+actual object CompositeTransformer: Transformer, JvmTransformer() {
+    private val transformers = TransformerRegistrar
+    override fun precheck(
+        className: String,
+        loader: Any?,
+        protectionDomain: Any?
+    ): Boolean {
+        return transformers.enabledTransformers.any { it.precheck(className, loader, protectionDomain) }
+    }
+}

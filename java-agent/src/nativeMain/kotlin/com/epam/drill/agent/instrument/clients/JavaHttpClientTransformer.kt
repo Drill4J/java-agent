@@ -18,9 +18,9 @@ package com.epam.drill.agent.instrument.clients
 import com.epam.drill.agent.configuration.Configuration
 import com.epam.drill.agent.instrument.AbstractTransformerObject
 import com.epam.drill.agent.instrument.InstrumentationParameterDefinitions.INSTRUMENTATION_JAVA_HTTP_CLIENT_ENABLED
-import com.epam.drill.agent.instrument.TransformerObject
+import com.epam.drill.agent.instrument.Transformer
 
-actual object JavaHttpClientTransformer : TransformerObject, AbstractTransformerObject() {
+actual object JavaHttpClientTransformer : Transformer, AbstractTransformerObject() {
     override fun enabled() = super<AbstractTransformerObject>.enabled() && Configuration.parameters[INSTRUMENTATION_JAVA_HTTP_CLIENT_ENABLED]
     override fun precheck(
         className: String,

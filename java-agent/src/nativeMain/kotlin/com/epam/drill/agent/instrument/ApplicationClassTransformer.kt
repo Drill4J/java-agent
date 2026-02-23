@@ -20,20 +20,16 @@ import com.epam.drill.agent.configuration.Configuration
 import com.epam.drill.agent.module.InstrumentationAgentModule
 import com.epam.drill.agent.module.JvmModuleStorage
 
-actual object ApplicationClassTransformer : TransformerObject, AbstractTransformerObject() {
+actual object ApplicationClassTransformer : Transformer, AbstractTransformerObject() {
 
     override fun precheck(
         className: String,
         loader: Any?,
         protectionDomain: Any?
-    ): Boolean = loader != null && protectionDomain != null && '$' !in className
-
-    override fun permit(
-        className: String,
-        superName: String?,
-        interfaces: Array<String?>
-    ): Boolean = ClassSource(className, superName ?: "")
-        .prefixMatches(Configuration.agentMetadata.packagesPrefixes)
+    ): Boolean = loader != null
+            && protectionDomain != null
+            && '$' !in className
+            && ClassSource(className, "").prefixMatches(Configuration.agentMetadata.packagesPrefixes)
 
     override fun transform(
         className: String,
@@ -45,14 +41,4 @@ actual object ApplicationClassTransformer : TransformerObject, AbstractTransform
         .fold(classFileBuffer) { bytes, plugin ->
             plugin.instrument(className, bytes) ?: bytes
         }
-
-    override fun checkAndTransform(
-        className: String,
-        classFileBuffer: ByteArray,
-        loader: Any?,
-        protectionDomain: Any?
-    ): ByteArray {
-        if (!permit(className, null, emptyArray())) return classFileBuffer
-        return transform(className, classFileBuffer, loader, protectionDomain)
-    }
 }

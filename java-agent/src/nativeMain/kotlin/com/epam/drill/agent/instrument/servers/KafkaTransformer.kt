@@ -20,10 +20,8 @@ import com.epam.drill.agent.instrument.AbstractTransformerObject
 import com.epam.drill.agent.instrument.InstrumentationParameterDefinitions.INSTRUMENTATION_KAFKA_ENABLED
 import com.epam.drill.agent.instrument.KAFKA_CONSUMER_SPRING
 import com.epam.drill.agent.instrument.KAFKA_PRODUCER_INTERFACE
-import com.epam.drill.agent.instrument.TransformerObject
+import com.epam.drill.agent.instrument.Transformer
 
-actual object KafkaTransformer : TransformerObject, AbstractTransformerObject() {
+actual object KafkaTransformer : Transformer, AbstractTransformerObject() {
     override fun enabled() = super<AbstractTransformerObject>.enabled() && Configuration.parameters[INSTRUMENTATION_KAFKA_ENABLED]
-    override fun permit(className: String, superName: String?, interfaces: Array<String?>) =
-        KAFKA_CONSUMER_SPRING == className || interfaces.contains(KAFKA_PRODUCER_INTERFACE)
 }

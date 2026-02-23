@@ -15,8 +15,7 @@
  */
 package com.epam.drill.agent.jvmti
 
-import com.epam.drill.agent.instrument.servers.*
-import com.epam.drill.agent.instrument.TransformerRegistrar
+import com.epam.drill.agent.instrument.CompositeTransformer
 import com.epam.drill.agent.jvmapi.gen.Allocate
 import com.epam.drill.agent.jvmapi.gen.jint
 import com.epam.drill.agent.jvmapi.gen.jintVar
@@ -47,11 +46,8 @@ object ClassFileLoadHook {
         initRuntimeIfNeeded()
         val kClassName = clsName?.toKString() ?: return
         val kClassData = classData ?: return
-        val precheckedTransformers = TransformerRegistrar.enabledTransformers
-            .filterNot { kClassName.startsWith(DRILL_PACKAGE) }
-            .filter { it.precheck(kClassName, loader, protectionDomain) }
-            .takeIf { it.any() }
-            ?: return
+        if (kClassName.startsWith(DRILL_PACKAGE)) return
+        if (!CompositeTransformer.precheck(kClassName, loader, protectionDomain)) return
 
         val oldClassBytes = runCatching {
             val classBytes = ByteArray(classDataLen).apply {
@@ -62,19 +58,13 @@ object ClassFileLoadHook {
             logger.error(it) { "Can't read class: $kClassName" }
         }.getOrNull() ?: return
 
-        val newClassBytes = precheckedTransformers.fold(oldClassBytes) { bytes, transformer ->
-            runCatching {
-                transformer.checkAndTransform(kClassName, bytes, loader, protectionDomain)
-            }.onFailure {
-                logger.warn(it) { "Can't transform class: $kClassName with ${transformer::class.simpleName}" }
-            }.getOrNull()
-                ?.takeIf { it !== bytes }
-                ?.also {
-                    logger.debug { "$kClassName was transformed by ${transformer::class.simpleName}" }
-                } ?: bytes
-        }
+        val newClassBytes = runCatching {
+            CompositeTransformer.transform(kClassName, oldClassBytes, loader, protectionDomain)
+        }.onFailure {
+            logger.warn(it) { "Can't transform class: $kClassName" }
+        }.getOrNull() ?: return
 
-        if (newClassBytes !== oldClassBytes) {
+        if (!newClassBytes.contentEquals(oldClassBytes)) {
             totalTransformClass.addAndGet(1).takeIf { it % 100 == 0 }?.let {
                 logger.debug { "At least $it classes were transformed" }
             }
@@ -96,20 +86,5 @@ object ClassFileLoadHook {
         }
         newClassDataLen!!.pointed.value = instrumentedSize
     }
-
-    @OptIn(ExperimentalForeignApi::class)
-    private fun isBootstrapClassLoading(loader: jobject?, protectionDomain: jobject?) =
-        loader == null || protectionDomain == null
-
-    @OptIn(ExperimentalForeignApi::class)
-    private fun isTTLCandidate(
-        kClassName: String,
-        superName: String,
-        interfaces: Collection<String>,
-    ) = kClassName in TTLTransformer.directTtlClasses
-            || (kClassName != TTLTransformer.timerTaskClass
-            && (TTLTransformer.runnableInterface in interfaces
-            || superName == TTLTransformer.poolExecutor))
-            && !kClassName.startsWith(TTLTransformer.jdkInternal)
 
 }

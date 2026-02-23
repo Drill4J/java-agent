@@ -18,8 +18,8 @@ package com.epam.drill.agent.instrument.clients
 import com.epam.drill.agent.configuration.Configuration
 import com.epam.drill.agent.instrument.AbstractTransformerObject
 import com.epam.drill.agent.instrument.InstrumentationParameterDefinitions.INSTRUMENTATION_APACHE_HTTP_CLIENT_ENABLED
-import com.epam.drill.agent.instrument.TransformerObject
+import com.epam.drill.agent.instrument.Transformer
 
-actual object ApacheHttpClientTransformer : TransformerObject, AbstractTransformerObject() {
+actual object ApacheHttpClientTransformer : Transformer, AbstractTransformerObject() {
     override fun enabled() = super<AbstractTransformerObject>.enabled() && Configuration.parameters[INSTRUMENTATION_APACHE_HTTP_CLIENT_ENABLED]
 }

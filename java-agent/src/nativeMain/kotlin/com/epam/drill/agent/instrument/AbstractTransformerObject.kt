@@ -18,6 +18,14 @@ package com.epam.drill.agent.instrument
 import com.epam.drill.agent.configuration.Configuration
 import com.epam.drill.agent.instrument.InstrumentationParameterDefinitions.INSTRUMENTATION_ENABLED
 
-abstract class AbstractTransformerObject: JvmTransformerObject() {
+abstract class AbstractTransformerObject: Transformer {
     override fun enabled() = Configuration.parameters[INSTRUMENTATION_ENABLED]
+    override fun transform(
+        className: String,
+        classFileBuffer: ByteArray,
+        loader: Any?,
+        protectionDomain: Any?
+    ): ByteArray {
+        throw UnsupportedOperationException("Use transform in CompositeTransformer instead")
+    }
 }

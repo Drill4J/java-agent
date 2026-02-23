@@ -18,9 +18,9 @@ package com.epam.drill.agent.instrument.servers
 import com.epam.drill.agent.configuration.Configuration
 import com.epam.drill.agent.instrument.ClassPathProvider
 import com.epam.drill.agent.instrument.RuntimeClassPathProvider
-import com.epam.drill.agent.instrument.TransformerObject
+import com.epam.drill.agent.instrument.Transformer
 
 actual object TTLTransformer :
-    TransformerObject,
+    Transformer,
     TTLTransformerObject(Configuration),
     ClassPathProvider by RuntimeClassPathProvider
