@@ -41,7 +41,7 @@ data class ClassSource(
             prefixes.none { it.startsWith('!') && entityName.regionMatches(offset, it, 1, it.length - 1) }
         }
         val isNotSubclass: () -> Boolean = {
-            superName != null && prefixes.none {
+            superName == null || prefixes.none {
                 it.startsWith(SUBCLASS_OF) &&
                         superName.isNotBlank() &&
                         superName.regionMatches(offset, it, SUBCLASS_OF.length, it.length - SUBCLASS_OF.length)

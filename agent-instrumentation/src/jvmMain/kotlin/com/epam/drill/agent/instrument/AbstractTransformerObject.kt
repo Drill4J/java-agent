@@ -23,7 +23,6 @@ import javassist.CtBehavior
 import javassist.CtClass
 import javassist.LoaderClassPath
 import mu.KLogger
-import org.objectweb.asm.ClassReader
 
 abstract class AbstractTransformerObject(protected val agentConfiguration: AgentConfiguration) : TransformerObject, ClassPathProvider {
 
