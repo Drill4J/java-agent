@@ -43,6 +43,7 @@ data class AstMethod(
 @Serializable
 data class MethodCoverage(
     val signature: String,
+    val bodyChecksum: String,
     val testId: String?,
     val testSessionId: String?,
     @Serializable(with = BitSetSerializer::class)
