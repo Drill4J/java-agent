@@ -42,7 +42,7 @@ class IntervalCoverageSender(
     private val sender: AgentMessageSender = StubSender(),
     private val collectReleasedProbes: () -> Sequence<ExecDatum> = { emptySequence() },
     private val collectUnreleasedProbes: () -> Sequence<ExecDatum> = { emptySequence() },
-    private val classProbePositions: ConcurrentHashMap<Long, Map<String, Pair<Int, Int>>>
+    private val classMethodsMetadata: ConcurrentHashMap<Long, ClassMethodsMetadata>
 ) : CoverageSender {
     private val scheduledThreadPool = Executors.newSingleThreadScheduledExecutor()
     private val destination = AgentMessageDestination("POST", "coverage")
@@ -77,29 +77,25 @@ class IntervalCoverageSender(
      */
     private fun sendProbes(dataToSend: Sequence<ExecDatum>) {
         dataToSend
-            .mapNotNull {
-                classProbePositions[it.id]?.let { positionsByMethod ->
-                    it to positionsByMethod
-                } ?: run {
-                    logger.warn("No probe positions for class id=${it.id}")
-                    null
-                }
-            }
-            .flatMap { (datum, positionsByMethod) ->
-                positionsByMethod.mapNotNull { (signature, positions) ->
-                    val methodProbes =
-                        datum.probes.values
-                            .copyOfRange(positions.first, positions.first + positions.second)
-                            .toBitSet()
+            .flatMap {
+                classMethodsMetadata[it.id]
+                    ?.mapNotNull { (signature, metadata) ->
+                        val methodProbes = it.probes.values.copyOfRange(
+                            metadata.probesStartPos,
+                            metadata.probesStartPos + metadata.probesCount
+                        ).toBitSet()
 
-                    if (methodProbes.isEmpty) null
-                    else MethodCoverage(
-                        signature = signature,
-                        testId = datum.testId,
-                        testSessionId = datum.sessionId,
-                        probes = methodProbes
-                    )
-                }
+                        if (methodProbes.isEmpty) null
+                        else MethodCoverage(
+                            signature = signature,
+                            bodyChecksum = metadata.bodyChecksum,
+                            testId = it.testId,
+                            testSessionId = it.sessionId,
+                            probes = methodProbes
+                        )
+                    }
+                    ?.asSequence()
+                    ?: emptySequence()
             }
             .chunked(pageSize)
             .forEach { sender.send(destination, CoveragePayload(
