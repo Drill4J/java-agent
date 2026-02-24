@@ -18,10 +18,10 @@ package com.epam.drill.agent.instrument.reactor.transformers
 import com.epam.drill.agent.configuration.Configuration
 import com.epam.drill.agent.instrument.ClassPathProvider
 import com.epam.drill.agent.instrument.RuntimeClassPathProvider
-import com.epam.drill.agent.instrument.TransformerObject
+import com.epam.drill.agent.instrument.Transformer
 import com.epam.drill.agent.request.DrillRequestHolder
 
-object MonoTransformer : TransformerObject,
+object MonoTransformer : Transformer,
     MonoTransformerObject(Configuration),
     com.epam.drill.agent.common.request.RequestHolder by DrillRequestHolder,
     ClassPathProvider by RuntimeClassPathProvider

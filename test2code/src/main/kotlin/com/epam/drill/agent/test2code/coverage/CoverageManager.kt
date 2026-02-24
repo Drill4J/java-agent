@@ -16,12 +16,16 @@
 package com.epam.drill.agent.test2code.coverage
 
 import com.epam.drill.agent.jacoco.AgentProbes
+import java.util.concurrent.ConcurrentHashMap
 
 open class CoverageManager(
     private val threadCoverageRecorder: ICoverageRecorder = ThreadCoverageRecorder(),
     private val globalCoverageRecorder: GlobalCoverageRecorder = GlobalCoverageRecorder(),
 ) : IProbesProxy,
     ICoverageRecorder by threadCoverageRecorder {
+
+    // TODO doesn't make much sense to store it here, if we use it only in coverage sender
+    val classMethodsMetadata: ConcurrentHashMap<Long, ClassMethodsMetadata> = ConcurrentHashMap()
 
     override fun invoke(
         id: Long,
@@ -34,13 +38,16 @@ open class CoverageManager(
         val execDatum = coverage.execData.getOrPut(id) {
             ExecDatum(
                 id = id,
-                name = name,
                 probes = AgentProbes(probeCount),
                 sessionId = coverage.context.sessionId,
                 testId = coverage.context.testId
             )
         }
         return execDatum.probes
+    }
+
+    override fun addClassMethodsMetadata(classId: Long, methodsMetadata: ClassMethodsMetadata) {
+        classMethodsMetadata[classId] = methodsMetadata
     }
 
     override fun pollRecorded(): Sequence<ExecDatum> {

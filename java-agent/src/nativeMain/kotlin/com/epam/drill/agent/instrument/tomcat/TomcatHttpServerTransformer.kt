@@ -16,11 +16,13 @@
 package com.epam.drill.agent.instrument.tomcat
 
 import com.epam.drill.agent.instrument.AbstractHttpTransformerObject
-import com.epam.drill.agent.instrument.JvmTransformerObject
 import com.epam.drill.agent.instrument.TOMCAT_HTTP_FILTER
-import com.epam.drill.agent.instrument.TransformerObject
+import com.epam.drill.agent.instrument.Transformer
 
-actual object TomcatHttpServerTransformer : TransformerObject, AbstractHttpTransformerObject() {
-    override fun permit(className: String, superName: String?, interfaces: Array<String?>) =
-        TOMCAT_HTTP_FILTER == className
+actual object TomcatHttpServerTransformer : Transformer, AbstractHttpTransformerObject() {
+    override fun precheck(
+        className: String,
+        loader: Any?,
+        protectionDomain: Any?
+    ): Boolean = TOMCAT_HTTP_FILTER == className
 }

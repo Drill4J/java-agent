@@ -21,6 +21,7 @@ import com.epam.drill.agent.configuration.Configuration
 import com.epam.drill.agent.configuration.DefaultParameterDefinitions
 import com.epam.drill.agent.configuration.ParameterDefinitions
 import com.epam.drill.agent.instrument.ApplicationClassTransformer
+import com.epam.drill.agent.instrument.CompositeTransformer
 import com.epam.drill.agent.instrument.TransformerRegistrar
 import com.epam.drill.agent.instrument.clients.ApacheHttpClientTransformer
 import com.epam.drill.agent.instrument.clients.JavaHttpClientTransformer
@@ -51,24 +52,10 @@ import com.epam.drill.agent.instrument.undertow.UndertowWsMessagesTransformer
 import com.epam.drill.agent.instrument.undertow.UndertowWsServerTransformer
 import com.epam.drill.agent.logging.LoggingConfiguration
 import com.epam.drill.agent.module.JvmModuleLoader
-import com.epam.drill.agent.test.instrument.cucumber.Cucumber4Transformer
-import com.epam.drill.agent.test.instrument.cucumber.Cucumber5Transformer
-import com.epam.drill.agent.test.instrument.cucumber.Cucumber6Transformer
-import com.epam.drill.agent.test.instrument.jmeter.JMeterTransformer
-import com.epam.drill.agent.test.instrument.junit.JUnit4PrioritizingTransformer
-import com.epam.drill.agent.test.instrument.junit.JUnit4Transformer
-import com.epam.drill.agent.test.instrument.junit.JUnit5Transformer
-import com.epam.drill.agent.test.instrument.junit.JUnitPlatformPrioritizingTransformer
-import com.epam.drill.agent.test.instrument.selenium.SeleniumTransformer
-import com.epam.drill.agent.test.instrument.testng.TestNG6PrioritizingTransformer
-import com.epam.drill.agent.test.instrument.testng.TestNG6Transformer
-import com.epam.drill.agent.test.instrument.testng.TestNG7PrioritizingTransformer
-import com.epam.drill.agent.test.instrument.testng.TestNG7Transformer
-import com.epam.drill.agent.test.session.SessionController
 import com.epam.drill.agent.test2code.Test2Code
 import com.epam.drill.agent.test2code.configuration.Test2CodeParameterDefinitions
 import com.epam.drill.agent.transport.JvmModuleMessageSender
-import jdk.internal.org.objectweb.asm.ClassReader
+import org.objectweb.asm.ClassReader
 import mu.KotlinLogging
 import java.lang.instrument.ClassFileTransformer
 import java.lang.instrument.Instrumentation
@@ -87,50 +74,6 @@ private val logo = """
 private const val DRILL_PACKAGE = "com/epam/drill/agent"
 
 private val logger = KotlinLogging.logger("com.epam.drill.agent.Agent")
-private val transformers = setOf(
-    ApplicationClassTransformer,
-    TomcatHttpServerTransformer,
-    JettyHttpServerTransformer,
-    UndertowHttpServerTransformer,
-    NettyHttpServerTransformer,
-    JavaHttpClientTransformer,
-    ApacheHttpClientTransformer,
-    OkHttp3ClientTransformer,
-    SpringWebClientTransformer,
-    KafkaTransformer,
-    CadenceTransformer,
-    TTLTransformer,
-    ReactorTransformer,
-//    SSLEngineTransformer, TODO does not work in JVM due to too early initialization of HeadersRetriever
-    JettyWsClientTransformer,
-    JettyWsServerTransformer,
-    Jetty9WsMessagesTransformer,
-    Jetty10WsMessagesTransformer,
-    Jetty11WsMessagesTransformer,
-    NettyWsClientTransformer,
-    NettyWsServerTransformer,
-    NettyWsMessagesTransformer,
-    TomcatWsClientTransformer,
-    TomcatWsServerTransformer,
-    TomcatWsMessagesTransformer,
-    UndertowWsClientTransformer,
-    UndertowWsServerTransformer,
-    UndertowWsMessagesTransformer,
-    CompatibilityTestsTransformer,
-    JUnit4Transformer,
-    JUnit5Transformer,
-    TestNG6Transformer,
-    TestNG7Transformer,
-    Cucumber4Transformer,
-    Cucumber5Transformer,
-    Cucumber6Transformer,
-    SeleniumTransformer,
-    JMeterTransformer,
-    JUnit4PrioritizingTransformer,
-    JUnitPlatformPrioritizingTransformer,
-    TestNG6PrioritizingTransformer,
-    TestNG7PrioritizingTransformer,
-)
 
 fun premain(agentArgs: String?, inst: Instrumentation) {
     try {
@@ -139,7 +82,6 @@ fun premain(agentArgs: String?, inst: Instrumentation) {
         Configuration.initializeNative(agentArgs ?: "")
         updateJvmLoggingConfiguration()
         validateConfiguration()
-        TransformerRegistrar.initialize(transformers)
         inst.addTransformer(DrillClassFileTransformer, true)
         JvmModuleMessageSender.sendAgentMetadata()
         JvmModuleLoader.loadJvmModule(Test2Code::class.java.name).load()
@@ -216,35 +158,19 @@ object DrillClassFileTransformer : ClassFileTransformer {
     ): ByteArray? {
         val kClassName = className ?: return null
         val kClassBytes = classfileBuffer ?: return null
-        val precheckedTransformers = TransformerRegistrar.enabledTransformers
-            .filterNot { kClassName.startsWith(DRILL_PACKAGE) }
-            .filter { it.precheck(kClassName, loader, protectionDomain) }
-            .takeIf { it.any() }
-            ?: return null
-        val (oldClassBytes, reader) = runCatching {
-            kClassBytes to ClassReader(kClassBytes)
+        if (kClassName.startsWith(DRILL_PACKAGE)) return null
+        if (!CompositeTransformer.precheck(kClassName, loader, protectionDomain)) return null
+        val oldClassBytes = runCatching {
+            kClassBytes
         }.onFailure {
             logger.error(it) { "Can't read class: $kClassName" }
         }.getOrNull() ?: return null
-        val permittedTransformers = precheckedTransformers.filter {
-            it.permit(
-                kClassName,
-                reader.superName,
-                reader.interfaces
-            )
-        }
 
-        val newClassBytes = permittedTransformers.fold(oldClassBytes) { bytes, transformer ->
-            runCatching {
-                transformer.transform(kClassName, bytes, loader, protectionDomain)
+        val newClassBytes = runCatching {
+                CompositeTransformer.transform(kClassName, oldClassBytes, loader, protectionDomain)
             }.onFailure {
-                logger.warn(it) { "Can't transform class: $kClassName with ${transformer::class.simpleName}" }
-            }.getOrNull()
-                ?.takeIf { it !== bytes }
-                ?.also {
-                    logger.debug { "$kClassName was transformed by ${transformer::class.simpleName}" }
-                } ?: bytes
-        }
+                logger.warn(it) { "Can't transform class: $kClassName" }
+            }.getOrNull() ?: return null
 
         return if (newClassBytes !== oldClassBytes) newClassBytes else null
     }

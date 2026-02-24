@@ -19,7 +19,7 @@ import com.epam.drill.agent.configuration.Configuration
 import com.epam.drill.agent.instrument.*
 
 actual object JettyWsServerTransformer :
-    TransformerObject,
+    Transformer,
     JettyWsServerTransformerObject(Configuration),
     HeadersProcessor by DefaultHeadersProcessor,
     ClassPathProvider by RuntimeClassPathProvider

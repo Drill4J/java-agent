@@ -15,6 +15,6 @@
  */
 package com.epam.drill.agent.instrument.undertow
 
-import com.epam.drill.agent.instrument.TransformerObject
+import com.epam.drill.agent.instrument.Transformer
 
-expect object UndertowWsServerTransformer : TransformerObject
+expect object UndertowWsServerTransformer : Transformer

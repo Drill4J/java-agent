@@ -22,10 +22,10 @@ import com.epam.drill.agent.instrument.DefaultPayloadProcessor
 import com.epam.drill.agent.instrument.HeadersProcessor
 import com.epam.drill.agent.instrument.PayloadProcessor
 import com.epam.drill.agent.instrument.RuntimeClassPathProvider
-import com.epam.drill.agent.instrument.TransformerObject
+import com.epam.drill.agent.instrument.Transformer
 
 actual object TomcatWsMessagesTransformer :
-    TransformerObject,
+    Transformer,
     TomcatWsMessagesTransformerObject(Configuration),
     HeadersProcessor by DefaultHeadersProcessor,
     PayloadProcessor by DefaultPayloadProcessor,

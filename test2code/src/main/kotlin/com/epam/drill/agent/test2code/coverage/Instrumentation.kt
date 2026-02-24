@@ -21,7 +21,8 @@ import com.epam.drill.agent.jacoco.BooleanArrayProbeInserter.*
 import com.epam.drill.agent.jacoco.DrillClassProbesAdapter
 import com.epam.drill.agent.jacoco.DrillDuplicateFrameEliminator
 import com.epam.drill.agent.jacoco.DrillMethodInstrumenter
-import com.epam.drill.agent.test2code.classparsing.ProbeCounter
+import com.epam.drill.agent.test2code.classparsing.ClassProbeCounter
+import com.epam.drill.agent.test2code.classparsing.calculateMethodsChecksums
 import org.jacoco.core.internal.data.CRC64
 import org.jacoco.core.internal.flow.*
 import org.jacoco.core.internal.instr.*
@@ -42,9 +43,21 @@ class DrillInstrumenter(
         val classId = CRC64.classId(initialBytes)
 
         //count probes before transformation
-        val counter = ProbeCounter()
         val reader = InstrSupport.classReaderFor(initialBytes)
+        val counter = ClassProbeCounter(className)
         reader.accept(DrillClassProbesAdapter(counter, false), 0)
+
+        val bodyChecksums = calculateMethodsChecksums(initialBytes, className)
+        val classMethodsMetadata: ClassMethodsMetadata = counter.methods.associate { m ->
+            val signature = "${m.classname}:${m.name}:${m.params}:${m.returnType}"
+            signature to ClassMethodMetadata(
+                probesStartPos = m.probesStartPos,
+                probesCount = m.probesCount,
+                bodyChecksum = bodyChecksums[signature] ?: "" // interface methods don't have a body
+            )
+        }
+
+        probesProxy.addClassMethodsMetadata(classId, classMethodsMetadata)
 
         val genId = classCounter.incrementAndGet()
         val probeCount = counter.count

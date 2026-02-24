@@ -17,9 +17,13 @@ package com.epam.drill.agent.instrument.jetty
 
 import com.epam.drill.agent.instrument.AbstractHttpTransformerObject
 import com.epam.drill.agent.instrument.JETTY_SERVER_HANDLER
-import com.epam.drill.agent.instrument.TransformerObject
+import com.epam.drill.agent.instrument.Transformer
 
-actual object JettyHttpServerTransformer : TransformerObject, AbstractHttpTransformerObject() {
-    override fun permit(className: String, superName: String?, interfaces: Array<String?>) =
-        JETTY_SERVER_HANDLER == className
+actual object JettyHttpServerTransformer : Transformer, AbstractHttpTransformerObject() {
+
+    override fun precheck(
+        className: String,
+        loader: Any?,
+        protectionDomain: Any?
+    ): Boolean = JETTY_SERVER_HANDLER == className
 }

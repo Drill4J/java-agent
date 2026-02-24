@@ -16,15 +16,14 @@
 package com.epam.drill.agent.instrument.netty
 
 import com.epam.drill.agent.instrument.AbstractHttpTransformerObject
-import com.epam.drill.agent.instrument.JvmTransformerObject
 import com.epam.drill.agent.instrument.NETTY_CHANNEL_HANDLER_CONTEXT
-import com.epam.drill.agent.instrument.TransformerObject
+import com.epam.drill.agent.instrument.Transformer
 
-actual object NettyHttpServerTransformer : TransformerObject, AbstractHttpTransformerObject() {
+actual object NettyHttpServerTransformer : Transformer, AbstractHttpTransformerObject() {
 
-    override fun permit(
+    override fun precheck(
         className: String,
-        superName: String?,
-        interfaces: Array<String?>
+        loader: Any?,
+        protectionDomain: Any?
     ): Boolean = '$' !in className && className.startsWith(NETTY_CHANNEL_HANDLER_CONTEXT)
 }

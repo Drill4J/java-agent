@@ -131,9 +131,7 @@ fun parseAstClass(className: String, classBytes: ByteArray): List<AstMethod> {
     }
 }
 
-private fun AstMethod.classSignature() =
-    "${name}/${params}/${returnType}"
-
+private fun AstMethod.classSignature() = "${classname}:${name}:${params}:${returnType}"
 
 private fun getReturnType(methodNode: MethodNode): String {
     val returnTypeDesc: String = Type.getReturnType(methodNode.desc).descriptor

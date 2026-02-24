@@ -37,6 +37,7 @@ val nativeAgentHookEnabled: String by parent!!.extra
 val macosLd64: String by parent!!.extra
 val bytebuddyVersion: String by parent!!.extra
 val kotlinxCliVersion: String by parent!!.extra
+val asmVersion: String by parent!!.extra
 
 repositories {
     mavenCentral()
@@ -116,6 +117,7 @@ kotlin {
                 implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:${kotlinxSerializationVersion}")
                 implementation("org.jetbrains.kotlinx:kotlinx-serialization-protobuf:${kotlinxSerializationVersion}")
                 implementation("org.jetbrains.kotlinx:kotlinx-cli:${kotlinxCliVersion}")
+                implementation("org.ow2.asm:asm:${asmVersion}")
                 implementation("com.benasher44:uuid:${uuidVersion}")
                 implementation(project(":common"))
                 implementation(project(":agent-transport"))
@@ -131,7 +133,6 @@ kotlin {
                 implementation("com.benasher44:uuid:$uuidVersion")
                 implementation("io.ktor:ktor-utils:$ktorVersion")
                 implementation(project(":jvmapi"))
-                implementation(project(":knasm"))
                 implementation(project(":konform"))
                 implementation(project(":agent-instrumentation"))
                 if (nativeAgentHookEnabled == "true")

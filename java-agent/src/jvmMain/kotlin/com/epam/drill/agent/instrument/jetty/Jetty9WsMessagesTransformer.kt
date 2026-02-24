@@ -19,7 +19,7 @@ import com.epam.drill.agent.configuration.Configuration
 import com.epam.drill.agent.instrument.*
 
 actual object Jetty9WsMessagesTransformer :
-    TransformerObject,
+    Transformer,
     Jetty9WsMessagesTransformerObject(Configuration),
     HeadersProcessor by DefaultHeadersProcessor,
     PayloadProcessor by DefaultPayloadProcessor,

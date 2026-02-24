@@ -15,4 +15,4 @@
  */
 package com.epam.drill.agent.instrument
 
-expect object ApplicationClassTransformer: TransformerObject
+expect object ApplicationClassTransformer: Transformer

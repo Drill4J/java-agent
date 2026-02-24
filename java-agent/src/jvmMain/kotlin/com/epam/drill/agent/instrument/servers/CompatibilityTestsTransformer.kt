@@ -21,7 +21,7 @@ import com.epam.drill.agent.instrument.test.CompatibilityTestsTransformerObject
 import com.epam.drill.agent.request.DrillRequestHolder
 
 actual object CompatibilityTestsTransformer :
-    TransformerObject,
+    Transformer,
     com.epam.drill.agent.common.request.RequestHolder by DrillRequestHolder,
     CompatibilityTestsTransformerObject(Configuration),
     ClassPathProvider by RuntimeClassPathProvider

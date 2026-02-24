@@ -15,6 +15,6 @@
  */
 package com.epam.drill.agent.instrument.netty
 
-import com.epam.drill.agent.instrument.TransformerObject
+import com.epam.drill.agent.instrument.Transformer
 
-expect object NettyWsClientTransformer : TransformerObject
+expect object NettyWsClientTransformer : Transformer

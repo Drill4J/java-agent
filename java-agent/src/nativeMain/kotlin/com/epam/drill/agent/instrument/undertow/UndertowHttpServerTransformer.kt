@@ -16,11 +16,14 @@
 package com.epam.drill.agent.instrument.undertow
 
 import com.epam.drill.agent.instrument.AbstractHttpTransformerObject
-import com.epam.drill.agent.instrument.JvmTransformerObject
-import com.epam.drill.agent.instrument.TransformerObject
+import com.epam.drill.agent.instrument.Transformer
 import com.epam.drill.agent.instrument.UNDERTOW_SERVER_CONNECTORS
 
-actual object UndertowHttpServerTransformer : TransformerObject, AbstractHttpTransformerObject() {
-    override fun permit(className: String, superName: String?, interfaces: Array<String?>) =
-        UNDERTOW_SERVER_CONNECTORS == className
+actual object UndertowHttpServerTransformer : Transformer, AbstractHttpTransformerObject() {
+
+    override fun precheck(
+        className: String,
+        loader: Any?,
+        protectionDomain: Any?
+    ): Boolean = UNDERTOW_SERVER_CONNECTORS == className
 }
