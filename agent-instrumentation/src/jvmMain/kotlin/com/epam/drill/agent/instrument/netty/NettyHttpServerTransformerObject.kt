@@ -22,6 +22,7 @@ import javassist.CtClass
 import mu.KotlinLogging
 import com.epam.drill.agent.instrument.HeadersProcessor
 import com.epam.drill.agent.common.request.HeadersRetriever
+import com.epam.drill.agent.instrument.COMPILER_GENERATED_NAMES_PREFIX
 import com.epam.drill.agent.instrument.NETTY_CHANNEL_HANDLER_CONTEXT
 import com.epam.drill.agent.instrument.http.AbstractHttpTransformerObject
 
@@ -42,7 +43,7 @@ abstract class NettyHttpServerTransformerObject(
         className: String,
         superName: String?,
         interfaces: Array<String?>
-    ): Boolean = '$' !in className && className.startsWith(NETTY_CHANNEL_HANDLER_CONTEXT)
+    ): Boolean = COMPILER_GENERATED_NAMES_PREFIX !in className && className.startsWith(NETTY_CHANNEL_HANDLER_CONTEXT)
 
     override fun transform(className: String, ctClass: CtClass) {
         val invokeChannelReadMethod = ctClass.getMethod("fireChannelRead", "(Ljava/lang/Object;)Lio/netty/channel/ChannelHandlerContext;")
