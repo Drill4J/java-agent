@@ -15,6 +15,12 @@
  */
 package com.epam.drill.agent.test.instrument.testng
 
-import com.epam.drill.agent.instrument.TransformerObject
+import com.epam.drill.agent.instrument.Transformer
 
-actual object TestNG6Transformer: TransformerObject, AbstractTestNGTransformer()
+actual object TestNG6Transformer: Transformer, AbstractTestNGTransformer() {
+    override fun precheck(
+        className: String,
+        loader: Any?,
+        protectionDomain: Any?
+    ): Boolean = className == "org/testng/TestRunner"
+}

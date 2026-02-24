@@ -15,10 +15,12 @@
  */
 package com.epam.drill.agent.test.instrument.junit
 
-import com.epam.drill.agent.instrument.TransformerObject
+import com.epam.drill.agent.instrument.Transformer
 
-actual object JUnit4Transformer: TransformerObject, AbstractJUnitTransformer() {
-    override fun permit(className: String, superName: String?, interfaces: Array<String?>): Boolean {
-        return className == "org/junit/runner/notification/RunNotifier"
-    }
+actual object JUnit4Transformer: Transformer, AbstractJUnitTransformer() {
+    override fun precheck(
+        className: String,
+        loader: Any?,
+        protectionDomain: Any?
+    ): Boolean = className == "org/junit/runner/notification/RunNotifier"
 }

@@ -15,6 +15,6 @@
  */
 package com.epam.drill.agent.test.instrument.junit
 
-import com.epam.drill.agent.instrument.TransformerObject
+import com.epam.drill.agent.instrument.Transformer
 
-expect object JUnit5Transformer : TransformerObject
+expect object JUnit5Transformer : Transformer

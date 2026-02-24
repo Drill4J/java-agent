@@ -15,6 +15,6 @@
  */
 package com.epam.drill.agent.test.instrument.junit
 
-import com.epam.drill.agent.instrument.TransformerObject
+import com.epam.drill.agent.instrument.Transformer
 
-expect object JUnitPlatformPrioritizingTransformer : TransformerObject
+expect object JUnitPlatformPrioritizingTransformer : Transformer

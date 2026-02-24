@@ -22,7 +22,10 @@ import com.epam.drill.agent.test.instrument.AbstractTestTransformerObject
 abstract class AbstractTestNGTransformer(): AbstractTestTransformerObject() {
     override fun enabled() = super.enabled() && Configuration.parameters[INSTRUMENTATION_TESTNG_ENABLED]
 
-    override fun permit(className: String, superName: String?, interfaces: Array<String?>): Boolean {
-        return className == "org/testng/TestRunner"
-    }
+    override fun precheck(
+        className: String,
+        loader: Any?,
+        protectionDomain: Any?
+    ): Boolean = className.startsWith("org/testng/")
+
 }

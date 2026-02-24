@@ -15,12 +15,12 @@
  */
 package com.epam.drill.agent.test.instrument.cucumber
 
-import com.epam.drill.agent.instrument.TransformerObject
+import com.epam.drill.agent.instrument.Transformer
 import java.security.ProtectionDomain
 import javassist.ClassPool
 import javassist.CtClass
 
-actual object Cucumber5Transformer : TransformerObject, AbstractCucumber56Transformer() {
+actual object Cucumber5Transformer : Transformer, AbstractCucumber56Transformer() {
     override val versionPattern: Regex = "5\\.[0-9]+\\.[0-9]+".toRegex()
     override val Event: String = "io.cucumber.plugin.event.Event"
 

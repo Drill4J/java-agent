@@ -17,14 +17,14 @@ package com.epam.drill.agent.test.instrument.junit
 
 import com.epam.drill.agent.configuration.Configuration
 import com.epam.drill.agent.configuration.ParameterDefinitions
-import com.epam.drill.agent.instrument.TransformerObject
+import com.epam.drill.agent.instrument.Transformer
 import com.epam.drill.agent.test.execution.TestMethodInfo
 import com.epam.drill.agent.test.prioritization.RecommendedTests
 import javassist.*
 import mu.KotlinLogging
 import java.security.ProtectionDomain
 
-actual object JUnitPlatformPrioritizingTransformer : TransformerObject, AbstractJUnitTransformer() {
+actual object JUnitPlatformPrioritizingTransformer : Transformer, AbstractJUnitTransformer() {
 
     override val logger = KotlinLogging.logger {}
     private val DrillJUnit5Filter = "${this.javaClass.`package`.name}.gen.DrillJUnit5Filter"

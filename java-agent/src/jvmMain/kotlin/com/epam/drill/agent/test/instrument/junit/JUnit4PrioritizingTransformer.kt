@@ -16,7 +16,7 @@
 package com.epam.drill.agent.test.instrument.junit
 
 import com.epam.drill.agent.configuration.ParameterDefinitions
-import com.epam.drill.agent.instrument.TransformerObject
+import com.epam.drill.agent.instrument.Transformer
 import com.epam.drill.agent.test.prioritization.RecommendedTests
 import javassist.*
 import mu.KotlinLogging
@@ -25,7 +25,7 @@ import java.security.ProtectionDomain
 private const val Filter = "org.junit.runner.manipulation.Filter"
 private const val Description = "org.junit.runner.Description"
 
-actual object JUnit4PrioritizingTransformer : TransformerObject, AbstractJUnitTransformer() {
+actual object JUnit4PrioritizingTransformer : Transformer, AbstractJUnitTransformer() {
     override val logger = KotlinLogging.logger {}
     private val engineSegment = "junit"
     private val DrillJUnit4Filter = "${this.javaClass.`package`.name}.gen.DrillJUnit4Filter"

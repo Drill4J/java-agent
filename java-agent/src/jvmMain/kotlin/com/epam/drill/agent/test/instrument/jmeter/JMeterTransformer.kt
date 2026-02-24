@@ -16,13 +16,13 @@
 package com.epam.drill.agent.test.instrument.jmeter
 
 import com.epam.drill.agent.instrument.InstrumentationParameterDefinitions.INSTRUMENTATION_JMETER_ENABLED
-import com.epam.drill.agent.instrument.TransformerObject
+import com.epam.drill.agent.instrument.Transformer
 import com.epam.drill.agent.test.instrument.AbstractTestTransformerObject
 import javassist.*
 import mu.KotlinLogging
 import java.security.*
 
-actual object JMeterTransformer : TransformerObject, AbstractTestTransformerObject() {
+actual object JMeterTransformer : Transformer, AbstractTestTransformerObject() {
     override val logger = KotlinLogging.logger {}
 
     override fun enabled() = super<AbstractTestTransformerObject>.enabled() && agentConfiguration.parameters[INSTRUMENTATION_JMETER_ENABLED]

@@ -15,6 +15,6 @@
  */
 package com.epam.drill.agent.test.instrument.selenium
 
-import com.epam.drill.agent.instrument.TransformerObject
+import com.epam.drill.agent.instrument.Transformer
 
-expect object SeleniumTransformer : TransformerObject
+expect object SeleniumTransformer : Transformer

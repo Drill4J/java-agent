@@ -15,6 +15,6 @@
  */
 package com.epam.drill.agent.test.instrument.cucumber
 
-import com.epam.drill.agent.instrument.TransformerObject
+import com.epam.drill.agent.instrument.Transformer
 
-expect object Cucumber5Transformer : TransformerObject
+expect object Cucumber5Transformer : Transformer

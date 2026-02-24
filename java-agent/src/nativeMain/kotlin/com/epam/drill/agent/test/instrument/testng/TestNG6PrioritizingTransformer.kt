@@ -15,6 +15,6 @@
  */
 package com.epam.drill.agent.test.instrument.testng
 
-import com.epam.drill.agent.instrument.TransformerObject
+import com.epam.drill.agent.instrument.Transformer
 
-actual object TestNG6PrioritizingTransformer: TransformerObject, AbstractTestNGPrioritizingTransformer()
+actual object TestNG6PrioritizingTransformer: Transformer, AbstractTestNGPrioritizingTransformer()

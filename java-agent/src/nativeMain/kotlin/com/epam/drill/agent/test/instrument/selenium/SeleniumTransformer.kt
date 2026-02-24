@@ -17,13 +17,15 @@ package com.epam.drill.agent.test.instrument.selenium
 
 import com.epam.drill.agent.configuration.Configuration
 import com.epam.drill.agent.instrument.InstrumentationParameterDefinitions.INSTRUMENTATION_SELENIUM_ENABLED
-import com.epam.drill.agent.instrument.TransformerObject
+import com.epam.drill.agent.instrument.Transformer
 import com.epam.drill.agent.test.instrument.AbstractTestTransformerObject
 
-actual object SeleniumTransformer: TransformerObject, AbstractTestTransformerObject() {
+actual object SeleniumTransformer: Transformer, AbstractTestTransformerObject() {
     override fun enabled() = super<AbstractTestTransformerObject>.enabled() && Configuration.parameters[INSTRUMENTATION_SELENIUM_ENABLED]
 
-    override fun permit(className: String, superName: String?, interfaces: Array<String?>): Boolean {
-        return className == "org/openqa/selenium/remote/RemoteWebDriver"
-    }
+    override fun precheck(
+        className: String,
+        loader: Any?,
+        protectionDomain: Any?
+    ): Boolean = className == "org/openqa/selenium/remote/RemoteWebDriver"
 }

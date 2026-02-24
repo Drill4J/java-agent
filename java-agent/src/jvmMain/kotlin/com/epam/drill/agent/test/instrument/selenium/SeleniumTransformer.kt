@@ -19,7 +19,7 @@ import com.epam.drill.agent.configuration.Configuration
 import com.epam.drill.agent.configuration.ParameterDefinitions
 import com.epam.drill.agent.test.*
 import com.epam.drill.agent.instrument.InstrumentationParameterDefinitions.INSTRUMENTATION_SELENIUM_ENABLED
-import com.epam.drill.agent.instrument.TransformerObject
+import com.epam.drill.agent.instrument.Transformer
 import com.epam.drill.agent.test.instrument.AbstractTestTransformerObject
 import javassist.*
 import mu.KLogger
@@ -28,7 +28,7 @@ import mu.KotlinLogging
 import java.security.ProtectionDomain
 
 @Suppress("PrivatePropertyName")
-actual object SeleniumTransformer : TransformerObject, AbstractTestTransformerObject()  {
+actual object SeleniumTransformer : Transformer, AbstractTestTransformerObject()  {
 
     private const val Command = "org.openqa.selenium.remote.Command"
     private const val ImmutableMap = "com.google.common.collect.ImmutableMap"

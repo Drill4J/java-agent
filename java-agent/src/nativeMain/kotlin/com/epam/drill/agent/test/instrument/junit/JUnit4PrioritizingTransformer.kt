@@ -17,12 +17,14 @@ package com.epam.drill.agent.test.instrument.junit
 
 import com.epam.drill.agent.configuration.Configuration
 import com.epam.drill.agent.configuration.ParameterDefinitions
-import com.epam.drill.agent.instrument.TransformerObject
+import com.epam.drill.agent.instrument.Transformer
 
-actual object JUnit4PrioritizingTransformer: TransformerObject, AbstractJUnitTransformer() {
+actual object JUnit4PrioritizingTransformer: Transformer, AbstractJUnitTransformer() {
     override fun enabled(): Boolean = super<AbstractJUnitTransformer>.enabled() && Configuration.parameters[ParameterDefinitions.RECOMMENDED_TESTS_ENABLED]
 
-    override fun permit(className: String, superName: String?, interfaces: Array<String?>): Boolean {
-        return className == "org/junit/runners/JUnit4"
-    }
+    override fun precheck(
+        className: String,
+        loader: Any?,
+        protectionDomain: Any?
+    ): Boolean = className == "org/junit/runners/JUnit4"
 }

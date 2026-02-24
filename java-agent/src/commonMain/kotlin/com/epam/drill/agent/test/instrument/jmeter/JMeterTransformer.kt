@@ -15,6 +15,6 @@
  */
 package com.epam.drill.agent.test.instrument.jmeter
 
-import com.epam.drill.agent.instrument.TransformerObject
+import com.epam.drill.agent.instrument.Transformer
 
-expect object JMeterTransformer : TransformerObject
+expect object JMeterTransformer : Transformer

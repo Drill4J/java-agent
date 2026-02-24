@@ -17,13 +17,15 @@ package com.epam.drill.agent.test.instrument.jmeter
 
 import com.epam.drill.agent.configuration.Configuration
 import com.epam.drill.agent.instrument.InstrumentationParameterDefinitions.INSTRUMENTATION_JMETER_ENABLED
-import com.epam.drill.agent.instrument.TransformerObject
+import com.epam.drill.agent.instrument.Transformer
 import com.epam.drill.agent.test.instrument.AbstractTestTransformerObject
 
-actual object JMeterTransformer: TransformerObject, AbstractTestTransformerObject() {
+actual object JMeterTransformer: Transformer, AbstractTestTransformerObject() {
     override fun enabled() = super<AbstractTestTransformerObject>.enabled() && Configuration.parameters[INSTRUMENTATION_JMETER_ENABLED]
 
-    override fun permit(className: String, superName: String?, interfaces: Array<String?>): Boolean {
-        return className == "org/apache/jmeter/protocol/http/sampler/HTTPHC4Impl"
-    }
+    override fun precheck(
+        className: String,
+        loader: Any?,
+        protectionDomain: Any?
+    ): Boolean = className == "org/apache/jmeter/protocol/http/sampler/HTTPHC4Impl"
 }

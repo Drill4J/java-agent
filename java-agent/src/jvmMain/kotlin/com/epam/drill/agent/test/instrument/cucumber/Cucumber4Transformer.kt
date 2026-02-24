@@ -15,10 +15,10 @@
  */
 package com.epam.drill.agent.test.instrument.cucumber
 
-import com.epam.drill.agent.instrument.TransformerObject
+import com.epam.drill.agent.instrument.Transformer
 import javassist.*
 
-actual object Cucumber4Transformer : TransformerObject, AbstractCucumberTransformer() {
+actual object Cucumber4Transformer : Transformer, AbstractCucumberTransformer() {
     override val testPackage = "cucumber.api.event"
     override val Status = "cucumber.api.Result.Type"
     override val EventBus = "cucumber.runner.EventBus"

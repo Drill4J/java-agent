@@ -15,7 +15,7 @@
  */
 package com.epam.drill.agent.test.instrument.junit
 
-import com.epam.drill.agent.instrument.TransformerObject
+import com.epam.drill.agent.instrument.Transformer
 import com.epam.drill.agent.test.execution.TestController
 import com.epam.drill.agent.test.execution.TestResult
 import javassist.ClassPool
@@ -27,7 +27,7 @@ import mu.KotlinLogging
 import java.security.ProtectionDomain
 
 actual object JUnit4Transformer:
-    TransformerObject,
+    Transformer,
     AbstractJUnitTransformer() {
     override val logger = KotlinLogging.logger {}
     const val engineSegment = "junit"

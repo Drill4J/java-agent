@@ -15,14 +15,14 @@
  */
 package com.epam.drill.agent.test.instrument.junit
 
-import com.epam.drill.agent.instrument.TransformerObject
+import com.epam.drill.agent.instrument.Transformer
 import com.epam.drill.agent.test.execution.TestController
 import com.epam.drill.agent.test.execution.TestMethodInfo
 import javassist.*
 import mu.KotlinLogging
 import java.security.*
 
-actual object JUnit5Transformer: TransformerObject, AbstractJUnitTransformer() {
+actual object JUnit5Transformer: Transformer, AbstractJUnitTransformer() {
     override val logger = KotlinLogging.logger {}
 
     override fun permit(className: String, superName: String?, interfaces: Array<String?>): Boolean {

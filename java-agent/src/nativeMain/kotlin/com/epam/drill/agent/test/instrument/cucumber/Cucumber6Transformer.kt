@@ -15,10 +15,12 @@
  */
 package com.epam.drill.agent.test.instrument.cucumber
 
-import com.epam.drill.agent.instrument.TransformerObject
+import com.epam.drill.agent.instrument.Transformer
 
-actual object Cucumber6Transformer: TransformerObject, AbstractCucumberTransformer() {
-    override fun permit(className: String, superName: String?, interfaces: Array<String?>): Boolean {
-        return className == "io/cucumber/core/runner/TestStep"
-    }
+actual object Cucumber6Transformer: Transformer, AbstractCucumberTransformer() {
+    override fun precheck(
+        className: String,
+        loader: Any?,
+        protectionDomain: Any?
+    ): Boolean = className == "io/cucumber/core/runner/TestStep"
 }

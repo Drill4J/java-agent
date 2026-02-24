@@ -17,11 +17,10 @@ package com.epam.drill.agent.test.instrument.testng
 
 import com.epam.drill.agent.configuration.Configuration
 import com.epam.drill.agent.configuration.ParameterDefinitions
+import com.epam.drill.agent.instrument.InstrumentationParameterDefinitions.INSTRUMENTATION_TESTNG_ENABLED
+import com.epam.drill.agent.test.instrument.AbstractTestTransformerObject
 
 abstract class AbstractTestNGPrioritizingTransformer(): AbstractTestNGTransformer() {
-    override fun enabled(): Boolean = super<AbstractTestNGTransformer>.enabled() && Configuration.parameters[ParameterDefinitions.RECOMMENDED_TESTS_ENABLED]
-
-    override fun permit(className: String, superName: String?, interfaces: Array<String?>): Boolean {
-        return interfaces.any { it == "org/testng/IMethodSelector" }
-    }
+    override fun enabled(): Boolean = super.enabled()
+            && Configuration.parameters[ParameterDefinitions.RECOMMENDED_TESTS_ENABLED]
 }

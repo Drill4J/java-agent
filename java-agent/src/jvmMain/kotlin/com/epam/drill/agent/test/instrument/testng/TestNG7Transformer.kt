@@ -15,11 +15,11 @@
  */
 package com.epam.drill.agent.test.instrument.testng
 
-import com.epam.drill.agent.instrument.TransformerObject
+import com.epam.drill.agent.instrument.Transformer
 import javassist.*
 import java.security.*
 
-actual object TestNG7Transformer : TransformerObject, AbstractTestNG67Transformer() {
+actual object TestNG7Transformer : Transformer, AbstractTestNG67Transformer() {
 
     override val versionRegex: Regex = "testng-7\\.[0-9]+(\\.[0-9]+)*".toRegex()
 

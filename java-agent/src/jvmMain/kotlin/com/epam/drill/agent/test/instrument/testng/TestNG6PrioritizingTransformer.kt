@@ -15,10 +15,10 @@
  */
 package com.epam.drill.agent.test.instrument.testng
 
-import com.epam.drill.agent.instrument.TransformerObject
+import com.epam.drill.agent.instrument.Transformer
 import mu.KotlinLogging
 
-actual object TestNG6PrioritizingTransformer: TransformerObject, AbstractTestNGPrioritizingTransformer() {
+actual object TestNG6PrioritizingTransformer: Transformer, AbstractTestNGPrioritizingTransformer() {
     override val logger = KotlinLogging.logger {}
     override val versionRegex: Regex = "testng-6\\.[0-9]+(\\.[0-9]+)*".toRegex()
 

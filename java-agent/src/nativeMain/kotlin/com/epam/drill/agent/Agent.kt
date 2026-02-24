@@ -26,13 +26,13 @@ import mu.KotlinLogging
 import com.epam.drill.agent.configuration.AgentLoggingConfiguration
 import com.epam.drill.agent.configuration.Configuration
 import com.epam.drill.agent.configuration.DefaultParameterDefinitions.INSTALLATION_DIR
-import com.epam.drill.agent.instrument.ApplicationClassTransformer
 import com.epam.drill.agent.jvmti.classFileLoadHook
 import com.epam.drill.agent.jvmti.vmDeathEvent
 import com.epam.drill.agent.jvmti.vmInitEvent
 import com.epam.drill.agent.module.JvmModuleLoader
 import com.epam.drill.agent.transport.JvmModuleMessageSender
 import com.epam.drill.agent.jvmapi.gen.*
+import com.epam.drill.agent.test.session.SessionController
 import kotlinx.cinterop.ExperimentalForeignApi
 import kotlin.experimental.ExperimentalNativeApi
 
@@ -81,7 +81,6 @@ object Agent {
         Configuration.initializeJvm()
         loadJvmModule("com.epam.drill.agent.test2code.Test2Code")
         JvmModuleMessageSender.sendAgentMetadata()
-
         SessionController.startSession()
     }
 
