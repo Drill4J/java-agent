@@ -18,6 +18,6 @@ package com.epam.drill.agent.instrument
 interface Transformer {
     fun precheck(className: String, loader: Any?, protectionDomain: Any?): Boolean =
         loader != null && protectionDomain != null
-    fun transform(className: String, classFileBuffer: ByteArray, loader: Any?, protectionDomain: Any?): ByteArray
+    fun transform(className: String, classFileBuffer: ByteArray, loader: Any?, protectionDomain: Any?): ByteArray?
     fun enabled(): Boolean = true
 }

@@ -37,7 +37,7 @@ abstract class AbstractTransformerObject(protected val agentConfiguration: Agent
         classFileBuffer: ByteArray,
         loader: Any?,
         protectionDomain: Any?
-    ): ByteArray = ClassPool.getDefault().run {
+    ): ByteArray? = ClassPool.getDefault().run {
         val classLoader = loader ?: ClassLoader.getSystemClassLoader()
         this.appendClassPath(LoaderClassPath(classLoader as? ClassLoader))
         if (this.getOrNull(this::class.java.name) == null) {

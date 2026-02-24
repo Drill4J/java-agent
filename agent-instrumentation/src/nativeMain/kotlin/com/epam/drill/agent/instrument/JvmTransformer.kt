@@ -32,7 +32,7 @@ abstract class JvmTransformer : Transformer {
         classFileBuffer: ByteArray,
         loader: Any?,
         protectionDomain: Any?,
-    ): ByteArray =
+    ): ByteArray? =
         getObjectMethod(
             this::class,
             this::transform.name,
@@ -45,6 +45,6 @@ abstract class JvmTransformer : Transformer {
                 toJByteArray(classFileBuffer),
                 loader as jobject?,
                 protectionDomain as jobject?
-            )!!.let(::toByteArray)
+            )?.let(::toByteArray)
         }
 }
