@@ -46,8 +46,8 @@ abstract class SSLEngineTransformerObject(
     private val httpVerbs = setOf("OPTIONS", "GET", "HEAD", "POST", "PUT", "PATCH", "DELETE", "TRACE", "CONNECT", "PRI")
     private val httpHeadersEndMark = HTTP_HEADERS_END_MARK.encodeToByteArray()
 
-    private val agentIdPair = headersRetriever.agentIdHeader() to headersRetriever.agentIdHeaderValue()
-    private val adminAddressPair = headersRetriever.adminAddressHeader() to headersRetriever.adminAddressValue()
+    private val agentIdPair by lazy { headersRetriever.agentIdHeader() to headersRetriever.agentIdHeaderValue() }
+    private val adminAddressPair by lazy { headersRetriever.adminAddressHeader() to headersRetriever.adminAddressValue() }
 
     override val logger = KotlinLogging.logger {}
 

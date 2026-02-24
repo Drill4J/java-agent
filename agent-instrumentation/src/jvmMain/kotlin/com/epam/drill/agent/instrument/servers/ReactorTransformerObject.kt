@@ -33,10 +33,10 @@ abstract class ReactorTransformerObject(
     }
 
     override fun permit(className: String, superName: String?, interfaces: Array<String?>) =
-        reactorTransformers.any { it.permit(className, null, null) }
+        reactorTransformers.any { it.permit(className, null, emptyArray()) }
 
     override fun transform(className: String, ctClass: CtClass) {
-        reactorTransformers.find { it.permit(className, null, null) }
+        reactorTransformers.find { it.permit(className, null, emptyArray()) }
             ?.transform(className, ctClass)
             ?: logger.error { "Reactor transformer object for class $className not found" }
     }

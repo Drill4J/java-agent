@@ -129,7 +129,6 @@ kotlin {
             dependencies {
                 implementation("io.ktor:ktor-utils:$ktorVersion")
                 implementation(project(":logging"))
-                implementation(project(":knasm"))
             }
         }
         val mingwX64Main by getting(configuration = configureNativeMainDependencies)

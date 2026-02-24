@@ -17,12 +17,14 @@ package com.epam.drill.agent.test2code.common.transport
 
 import kotlinx.serialization.Serializable
 import com.epam.drill.agent.common.transport.AgentMessage
-import com.epam.drill.agent.test2code.common.api.ClassCoverage
+import com.epam.drill.agent.test2code.common.api.MethodCoverage
 
 @Serializable
 data class CoveragePayload(
     val groupId: String,
     val appId: String,
     val instanceId: String,
-    val coverage: List<ClassCoverage>
+    val commitSha: String?,
+    val buildVersion: String?,
+    val coverage: List<MethodCoverage>
 ): AgentMessage()

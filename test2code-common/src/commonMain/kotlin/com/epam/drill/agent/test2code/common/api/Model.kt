@@ -40,12 +40,10 @@ data class AstMethod(
     val classAnnotations: Map<String, List<String>>? = null,
 )
 
-/**
- * Class probes received by a specific test
- */
 @Serializable
-data class ClassCoverage(
-    val classname: String,
+data class MethodCoverage(
+    val signature: String,
+    val bodyChecksum: String,
     val testId: String?,
     val testSessionId: String?,
     @Serializable(with = BitSetSerializer::class)
@@ -56,9 +54,9 @@ data class ClassCoverage(
         if (this === other) return true
         if (other == null || this::class != other::class) return false
 
-        other as ClassCoverage
+        other as MethodCoverage
 
-        if (classname != other.classname) return false
+        if (signature != other.signature) return false
         if (probes != other.probes) return false
         if (testId != other.testId) return false
         if (testSessionId != other.testSessionId) return false
@@ -69,7 +67,7 @@ data class ClassCoverage(
     // Calculating hashcode value without probes.
     // We need to update ExeclassData instead of storing a new one.
     override fun hashCode(): Int {
-        var result = classname.hashCode()
+        var result = signature.hashCode()
         result = 31 * result + testId.hashCode() + testSessionId.hashCode()
         return result
     }

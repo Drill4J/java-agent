@@ -33,7 +33,6 @@ pluginManagement {
 include("jvmapi")
 include("logging")
 include("common")
-include("knasm")
 // FYI: Interceptor not patched for macOS ARM64 architecture.
 //include("interceptor-hook")
 //include("interceptor-http")

@@ -50,7 +50,7 @@ abstract class NettyWsServerTransformerObject(agentConfiguration: AgentConfigura
     }
 
     private fun transformChannelHandlerContext(ctClass: CtClass) {
-        val invokeChannelReadMethod = ctClass.getMethod("invokeChannelRead", "(Ljava/lang/Object;)V")
+        val invokeChannelReadMethod = ctClass.getMethod("fireChannelRead", "(Ljava/lang/Object;)Lio/netty/channel/ChannelHandlerContext;")
         invokeChannelReadMethod.insertCatching(
             CtBehavior::insertBefore,
             """

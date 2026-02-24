@@ -35,16 +35,12 @@ abstract class AbstractTransformerObject(protected val agentConfiguration: Agent
         return agentConfiguration.parameters[INSTRUMENTATION_ENABLED]
     }
 
-    override fun permit(className: String, superName: String?, interfaces: String?): Boolean {
-        return permit(className, superName, interfaces?.split(";")?.toTypedArray() ?: emptyArray())
-    }
-
     override fun transform(
         className: String,
         classFileBuffer: ByteArray,
         loader: Any?,
         protectionDomain: Any?
-    ): ByteArray = ClassPool.getDefault().run {
+    ): ByteArray? = ClassPool.getDefault().run {
         val classLoader = loader ?: ClassLoader.getSystemClassLoader()
         this.appendClassPath(LoaderClassPath(classLoader as? ClassLoader))
         if (this.getOrNull(this::class.java.name) == null) {

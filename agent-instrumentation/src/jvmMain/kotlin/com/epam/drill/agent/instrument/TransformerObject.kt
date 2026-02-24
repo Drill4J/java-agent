@@ -13,12 +13,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.epam.drill.agent.instrument.transformers.clients
+package com.epam.drill.agent.instrument
 
-import com.epam.drill.agent.instrument.*
-import com.epam.drill.agent.instrument.clients.SpringWebClientTransformerObject
-
-actual object SpringWebClientTransformer:
-    SpringWebClientTransformerObject(TestAgentParameters),
-    HeadersProcessor by TestHeadersProcessor,
-    ClassPathProvider by TestClassPathProvider
+interface TransformerObject: Transformer {
+    fun permit(className: String, superName: String?, interfaces: Array<String?>): Boolean
+}

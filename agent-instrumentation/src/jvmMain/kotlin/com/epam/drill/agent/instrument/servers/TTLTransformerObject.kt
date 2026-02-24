@@ -39,6 +39,8 @@ abstract class TTLTransformerObject(agentConfiguration: AgentConfiguration) : Ab
     )
     private val threadPoolExecutorClass = "java/util/concurrent/ThreadPoolExecutor"
     private val timerTaskClass = "java/util/TimerTask"
+    private val runnableInterface = "java/lang/Runnable"
+    private val jdkInternal = "jdk/internal"
 
     private val transformletList: MutableList<JavassistTransformlet> = ArrayList()
 
@@ -55,8 +57,8 @@ abstract class TTLTransformerObject(agentConfiguration: AgentConfiguration) : Ab
 
     override fun permit(className: String, superName: String?, interfaces: Array<String?>): Boolean {
         if (directTtlClasses.contains(className)) return true
-        return (threadPoolExecutorClass == superName || interfaces.contains("java/lang/Runnable"))
-                && className != timerTaskClass && !className.startsWith("jdk/internal")
+        return (threadPoolExecutorClass == superName || interfaces.contains(runnableInterface))
+                && className != timerTaskClass && !className.startsWith(jdkInternal)
     }
 
     override fun transform(
