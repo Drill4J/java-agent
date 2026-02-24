@@ -25,7 +25,7 @@ abstract class AbstractTransformerObject: Transformer {
         classFileBuffer: ByteArray,
         loader: Any?,
         protectionDomain: Any?
-    ): ByteArray {
+    ): ByteArray? {
         throw UnsupportedOperationException("Use transform in CompositeTransformer instead")
     }
 }

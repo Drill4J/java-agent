@@ -43,7 +43,7 @@ actual object ApplicationClassTransformer :
         classFileBuffer: ByteArray,
         loader: Any?,
         protectionDomain: Any?
-    ): ByteArray = JvmModuleStorage.values()
+    ): ByteArray? = JvmModuleStorage.values()
         .filterIsInstance<Instrumenter>()
         .fold(classFileBuffer) { bytes, plugin ->
             plugin.instrument(className, bytes) ?: bytes

@@ -35,16 +35,18 @@ actual object CompositeTransformer : Transformer {
         classFileBuffer: ByteArray,
         loader: Any?,
         protectionDomain: Any?
-    ): ByteArray {
+    ): ByteArray? {
         val reader = runCatching { ClassReader(classFileBuffer) }
             .onFailure { logger.warn(it) { "Can't read class: $classFileBuffer" } }
-            .getOrNull() ?: return classFileBuffer
+            .getOrNull() ?: return null
         val enabledTransformers = runCatching { transformers.enabledTransformers }.onFailure {
             logger.warn(it) { "Can't get enabled transformers for class: $className" }
-        }.getOrNull() ?: return classFileBuffer
+        }.getOrNull() ?: return null
         return enabledTransformers.fold(classFileBuffer) { bytes, transformer ->
             runCatching {
                 when {
+                    !transformer.precheck(className, loader, protectionDomain) -> bytes
+
                     transformer is TransformerObject && !transformer.permit(
                         className,
                         reader.superName,
@@ -58,6 +60,6 @@ actual object CompositeTransformer : Transformer {
             }.getOrNull()?.takeIf { it !== bytes }?.also {
                 logger.debug { "$className was transformed by ${transformer::class.simpleName}" }
             } ?: bytes
-        }
+        }.takeIf { it !== classFileBuffer }
     }
 }
