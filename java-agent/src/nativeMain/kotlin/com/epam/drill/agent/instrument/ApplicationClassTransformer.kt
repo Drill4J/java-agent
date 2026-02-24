@@ -28,7 +28,7 @@ actual object ApplicationClassTransformer : Transformer, AbstractTransformerObje
         protectionDomain: Any?
     ): Boolean = loader != null
             && protectionDomain != null
-            && '$' !in className
+            && COMPILER_GENERATED_NAMES_PREFIX !in className
             && ClassSource(className, "").prefixMatches(Configuration.agentMetadata.packagesPrefixes)
 
     override fun transform(
