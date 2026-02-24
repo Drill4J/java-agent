@@ -54,8 +54,8 @@ actual object SessionController {
     }
 
     actual fun startSession() {
-        if (!isTestAgentEnabled()) {
-            logger.info { "Test agent is disabled. Test session will not be started." }
+        if (!isTestTracingEnabled()) {
+            logger.info { "Test tracing is disabled. Test session will not be started." }
             return
         }
         val customSessionId = Configuration.parameters[ParameterDefinitions.SESSION_ID]
@@ -86,8 +86,8 @@ actual object SessionController {
 
     fun getSessionId(): String = sessionId
 
-    private fun isTestAgentEnabled(): Boolean = Configuration.parameters[ParameterDefinitions.TEST_AGENT_ENABLED]
-    private fun isTestLaunchMetadataSendingEnabled(): Boolean = isTestAgentEnabled() && Configuration.parameters[ParameterDefinitions.TEST_LAUNCH_METADATA_SENDING_ENABLED]
+    private fun isTestTracingEnabled(): Boolean = Configuration.parameters[ParameterDefinitions.TEST_TRACING_ENABLED]
+    private fun isTestLaunchMetadataSendingEnabled(): Boolean = isTestTracingEnabled() && Configuration.parameters[ParameterDefinitions.TEST_LAUNCH_METADATA_SENDING_ENABLED]
 }
 
 private fun List<TestExecutionInfo>.toTestLaunchPayloads(): List<TestLaunchPayload> = map { info ->

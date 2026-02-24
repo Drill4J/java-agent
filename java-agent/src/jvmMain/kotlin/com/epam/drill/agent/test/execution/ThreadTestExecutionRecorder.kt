@@ -113,14 +113,16 @@ class ThreadTestExecutionRecorder(
     private fun generateTestLaunchId() = UUID.randomUUID().toString()
 
     private fun addDrillHeaders(testLaunchId: String) {
-        val drillRequest = if (Configuration.parameters[ParameterDefinitions.TEST_TRACING_ENABLED]) {
-            DrillRequest(
+        val drillRequest = when {
+            Configuration.parameters[ParameterDefinitions.TEST_TRACING_PER_SESSION_ENABLED] -> DrillRequest(
+                drillSessionId = SessionController.getSessionId()
+            )
+            Configuration.parameters[ParameterDefinitions.TEST_TRACING_PER_TEST_LAUNCH_ENABLED] -> DrillRequest(
                 drillSessionId = SessionController.getSessionId(),
                 headers = mapOf(TEST_ID_HEADER to (testLaunchId))
             )
-        } else {
-            DrillRequest(drillSessionId = SessionController.getSessionId())
-        }
+            else -> null
+        } ?: return
         requestHolder.store(drillRequest)
     }
 

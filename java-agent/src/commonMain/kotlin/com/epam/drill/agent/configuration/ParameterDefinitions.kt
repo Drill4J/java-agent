@@ -45,8 +45,6 @@ object ParameterDefinitions: AgentParameterDefinitionCollection() {
         AgentParameterDefinition.forBoolean(name = "useProtobufSerializer", defaultValue = true).register()
     val USE_GZIP_COMPRESSION = AgentParameterDefinition.forBoolean(name = "useGzipCompression", defaultValue = true).register()
 
-    val TEST_AGENT_ENABLED = AgentParameterDefinition.forBoolean(name = "testAgentEnabled", defaultValue = false).register()
-
     val WITH_JS_COVERAGE = AgentParameterDefinition.forBoolean(name = "withJsCoverage", defaultValue = false).register()
     val PROXY_ADDRESS = AgentParameterDefinition.forString(name = "browserProxyAddress", defaultValue = "").register()
     val DEVTOOLS_PROXY_ADDRESS = AgentParameterDefinition.forString(
@@ -79,5 +77,7 @@ object ParameterDefinitions: AgentParameterDefinitionCollection() {
     val RECOMMENDED_TESTS_USE_MATERIALIZED_VIEWS = AgentParameterDefinition.forString(name = "recommendedTestsUseMaterializedViews", defaultValue = "").register()
 
     val TEST_TRACING_ENABLED = AgentParameterDefinition.forBoolean(name = "testTracingEnabled", defaultValue = true).register()
+    val TEST_TRACING_PER_SESSION_ENABLED = AgentParameterDefinition.forBoolean(name = "testTracingTestSessionEnabled", defaultValue = true).register()
+    val TEST_TRACING_PER_TEST_LAUNCH_ENABLED = AgentParameterDefinition.forBoolean(name = "testTracingTestLaunchEnabled", defaultValue = true).register()
     val TEST_LAUNCH_METADATA_SENDING_ENABLED = AgentParameterDefinition.forBoolean(name = "testLaunchMetadataSendingEnabled", defaultValue = true).register()
 }

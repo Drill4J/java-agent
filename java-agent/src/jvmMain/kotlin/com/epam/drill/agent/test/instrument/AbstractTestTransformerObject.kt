@@ -16,7 +16,7 @@
 package com.epam.drill.agent.test.instrument
 
 import com.epam.drill.agent.configuration.Configuration
-import com.epam.drill.agent.configuration.ParameterDefinitions.TEST_AGENT_ENABLED
+import com.epam.drill.agent.configuration.ParameterDefinitions.TEST_TRACING_ENABLED
 import com.epam.drill.agent.instrument.AbstractTransformerObject
 import com.epam.drill.agent.instrument.ClassPathProvider
 import com.epam.drill.agent.instrument.RuntimeClassPathProvider
@@ -26,7 +26,7 @@ import java.security.ProtectionDomain
 
 abstract class AbstractTestTransformerObject : AbstractTransformerObject(Configuration),
     ClassPathProvider by RuntimeClassPathProvider {
-    override fun enabled() = super.enabled() && Configuration.parameters[TEST_AGENT_ENABLED]
+    override fun enabled() = super.enabled() && Configuration.parameters[TEST_TRACING_ENABLED]
 
     override fun transform(className: String, ctClass: CtClass) {
         throw NotImplementedError("AbstractTestTransformerObject.transform is not implemented")

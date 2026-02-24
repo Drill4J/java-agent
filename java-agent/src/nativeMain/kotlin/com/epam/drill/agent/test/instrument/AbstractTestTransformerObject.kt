@@ -16,9 +16,9 @@
 package com.epam.drill.agent.test.instrument
 
 import com.epam.drill.agent.configuration.Configuration
-import com.epam.drill.agent.configuration.ParameterDefinitions.TEST_AGENT_ENABLED
+import com.epam.drill.agent.configuration.ParameterDefinitions.TEST_TRACING_ENABLED
 import com.epam.drill.agent.instrument.AbstractTransformerObject
 
 abstract class AbstractTestTransformerObject: AbstractTransformerObject() {
-    override fun enabled() = super.enabled() && Configuration.parameters[TEST_AGENT_ENABLED]
+    override fun enabled() = super.enabled() && Configuration.parameters[TEST_TRACING_ENABLED]
 }
