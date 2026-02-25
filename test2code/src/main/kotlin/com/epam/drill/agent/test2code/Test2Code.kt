@@ -126,7 +126,7 @@ class Test2Code(
         val enableScanClassLoaders = configuration.parameters[Test2CodeParameterDefinitions.ENABLE_SCAN_CLASS_LOADERS]
         val scanClassDelay = configuration.parameters[Test2CodeParameterDefinitions.SCAN_CLASS_DELAY]
         if (enableScanClassLoaders && scanClassDelay.isPositive()) {
-            logger.debug { "Waiting class scan delay ${scanClassDelay.inWholeMilliseconds} ms..." }
+            logger.debug { "Waiting class loader scan delay ${scanClassDelay.inWholeMilliseconds} ms..." }
             runBlocking { delay(scanClassDelay) }
         }
         logger.info { "Scanning classes, package prefixes: $packagePrefixes... " }
