@@ -53,7 +53,7 @@ object ParameterDefinitions: AgentParameterDefinitionCollection() {
         parser = { it.trim().takeIf(String::isBlank) ?: it.takeIf(URL_SCHEME_REGEX::matches) ?: "http://$it"}
     ).register()
     val DEVTOOLS_REPLACE_LOCALHOST = AgentParameterDefinition.forString(name = "devtoolsAddressReplaceLocalhost", defaultValue = "").register()
-    val SESSION_ID = NullableAgentParameterDefinition.forString(name = "sessionId").register()
+    val TEST_SESSION_ID = NullableAgentParameterDefinition.forString(name = "testSessionId").register()
     val LAUNCH_TYPE = AgentParameterDefinition.forString(name = "launchType", defaultValue = "").register()
     val FRAMEWORK_PLUGINS = AgentParameterDefinition.forType(
         name = "rawFrameworkPlugins",
@@ -79,5 +79,4 @@ object ParameterDefinitions: AgentParameterDefinitionCollection() {
     val TEST_TRACING_ENABLED = AgentParameterDefinition.forBoolean(name = "testTracingEnabled", defaultValue = true).register()
     val TEST_TRACING_PER_SESSION_ENABLED = AgentParameterDefinition.forBoolean(name = "testTracingPerTestSessionEnabled", defaultValue = true).register()
     val TEST_TRACING_PER_TEST_LAUNCH_ENABLED = AgentParameterDefinition.forBoolean(name = "testTracingPerTestLaunchEnabled", defaultValue = true).register()
-    val TEST_LAUNCH_METADATA_SENDING_ENABLED = AgentParameterDefinition.forBoolean(name = "testLaunchMetadataSendingEnabled", defaultValue = true).register()
 }

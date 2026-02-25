@@ -40,23 +40,21 @@ actual object SeleniumTransformer : Transformer, AbstractTestTransformerObject()
     private const val EXTENSION_NAME = "header-transmitter.xpi"
     private val FirefoxDriver = "org.openqa.selenium.firefox.FirefoxDriver"
 
-    private var extensionFile: String? = null
+    private val extensionFile by lazy {
+        val extension = this::class.java.getResource("/$EXTENSION_NAME")
+        if (extension != null) {
+            File(System.getProperty("java.io.tmpdir")).resolve(EXTENSION_NAME).apply {
+                writeBytes(extension.readBytes())
+            }.absolutePath
+        } else {
+            logger.warn { "Failed to load extension file: $EXTENSION_NAME" }
+            null
+        }
+    }
 
     internal const val addDrillCookiesMethod = "addDrillCookies"
     private const val isFirefoxBrowser = "isFirefoxBrowser"
     override val logger: KLogger = KotlinLogging.logger {}
-
-    init {
-        val extension = this::class.java.getResource("/$EXTENSION_NAME")
-        if (extension != null) {
-            File(System.getProperty("java.io.tmpdir")).resolve(EXTENSION_NAME).apply {
-                extensionFile = absolutePath
-                writeBytes(extension.readBytes())
-            }
-        } else {
-            logger.warn { "Failed to load extension file: $EXTENSION_NAME" }
-        }
-    }
 
     override fun enabled() = super<AbstractTestTransformerObject>.enabled() && agentConfiguration.parameters[INSTRUMENTATION_SELENIUM_ENABLED]
 

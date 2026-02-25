@@ -63,7 +63,6 @@ class ThreadTestExecutionRecorder(
         }
         clearDrillHeaders()
         listeners.forEach { it.onTestFinished(testLaunchId, testMethod, testResult) }
-        println("Test: $testMethod FINISHED")
         logger.debug { "Test: $testMethod FINISHED. Result: $status" }
     }
 
@@ -113,13 +112,16 @@ class ThreadTestExecutionRecorder(
     private fun generateTestLaunchId() = UUID.randomUUID().toString()
 
     private fun addDrillHeaders(testLaunchId: String) {
+        val isTestTracingPerTestLaunchEnabled = Configuration.parameters[ParameterDefinitions.TEST_TRACING_PER_TEST_LAUNCH_ENABLED]
+        val isTestTracingPerSessionEnabled = Configuration.parameters[ParameterDefinitions.TEST_TRACING_PER_SESSION_ENABLED]
+
         val drillRequest = when {
-            Configuration.parameters[ParameterDefinitions.TEST_TRACING_PER_SESSION_ENABLED] -> DrillRequest(
-                drillSessionId = SessionController.getSessionId()
-            )
-            Configuration.parameters[ParameterDefinitions.TEST_TRACING_PER_TEST_LAUNCH_ENABLED] -> DrillRequest(
+            isTestTracingPerTestLaunchEnabled -> DrillRequest(
                 drillSessionId = SessionController.getSessionId(),
                 headers = mapOf(TEST_ID_HEADER to (testLaunchId))
+            )
+            isTestTracingPerSessionEnabled -> DrillRequest(
+                drillSessionId = SessionController.getSessionId()
             )
             else -> null
         } ?: return

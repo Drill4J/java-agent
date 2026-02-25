@@ -48,21 +48,22 @@ actual object SessionController {
     )
     private lateinit var sessionId: String
 
-    init {
-        if (isTestLaunchMetadataSendingEnabled())
-            Runtime.getRuntime().addShutdownHook(Thread { testInfoSender.stopSendingTests() })
-    }
 
     actual fun startSession() {
         if (!isTestTracingEnabled()) {
-            logger.info { "Test tracing is disabled. Test session will not be started." }
+            logger.info { "Test tracing is disabled." }
             return
         }
-        val customSessionId = Configuration.parameters[ParameterDefinitions.SESSION_ID]
+        logger.info { "Test tracing is enabled." }
+        val customSessionId = Configuration.parameters[ParameterDefinitions.TEST_SESSION_ID]
         sessionId = customSessionId ?: uuid4().toString()
         DrillInitialContext.add(SESSION_ID_HEADER, sessionId)
         DrillRequestHolder.store(DrillRequest(sessionId))
-        logger.info { "Test session started: $sessionId" }
+        logger.info { "Test session: $sessionId" }
+
+        testInfoSender.startSendingTests()
+        Runtime.getRuntime().addShutdownHook(Thread { testInfoSender.stopSendingTests() })
+
         val builds =
             takeIf { Configuration.parameters[ParameterDefinitions.RECOMMENDED_TESTS_TARGET_APP_ID].isNotEmpty() }?.let {
                 SingleSessionBuildPayload(
@@ -80,14 +81,12 @@ actual object SessionController {
                 builds = builds
             )
         )
-        if (isTestLaunchMetadataSendingEnabled())
-            testInfoSender.startSendingTests()
     }
 
     fun getSessionId(): String = sessionId
 
     private fun isTestTracingEnabled(): Boolean = Configuration.parameters[ParameterDefinitions.TEST_TRACING_ENABLED]
-    private fun isTestLaunchMetadataSendingEnabled(): Boolean = isTestTracingEnabled() && Configuration.parameters[ParameterDefinitions.TEST_LAUNCH_METADATA_SENDING_ENABLED]
+    private fun isTestLaunchMetadataSendingEnabled(): Boolean = isTestTracingEnabled() && Configuration.parameters[ParameterDefinitions.TEST_TRACING_PER_TEST_LAUNCH_ENABLED]
 }
 
 private fun List<TestExecutionInfo>.toTestLaunchPayloads(): List<TestLaunchPayload> = map { info ->
