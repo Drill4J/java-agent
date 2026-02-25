@@ -77,7 +77,7 @@ object ParameterDefinitions: AgentParameterDefinitionCollection() {
     val RECOMMENDED_TESTS_USE_MATERIALIZED_VIEWS = AgentParameterDefinition.forString(name = "recommendedTestsUseMaterializedViews", defaultValue = "").register()
 
     val TEST_TRACING_ENABLED = AgentParameterDefinition.forBoolean(name = "testTracingEnabled", defaultValue = true).register()
-    val TEST_TRACING_PER_SESSION_ENABLED = AgentParameterDefinition.forBoolean(name = "testTracingTestSessionEnabled", defaultValue = true).register()
-    val TEST_TRACING_PER_TEST_LAUNCH_ENABLED = AgentParameterDefinition.forBoolean(name = "testTracingTestLaunchEnabled", defaultValue = true).register()
+    val TEST_TRACING_PER_SESSION_ENABLED = AgentParameterDefinition.forBoolean(name = "testTracingPerTestSessionEnabled", defaultValue = true).register()
+    val TEST_TRACING_PER_TEST_LAUNCH_ENABLED = AgentParameterDefinition.forBoolean(name = "testTracingPerTestLaunchEnabled", defaultValue = true).register()
     val TEST_LAUNCH_METADATA_SENDING_ENABLED = AgentParameterDefinition.forBoolean(name = "testLaunchMetadataSendingEnabled", defaultValue = true).register()
 }

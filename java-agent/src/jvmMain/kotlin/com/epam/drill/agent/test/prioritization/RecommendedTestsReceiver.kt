@@ -54,14 +54,6 @@ class RecommendedTestsReceiverImpl(
         val baselineBuildVersion =
             Configuration.parameters[ParameterDefinitions.RECOMMENDED_TESTS_BASELINE_BUILD_VERSION]
                 .takeIf { it.isNotEmpty() }
-        val coveragePeriodDays =
-            Configuration.parameters[ParameterDefinitions.RECOMMENDED_TESTS_COVERAGE_PERIOD_DAYS].toInt()
-                .takeIf { it > 0 }
-        val useMaterializedViews =
-            Configuration.parameters[ParameterDefinitions.RECOMMENDED_TESTS_USE_MATERIALIZED_VIEWS]
-                .takeIf { it.isNotEmpty() }
-                ?.lowercase()
-                ?.toBooleanStrict()
 
         val parameters: String = buildString {
             append("?groupId=$groupId")
@@ -72,8 +64,6 @@ class RecommendedTestsReceiverImpl(
             targetCommitSha?.let { append("&targetCommitSha=$it") }
             baselineCommitSha?.let { append("&baselineCommitSha=$it") }
             baselineBuildVersion?.let { append("&baselineBuildVersion=$it") }
-            coveragePeriodDays?.let { append("&coveragePeriodDays=$it") }
-            useMaterializedViews?.let { append("&useMaterializedViews=$it") }
         }
         logger.debug { "Retrieving information about recommended tests, testTaskId: $testTaskId" }
         return runCatching {
