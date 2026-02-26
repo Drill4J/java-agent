@@ -27,3 +27,5 @@ const val UNDERTOW_SERVER_CONNECTORS = "io/undertow/server/Connectors"
 const val NETTY_CHANNEL_HANDLER_CONTEXT = "io/netty/channel/AbstractChannelHandlerContext"
 
 const val SSL_ENGINE_CLASS_NAME = "javax/net/ssl/SSLEngine"
+
+const val COMPILER_GENERATED_NAMES_PREFIX = '$'

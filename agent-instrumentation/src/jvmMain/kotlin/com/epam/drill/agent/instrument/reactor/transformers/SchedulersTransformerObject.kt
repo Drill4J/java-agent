@@ -17,7 +17,7 @@ package com.epam.drill.agent.instrument.reactor.transformers
 
 import com.epam.drill.agent.common.configuration.AgentConfiguration
 import com.epam.drill.agent.common.configuration.AgentParameters
-import com.epam.drill.agent.instrument.TransformerObject
+import com.epam.drill.agent.instrument.Transformer
 import com.epam.drill.agent.instrument.AbstractTransformerObject
 import com.epam.drill.agent.instrument.reactor.PropagatedDrillRequestRunnable
 import com.epam.drill.agent.common.request.DrillRequest

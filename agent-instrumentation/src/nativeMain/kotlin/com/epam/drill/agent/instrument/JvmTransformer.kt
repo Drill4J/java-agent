@@ -15,8 +15,6 @@
  */
 package com.epam.drill.agent.instrument
 
-import kotlinx.cinterop.toBoolean
-import com.epam.drill.agent.jvmapi.gen.CallBooleanMethod
 import com.epam.drill.agent.jvmapi.gen.CallObjectMethod
 import com.epam.drill.agent.jvmapi.gen.NewStringUTF
 import com.epam.drill.agent.jvmapi.gen.jobject
@@ -25,7 +23,7 @@ import com.epam.drill.agent.jvmapi.toByteArray
 import com.epam.drill.agent.jvmapi.toJByteArray
 import kotlinx.cinterop.ExperimentalForeignApi
 
-abstract class JvmTransformerObject : TransformerObject {
+abstract class JvmTransformer : Transformer {
 
     @OptIn(ExperimentalForeignApi::class)
     @Suppress("unchecked_cast")
@@ -34,7 +32,7 @@ abstract class JvmTransformerObject : TransformerObject {
         classFileBuffer: ByteArray,
         loader: Any?,
         protectionDomain: Any?,
-    ): ByteArray =
+    ): ByteArray? =
         getObjectMethod(
             this::class,
             this::transform.name,
@@ -47,34 +45,6 @@ abstract class JvmTransformerObject : TransformerObject {
                 toJByteArray(classFileBuffer),
                 loader as jobject?,
                 protectionDomain as jobject?
-            )!!.let(::toByteArray)
+            )?.let(::toByteArray)
         }
-
-    override fun permit(className: String, superName: String?, interfaces: Array<String?>): Boolean =
-        permit(
-            className,
-            superName,
-            interfaces.filterNotNull().filter(String::isNotBlank).takeIf(List<String>::isNotEmpty)?.joinToString(";")
-        )
-
-    @OptIn(ExperimentalForeignApi::class)
-    override fun permit(
-        className: String,
-        superName: String?,
-        interfaces: String?
-    ): Boolean =
-        getObjectMethod(
-            this::class,
-            Transformer::permit.name,
-            "(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)Z"
-        ).run {
-            CallBooleanMethod(
-                this.first,
-                this.second,
-                className?.let(::NewStringUTF),
-                superName?.let(::NewStringUTF),
-                interfaces?.let(::NewStringUTF)
-            ).toByte().toBoolean()
-        }
-
 }
