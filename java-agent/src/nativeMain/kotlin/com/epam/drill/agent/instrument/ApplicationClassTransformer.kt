@@ -20,27 +20,23 @@ import com.epam.drill.agent.configuration.Configuration
 import com.epam.drill.agent.module.InstrumentationAgentModule
 import com.epam.drill.agent.module.JvmModuleStorage
 
-actual object ApplicationClassTransformer : TransformerObject, AbstractTransformerObject() {
+actual object ApplicationClassTransformer : Transformer, AbstractTransformerObject() {
 
     override fun precheck(
         className: String,
         loader: Any?,
         protectionDomain: Any?
-    ): Boolean = loader != null && protectionDomain != null && '$' !in className
-
-    override fun permit(
-        className: String,
-        superName: String?,
-        interfaces: Array<String?>
-    ): Boolean = ClassSource(className, superName ?: "")
-        .prefixMatches(Configuration.agentMetadata.packagesPrefixes)
+    ): Boolean = loader != null
+            && protectionDomain != null
+            && COMPILER_GENERATED_NAMES_PREFIX !in className
+            && ClassSource(className, "").prefixMatches(Configuration.agentMetadata.packagesPrefixes)
 
     override fun transform(
         className: String,
         classFileBuffer: ByteArray,
         loader: Any?,
         protectionDomain: Any?
-    ): ByteArray = JvmModuleStorage.values()
+    ): ByteArray? = JvmModuleStorage.values()
         .filterIsInstance<InstrumentationAgentModule>()
         .fold(classFileBuffer) { bytes, plugin ->
             plugin.instrument(className, bytes) ?: bytes

@@ -15,6 +15,6 @@
  */
 package com.epam.drill.agent.instrument.jetty
 
-import com.epam.drill.agent.instrument.TransformerObject
+import com.epam.drill.agent.instrument.Transformer
 
-expect object Jetty10WsMessagesTransformer : TransformerObject
+expect object Jetty10WsMessagesTransformer : Transformer

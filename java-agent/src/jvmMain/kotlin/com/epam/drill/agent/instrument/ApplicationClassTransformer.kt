@@ -24,7 +24,7 @@ import mu.KLogger
 import mu.KotlinLogging
 
 actual object ApplicationClassTransformer :
-    TransformerObject,
+    Transformer,
     AbstractTransformerObject(Configuration),
     HeadersProcessor by DefaultHeadersProcessor,
     ClassPathProvider by RuntimeClassPathProvider {
@@ -35,7 +35,7 @@ actual object ApplicationClassTransformer :
         className: String,
         superName: String?,
         interfaces: Array<String?>
-    ): Boolean = ClassSource(className, superName ?: "")
+    ): Boolean = ClassSource(className, superName)
         .prefixMatches(Configuration.agentMetadata.packagesPrefixes)
 
     override fun transform(
@@ -43,7 +43,7 @@ actual object ApplicationClassTransformer :
         classFileBuffer: ByteArray,
         loader: Any?,
         protectionDomain: Any?
-    ): ByteArray = JvmModuleStorage.values()
+    ): ByteArray? = JvmModuleStorage.values()
         .filterIsInstance<Instrumenter>()
         .fold(classFileBuffer) { bytes, plugin ->
             plugin.instrument(className, bytes) ?: bytes

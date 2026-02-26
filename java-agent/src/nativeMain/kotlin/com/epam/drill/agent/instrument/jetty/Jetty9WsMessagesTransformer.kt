@@ -15,12 +15,7 @@
  */
 package com.epam.drill.agent.instrument.jetty
 
-import com.epam.drill.agent.configuration.Configuration
-import com.epam.drill.agent.instrument.AbstractTransformerObject
 import com.epam.drill.agent.instrument.AbstractWsTransformerObject
-import com.epam.drill.agent.instrument.InstrumentationParameterDefinitions.INSTRUMENTATION_APACHE_HTTP_CLIENT_ENABLED
-import com.epam.drill.agent.instrument.InstrumentationParameterDefinitions.INSTRUMENTATION_WS_ENABLED
-import com.epam.drill.agent.instrument.JvmTransformerObject
-import com.epam.drill.agent.instrument.TransformerObject
+import com.epam.drill.agent.instrument.Transformer
 
-actual object Jetty9WsMessagesTransformer : TransformerObject, AbstractWsTransformerObject()
+actual object Jetty9WsMessagesTransformer : Transformer, AbstractWsTransformerObject()

@@ -15,6 +15,6 @@
  */
 package com.epam.drill.agent.instrument.servers
 
-import com.epam.drill.agent.instrument.TransformerObject
+import com.epam.drill.agent.instrument.Transformer
 
-expect object CadenceTransformer : TransformerObject
+expect object CadenceTransformer : Transformer

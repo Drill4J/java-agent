@@ -17,15 +17,17 @@ package com.epam.drill.agent.instrument.servers
 
 import com.epam.drill.agent.configuration.Configuration
 import com.epam.drill.agent.instrument.AbstractTransformerObject
-import com.epam.drill.agent.instrument.JvmTransformerObject
-import com.epam.drill.agent.instrument.TransformerObject
+import com.epam.drill.agent.instrument.Transformer
 import com.epam.drill.agent.instrument.CADENCE_CONSUMER
 import com.epam.drill.agent.instrument.CADENCE_PRODUCER
 import com.epam.drill.agent.instrument.InstrumentationParameterDefinitions.INSTRUMENTATION_CADENCE_ENABLED
 
 
-actual object CadenceTransformer : TransformerObject, AbstractTransformerObject() {
+actual object CadenceTransformer : Transformer, AbstractTransformerObject() {
     override fun enabled() = super<AbstractTransformerObject>.enabled() && Configuration.parameters[INSTRUMENTATION_CADENCE_ENABLED]
-    override fun permit(className: String, superName: String?, interfaces: Array<String?>) =
-        CADENCE_PRODUCER == className || CADENCE_CONSUMER == className
+    override fun precheck(
+        className: String,
+        loader: Any?,
+        protectionDomain: Any?
+    ): Boolean = CADENCE_PRODUCER == className || CADENCE_CONSUMER == className
 }
