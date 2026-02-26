@@ -45,8 +45,6 @@ actual object CompositeTransformer : Transformer {
         return enabledTransformers.fold(classFileBuffer) { bytes, transformer ->
             runCatching {
                 when {
-                    !transformer.precheck(className, loader, protectionDomain) -> bytes
-
                     transformer is TransformerObject && !transformer.permit(
                         className,
                         reader.superName,
