@@ -55,11 +55,6 @@ object ParameterDefinitions: AgentParameterDefinitionCollection() {
     val DEVTOOLS_REPLACE_LOCALHOST = AgentParameterDefinition.forString(name = "devtoolsAddressReplaceLocalhost", defaultValue = "").register()
     val TEST_SESSION_ID = NullableAgentParameterDefinition.forString(name = "testSessionId").register()
     val LAUNCH_TYPE = AgentParameterDefinition.forString(name = "launchType", defaultValue = "").register()
-    val FRAMEWORK_PLUGINS = AgentParameterDefinition.forType(
-        name = "rawFrameworkPlugins",
-        defaultValue = emptyList(),
-        parser = { it.split(";") }
-    ).register()
 
     private val URL_SCHEME_REGEX = Regex("\\w+://.+")
 
@@ -68,13 +63,11 @@ object ParameterDefinitions: AgentParameterDefinitionCollection() {
 
     val TEST_TASK_ID = AgentParameterDefinition.forString(name = "testTaskId", defaultValue = "").register()
     val RECOMMENDED_TESTS_ENABLED = AgentParameterDefinition.forBoolean(name = "recommendedTestsEnabled", defaultValue = false).register()
-    val RECOMMENDED_TESTS_COVERAGE_PERIOD_DAYS = AgentParameterDefinition.forInt(name = "recommendedTestsCoveragePeriodDays", defaultValue = 0).register()
     val RECOMMENDED_TESTS_TARGET_APP_ID = AgentParameterDefinition.forString(name = "recommendedTestsTargetAppId", defaultValue = "").register()
     val RECOMMENDED_TESTS_TARGET_COMMIT_SHA = AgentParameterDefinition.forString(name = "recommendedTestsTargetCommitSha", defaultValue = "").register()
     val RECOMMENDED_TESTS_TARGET_BUILD_VERSION = AgentParameterDefinition.forString(name = "recommendedTestsTargetBuildVersion", defaultValue = "").register()
     val RECOMMENDED_TESTS_BASELINE_COMMIT_SHA = AgentParameterDefinition.forString(name = "recommendedTestsBaselineCommitSha", defaultValue = "").register()
     val RECOMMENDED_TESTS_BASELINE_BUILD_VERSION = AgentParameterDefinition.forString(name = "recommendedTestsBaselineBuildVersion", defaultValue = "").register()
-    val RECOMMENDED_TESTS_USE_MATERIALIZED_VIEWS = AgentParameterDefinition.forString(name = "recommendedTestsUseMaterializedViews", defaultValue = "").register()
 
     val TEST_TRACING_ENABLED = AgentParameterDefinition.forBoolean(name = "testTracingEnabled", defaultValue = true).register()
     val TEST_TRACING_PER_SESSION_ENABLED = AgentParameterDefinition.forBoolean(name = "testTracingPerTestSessionEnabled", defaultValue = true).register()
