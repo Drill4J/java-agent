@@ -31,7 +31,7 @@ actual class DefaultAgentConfiguration(
         get() = _inputParameters.toMap()
 
     private fun agentMetadata() = AgentMetadata(
-        groupId = parameters[DefaultParameterDefinitions.GROUP_ID] ?: "",
+        groupId = parameters[DefaultParameterDefinitions.GROUP_ID],
         appId = parameters[DefaultParameterDefinitions.APP_ID] ?: "",
         buildVersion = parameters[DefaultParameterDefinitions.BUILD_VERSION] ?: "",
         commitSha = parameters[DefaultParameterDefinitions.COMMIT_SHA] ?: "",
