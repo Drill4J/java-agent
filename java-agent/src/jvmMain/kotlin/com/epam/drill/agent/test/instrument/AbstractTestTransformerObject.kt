@@ -16,7 +16,7 @@
 package com.epam.drill.agent.test.instrument
 
 import com.epam.drill.agent.configuration.Configuration
-import com.epam.drill.agent.configuration.ParameterDefinitions.TEST_TRACING_ENABLED
+import com.epam.drill.agent.configuration.CapabilityParameterDefinitions.TEST_TRACING_ENABLED
 import com.epam.drill.agent.instrument.AbstractTransformerObject
 import com.epam.drill.agent.instrument.ClassPathProvider
 import com.epam.drill.agent.instrument.RuntimeClassPathProvider
