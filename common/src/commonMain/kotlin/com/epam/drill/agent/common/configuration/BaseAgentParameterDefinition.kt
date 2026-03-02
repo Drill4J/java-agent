@@ -26,7 +26,7 @@ sealed class BaseAgentParameterDefinition<T : Any>(
     val type: KClass<T>,
     val parser: (String) -> T,
     val validation: ValidationType = ValidationType.STRICT,
-    val validator: (T?) -> ValidationResult<*>
+    val validator: (T?, AgentParameters) -> ValidationResult<*>
 ) {
     fun isSoftValidation() = validation == ValidationType.SOFT
     fun isStrictValidation() = validation == ValidationType.STRICT

@@ -121,9 +121,9 @@ actual class DefaultAgentParameters actual constructor(
     @Suppress("UNCHECKED_CAST")
     private fun <T : Any> safeValidate(
         value: Any?,
-        validator: (T?) -> ValidationResult<*>
+        validator: (T?, AgentParameters) -> ValidationResult<*>
     ): ValidationResult<*> {
         val typedValue = value as T?
-        return validator(typedValue)
+        return validator(typedValue, this)
     }
 }

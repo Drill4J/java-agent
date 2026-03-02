@@ -32,7 +32,7 @@ class AgentParameterDefinition<T : Any>(
     val defaultValue: T? = null,
     parser: (String) -> T,
     validation: ValidationType = ValidationType.STRICT,
-    validator: (T?) -> ValidationResult<*>
+    validator: (T?, AgentParameters) -> ValidationResult<*>
 ) : BaseAgentParameterDefinition<T>(
     name = name,
     description = description,
@@ -43,23 +43,6 @@ class AgentParameterDefinition<T : Any>(
 ) {
 
     companion object {
-
-        inline fun <reified T : Any> forType(
-            name: String,
-            description: String? = null,
-            defaultValue: T? = null,
-            validation: ValidationType = ValidationType.STRICT,
-            noinline parser: (String) -> T,
-            noinline validator: (Any?) -> ValidationResult<*> = { Valid(true) }
-        ) = AgentParameterDefinition(
-            name,
-            description,
-            T::class,
-            defaultValue,
-            parser,
-            validation,
-            validator
-        )
 
         fun forString(
             name: String,
@@ -75,7 +58,7 @@ class AgentParameterDefinition<T : Any>(
             defaultValue,
             parser,
             validation,
-            validator = { validate(it, validator) }
+            validator = { it, _ -> validate( it, validator) }
         )
 
         fun forBoolean(
@@ -92,7 +75,7 @@ class AgentParameterDefinition<T : Any>(
             defaultValue,
             parser,
             validation,
-            validator = { validate(it, validator) }
+            validator = { it, _ -> validate( it, validator) }
         )
 
         fun forInt(
@@ -109,7 +92,7 @@ class AgentParameterDefinition<T : Any>(
             defaultValue,
             parser,
             validation,
-            validator = { validate(it, validator) }
+            validator = { it, _ -> validate( it, validator) }
         )
 
         fun forLong(
@@ -126,7 +109,7 @@ class AgentParameterDefinition<T : Any>(
             defaultValue,
             parser,
             validation,
-            validator = { validate(it, validator) }
+            validator = { it, _ -> validate( it, validator) }
         )
 
         fun forDuration(
@@ -143,12 +126,13 @@ class AgentParameterDefinition<T : Any>(
             defaultValue,
             parser,
             validation,
-            validator = { validate(it, validator) }
+            validator = { it, _ -> validate( it, validator) }
         )
 
         fun forList(
             name: String,
             description: String? = null,
+            requiredIf: (AgentParameters) -> Boolean = { false },
             defaultValue: List<String> = emptyList(),
             validation: ValidationType = ValidationType.STRICT,
             parser: (String) -> List<String> = { it.split(";") },
@@ -161,10 +145,11 @@ class AgentParameterDefinition<T : Any>(
             defaultValue = defaultValue,
             parser = parser,
             validation = validation,
-            validator = { value ->
+            validator = { value, params ->
                 class Typed(val value: List<String>)
                 Validation {
-                    Typed::value required listValidator
+                    if (requiredIf(params))
+                        Typed::value required listValidator
                     Typed::value onEach itemValidator
                 }.validate(Typed(value?.filterIsInstance<String>() ?: emptyList()))
             }

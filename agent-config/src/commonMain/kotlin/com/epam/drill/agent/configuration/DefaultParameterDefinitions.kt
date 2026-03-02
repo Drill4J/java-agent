@@ -17,11 +17,17 @@ package com.epam.drill.agent.configuration
 
 import com.epam.drill.agent.common.configuration.AgentParameterDefinition
 import com.epam.drill.agent.common.configuration.AgentParameterDefinitionCollection
+import com.epam.drill.agent.common.configuration.AgentParameters
 import com.epam.drill.agent.common.configuration.NullableAgentParameterDefinition
 import com.epam.drill.agent.konform.validation.jsonschema.minItems
 import com.epam.drill.agent.konform.validation.jsonschema.minLength
 
 object DefaultParameterDefinitions : AgentParameterDefinitionCollection() {
+
+    val applicationAgentEnabled: (AgentParameters) -> Boolean = { config ->
+        config[CapabilityParameterDefinitions.CLASS_SCANNING_ENABLED]
+                || config[CapabilityParameterDefinitions.COVERAGE_COLLECTION_ENABLED]
+    }
 
     val GROUP_ID = AgentParameterDefinition.forString(
         name = "groupId",
@@ -30,9 +36,10 @@ object DefaultParameterDefinitions : AgentParameterDefinitionCollection() {
             identifier()
             minLength(3)
         }).register()
-    val APP_ID = AgentParameterDefinition.forString(
+    val APP_ID = NullableAgentParameterDefinition.forString(
         name = "appId",
         description = "Unique arbitrary string identifying your application. Example: api-service",
+        requiredIf = applicationAgentEnabled,
         validator = {
             identifier()
             minLength(3)
@@ -69,6 +76,7 @@ object DefaultParameterDefinitions : AgentParameterDefinitionCollection() {
             Documentation:
             https://drill4j.github.io/docs/agents/java-agent/#how-to-set-package-prefixes
         """.trimIndent(),
+        requiredIf = applicationAgentEnabled,
         parser = { it.split(";") },
         listValidator = {
             minItems(1)
