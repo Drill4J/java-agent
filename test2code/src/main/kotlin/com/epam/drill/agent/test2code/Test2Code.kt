@@ -29,13 +29,14 @@ import com.epam.drill.agent.common.transport.AgentMessageDestination
 import com.epam.drill.agent.common.transport.AgentMessageSender
 import com.epam.drill.agent.common.classloading.EntitySource
 import com.epam.drill.agent.configuration.AgentParametersValidator
+import com.epam.drill.agent.configuration.CapabilityParameterDefinitions.CLASS_SCANNING_ENABLED
+import com.epam.drill.agent.configuration.CapabilityParameterDefinitions.COVERAGE_COLLECTION_ENABLED
 import com.epam.drill.agent.test2code.common.api.AstMethod
 import com.epam.drill.agent.test2code.common.transport.ClassMetadata
 import com.epam.drill.agent.test2code.classloading.ClassLoadersScanner
 import com.epam.drill.agent.test2code.classloading.ClassScanner
 import com.epam.drill.agent.test2code.classparsing.parseAstClass
 import com.epam.drill.agent.test2code.configuration.Test2CodeParameterDefinitions
-import com.epam.drill.agent.test2code.configuration.Test2CodeParameterDefinitions.COVERAGE_COLLECTION_ENABLED
 import com.epam.drill.agent.test2code.coverage.*
 
 private const val DRILL_TEST_ID_HEADER = "drill-test-id"
@@ -70,7 +71,7 @@ class Test2Code(
         classMethodsMetadata = coverageManager.classMethodsMetadata
     )
     private val coverageCollectionEnabled = configuration.parameters[COVERAGE_COLLECTION_ENABLED]
-    private val classScanningEnabled = configuration.parameters[Test2CodeParameterDefinitions.CLASS_SCANNING_ENABLED]
+    private val classScanningEnabled = configuration.parameters[CLASS_SCANNING_ENABLED]
 
     override fun onConnect() {}
 
@@ -126,7 +127,7 @@ class Test2Code(
         val enableScanClassLoaders = configuration.parameters[Test2CodeParameterDefinitions.ENABLE_SCAN_CLASS_LOADERS]
         val scanClassDelay = configuration.parameters[Test2CodeParameterDefinitions.SCAN_CLASS_DELAY]
         if (enableScanClassLoaders && scanClassDelay.isPositive()) {
-            logger.debug { "Waiting class loader scan delay ${scanClassDelay.inWholeMilliseconds} ms..." }
+            logger.info { "Waiting class loader scan delay ${scanClassDelay.inWholeMilliseconds} ms..." }
             runBlocking { delay(scanClassDelay) }
         }
         logger.info { "Scanning classes, package prefixes: $packagePrefixes... " }

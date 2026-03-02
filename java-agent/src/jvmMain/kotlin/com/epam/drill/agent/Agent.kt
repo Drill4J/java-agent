@@ -17,6 +17,7 @@ package com.epam.drill.agent
 
 import com.epam.drill.agent.configuration.AgentParameterValidationError
 import com.epam.drill.agent.configuration.AgentParametersValidator
+import com.epam.drill.agent.configuration.CapabilityParameterDefinitions
 import com.epam.drill.agent.configuration.Configuration
 import com.epam.drill.agent.configuration.DefaultParameterDefinitions
 import com.epam.drill.agent.configuration.ParameterDefinitions
@@ -54,8 +55,11 @@ fun premain(agentArgs: String?, inst: Instrumentation) {
         updateJvmLoggingConfiguration()
         validateConfiguration()
         inst.addTransformer(DrillClassFileTransformer, true)
-        JvmModuleMessageSender.sendAgentMetadata()
-        JvmModuleLoader.loadJvmModule(Test2Code::class.java.name).load()
+        inst.retransformClasses(*inst.allLoadedClasses)
+        if (isClassScanningEnabled() || isCoverageCollectionEnabled()) {
+            JvmModuleMessageSender.sendAgentMetadata()
+            JvmModuleLoader.loadJvmModule(Test2Code::class.java.name).load()
+        }
 
         SessionController.startSession()
     } catch (e: Throwable) {
@@ -146,3 +150,7 @@ object DrillClassFileTransformer : ClassFileTransformer {
         return if (newClassBytes !== oldClassBytes) newClassBytes else null
     }
 }
+
+private fun isClassScanningEnabled(): Boolean = Configuration.parameters[CapabilityParameterDefinitions.CLASS_SCANNING_ENABLED]
+private fun isCoverageCollectionEnabled(): Boolean = Configuration.parameters[CapabilityParameterDefinitions.COVERAGE_COLLECTION_ENABLED]
+private fun isContextPropagationEnabled(): Boolean = Configuration.parameters[CapabilityParameterDefinitions.CONTEXT_PROPAGATION_ENABLED]

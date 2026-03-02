@@ -69,7 +69,6 @@ object ParameterDefinitions: AgentParameterDefinitionCollection() {
     val RECOMMENDED_TESTS_BASELINE_COMMIT_SHA = AgentParameterDefinition.forString(name = "recommendedTestsBaselineCommitSha", defaultValue = "").register()
     val RECOMMENDED_TESTS_BASELINE_BUILD_VERSION = AgentParameterDefinition.forString(name = "recommendedTestsBaselineBuildVersion", defaultValue = "").register()
 
-    val TEST_TRACING_ENABLED = AgentParameterDefinition.forBoolean(name = "testTracingEnabled", defaultValue = true).register()
     val TEST_TRACING_PER_SESSION_ENABLED = AgentParameterDefinition.forBoolean(name = "testTracingPerTestSessionEnabled", defaultValue = true).register()
     val TEST_TRACING_PER_TEST_LAUNCH_ENABLED = AgentParameterDefinition.forBoolean(name = "testTracingPerTestLaunchEnabled", defaultValue = true).register()
 }

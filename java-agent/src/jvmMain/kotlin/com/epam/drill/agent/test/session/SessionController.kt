@@ -18,6 +18,7 @@ package com.epam.drill.agent.test.session
 import com.benasher44.uuid.*
 import com.epam.drill.agent.common.request.DrillInitialContext
 import com.epam.drill.agent.common.request.DrillRequest
+import com.epam.drill.agent.configuration.CapabilityParameterDefinitions.TEST_TRACING_ENABLED
 import com.epam.drill.agent.request.DrillRequestHolder
 import com.epam.drill.agent.test.SESSION_ID_HEADER
 import com.epam.drill.agent.configuration.Configuration
@@ -85,7 +86,7 @@ actual object SessionController {
 
     fun getSessionId(): String = sessionId
 
-    private fun isTestTracingEnabled(): Boolean = Configuration.parameters[ParameterDefinitions.TEST_TRACING_ENABLED]
+    private fun isTestTracingEnabled(): Boolean = Configuration.parameters[TEST_TRACING_ENABLED]
     private fun isTestLaunchMetadataSendingEnabled(): Boolean = isTestTracingEnabled() && Configuration.parameters[ParameterDefinitions.TEST_TRACING_PER_TEST_LAUNCH_ENABLED]
 }
 

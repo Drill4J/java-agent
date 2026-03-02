@@ -80,7 +80,9 @@ object Agent {
         AgentLoggingConfiguration.updateJvmLoggingConfiguration()
         Configuration.initializeJvm()
         loadJvmModule("com.epam.drill.agent.test2code.Test2Code")
-        JvmModuleMessageSender.sendAgentMetadata()
+        if (isClassScanningEnabled() || isCoverageCollectionEnabled()) {
+            JvmModuleMessageSender.sendAgentMetadata()
+        }
         SessionController.startSession()
     }
 
