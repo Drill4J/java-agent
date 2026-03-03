@@ -20,6 +20,11 @@ import com.epam.drill.agent.common.configuration.AgentParameterDefinitionCollect
  */
 object InstrumentationParameterDefinitions: AgentParameterDefinitionCollection() {
     val INSTRUMENTATION_ENABLED = AgentParameterDefinition.forBoolean(name = "instrumentationEnabled", defaultValue = true).register()
+    val CONTEXT_PROPAGATION_ENABLED = AgentParameterDefinition.forBoolean(
+        name = "contextPropagationEnabled",
+        description = "Enable/disable context propagation",
+        defaultValue = true
+    ).register()
     val INSTRUMENTATION_COMPATIBILITY_TESTS_ENABLED = AgentParameterDefinition.forBoolean(name = "instrumentationCompatibilityTestsEnabled", defaultValue = false).register()
 
     //Async frameworks

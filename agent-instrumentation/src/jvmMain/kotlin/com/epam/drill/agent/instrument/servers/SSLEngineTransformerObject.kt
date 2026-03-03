@@ -24,6 +24,7 @@ import mu.KotlinLogging
 import com.epam.drill.agent.instrument.AbstractTransformerObject
 import com.epam.drill.agent.instrument.HeadersProcessor
 import com.epam.drill.agent.common.request.HeadersRetriever
+import com.epam.drill.agent.instrument.AbstractPropagationTransformer
 import com.epam.drill.agent.instrument.InstrumentationParameterDefinitions.INSTRUMENTATION_SSL_ENABLED
 import com.epam.drill.agent.instrument.SSL_ENGINE_CLASS_NAME
 
@@ -41,7 +42,7 @@ private const val HTTP_RESPONSE_MARK = "HTTP"
 abstract class SSLEngineTransformerObject(
     headersRetriever: HeadersRetriever,
     agentConfiguration: AgentConfiguration
-) : HeadersProcessor, AbstractTransformerObject(agentConfiguration) {
+) : HeadersProcessor, AbstractPropagationTransformer(agentConfiguration) {
 
     private val httpVerbs = setOf("OPTIONS", "GET", "HEAD", "POST", "PUT", "PATCH", "DELETE", "TRACE", "CONNECT", "PRI")
     private val httpHeadersEndMark = HTTP_HEADERS_END_MARK.encodeToByteArray()

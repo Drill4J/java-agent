@@ -17,6 +17,7 @@ package com.epam.drill.agent.instrument.clients
 
 import com.epam.drill.agent.common.configuration.AgentConfiguration
 import com.epam.drill.agent.common.configuration.AgentParameters
+import com.epam.drill.agent.instrument.AbstractPropagationTransformer
 import com.epam.drill.agent.instrument.AbstractTransformerObject
 import com.epam.drill.agent.instrument.HeadersProcessor
 import com.epam.drill.agent.instrument.InstrumentationParameterDefinitions.INSTRUMENTATION_SPRING_WEB_CLIENT_ENABLED
@@ -28,7 +29,7 @@ import mu.KotlinLogging
  * Transformer for Spring Webflux WebClient
  */
 abstract class SpringWebClientTransformerObject(agentConfiguration: AgentConfiguration) : HeadersProcessor,
-    AbstractTransformerObject(agentConfiguration) {
+    AbstractPropagationTransformer(agentConfiguration) {
     override val logger = KotlinLogging.logger {}
 
     override fun enabled(): Boolean = super.enabled() && agentConfiguration.parameters[INSTRUMENTATION_SPRING_WEB_CLIENT_ENABLED]

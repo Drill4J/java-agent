@@ -17,6 +17,7 @@ package com.epam.drill.agent.instrument.servers
 
 import com.epam.drill.agent.common.configuration.AgentConfiguration
 import com.epam.drill.agent.common.configuration.AgentParameters
+import com.epam.drill.agent.instrument.AbstractPropagationTransformer
 import com.epam.drill.agent.ttl.threadpool.agent.TtlAgent
 import com.epam.drill.agent.ttl.threadpool.agent.internal.logging.Logger
 import com.epam.drill.agent.ttl.threadpool.agent.internal.transformlet.ClassInfo
@@ -29,7 +30,7 @@ import mu.KotlinLogging
 import com.epam.drill.agent.instrument.AbstractTransformerObject
 import com.epam.drill.agent.instrument.InstrumentationParameterDefinitions.INSTRUMENTATION_TTL_ENABLED
 
-abstract class TTLTransformerObject(agentConfiguration: AgentConfiguration) : AbstractTransformerObject(agentConfiguration) {
+abstract class TTLTransformerObject(agentConfiguration: AgentConfiguration) : AbstractPropagationTransformer(agentConfiguration) {
 
     private val directTtlClasses = listOf(
         "java/util/concurrent/ScheduledThreadPoolExecutor",

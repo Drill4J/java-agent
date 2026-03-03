@@ -22,6 +22,7 @@ import javassist.CtClass
 import mu.KotlinLogging
 import com.epam.drill.agent.instrument.HeadersProcessor
 import com.epam.drill.agent.common.request.HeadersRetriever
+import com.epam.drill.agent.instrument.AbstractPropagationTransformer
 import com.epam.drill.agent.instrument.COMPILER_GENERATED_NAMES_PREFIX
 import com.epam.drill.agent.instrument.NETTY_CHANNEL_HANDLER_CONTEXT
 import com.epam.drill.agent.instrument.http.AbstractHttpTransformerObject
@@ -35,7 +36,7 @@ import com.epam.drill.agent.instrument.http.AbstractHttpTransformerObject
 abstract class NettyHttpServerTransformerObject(
     private val headersRetriever: HeadersRetriever,
     agentConfiguration: AgentConfiguration
-) : HeadersProcessor, AbstractHttpTransformerObject(agentConfiguration) {
+) : HeadersProcessor, AbstractPropagationTransformer(agentConfiguration) {
 
     override val logger = KotlinLogging.logger {}
 

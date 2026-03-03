@@ -17,6 +17,7 @@ package com.epam.drill.agent.instrument.servers
 
 import com.epam.drill.agent.common.configuration.AgentConfiguration
 import com.epam.drill.agent.common.configuration.AgentParameters
+import com.epam.drill.agent.instrument.AbstractPropagationTransformer
 import javassist.CtBehavior
 import javassist.CtClass
 import mu.KotlinLogging
@@ -27,7 +28,7 @@ import com.epam.drill.agent.instrument.HeadersProcessor
 import com.epam.drill.agent.instrument.InstrumentationParameterDefinitions.INSTRUMENTATION_CADENCE_ENABLED
 
 abstract class CadenceTransformerObject(agentConfiguration: AgentConfiguration) : HeadersProcessor,
-    AbstractTransformerObject(agentConfiguration) {
+    AbstractPropagationTransformer(agentConfiguration) {
 
     private val producerInstrumentedMethods = listOf(
         "signalAsync",

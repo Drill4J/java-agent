@@ -17,6 +17,7 @@ package com.epam.drill.agent.instrument.clients
 
 import com.epam.drill.agent.common.configuration.AgentConfiguration
 import com.epam.drill.agent.common.configuration.AgentParameters
+import com.epam.drill.agent.instrument.AbstractPropagationTransformer
 import javassist.CtBehavior
 import javassist.CtClass
 import javassist.CtMethod
@@ -34,7 +35,7 @@ import com.epam.drill.agent.instrument.InstrumentationParameterDefinitions.INSTR
  *     com.squareup.okhttp3:okhttp:4.12.0
  */
 abstract class OkHttp3ClientTransformerObject(agentConfiguration: AgentConfiguration) : HeadersProcessor,
-    AbstractTransformerObject(agentConfiguration) {
+    AbstractPropagationTransformer(agentConfiguration) {
 
     override val logger = KotlinLogging.logger {}
 

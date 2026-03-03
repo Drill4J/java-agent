@@ -20,6 +20,7 @@ import com.epam.drill.agent.common.configuration.AgentParameters
 import com.epam.drill.agent.instrument.AbstractTransformerObject
 import com.epam.drill.agent.instrument.HeadersProcessor
 import com.epam.drill.agent.common.request.HeadersRetriever
+import com.epam.drill.agent.instrument.AbstractPropagationTransformer
 import com.epam.drill.agent.instrument.UNDERTOW_SERVER_CONNECTORS
 import com.epam.drill.agent.instrument.http.AbstractHttpTransformerObject
 import javassist.CtBehavior
@@ -35,7 +36,7 @@ import mu.KotlinLogging
 abstract class UndertowHttpServerTransformerObject(
     private val headersRetriever: HeadersRetriever,
     agentConfiguration: AgentConfiguration
-) : HeadersProcessor, AbstractHttpTransformerObject(agentConfiguration) {
+) : HeadersProcessor, AbstractPropagationTransformer(agentConfiguration) {
 
     override val logger = KotlinLogging.logger {}
 

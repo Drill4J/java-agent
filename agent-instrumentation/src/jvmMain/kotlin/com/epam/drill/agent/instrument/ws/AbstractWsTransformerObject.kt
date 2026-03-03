@@ -17,11 +17,12 @@ package com.epam.drill.agent.instrument.ws
 
 import com.epam.drill.agent.common.configuration.AgentConfiguration
 import com.epam.drill.agent.common.configuration.AgentParameters
+import com.epam.drill.agent.instrument.AbstractPropagationTransformer
 import com.epam.drill.agent.instrument.AbstractTransformerObject
 import com.epam.drill.agent.instrument.HeadersProcessor
 import com.epam.drill.agent.instrument.InstrumentationParameterDefinitions.INSTRUMENTATION_WS_ENABLED
 
 abstract class AbstractWsTransformerObject(agentConfiguration: AgentConfiguration) : HeadersProcessor,
-    AbstractTransformerObject(agentConfiguration) {
+    AbstractPropagationTransformer(agentConfiguration) {
     override fun enabled(): Boolean = super.enabled() && agentConfiguration.parameters[INSTRUMENTATION_WS_ENABLED]
 }

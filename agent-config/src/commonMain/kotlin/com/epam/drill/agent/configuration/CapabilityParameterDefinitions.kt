@@ -29,11 +29,6 @@ object CapabilityParameterDefinitions : AgentParameterDefinitionCollection() {
         description = "Enable/disable application classes scanning",
         defaultValue = true
     ).register()
-    val CONTEXT_PROPAGATION_ENABLED = AgentParameterDefinition.forBoolean(
-        name = "contextPropagationEnabled",
-        description = "Enable/disable context propagation",
-        defaultValue = true
-    ).register()
     val TEST_TRACING_ENABLED = AgentParameterDefinition.forBoolean(
         name = "testTracingEnabled",
         description = "Enable/disable test tracing",

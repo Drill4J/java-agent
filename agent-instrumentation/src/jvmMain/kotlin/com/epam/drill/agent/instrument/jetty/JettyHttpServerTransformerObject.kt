@@ -23,13 +23,14 @@ import javassist.CtClass
 import mu.KotlinLogging
 import com.epam.drill.agent.instrument.HeadersProcessor
 import com.epam.drill.agent.common.request.HeadersRetriever
+import com.epam.drill.agent.instrument.AbstractPropagationTransformer
 import com.epam.drill.agent.instrument.JETTY_SERVER_HANDLER
 import com.epam.drill.agent.instrument.http.AbstractHttpTransformerObject
 
 abstract class JettyHttpServerTransformerObject(
     protected val headersRetriever: HeadersRetriever,
     agentConfiguration: AgentConfiguration
-) : HeadersProcessor, AbstractHttpTransformerObject(agentConfiguration) {
+) : HeadersProcessor, AbstractPropagationTransformer(agentConfiguration) {
 
     override val logger = KotlinLogging.logger {}
 

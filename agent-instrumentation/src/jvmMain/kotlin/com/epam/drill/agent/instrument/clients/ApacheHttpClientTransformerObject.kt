@@ -17,6 +17,7 @@ package com.epam.drill.agent.instrument.clients
 
 import com.epam.drill.agent.common.configuration.AgentConfiguration
 import com.epam.drill.agent.common.configuration.AgentParameters
+import com.epam.drill.agent.instrument.AbstractPropagationTransformer
 import javassist.CtBehavior
 import javassist.CtClass
 import mu.KotlinLogging
@@ -35,7 +36,7 @@ import com.epam.drill.agent.instrument.InstrumentationParameterDefinitions.INSTR
  *     org.apache.httpcomponents:httpclient:5.3.1
  */
 abstract class ApacheHttpClientTransformerObject(agentConfiguration: AgentConfiguration) : HeadersProcessor,
-    AbstractTransformerObject(agentConfiguration) {
+    AbstractPropagationTransformer(agentConfiguration) {
 
     override val logger = KotlinLogging.logger {}
 

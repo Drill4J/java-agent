@@ -17,6 +17,7 @@ package com.epam.drill.agent.instrument.servers
 
 import com.epam.drill.agent.common.configuration.AgentConfiguration
 import com.epam.drill.agent.common.configuration.AgentParameters
+import com.epam.drill.agent.instrument.AbstractPropagationTransformer
 import javassist.CtBehavior
 import javassist.CtClass
 import mu.KotlinLogging
@@ -33,7 +34,8 @@ import com.epam.drill.agent.instrument.KAFKA_PRODUCER_INTERFACE
  *     org.apache.kafka:kafka-clients:3.2.3
  *     org.springframework.kafka:spring-kafka:2.9.13
  */
-abstract class KafkaTransformerObject(agentConfiguration: AgentConfiguration) : HeadersProcessor, AbstractTransformerObject(agentConfiguration) {
+abstract class KafkaTransformerObject(agentConfiguration: AgentConfiguration) : HeadersProcessor,
+    AbstractPropagationTransformer(agentConfiguration) {
 
     override val logger = KotlinLogging.logger {}
 
