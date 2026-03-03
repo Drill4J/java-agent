@@ -127,6 +127,4 @@ object Agent {
     }
     private fun isClassScanningEnabled(): Boolean = Configuration.parameters[CapabilityParameterDefinitions.CLASS_SCANNING_ENABLED]
     private fun isCoverageCollectionEnabled(): Boolean = Configuration.parameters[CapabilityParameterDefinitions.COVERAGE_COLLECTION_ENABLED]
-    private fun isContextPropagationEnabled(): Boolean = Configuration.parameters[CapabilityParameterDefinitions.CONTEXT_PROPAGATION_ENABLED]
-
 }
