@@ -44,6 +44,19 @@ import com.epam.drill.agent.instrument.undertow.UndertowHttpServerTransformer
 import com.epam.drill.agent.instrument.undertow.UndertowWsClientTransformer
 import com.epam.drill.agent.instrument.undertow.UndertowWsMessagesTransformer
 import com.epam.drill.agent.instrument.undertow.UndertowWsServerTransformer
+import com.epam.drill.agent.test.instrument.cucumber.Cucumber4Transformer
+import com.epam.drill.agent.test.instrument.cucumber.Cucumber5Transformer
+import com.epam.drill.agent.test.instrument.cucumber.Cucumber6Transformer
+import com.epam.drill.agent.test.instrument.jmeter.JMeterTransformer
+import com.epam.drill.agent.test.instrument.junit.JUnit4PrioritizingTransformer
+import com.epam.drill.agent.test.instrument.junit.JUnit4Transformer
+import com.epam.drill.agent.test.instrument.junit.JUnit5Transformer
+import com.epam.drill.agent.test.instrument.junit.JUnitPlatformPrioritizingTransformer
+import com.epam.drill.agent.test.instrument.selenium.SeleniumTransformer
+import com.epam.drill.agent.test.instrument.testng.TestNG6PrioritizingTransformer
+import com.epam.drill.agent.test.instrument.testng.TestNG6Transformer
+import com.epam.drill.agent.test.instrument.testng.TestNG7PrioritizingTransformer
+import com.epam.drill.agent.test.instrument.testng.TestNG7Transformer
 
 actual object TransformerRegistrar {
     private val logger = KotlinLogging.logger {}
@@ -77,6 +90,20 @@ actual object TransformerRegistrar {
         UndertowWsServerTransformer,
         UndertowWsMessagesTransformer,
         CompatibilityTestsTransformer,
+        //Test instrumentation
+        Cucumber4Transformer,
+        Cucumber5Transformer,
+        Cucumber6Transformer,
+        JMeterTransformer,
+        JUnit4PrioritizingTransformer,
+        JUnit4Transformer,
+        JUnit5Transformer,
+        JUnitPlatformPrioritizingTransformer,
+        SeleniumTransformer,
+        TestNG6PrioritizingTransformer,
+        TestNG6Transformer,
+        TestNG7PrioritizingTransformer,
+        TestNG7Transformer
     )
     actual val enabledTransformers: List<Transformer> by lazy {
         transformers.filter { transformer ->

@@ -15,7 +15,6 @@
  */
 package com.epam.drill.agent.transport
 
-import com.epam.drill.agent.common.configuration.AgentMetadata
 import java.io.File
 import io.aesy.datasize.ByteUnit
 import io.aesy.datasize.DataSize
@@ -24,12 +23,10 @@ import com.epam.drill.agent.configuration.Configuration
 import com.epam.drill.agent.configuration.DefaultParameterDefinitions
 import com.epam.drill.agent.configuration.ParameterDefinitions
 import com.epam.drill.agent.transport.http.HttpAgentMessageTransport
-import com.epam.drill.agent.common.transport.AgentMessage
 import com.epam.drill.agent.common.transport.AgentMessageDestination
 import com.epam.drill.agent.common.transport.AgentMessageSender
 import kotlinx.serialization.InternalSerializationApi
 import kotlinx.serialization.KSerializer
-import kotlinx.serialization.Serializable
 
 actual object JvmModuleMessageSender : AgentMessageSender {
 

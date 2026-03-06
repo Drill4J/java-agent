@@ -17,45 +17,17 @@ package com.epam.drill.agent
 
 import com.epam.drill.agent.configuration.AgentParameterValidationError
 import com.epam.drill.agent.configuration.AgentParametersValidator
+import com.epam.drill.agent.configuration.CapabilityParameterDefinitions
 import com.epam.drill.agent.configuration.Configuration
 import com.epam.drill.agent.configuration.DefaultParameterDefinitions
 import com.epam.drill.agent.configuration.ParameterDefinitions
-import com.epam.drill.agent.instrument.ApplicationClassTransformer
 import com.epam.drill.agent.instrument.CompositeTransformer
-import com.epam.drill.agent.instrument.TransformerRegistrar
-import com.epam.drill.agent.instrument.clients.ApacheHttpClientTransformer
-import com.epam.drill.agent.instrument.clients.JavaHttpClientTransformer
-import com.epam.drill.agent.instrument.clients.OkHttp3ClientTransformer
-import com.epam.drill.agent.instrument.clients.SpringWebClientTransformer
-import com.epam.drill.agent.instrument.jetty.Jetty10WsMessagesTransformer
-import com.epam.drill.agent.instrument.jetty.Jetty11WsMessagesTransformer
-import com.epam.drill.agent.instrument.jetty.Jetty9WsMessagesTransformer
-import com.epam.drill.agent.instrument.jetty.JettyHttpServerTransformer
-import com.epam.drill.agent.instrument.jetty.JettyWsClientTransformer
-import com.epam.drill.agent.instrument.jetty.JettyWsServerTransformer
-import com.epam.drill.agent.instrument.netty.NettyHttpServerTransformer
-import com.epam.drill.agent.instrument.netty.NettyWsClientTransformer
-import com.epam.drill.agent.instrument.netty.NettyWsMessagesTransformer
-import com.epam.drill.agent.instrument.netty.NettyWsServerTransformer
-import com.epam.drill.agent.instrument.servers.CadenceTransformer
-import com.epam.drill.agent.instrument.servers.CompatibilityTestsTransformer
-import com.epam.drill.agent.instrument.servers.KafkaTransformer
-import com.epam.drill.agent.instrument.servers.ReactorTransformer
-import com.epam.drill.agent.instrument.servers.TTLTransformer
-import com.epam.drill.agent.instrument.tomcat.TomcatHttpServerTransformer
-import com.epam.drill.agent.instrument.tomcat.TomcatWsClientTransformer
-import com.epam.drill.agent.instrument.tomcat.TomcatWsMessagesTransformer
-import com.epam.drill.agent.instrument.tomcat.TomcatWsServerTransformer
-import com.epam.drill.agent.instrument.undertow.UndertowHttpServerTransformer
-import com.epam.drill.agent.instrument.undertow.UndertowWsClientTransformer
-import com.epam.drill.agent.instrument.undertow.UndertowWsMessagesTransformer
-import com.epam.drill.agent.instrument.undertow.UndertowWsServerTransformer
 import com.epam.drill.agent.logging.LoggingConfiguration
 import com.epam.drill.agent.module.JvmModuleLoader
+import com.epam.drill.agent.test.session.SessionController
 import com.epam.drill.agent.test2code.Test2Code
 import com.epam.drill.agent.test2code.configuration.Test2CodeParameterDefinitions
 import com.epam.drill.agent.transport.JvmModuleMessageSender
-import org.objectweb.asm.ClassReader
 import mu.KotlinLogging
 import java.lang.instrument.ClassFileTransformer
 import java.lang.instrument.Instrumentation
@@ -83,8 +55,13 @@ fun premain(agentArgs: String?, inst: Instrumentation) {
         updateJvmLoggingConfiguration()
         validateConfiguration()
         inst.addTransformer(DrillClassFileTransformer, true)
-        JvmModuleMessageSender.sendAgentMetadata()
-        JvmModuleLoader.loadJvmModule(Test2Code::class.java.name).load()
+        inst.retransformClasses(*inst.allLoadedClasses)
+        if (isClassScanningEnabled() || isCoverageCollectionEnabled()) {
+            JvmModuleMessageSender.sendAgentMetadata()
+            JvmModuleLoader.loadJvmModule(Test2Code::class.java.name).load()
+        }
+
+        SessionController.startSession()
     } catch (e: Throwable) {
         println("Drill4J Initialization Error:\n${e.message ?: e::class.java.name}")
     }
@@ -173,3 +150,6 @@ object DrillClassFileTransformer : ClassFileTransformer {
         return if (newClassBytes !== oldClassBytes) newClassBytes else null
     }
 }
+
+private fun isClassScanningEnabled(): Boolean = Configuration.parameters[CapabilityParameterDefinitions.CLASS_SCANNING_ENABLED]
+private fun isCoverageCollectionEnabled(): Boolean = Configuration.parameters[CapabilityParameterDefinitions.COVERAGE_COLLECTION_ENABLED]
