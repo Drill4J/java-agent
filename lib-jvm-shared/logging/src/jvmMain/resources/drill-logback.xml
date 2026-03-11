@@ -1,0 +1,10 @@
+<configuration>
+    <appender name="STDOUT" class="com.epam.drill.agent.shadow.ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>%date{yyyy-MM-dd HH:mm:ss.SSS} %-5level [%logger] %message%n%throwable</pattern>
+        </encoder>
+    </appender>
+    <root level="INFO">
+        <appender-ref ref="STDOUT"/>
+    </root>
+</configuration>
