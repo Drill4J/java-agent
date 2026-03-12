@@ -54,21 +54,15 @@ actual object Configuration : AgentConfiguration {
             installationDirProvider
         ))
         logger.debug { "initializeNative: Found from properties file: ${propertiesFileProvider.configuration}" }
-        val validatedParametersProvider = ValidatedParametersProvider(setOf(
-            environmentVariablesProvider,
-            agentOptionsProvider,
-            installationDirProvider,
-            propertiesFileProvider
-        ))
         val runtimeParametersProvider = RuntimeParametersProvider()
         configuration.value = DefaultAgentConfiguration(setOf(
-            validatedParametersProvider,
             environmentVariablesProvider,
             agentOptionsProvider,
             installationDirProvider,
             propertiesFileProvider,
             runtimeParametersProvider
         )).freeze()
+        defineDefaults(parameters)
     }
 
     actual fun initializeJvm(inputParameters: String): Unit =
@@ -78,4 +72,17 @@ actual object Configuration : AgentConfiguration {
         .joinToString(",") { "${it.key}=${it.value}" }
         .let(::initializeJvm)
 
+    private fun defineDefaults(agentParameters: AgentParameters)  {
+        agentParameters.define(
+            DefaultParameterDefinitions.APP_ID,
+            DefaultParameterDefinitions.INSTANCE_ID,
+            DefaultParameterDefinitions.BUILD_VERSION,
+            DefaultParameterDefinitions.GROUP_ID,
+            DefaultParameterDefinitions.COMMIT_SHA,
+            DefaultParameterDefinitions.ENV_ID,
+            DefaultParameterDefinitions.INSTALLATION_DIR,
+            DefaultParameterDefinitions.CONFIG_PATH,
+            DefaultParameterDefinitions.PACKAGE_PREFIXES
+        )
+    }
 }

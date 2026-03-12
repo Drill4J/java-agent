@@ -40,7 +40,7 @@ actual object CompositeTransformer : Transformer {
             .onFailure { logger.warn(it) { "Can't read class: $classFileBuffer" } }
             .getOrNull() ?: return null
         val enabledTransformers = runCatching { transformers.enabledTransformers }.onFailure {
-            logger.warn(it) { "Can't get enabled transformers for class: $className" }
+            logger.warn { "Can't get enabled transformers for class: $className: " + it.message }
         }.getOrNull() ?: return null
         return enabledTransformers.fold(classFileBuffer) { bytes, transformer ->
             runCatching {

@@ -59,16 +59,6 @@ object Test2CodeParameterDefinitions : AgentParameterDefinitionCollection() {
         name = "methodsSendPageSize",
         defaultValue = 1000
     ).register()
-    val COVERAGE_COLLECTION_ENABLED = AgentParameterDefinition.forBoolean(
-        name = "coverageCollectionEnabled",
-        description = "Enable/disable application code coverage collection",
-        defaultValue = true
-    ).register()
-    val CLASS_SCANNING_ENABLED = AgentParameterDefinition.forBoolean(
-        name = "classScanningEnabled",
-        description = "Enable/disable application classes scanning",
-        defaultValue = true
-    ).register()
     val EXCLUDE_METHODS_BY_ANNOTATION_PACKAGE = AgentParameterDefinition.forList(
         name = "excludeMethodsByAnnotationPackage",
         description = """

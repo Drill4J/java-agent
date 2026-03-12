@@ -57,8 +57,10 @@ class ClassLoadersScanner(
      */
     private fun scanClassLoadersIfNecessary() = if (enableScanClassLoaders)
         scanClassLoadersURIs(scanClassLoaders())
-    else
+    else {
+        logger.info { "Classloader scanning is disabled" }
         emptySet()
+    }
 
     /**
      * Retrieve all classloaders from active threads.
