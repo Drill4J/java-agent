@@ -16,13 +16,13 @@
 package com.epam.drill.agent.instrument.netty
 
 import com.epam.drill.agent.common.configuration.AgentConfiguration
-import com.epam.drill.agent.common.configuration.AgentParameters
+import javassist.ClassPool
 import javassist.CtBehavior
 import javassist.CtClass
 import mu.KotlinLogging
-import com.epam.drill.agent.instrument.AbstractTransformerObject
 import com.epam.drill.agent.instrument.HeadersProcessor
 import com.epam.drill.agent.instrument.ws.AbstractWsTransformerObject
+import java.security.ProtectionDomain
 
 /**
  * Transformer for simple Netty-based web servers
@@ -41,7 +41,21 @@ abstract class NettyWsServerTransformerObject(agentConfiguration: AgentConfigura
             "io/netty/handler/codec/http/websocketx/WebSocketServerHandshaker"
         ).contains(className)
 
-    override fun transform(className: String, ctClass: CtClass) {
+    override fun transform(
+        className: String,
+        ctClass: CtClass,
+        pool: ClassPool,
+        classLoader: ClassLoader?,
+        protectionDomain: ProtectionDomain?
+    ) {
+        if (pool.find(WEBSOCKET_FRAME_BINARY) == null) {
+            logger.debug { "transform: Skipping $className because $WEBSOCKET_FRAME_BINARY class is not available" }
+            return
+        }
+        if (pool.find(WEBSOCKET_FRAME_TEXT) == null) {
+            logger.debug { "transform: Skipping $className because $WEBSOCKET_FRAME_TEXT class is not available" }
+            return
+        }
         logger.info { "transform: Starting NettyWsServerTransformerObject for $className..." }
         when (className) {
             "io/netty/channel/AbstractChannelHandlerContext" -> transformChannelHandlerContext(ctClass)

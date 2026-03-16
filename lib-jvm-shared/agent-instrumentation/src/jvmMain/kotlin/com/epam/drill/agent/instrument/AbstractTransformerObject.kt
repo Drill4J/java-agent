@@ -59,7 +59,9 @@ abstract class AbstractTransformerObject(protected val agentConfiguration: Agent
         }
     }
 
-    abstract fun transform(className: String, ctClass: CtClass)
+    open fun transform(className: String, ctClass: CtClass) {
+        // Default implementation does nothing, can be overridden by subclasses
+    }
 
     open fun transform(
         className: String,

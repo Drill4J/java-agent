@@ -50,7 +50,6 @@ abstract class TomcatHttpServerTransformerObject(
         val adminUrl = headersRetriever.adminAddressValue()
         val agentIdHeader = headersRetriever.agentIdHeader()
         val agentIdValue = headersRetriever.agentIdHeaderValue()
-        logger.debug { "transform: Starting TomcatHttpServerTransformer with admin host $adminUrl..." }
         val method = try {
             ctClass.getMethod("doFilter", "(Ljavax/servlet/ServletRequest;Ljavax/servlet/ServletResponse;)V")
         } catch (e: NotFoundException) {

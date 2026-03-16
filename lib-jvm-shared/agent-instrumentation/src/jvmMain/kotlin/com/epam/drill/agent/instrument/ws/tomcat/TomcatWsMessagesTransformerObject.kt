@@ -16,17 +16,17 @@
 package com.epam.drill.agent.instrument.tomcat
 
 import com.epam.drill.agent.common.configuration.AgentConfiguration
-import com.epam.drill.agent.common.configuration.AgentParameters
+import javassist.ClassPool
 import javassist.CtBehavior
 import javassist.CtClass
 import javassist.CtField
 import javassist.CtMethod
 import javassist.NotFoundException
 import mu.KotlinLogging
-import com.epam.drill.agent.instrument.AbstractTransformerObject
 import com.epam.drill.agent.instrument.HeadersProcessor
 import com.epam.drill.agent.instrument.PayloadProcessor
 import com.epam.drill.agent.instrument.ws.AbstractWsTransformerObject
+import java.security.ProtectionDomain
 
 abstract class TomcatWsMessagesTransformerObject(agentConfiguration: AgentConfiguration) : HeadersProcessor, PayloadProcessor,
     AbstractWsTransformerObject(agentConfiguration) {
@@ -43,10 +43,21 @@ abstract class TomcatWsMessagesTransformerObject(agentConfiguration: AgentConfig
         "org/apache/tomcat/websocket/server/UpgradeUtil"
     ).contains(className)
 
-    override fun transform(className: String, ctClass: CtClass) {
+    override fun transform(
+        className: String,
+        ctClass: CtClass,
+        pool: ClassPool,
+        classLoader: ClassLoader?,
+        protectionDomain: ProtectionDomain?
+    ) {
+        val wsSessionClass = "org.apache.tomcat.websocket.WsSession"
+        if (pool.find(wsSessionClass) == null) {
+            logger.debug { "transform: Skipping $className because $wsSessionClass class is not available" }
+            return
+        }
         logger.info { "transform: Starting TomcatWsMessagesTransformer for $className..." }
         if (className != "org/apache/tomcat/websocket/WsSession")
-            ctClass.classPool.classLoader.loadClass("org.apache.tomcat.websocket.WsSession")
+            ctClass.classPool.classLoader.loadClass(wsSessionClass)
         when (className) {
             "org/apache/tomcat/websocket/WsSession" -> transformWsSession(ctClass)
             "org/apache/tomcat/websocket/WsFrameBase" -> transformWsFrameBase(ctClass)

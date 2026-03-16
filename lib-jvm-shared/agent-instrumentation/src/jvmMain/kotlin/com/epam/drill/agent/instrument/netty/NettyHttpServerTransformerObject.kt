@@ -16,7 +16,7 @@
 package com.epam.drill.agent.instrument.netty
 
 import com.epam.drill.agent.common.configuration.AgentConfiguration
-import com.epam.drill.agent.common.configuration.AgentParameters
+import javassist.ClassPool
 import javassist.CtBehavior
 import javassist.CtClass
 import mu.KotlinLogging
@@ -25,7 +25,7 @@ import com.epam.drill.agent.common.request.HeadersRetriever
 import com.epam.drill.agent.instrument.AbstractPropagationTransformer
 import com.epam.drill.agent.instrument.COMPILER_GENERATED_NAMES_PREFIX
 import com.epam.drill.agent.instrument.NETTY_CHANNEL_HANDLER_CONTEXT
-import com.epam.drill.agent.instrument.http.AbstractHttpTransformerObject
+import java.security.ProtectionDomain
 
 /**
  * Transformer for simple Netty-based web servers
@@ -46,7 +46,21 @@ abstract class NettyHttpServerTransformerObject(
         interfaces: Array<String?>
     ): Boolean = COMPILER_GENERATED_NAMES_PREFIX !in className && className.startsWith(NETTY_CHANNEL_HANDLER_CONTEXT)
 
-    override fun transform(className: String, ctClass: CtClass) {
+    override fun transform(
+        className: String,
+        ctClass: CtClass,
+        pool: ClassPool,
+        classLoader: ClassLoader?,
+        protectionDomain: ProtectionDomain?
+    ) {
+        if (pool.find(HTTP_REQUEST) == null) {
+            logger.debug { "transform: Skipping $className because $HTTP_REQUEST class is not available" }
+            return
+        }
+        if (pool.find(HTTP_RESPONSE) == null) {
+            logger.debug { "transform: Skipping $className because $HTTP_RESPONSE class is not available" }
+            return
+        }
         val invokeChannelReadMethod = ctClass.getMethod("fireChannelRead", "(Ljava/lang/Object;)Lio/netty/channel/ChannelHandlerContext;")
         invokeChannelReadMethod.insertCatching(
             CtBehavior::insertBefore,
