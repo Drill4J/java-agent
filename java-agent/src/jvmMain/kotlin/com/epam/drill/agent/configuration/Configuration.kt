@@ -41,9 +41,9 @@ actual object Configuration : AgentConfiguration {
             DefaultParameterDefinitions.COMMIT_SHA,
             DefaultParameterDefinitions.ENV_ID,
             DefaultParameterDefinitions.INSTALLATION_DIR,
-            DefaultParameterDefinitions.CONFIG_PATH
+            DefaultParameterDefinitions.CONFIG_PATH,
+            DefaultParameterDefinitions.PACKAGE_PREFIXES
         )
-        agentParameters.define(DefaultParameterDefinitions.PACKAGE_PREFIXES)
     }
 
     actual override val agentMetadata: AgentMetadata

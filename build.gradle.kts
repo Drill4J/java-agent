@@ -104,19 +104,4 @@ tasks {
             gitrepo.pull()
         }
     }
-    val tagSharedLibs by registering {
-        group = "other"
-        doLast {
-            val tag = "${project.name}-v${project.version}"
-            val gitrepo = Grgit.open {
-                dir = sharedLibsDir
-                credentials = Credentials(System.getenv("SHARED_LIBS_USER"), System.getenv("SHARED_LIBS_PASSWORD"))
-            }
-            gitrepo.tag.add { name = tag }
-            gitrepo.push { refsOrSpecs = listOf("tags/$tag") }
-            val properties = Configurations().propertiesBuilder(file("gradle.properties"))
-            properties.configuration.setProperty("sharedLibsRef", tag)
-            properties.save()
-        }
-    }
 }

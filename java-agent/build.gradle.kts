@@ -75,6 +75,7 @@ kotlin {
             languageSettings.optIn("kotlin.ExperimentalStdlibApi")
             languageSettings.optIn("kotlinx.serialization.ExperimentalSerializationApi")
             languageSettings.optIn("io.ktor.utils.io.core.ExperimentalIoApi")
+            languageSettings.optIn("kotlinx.serialization.InternalSerializationApi")
         }
         targets.withType<KotlinNativeTarget>()[HostManager.host.presetName].compilations.forEach {
             it.defaultSourceSet.kotlin.srcDir("src/native${it.compilationName.capitalize()}/kotlin")
@@ -117,6 +118,7 @@ kotlin {
                 implementation("org.jetbrains.kotlinx:kotlinx-serialization-protobuf:${kotlinxSerializationVersion}")
                 implementation("org.jetbrains.kotlinx:kotlinx-cli:${kotlinxCliVersion}")
                 implementation("org.ow2.asm:asm:${asmVersion}")
+                implementation("com.benasher44:uuid:${uuidVersion}")
                 implementation(project(":common"))
                 implementation(project(":agent-transport"))
                 implementation(project(":agent-instrumentation"))

@@ -17,12 +17,10 @@ package com.epam.drill.agent.transport
 
 import com.epam.drill.agent.common.transport.AgentMessageDestination
 
-class HttpAgentMessageDestinationMapper : AgentMessageDestinationMapper {
-
-    private val dataIngestionPath = "data-ingest"
+class HttpAgentMessageDestinationMapper(val path: String = "data-ingest") : AgentMessageDestinationMapper {
 
     override fun map(destination: AgentMessageDestination) = destination.copy(
-        target = if (destination.target.isEmpty()) dataIngestionPath else "${dataIngestionPath}/${destination.target}"
+        target = if (destination.target.isEmpty()) path else "${path}/${destination.target}"
     )
 
 }

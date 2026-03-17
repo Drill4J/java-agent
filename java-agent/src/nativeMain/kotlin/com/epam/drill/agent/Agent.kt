@@ -24,15 +24,19 @@ import kotlinx.cinterop.staticCFunction
 import platform.posix.getpid
 import mu.KotlinLogging
 import com.epam.drill.agent.configuration.AgentLoggingConfiguration
+import com.epam.drill.agent.configuration.AgentParametersValidator
+import com.epam.drill.agent.configuration.CapabilityParameterDefinitions
 import com.epam.drill.agent.configuration.Configuration
+import com.epam.drill.agent.configuration.DefaultParameterDefinitions
 import com.epam.drill.agent.configuration.DefaultParameterDefinitions.INSTALLATION_DIR
-import com.epam.drill.agent.instrument.ApplicationClassTransformer
+import com.epam.drill.agent.configuration.ParameterDefinitions
 import com.epam.drill.agent.jvmti.classFileLoadHook
 import com.epam.drill.agent.jvmti.vmDeathEvent
 import com.epam.drill.agent.jvmti.vmInitEvent
 import com.epam.drill.agent.module.JvmModuleLoader
 import com.epam.drill.agent.transport.JvmModuleMessageSender
 import com.epam.drill.agent.jvmapi.gen.*
+import com.epam.drill.agent.test.session.SessionController
 import kotlinx.cinterop.ExperimentalForeignApi
 import kotlin.experimental.ExperimentalNativeApi
 
@@ -57,6 +61,7 @@ object Agent {
         AgentLoggingConfiguration.defaultNativeLoggingConfiguration()
         Configuration.initializeNative(options)
         AgentLoggingConfiguration.updateNativeLoggingConfiguration()
+        validateConfiguration()
         addCapabilities()
         setEventCallbacks()
         setUnhandledExceptionHook({ error: Throwable -> logger.error(error) { "Unhandled event: $error" }}.freeze())
@@ -80,7 +85,10 @@ object Agent {
         AgentLoggingConfiguration.updateJvmLoggingConfiguration()
         Configuration.initializeJvm()
         loadJvmModule("com.epam.drill.agent.test2code.Test2Code")
-        JvmModuleMessageSender.sendAgentMetadata()
+        if (isClassScanningEnabled() || isCoverageCollectionEnabled()) {
+            JvmModuleMessageSender.sendAgentMetadata()
+        }
+        SessionController.startSession()
     }
 
     fun agentOnVmDeath() {
@@ -110,4 +118,13 @@ object Agent {
             logger.error(it) { "loadJvmModule: Fatal error: id=${clazz}" }
         }
 
+    private fun validateConfiguration() {
+        val validator = AgentParametersValidator(Configuration.parameters)
+        validator.validate(
+            DefaultParameterDefinitions,
+            ParameterDefinitions,
+        )
+    }
+    private fun isClassScanningEnabled(): Boolean = Configuration.parameters[CapabilityParameterDefinitions.CLASS_SCANNING_ENABLED]
+    private fun isCoverageCollectionEnabled(): Boolean = Configuration.parameters[CapabilityParameterDefinitions.COVERAGE_COLLECTION_ENABLED]
 }
