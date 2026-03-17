@@ -36,7 +36,7 @@ object InstrumentationParameterDefinitions: AgentParameterDefinitionCollection()
     val INSTRUMENTATION_CADENCE_ENABLED = AgentParameterDefinition.forBoolean(name = "instrumentationCadenceEnabled", defaultValue = false).register()
 
     //WebSocket
-    val INSTRUMENTATION_WS_ENABLED = AgentParameterDefinition.forBoolean(name = "instrumentationWsEnabled", defaultValue = true).register()
+    val INSTRUMENTATION_WS_ENABLED = AgentParameterDefinition.forBoolean(name = "instrumentationWsEnabled", defaultValue = false).register()
 
     //Http
     val INSTRUMENTATION_HTTP_ENABLED = AgentParameterDefinition.forBoolean(name = "instrumentationHttpEnabled", defaultValue = true).register()
