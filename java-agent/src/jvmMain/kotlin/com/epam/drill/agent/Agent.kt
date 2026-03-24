@@ -55,7 +55,6 @@ fun premain(agentArgs: String?, inst: Instrumentation) {
         updateJvmLoggingConfiguration()
         validateConfiguration()
         inst.addTransformer(DrillClassFileTransformer, true)
-        inst.retransformClasses(*inst.allLoadedClasses)
         if (isClassScanningEnabled() || isCoverageCollectionEnabled()) {
             JvmModuleMessageSender.sendAgentMetadata()
             JvmModuleLoader.loadJvmModule(Test2Code::class.java.name).load()
