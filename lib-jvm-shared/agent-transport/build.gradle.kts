@@ -34,7 +34,6 @@ kotlin {
         }
         val jvmMain by getting {
             dependencies {
-                implementation("org.jetbrains.kotlinx:kotlinx-serialization-protobuf:$kotlinxSerializationVersion")
                 implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:$kotlinxSerializationVersion")
                 implementation("org.apache.httpcomponents.client5:httpclient5:$apacheHttpClientVersion")
                 api("io.github.microutils:kotlin-logging:$microutilsLoggingVersion")

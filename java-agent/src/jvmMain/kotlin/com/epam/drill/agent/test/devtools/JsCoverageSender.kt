@@ -19,7 +19,7 @@ import com.epam.drill.agent.common.transport.AgentMessageDestination
 import com.epam.drill.agent.test.instrument.selenium.*
 import com.epam.drill.agent.test.serialization.json
 import com.epam.drill.agent.test.session.SessionController
-import com.epam.drill.agent.test.transport.TestAgentMessageSender
+import com.epam.drill.agent.transport.DataIngestMessageSender
 import mu.KotlinLogging
 
 interface JsCoverageSender {
@@ -51,7 +51,7 @@ class JsCoverageSenderImpl : JsCoverageSender {
             sessionId = SessionController.getSessionId(),
             data = json.encodeToString(SessionData.serializer(), data)
         )
-        TestAgentMessageSender.send(
+        DataIngestMessageSender.send(
             destination = AgentMessageDestination(
                 "POST",
                 "raw-javascript-coverage"

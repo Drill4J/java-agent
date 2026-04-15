@@ -13,20 +13,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.epam.drill.agent.test.transport
+package com.epam.drill.agent.transport
 
 import com.epam.drill.agent.common.transport.AgentMessageReceiver
-import com.epam.drill.agent.transport.JsonAgentMessageDeserializer
-import com.epam.drill.agent.transport.SimpleAgentMessageReceiver
-import com.epam.drill.agent.transport.HttpAgentMessageDestinationMapper
 
-object TestAgentMessageReceiver : AgentMessageReceiver by messageReceiver()
+object MetricsMessageReceiver : AgentMessageReceiver by messageReceiver()
 
 fun messageReceiver(): AgentMessageReceiver {
     return SimpleAgentMessageReceiver(
-        agentTransport(),
+        agentMessageTransport(),
         JsonAgentMessageDeserializer(),
         HttpAgentMessageDestinationMapper("metrics")
     )
 }
-

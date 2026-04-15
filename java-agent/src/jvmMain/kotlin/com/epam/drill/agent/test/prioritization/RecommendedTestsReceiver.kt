@@ -23,8 +23,7 @@ import com.epam.drill.agent.configuration.ParameterDefinitions
 import com.epam.drill.agent.test.execution.TestController
 import com.epam.drill.agent.test.execution.TestExecutionRecorder
 import com.epam.drill.agent.test.execution.TestMethodInfo
-import com.epam.drill.agent.test.sending.*
-import com.epam.drill.agent.test.transport.TestAgentMessageReceiver
+import com.epam.drill.agent.transport.MetricsMessageReceiver
 import kotlinx.serialization.Serializable
 import mu.KotlinLogging
 
@@ -34,7 +33,7 @@ interface RecommendedTestsReceiver {
 }
 
 class RecommendedTestsReceiverImpl(
-    private val agentMessageReceiver: AgentMessageReceiver = TestAgentMessageReceiver,
+    private val agentMessageReceiver: AgentMessageReceiver = MetricsMessageReceiver,
     private val testExecutionRecorder: TestExecutionRecorder = TestController
 ) : RecommendedTestsReceiver {
     private val logger = KotlinLogging.logger {}

@@ -30,7 +30,7 @@ import com.epam.drill.agent.test.execution.TestController
 import com.epam.drill.agent.test.execution.TestExecutionInfo
 import com.epam.drill.agent.test.sending.TestDefinitionPayload
 import com.epam.drill.agent.test.sending.TestLaunchPayload
-import com.epam.drill.agent.test.transport.TestAgentMessageSender
+import com.epam.drill.agent.transport.DataIngestMessageSender
 import mu.KotlinLogging
 import java.time.Instant
 import java.time.ZoneId
@@ -41,10 +41,10 @@ import java.util.zip.CRC32
 actual object SessionController {
     private val logger = KotlinLogging.logger {}
     private val sessionSender: SessionSender = SessionSenderImpl(
-        messageSender = TestAgentMessageSender
+        messageSender = DataIngestMessageSender
     )
     private val testInfoSender: TestInfoSender = IntervalTestInfoSender(
-        messageSender = TestAgentMessageSender,
+        messageSender = DataIngestMessageSender,
         collectTests = { TestController.getFinishedTests().toTestLaunchPayloads() }
     )
     private lateinit var sessionId: String

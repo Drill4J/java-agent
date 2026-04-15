@@ -35,7 +35,6 @@ dependencies {
     implementation("org.jetbrains.kotlinx:kotlinx-collections-immutable-jvm:$kotlinxCollectionsVersion")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:$kotlinxCoroutinesVersion")
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:$kotlinxSerializationVersion")
-    implementation("org.jetbrains.kotlinx:kotlinx-serialization-protobuf:$kotlinxSerializationVersion")
     implementation("org.jacoco:org.jacoco.core:$jacocoVersion")
     implementation("org.apache.bcel:bcel:$bcelVersion")
     implementation("io.github.microutils:kotlin-logging-jvm:$microutilsLoggingVersion")
