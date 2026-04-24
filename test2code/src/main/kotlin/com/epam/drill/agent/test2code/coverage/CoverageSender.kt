@@ -59,14 +59,14 @@ class IntervalCoverageSender(
     }
 
     override fun stopSendingCoverage() {
-        scheduledThreadPool.shutdown()
-        if (!scheduledThreadPool.awaitTermination(5, TimeUnit.SECONDS)) {
-            logger.error("Failed to send some coverage data prior to shutdown")
-            scheduledThreadPool.shutdownNow();
-        }
         sendProbes(collectReleasedProbes())
         sendProbes(collectUnreleasedProbes())
         sender.shutdown()
+        scheduledThreadPool.shutdown()
+        if (!scheduledThreadPool.awaitTermination(1, TimeUnit.SECONDS)) {
+            logger.error("Failed to send some coverage data prior to shutdown")
+            scheduledThreadPool.shutdownNow();
+        }
         logger.info { "Coverage sending job is stopped." }
     }
 
