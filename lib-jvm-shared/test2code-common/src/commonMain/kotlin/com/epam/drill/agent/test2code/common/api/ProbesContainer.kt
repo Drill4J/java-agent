@@ -16,7 +16,6 @@
 package com.epam.drill.agent.test2code.common.api
 
 import kotlinx.serialization.KSerializer
-import kotlinx.serialization.builtins.BooleanArraySerializer
 import kotlinx.serialization.descriptors.SerialDescriptor
 import kotlinx.serialization.descriptors.buildClassSerialDescriptor
 import kotlinx.serialization.encoding.Decoder
@@ -31,12 +30,12 @@ expect class Probes(size: Int) {
 object BitSetSerializer : KSerializer<Probes> {
 
     override fun serialize(encoder: Encoder, value: Probes) {
-        encoder.encodeSerializableValue(BooleanArraySerializer(), value.toBooleanArray())
+        encoder.encodeString(value.toBitString())
     }
 
     override fun deserialize(decoder: Decoder): Probes {
-        val decodeSerializableValue = decoder.decodeSerializableValue(BooleanArraySerializer())
-        return decodeSerializableValue.toBitSet()
+        val bitString = decoder.decodeString()
+        return bitString.toBitSet()
     }
 
     override val descriptor: SerialDescriptor
@@ -78,8 +77,12 @@ fun Probes.toBooleanArray(): BooleanArray {
     }
 }
 
-fun Probes.toList(): List<Boolean> {
-    return toBooleanArray().toList()
+fun Probes.toBitString(): String {
+    val result = StringBuilder()
+    for (i in 0 until length() - 1) { // -1 drops end-of-original-array-indicator bit
+        result.append(if (get(i)) '1' else '0')
+    }
+    return result.toString()
 }
 
 fun BooleanArray.toBitSet(): Probes {
@@ -92,16 +95,12 @@ fun BooleanArray.toBitSet(): Probes {
     }
 }
 
-fun List<Boolean>.toBitSet(): Probes {
-    val finalSize = size + 1
+fun String.toBitSet(): Probes {
+    val finalSize = length + 1
     return Probes(finalSize).apply {
         forEachIndexed { index, b ->
-            set(index, b)
+            set(index, b != '0')
         }
-        set(size, true) // set end-of-original-array-indicator bit (see explanation above)
+        set(length, true) // set end-of-original-array-indicator bit (see explanation above)
     }
-}
-
-fun probesOf(vararg elements: Boolean): Probes {
-    return elements.toBitSet()
 }
