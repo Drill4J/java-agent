@@ -16,7 +16,6 @@
 package com.epam.drill.agent.transport
 
 import mu.KotlinLogging
-import com.epam.drill.agent.common.transport.AgentMessage
 import com.epam.drill.agent.common.transport.AgentMessageDestination
 import com.epam.drill.agent.common.transport.AgentMessageSender
 import kotlinx.serialization.KSerializer
@@ -52,13 +51,9 @@ open class QueuedAgentMessageSender(
         }
     }
 
-    override fun <T>send(destination: AgentMessageDestination, message: T, serializer: KSerializer<T>) {
+    override fun <T> send(destination: AgentMessageDestination, message: T, serializer: KSerializer<T>) {
         val mappedDestination = destinationMapper.map(destination)
         val serializedMessage = messageSerializer.serialize(message, serializer)
-        if (!isRunning.get()) {
-            handleUnsent(mappedDestination, serializedMessage, "sender is not running")
-            return
-        }
         if (!messageQueue.offer(Pair(mappedDestination, serializedMessage))) {
             handleUnsent(mappedDestination, serializedMessage, "queue capacity limit reached")
             return
@@ -69,10 +64,10 @@ open class QueuedAgentMessageSender(
     }
 
     override fun shutdown() {
-        isRunning.set(false)
+        if (!isRunning.compareAndSet(true, false)) return
         executor.shutdown()
         try {
-            if (!executor.awaitTermination(5, TimeUnit.SECONDS)) {
+            if (!executor.awaitTermination(1, TimeUnit.SECONDS)) {
                 executor.shutdownNow()
             }
         } catch (e: InterruptedException) {
@@ -144,6 +139,7 @@ open class QueuedAgentMessageSender(
                 tryToSend(destination, message) || handleUnsent(destination, message, reason)
             }
         } while (message != null)
+        logger.info { "Finished unloading a message queue." }
     }
 
     /**
