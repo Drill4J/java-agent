@@ -54,10 +54,6 @@ open class QueuedAgentMessageSender(
     override fun <T> send(destination: AgentMessageDestination, message: T, serializer: KSerializer<T>) {
         val mappedDestination = destinationMapper.map(destination)
         val serializedMessage = messageSerializer.serialize(message, serializer)
-        if (!isRunning.get()) {
-            handleUnsent(mappedDestination, serializedMessage, "sender is not running")
-            return
-        }
         if (!messageQueue.offer(Pair(mappedDestination, serializedMessage))) {
             handleUnsent(mappedDestination, serializedMessage, "queue capacity limit reached")
             return
