@@ -50,8 +50,10 @@ class ChecksumTest {
 
     @Test
     fun `changing lambda body should change it's checksum`() {
-        val methodSignatureBuild1 = "com/epam/drill/agent/fixture/ast/Build1:lambda\$null\$2:java.lang.String:java.lang.String"
-        val methodSignatureBuild2 = "com/epam/drill/agent/fixture/ast/Build2:lambda\$null\$2:java.lang.String:java.lang.String"
+        val methodSignatureBuild1 =
+            "com/epam/drill/agent/fixture/ast/Build1:lambda\$theSameMethodBody$0:java.lang.String:java.lang.String"
+        val methodSignatureBuild2 =
+            "com/epam/drill/agent/fixture/ast/Build2:lambda\$theSameMethodBody$0:java.lang.String:java.lang.String"
         assertNotEquals(
             checksumsBuild1[methodSignatureBuild1],
             checksumsBuild2[methodSignatureBuild2]
