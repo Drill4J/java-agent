@@ -49,13 +49,13 @@ class IntervalTestInfoSender(
     }
 
     override fun stopSendingTests() {
+        sendTests(collectTests())
+        messageSender.shutdown()
         scheduledThreadPool.shutdown()
         if (!scheduledThreadPool.awaitTermination(1, TimeUnit.SECONDS)) {
             logger.error("Failed to send some tests prior to shutdown")
             scheduledThreadPool.shutdownNow();
         }
-        sendTests(collectTests())
-        messageSender.shutdown()
         logger.info { "Test sending job is stopped." }
     }
 
