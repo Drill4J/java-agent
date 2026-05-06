@@ -91,7 +91,7 @@ class IntervalCoverageSender(
                             bodyChecksum = metadata.bodyChecksum,
                             testId = it.testId,
                             testSessionId = it.sessionId,
-                            probes = methodProbes
+                            stringProbes = methodProbes
                         )
                     }
                     ?.asSequence()
