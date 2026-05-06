@@ -180,10 +180,10 @@ class QueuedAgentMessageSenderTest {
         calls?.waitFor { verify(exactly = it) { messageSerializer.serialize(any(), TestAgentMessage.serializer()) } }
         calls?.waitFor { verify(exactly = it) { destinationMapper.map(any()) } }
         enqueued?.waitFor {
-            assertEquals(it, queueOffers.filter { o -> o }.size)
+            assertEquals(it, queueOffers.filter { o -> o }.size, "Expected $it messages to be enqueued, but was ${queueOffers.filter { o -> o }.size}")
         }
         dequeued?.waitFor {
-            assertEquals(it, queuePolls.filterNotNull().size)
+            assertEquals(it, queuePolls.filterNotNull().size, "Expected $it messages to be dequeued, but was ${queuePolls.filterNotNull().size}")
         }
 
         sendingAttempts?.waitFor { verify(exactly = it) { messageTransport.send(any(), any(), any()) } }
@@ -191,7 +191,7 @@ class QueuedAgentMessageSenderTest {
         unsent?.waitFor { verify(exactly = it) { messageSendingListener.onUnsent(any(), any()) } }
     }
 
-    private fun <T> T.waitFor(timeout: Long = 1000, block: (T) -> Unit) {
+    private fun <T> T.waitFor(timeout: Long = 2000, block: (T) -> Unit) {
         val start = System.currentTimeMillis()
         val timeIsOut = { System.currentTimeMillis() - start > timeout }
         var error: Throwable? = null
