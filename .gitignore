@@ -6,4 +6,3 @@ build/
 **/kotlin/kni/
 kni-meta-info
 **/commonGenerated/
-/lib-jvm-shared/
