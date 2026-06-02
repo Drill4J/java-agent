@@ -37,6 +37,7 @@ import com.epam.drill.agent.test2code.classloading.ClassLoadersScanner
 import com.epam.drill.agent.test2code.classloading.ClassScanner
 import com.epam.drill.agent.test2code.classparsing.parseAstClass
 import com.epam.drill.agent.test2code.configuration.Test2CodeParameterDefinitions
+import com.epam.drill.agent.common.lifecycle.AgentShutdownRegistry
 import com.epam.drill.agent.test2code.coverage.*
 
 private const val DRILL_TEST_ID_HEADER = "drill-test-id"
@@ -92,7 +93,9 @@ class Test2Code(
         }
         if (coverageCollectionEnabled) {
             coverageSender.startSendingCoverage()
-            Runtime.getRuntime().addShutdownHook(Thread { coverageSender.stopSendingCoverage() })
+            AgentShutdownRegistry.register("coverage-sender") { remainingMs ->
+                coverageSender.stopSendingCoverage(remainingMs)
+            }
         } else {
             logger.info { "Coverage collection is disabled" }
         }

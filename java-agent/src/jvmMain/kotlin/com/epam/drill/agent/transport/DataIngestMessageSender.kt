@@ -15,6 +15,7 @@
  */
 package com.epam.drill.agent.transport
 
+import com.epam.drill.agent.common.transport.AgentMessageDestination
 import com.epam.drill.agent.common.transport.AgentMessageSender
 import com.epam.drill.agent.configuration.Configuration
 import com.epam.drill.agent.configuration.DefaultParameterDefinitions
@@ -22,6 +23,7 @@ import com.epam.drill.agent.configuration.ParameterDefinitions
 import com.epam.drill.agent.transport.http.HttpAgentMessageTransport
 import io.aesy.datasize.ByteUnit
 import io.aesy.datasize.DataSize
+import kotlinx.serialization.KSerializer
 import mu.KotlinLogging
 import java.io.File
 import kotlin.takeIf
@@ -29,7 +31,21 @@ import kotlin.takeIf
 private const val QUEUE_DEFAULT_SIZE: Long = 512L * 1024 * 1024
 private val logger = KotlinLogging.logger {}
 
-object DataIngestMessageSender : AgentMessageSender by messageSender()
+object DataIngestMessageSender : AgentMessageSender {
+    private val delegate: AgentMessageSender = messageSender()
+
+    override fun <T> send(destination: AgentMessageDestination, message: T, serializer: KSerializer<T>) =
+        delegate.send(destination, message, serializer)
+
+    override fun shutdown() = shutdownWithTimeout(Long.MAX_VALUE)
+
+    fun shutdownWithTimeout(flushTimeoutMs: Long) {
+        when (val sender = delegate) {
+            is QueuedAgentMessageSender -> sender.shutdown(flushTimeoutMs)
+            else -> sender.shutdown()
+        }
+    }
+}
 
 fun messageSender(): AgentMessageSender {
     val transport = agentMessageTransport()

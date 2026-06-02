@@ -27,6 +27,7 @@ import com.epam.drill.agent.module.JvmModuleLoader
 import com.epam.drill.agent.test.session.SessionController
 import com.epam.drill.agent.test2code.Test2Code
 import com.epam.drill.agent.test2code.configuration.Test2CodeParameterDefinitions
+import com.epam.drill.agent.lifecycle.AgentShutdownCoordinator
 import com.epam.drill.agent.transport.JvmModuleMessageSender
 import mu.KotlinLogging
 import java.lang.instrument.ClassFileTransformer
@@ -61,6 +62,7 @@ fun premain(agentArgs: String?, inst: Instrumentation) {
         }
 
         SessionController.startSession()
+        AgentShutdownCoordinator.install()
     } catch (e: Throwable) {
         println("Drill4J Initialization Error:\n${e.message ?: e::class.java.name}")
     }
@@ -82,7 +84,7 @@ fun main(args: Array<String>) {
         JvmModuleMessageSender.sendBuildMetadata()
         val test2Code = JvmModuleLoader.loadJvmModule(Test2Code::class.java.name) as Test2Code
         test2Code.scanAndSendMetadataClasses()
-        Runtime.getRuntime().addShutdownHook(Thread { JvmModuleMessageSender.shutdown() })
+        AgentShutdownCoordinator.install()
         exitProcess(0)
     } catch (e: Throwable) {
         println("Drill4J Initialization Error:\n${e.message ?: e::class.java.name}")

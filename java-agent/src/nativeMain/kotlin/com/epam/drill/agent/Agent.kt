@@ -31,11 +31,11 @@ import com.epam.drill.agent.configuration.DefaultParameterDefinitions
 import com.epam.drill.agent.configuration.DefaultParameterDefinitions.INSTALLATION_DIR
 import com.epam.drill.agent.configuration.ParameterDefinitions
 import com.epam.drill.agent.jvmti.classFileLoadHook
-import com.epam.drill.agent.jvmti.vmDeathEvent
 import com.epam.drill.agent.jvmti.vmInitEvent
 import com.epam.drill.agent.module.JvmModuleLoader
 import com.epam.drill.agent.transport.JvmModuleMessageSender
 import com.epam.drill.agent.jvmapi.gen.*
+import com.epam.drill.agent.lifecycle.AgentShutdownCoordinator
 import com.epam.drill.agent.test.session.SessionController
 import kotlinx.cinterop.ExperimentalForeignApi
 import kotlin.experimental.ExperimentalNativeApi
@@ -89,10 +89,7 @@ object Agent {
             JvmModuleMessageSender.sendAgentMetadata()
         }
         SessionController.startSession()
-    }
-
-    fun agentOnVmDeath() {
-        logger.debug { "agentOnVmDeath" }
+        AgentShutdownCoordinator.install()
     }
 
     @OptIn(ExperimentalForeignApi::class)
@@ -107,7 +104,6 @@ object Agent {
     private fun setEventCallbacks() = memScoped {
         val alloc = alloc<jvmtiEventCallbacks>()
         alloc.VMInit = staticCFunction(::vmInitEvent)
-        alloc.VMDeath = staticCFunction(::vmDeathEvent)
         alloc.ClassFileLoadHook = staticCFunction(::classFileLoadHook)
         SetEventCallbacks(alloc.ptr, sizeOf<jvmtiEventCallbacks>().toInt())
         SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_VM_INIT, null)

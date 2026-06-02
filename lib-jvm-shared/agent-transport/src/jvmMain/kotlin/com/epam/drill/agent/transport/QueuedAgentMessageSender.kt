@@ -42,7 +42,11 @@ open class QueuedAgentMessageSender(
     private val maxRetries: Int = 5
 ) : AgentMessageSender {
     private val logger = KotlinLogging.logger {}
-    private val executor: ExecutorService = Executors.newFixedThreadPool(maxThreads)
+    private val executor: ExecutorService = Executors.newFixedThreadPool(
+        maxThreads,
+        drillDaemonThreadFactory("drill-message-sender"),
+    )
+
     private val isRunning = AtomicBoolean(true)
 
     init {
@@ -68,18 +72,42 @@ open class QueuedAgentMessageSender(
     }
 
     override fun shutdown() {
+        shutdown(Long.MAX_VALUE)
+    }
+
+    fun shutdown(flushTimeoutMs: Long) {
         if (!isRunning.compareAndSet(true, false)) return
+        logger.info { "Shutting down queued message sender, flush timeout is ${flushTimeoutMs}ms." }
+        val deadlineNanos = System.nanoTime() + TimeUnit.MILLISECONDS.toNanos(flushTimeoutMs.coerceAtLeast(0))
         executor.shutdown()
+        unloadQueue("sender is shutting down", deadlineNanos)
+        awaitExecutorDrain(deadlineNanos)
+        val remainingMs = remainingMs(deadlineNanos)
         try {
-            if (!executor.awaitTermination(1, TimeUnit.SECONDS)) {
-                executor.shutdownNow()
+            if (remainingMs > 0 && !executor.awaitTermination(remainingMs, TimeUnit.MILLISECONDS)) {
+                logger.warn {
+                    "Message sender executor did not terminate in ${remainingMs}ms; " +
+                        "leaving worker threads for JVM exit instead of forcing shutdown."
+                }
             }
         } catch (e: InterruptedException) {
-            logger.error(e) { "Failed to send some messages prior to shutdown" }
-            executor.shutdownNow()
+            logger.warn(e) { "Interrupted while waiting for message sender executor to terminate." }
+            Thread.currentThread().interrupt()
         }
-        unloadQueue("sender is shutting down")
+        if (messageQueue.size() > 0) {
+            logger.warn { "Shutdown completed with ${messageQueue.size()} message(s) still in the queue." }
+        }
     }
+
+    private fun awaitExecutorDrain(deadlineNanos: Long) {
+        while (messageQueue.size() > 0 && System.nanoTime() < deadlineNanos && !executor.isTerminated) {
+            val remainingMs = remainingMs(deadlineNanos).coerceAtLeast(1)
+            executor.awaitTermination(minOf(remainingMs, 250), TimeUnit.MILLISECONDS)
+        }
+    }
+
+    private fun remainingMs(deadlineNanos: Long): Long =
+        TimeUnit.NANOSECONDS.toMillis(deadlineNanos - System.nanoTime()).coerceAtLeast(0)
 
     /**
      * Processes the message queue.
@@ -135,15 +163,21 @@ open class QueuedAgentMessageSender(
     /**
      * Last attempt to send unsent messages, and register them as unsent if unsuccessful
      */
-    private fun unloadQueue(reason: String) {
+    private fun unloadQueue(reason: String, deadlineNanos: Long = Long.MAX_VALUE) {
         if (messageQueue.size() == 0) return
-        logger.info { "Unloading a message queue as $reason, queue size: ${messageQueue.size()}" }
-        do {
-            val message = messageQueue.poll()?.also { (destination, message) ->
-                tryToSend(destination, message) || handleUnsent(destination, message, reason)
+        logger.info { "Unloading message queue ($reason), queue size: ${messageQueue.size()}" }
+        while (messageQueue.size() > 0) {
+            if (System.nanoTime() >= deadlineNanos) {
+                logger.warn {
+                    "Shutdown flush timeout while unloading queue, ${messageQueue.size()} message(s) remain."
+                }
+                break
             }
-        } while (message != null)
-        logger.info { "Finished unloading a message queue." }
+            val queued = messageQueue.poll() ?: break
+            val (destination, message) = queued
+            tryToSend(destination, message) || handleUnsent(destination, message, reason)
+        }
+        logger.info { "Finished unloading message queue." }
     }
 
     /**

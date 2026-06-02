@@ -36,6 +36,11 @@ object ParameterDefinitions: AgentParameterDefinitionCollection() {
         defaultValue = "QUEUED").register()
     val MESSAGE_QUEUE_LIMIT = AgentParameterDefinition.forString(name = "messageQueueLimit", defaultValue = "512Mb").register()
     val MESSAGE_MAX_RETRIES = AgentParameterDefinition.forInt(name = "messageMaxRetries", defaultValue = Int.MAX_VALUE).register()
+    val SHUTDOWN_FLUSH_TIMEOUT_MS = AgentParameterDefinition.forInt(
+        name = "shutdownFlushTimeoutMs",
+        description = "Maximum time in milliseconds to stop producers and flush messages during JVM shutdown",
+        defaultValue = 60_000,
+    ).register()
     val SSL_TRUSTSTORE = NullableAgentParameterDefinition.forString(name = "sslTruststore").register()
     val SSL_TRUSTSTORE_PASSWORD = NullableAgentParameterDefinition.forString(name = "sslTruststorePassword").register()
     val LOG_LEVEL = AgentParameterDefinition.forString(name = "logLevel", defaultValue = "INFO").register()

@@ -50,4 +50,7 @@ class GlobalCoverageRecorder: ICoverageRecorder {
         } else
             emptySequence()
     }
+
+    override fun getUnreleased(): Sequence<ExecDatum> =
+        globalExecData.values.asSequence().filter { it.probes.containCovered() }
 }

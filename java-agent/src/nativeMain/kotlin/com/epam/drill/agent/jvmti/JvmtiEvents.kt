@@ -35,10 +35,6 @@ fun vmInitEvent(env: CPointer<jvmtiEnvVar>?, jniEnv: CPointer<JNIEnvVar>?, threa
 
 @OptIn(ExperimentalForeignApi::class)
 @Suppress("unused_parameter")
-fun vmDeathEvent(jvmtiEnv: CPointer<jvmtiEnvVar>?, jniEnv: CPointer<JNIEnvVar>?) = Agent.agentOnVmDeath()
-
-@OptIn(ExperimentalForeignApi::class)
-@Suppress("unused_parameter")
 fun classFileLoadHook(
     jvmtiEnv: CPointer<jvmtiEnvVar>?,
     jniEnv: CPointer<JNIEnvVar>?,
