@@ -42,10 +42,9 @@ open class QueuedAgentMessageSender(
     private val maxRetries: Int = 5
 ) : AgentMessageSender {
     private val logger = KotlinLogging.logger {}
-    private val executor: ExecutorService = Executors.newFixedThreadPool(
-        maxThreads,
-        drillDaemonThreadFactory("drill-message-sender"),
-    )
+    private val executor: ExecutorService = Executors.newFixedThreadPool(maxThreads) { runnable ->
+        Thread(runnable, "drill-message-sender").apply { isDaemon = true }
+    }
 
     private val isRunning = AtomicBoolean(true)
 
