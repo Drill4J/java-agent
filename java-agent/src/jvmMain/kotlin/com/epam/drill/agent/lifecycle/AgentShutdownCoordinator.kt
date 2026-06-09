@@ -49,28 +49,34 @@ actual object AgentShutdownCoordinator {
         val deadlineNanos = System.nanoTime() + TimeUnit.MILLISECONDS.toNanos(flushTimeoutMs)
         logger.debug { "Agent shutdown started, flush timeout is ${flushTimeoutMs}ms." }
 
-        for (task in AgentShutdownRegistry.tasks()) {
+        val registeredTasks = AgentShutdownRegistry.tasks()
+        val totalWorkItems = registeredTasks.size + 1
+
+        for (index in registeredTasks.indices) {
+            val task = registeredTasks[index]
+            val remainingWorkItems = totalWorkItems - index
             val remainingMs = remainingMs(deadlineNanos)
             if (remainingMs <= 0) {
                 logger.warn { "Shutdown flush timeout reached before task '${task.name}'." }
                 break
             }
+            val taskBudgetMs = remainingMs / remainingWorkItems
             runCatching {
-                logger.debug { "Running shutdown task '${task.name}' (${remainingMs}ms remaining)." }
-                task.action(remainingMs)
+                logger.debug { "Running shutdown task '${task.name}' (${taskBudgetMs}ms budget)." }
+                task.action(taskBudgetMs)
             }.onFailure {
                 logger.error(it) { "Shutdown task '${task.name}' failed." }
             }
         }
 
-        val remainingMs = remainingMs(deadlineNanos)
-        if (remainingMs <= 0) {
+        val senderBudgetMs = remainingMs(deadlineNanos)
+        if (senderBudgetMs <= 0) {
             logger.warn { "Shutdown flush timeout exhausted, attempting a best-effort message sender flush." }
         } else {
-            logger.debug { "Flushing message sender, ${remainingMs}ms remaining." }
+            logger.debug { "Flushing message sender (${senderBudgetMs}ms budget)." }
         }
         runCatching {
-            DataIngestMessageSender.shutdownWithTimeout(remainingMs)
+            DataIngestMessageSender.shutdownWithTimeout(senderBudgetMs)
         }.onFailure {
             logger.error(it) { "Message sender shutdown failed." }
         }
