@@ -42,7 +42,6 @@ class RecommendedTestsReceiverImpl(
         if (!Configuration.parameters[ParameterDefinitions.RECOMMENDED_TESTS_ENABLED])
             return emptyList()
         val groupId = Configuration.parameters[DefaultParameterDefinitions.GROUP_ID]
-        val testTaskId = Configuration.parameters[ParameterDefinitions.TEST_TASK_ID]
         val targetAppId = Configuration.parameters[ParameterDefinitions.RECOMMENDED_TESTS_TARGET_APP_ID]
         val targetBuildVersion = Configuration.parameters[ParameterDefinitions.RECOMMENDED_TESTS_TARGET_BUILD_VERSION]
             .takeIf { it.isNotEmpty() }
@@ -53,26 +52,30 @@ class RecommendedTestsReceiverImpl(
         val baselineBuildVersion =
             Configuration.parameters[ParameterDefinitions.RECOMMENDED_TESTS_BASELINE_BUILD_VERSION]
                 .takeIf { it.isNotEmpty() }
-
+        val limit = Configuration.parameters[ParameterDefinitions.RECOMMENDED_TESTS_LIMIT]
         val parameters: String = buildString {
             append("?groupId=$groupId")
             append("&appId=$targetAppId")
-            append("&testTaskId=$testTaskId")
-            append("&testsToSkip=true")
-            targetBuildVersion?.let { append("&targetBuildVersion=$it") }
-            targetCommitSha?.let { append("&targetCommitSha=$it") }
+            targetBuildVersion?.let { append("&buildVersion=$it") }
+            targetCommitSha?.let { append("&commitSha=$it") }
             baselineCommitSha?.let { append("&baselineCommitSha=$it") }
             baselineBuildVersion?.let { append("&baselineBuildVersion=$it") }
+            append("&impactStatuses=NOT_IMPACTED")
+            append("&pageSize=$limit")
         }
-        logger.debug { "Retrieving information about recommended tests, testTaskId: $testTaskId" }
+        logger.debug { "Retrieving information about recommended tests..." }
         return runCatching {
-            agentMessageReceiver.receive(
+            val response = agentMessageReceiver.receive(
                 AgentMessageDestination(
                     "GET",
-                    "/recommended-tests$parameters",
+                    "/impacted-tests$parameters",
                 ),
                 RecommendedTestsApiResponse::class
-            ).data.recommendedTests.map { it.toTestMethodInfo() }
+            )
+            if (response.paging.pageSize >= limit) {
+                logger.warn { "The number of recommended tests is more or equal than $limit. Consider increasing the limit." }
+            }
+            response.data.map { it.toTestMethodInfo() }
         }.onFailure {
             logger.warn { "Unable to retrieve information about recommended tests. Error message: $it" }
         }.getOrElse {
@@ -87,12 +90,8 @@ class RecommendedTestsReceiverImpl(
 
 @Serializable
 class RecommendedTestsApiResponse(
-    val data: RecommendedTestsResponse
-)
-
-@Serializable
-class RecommendedTestsResponse(
-    val recommendedTests: List<TestDefinitionResponse>
+    val data: List<TestDefinitionResponse>,
+    val paging: Paging
 )
 
 @Serializable
@@ -103,6 +102,14 @@ class TestDefinitionResponse(
     val testName: String,
     val tags: List<String>,
     val metadata: Map<String, String>,
+    val impactStatus: String,
+)
+
+@Serializable
+data class Paging(
+    val page: Int,
+    val pageSize: Int,
+    val total: Long?
 )
 
 private fun TestDefinitionResponse.toTestMethodInfo() = TestMethodInfo(
