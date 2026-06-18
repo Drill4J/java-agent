@@ -54,6 +54,10 @@ open class CoverageManager(
         return threadCoverageRecorder.pollRecorded() + globalCoverageRecorder.pollRecorded()
     }
 
+    override fun getUnreleased(): Sequence<ExecDatum> {
+        return threadCoverageRecorder.getUnreleased() + globalCoverageRecorder.getUnreleased()
+    }
+
 }
 
 /**

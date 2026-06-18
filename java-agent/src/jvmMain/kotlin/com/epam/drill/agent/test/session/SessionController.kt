@@ -30,6 +30,7 @@ import com.epam.drill.agent.test.execution.TestController
 import com.epam.drill.agent.test.execution.TestExecutionInfo
 import com.epam.drill.agent.test.sending.TestDefinitionPayload
 import com.epam.drill.agent.test.sending.TestLaunchPayload
+import com.epam.drill.agent.common.lifecycle.AgentShutdownRegistry
 import com.epam.drill.agent.transport.DataIngestMessageSender
 import mu.KotlinLogging
 import java.time.Instant
@@ -63,7 +64,9 @@ actual object SessionController {
         logger.info { "Test session: $sessionId" }
 
         testInfoSender.startSendingTests()
-        Runtime.getRuntime().addShutdownHook(Thread { testInfoSender.stopSendingTests() })
+        AgentShutdownRegistry.register("test-info-sender") { remainingMs ->
+            testInfoSender.stopSendingTests(remainingMs)
+        }
 
         val builds =
             takeIf { Configuration.parameters[ParameterDefinitions.RECOMMENDED_TESTS_TARGET_APP_ID].isNotEmpty() }?.let {

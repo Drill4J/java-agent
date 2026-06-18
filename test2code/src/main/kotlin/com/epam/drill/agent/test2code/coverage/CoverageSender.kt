@@ -28,7 +28,7 @@ import java.util.concurrent.ConcurrentHashMap
 
 interface CoverageSender {
     fun startSendingCoverage()
-    fun stopSendingCoverage()
+    fun stopSendingCoverage(remainingMs: Long)
 }
 
 class IntervalCoverageSender(
@@ -44,13 +44,21 @@ class IntervalCoverageSender(
     private val collectUnreleasedProbes: () -> Sequence<ExecDatum> = { emptySequence() },
     private val classMethodsMetadata: ConcurrentHashMap<Long, ClassMethodsMetadata>
 ) : CoverageSender {
-    private val scheduledThreadPool = Executors.newSingleThreadScheduledExecutor()
+    private val scheduledThreadPool = Executors.newSingleThreadScheduledExecutor { runnable ->
+        Thread(runnable, "drill-coverage-sender").apply { isDaemon = true }
+    }
     private val destination = AgentMessageDestination("POST", "coverage")
     private val logger = KotlinLogging.logger {}
 
     override fun startSendingCoverage() {
         scheduledThreadPool.scheduleAtFixedRate(
-            Runnable { sendProbes(collectReleasedProbes()) },
+            {
+                try {
+                    sendProbes(collectReleasedProbes())
+                } catch (t: Throwable) {
+                    logger.error(t) { "Coverage sending job failed" }
+                }
+            },
             0,
             intervalMs,
             TimeUnit.MILLISECONDS
@@ -58,14 +66,12 @@ class IntervalCoverageSender(
         logger.info { "Coverage sending job is started." }
     }
 
-    override fun stopSendingCoverage() {
+    override fun stopSendingCoverage(remainingMs: Long) {
         sendProbes(collectReleasedProbes())
         sendProbes(collectUnreleasedProbes())
-        sender.shutdown()
         scheduledThreadPool.shutdown()
-        if (!scheduledThreadPool.awaitTermination(1, TimeUnit.SECONDS)) {
-            logger.error("Failed to send some coverage data prior to shutdown")
-            scheduledThreadPool.shutdownNow();
+        if (remainingMs > 0 && !scheduledThreadPool.awaitTermination(remainingMs, TimeUnit.MILLISECONDS)) {
+            logger.warn { "Coverage sending scheduler did not stop within ${remainingMs}ms; leaving it for JVM exit." }
         }
         logger.info { "Coverage sending job is stopped." }
     }

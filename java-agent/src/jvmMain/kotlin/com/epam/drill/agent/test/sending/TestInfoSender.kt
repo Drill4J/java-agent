@@ -27,7 +27,7 @@ import java.util.concurrent.TimeUnit
 
 interface TestInfoSender {
     fun startSendingTests()
-    fun stopSendingTests()
+    fun stopSendingTests(remainingMs: Long)
 }
 
 class IntervalTestInfoSender(
@@ -36,11 +36,21 @@ class IntervalTestInfoSender(
     private val collectTests: () -> List<TestLaunchPayload> = { emptyList() }
 ) : TestInfoSender {
     private val logger = KotlinLogging.logger {}
-    private val scheduledThreadPool = Executors.newSingleThreadScheduledExecutor()
+    private val scheduledThreadPool = Executors.newSingleThreadScheduledExecutor { r ->
+        Thread(r, "drill-test-info-sender").apply {
+            isDaemon = true
+        }
+    }
 
     override fun startSendingTests() {
         scheduledThreadPool.scheduleAtFixedRate(
-            { sendTests(collectTests()) },
+            {
+                try {
+                    sendTests(collectTests())
+                } catch (t: Throwable) {
+                    logger.error(t) { "Test sending job failed" }
+                }
+            },
             0,
             intervalMs,
             TimeUnit.MILLISECONDS
@@ -48,13 +58,11 @@ class IntervalTestInfoSender(
         logger.debug { "Test sending job is started." }
     }
 
-    override fun stopSendingTests() {
+    override fun stopSendingTests(remainingMs: Long) {
         sendTests(collectTests())
-        messageSender.shutdown()
         scheduledThreadPool.shutdown()
-        if (!scheduledThreadPool.awaitTermination(1, TimeUnit.SECONDS)) {
-            logger.error("Failed to send some tests prior to shutdown")
-            scheduledThreadPool.shutdownNow();
+        if (remainingMs > 0 && !scheduledThreadPool.awaitTermination(remainingMs, TimeUnit.MILLISECONDS)) {
+            logger.warn { "Test sending scheduler did not stop within ${remainingMs}ms; leaving it for JVM exit." }
         }
         logger.info { "Test sending job is stopped." }
     }
