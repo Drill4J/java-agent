@@ -176,6 +176,28 @@ actual object JUnitPlatformPrioritizingTransformer : Transformer, AbstractJUnitT
                 cc
             )
         )
+        // JUnit Platform 1.11+ added getOutputDirectoryProvider() to LauncherDiscoveryRequest.
+        // This ensures compatibility with both JUnit Platform < 1.11 and >= 1.11.
+        val runtimeClassLoader = classLoader ?: ClassLoader.getSystemClassLoader()
+        runCatching {
+            runtimeClassLoader.loadClass(LauncherDiscoveryRequest)
+                .getMethod("getOutputDirectoryProvider")
+        }.onSuccess { method ->
+            val returnType = method.returnType.name
+            cc.addMethod(
+                CtMethod.make(
+                    """
+                    public $returnType getOutputDirectoryProvider() {
+                        return delegate.getOutputDirectoryProvider();
+                    }
+                    """.trimIndent(),
+                    cc
+                )
+            )
+            logger.debug { "JUnit Platform >= 1.11 detected: added getOutputDirectoryProvider() delegation (returnType=$returnType) to LauncherDiscoveryRequestAdapter" }
+        }.onFailure {
+            logger.debug { "JUnit Platform < 1.11 detected: skipping getOutputDirectoryProvider() delegation" }
+        }
         cc.toClass(classLoader, protectionDomain)
         return cc
     }
