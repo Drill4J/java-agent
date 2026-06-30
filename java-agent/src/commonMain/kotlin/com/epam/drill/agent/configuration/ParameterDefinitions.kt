@@ -67,6 +67,10 @@ object ParameterDefinitions: AgentParameterDefinitionCollection() {
     val RECOMMENDED_TESTS_BASELINE_COMMIT_SHA = AgentParameterDefinition.forString(name = "recommendedTestsBaselineCommitSha", defaultValue = "").register()
     val RECOMMENDED_TESTS_BASELINE_BUILD_VERSION = AgentParameterDefinition.forString(name = "recommendedTestsBaselineBuildVersion", defaultValue = "").register()
     val RECOMMENDED_TESTS_LIMIT = AgentParameterDefinition.forInt(name = "recommendedTestsLimit", defaultValue = 1000).register()
+    val RECOMMENDED_TESTS_FILE = NullableAgentParameterDefinition.forString(
+        name = "recommendedTestsFile",
+        description = "Path to a JSON file containing a list of tests to skip."
+    ).register()
 
     val TEST_TRACING_PER_SESSION_ENABLED = AgentParameterDefinition.forBoolean(name = "testTracingPerTestSessionEnabled", defaultValue = true).register()
     val TEST_TRACING_PER_TEST_LAUNCH_ENABLED = AgentParameterDefinition.forBoolean(name = "testTracingPerTestLaunchEnabled", defaultValue = true).register()

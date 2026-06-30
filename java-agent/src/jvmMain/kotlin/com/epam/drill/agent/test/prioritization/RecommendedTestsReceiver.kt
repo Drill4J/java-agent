@@ -25,7 +25,10 @@ import com.epam.drill.agent.test.execution.TestExecutionRecorder
 import com.epam.drill.agent.test.execution.TestMethodInfo
 import com.epam.drill.agent.transport.MetricsMessageReceiver
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.builtins.ListSerializer
+import kotlinx.serialization.json.Json
 import mu.KotlinLogging
+import java.io.File
 
 interface RecommendedTestsReceiver {
     fun getTestsToSkip(): List<TestMethodInfo>
@@ -39,6 +42,10 @@ class RecommendedTestsReceiverImpl(
     private val logger = KotlinLogging.logger {}
 
     override fun getTestsToSkip(): List<TestMethodInfo> {
+        val testsToSkipFilePath = Configuration.parameters[ParameterDefinitions.RECOMMENDED_TESTS_FILE]
+        if (testsToSkipFilePath != null) {
+            return loadTestsToSkipFromFile(testsToSkipFilePath)
+        }
         if (!Configuration.parameters[ParameterDefinitions.RECOMMENDED_TESTS_ENABLED])
             return emptyList()
         val groupId = Configuration.parameters[DefaultParameterDefinitions.GROUP_ID]
@@ -86,7 +93,24 @@ class RecommendedTestsReceiverImpl(
     override fun sendSkippedTest(test: TestMethodInfo) {
         testExecutionRecorder.recordTestIgnoring(test, isSmartSkip = true)
     }
+
+    private fun loadTestsToSkipFromFile(filePath: String): List<TestMethodInfo> {
+        logger.debug { "Loading tests to skip from file: $filePath" }
+        return runCatching {
+            val content = File(filePath).readText()
+            val entries = fileJson.decodeFromString(ListSerializer(TestDefinitionResponse.serializer()), content)
+            entries.map { it.toTestMethodInfo() }.also {
+                logger.info { "Loaded ${it.size} tests to skip from file: $filePath" }
+            }
+        }.onFailure {
+            logger.warn { "Unable to load tests to skip from file '$filePath'. Error message: $it" }
+        }.getOrElse {
+            emptyList()
+        }
+    }
 }
+
+private val fileJson = Json { ignoreUnknownKeys = true }
 
 @Serializable
 class RecommendedTestsApiResponse(
