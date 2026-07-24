@@ -17,4 +17,5 @@ package com.epam.drill.agent.transport
 
 expect object JvmModuleMessageSender {
     fun sendAgentMetadata()
+    fun startHeartbeatReporting()
 }

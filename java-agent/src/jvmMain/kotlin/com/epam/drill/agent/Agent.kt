@@ -58,6 +58,7 @@ fun premain(agentArgs: String?, inst: Instrumentation) {
         inst.addTransformer(DrillClassFileTransformer, true)
         if (isClassScanningEnabled() || isCoverageCollectionEnabled()) {
             JvmModuleMessageSender.sendAgentMetadata()
+            JvmModuleMessageSender.startHeartbeatReporting()
             JvmModuleLoader.loadJvmModule(Test2Code::class.java.name).load()
         }
 

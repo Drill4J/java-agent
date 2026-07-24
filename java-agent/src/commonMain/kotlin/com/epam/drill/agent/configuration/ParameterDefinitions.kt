@@ -79,4 +79,15 @@ object ParameterDefinitions: AgentParameterDefinitionCollection() {
 
     val TEST_TRACING_PER_SESSION_ENABLED = AgentParameterDefinition.forBoolean(name = "testTracingPerTestSessionEnabled", defaultValue = true).register()
     val TEST_TRACING_PER_TEST_LAUNCH_ENABLED = AgentParameterDefinition.forBoolean(name = "testTracingPerTestLaunchEnabled", defaultValue = true).register()
+
+    val HEARTBEAT_ENABLED = AgentParameterDefinition.forBoolean(
+        name = "heartbeatEnabled",
+        description = "Enables periodic agent heartbeat status reporting to the Backend.",
+        defaultValue = true
+    ).register()
+    val HEARTBEAT_INTERVAL = AgentParameterDefinition.forLong(
+        name = "heartbeatInterval",
+        description = "Interval in milliseconds between agent heartbeat status requests.",
+        defaultValue = 30_000L
+    ).register()
 }
