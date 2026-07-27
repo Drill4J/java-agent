@@ -17,6 +17,7 @@ package com.epam.drill.agent.transport
 
 import com.epam.drill.agent.common.transport.AgentMessage
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.json.JsonObject
 
 @Serializable
 class BuildPayload(
@@ -27,5 +28,8 @@ class BuildPayload(
     val branch: String? = null,
     val commitDate: String? = null,
     val commitMessage: String? = null,
-    val commitAuthor: String? = null
+    val commitAuthor: String? = null,
+    val agentVersion: String? = null,
+    val agentEnvironment: JsonObject? = null,
+    val agentParams: JsonObject? = null
 ) : AgentMessage()

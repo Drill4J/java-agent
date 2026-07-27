@@ -52,6 +52,9 @@ actual object Configuration : AgentConfiguration {
     actual override val parameters: AgentParameters
         get() = configuration.parameters
 
+    val inputParameters: Map<String, String>
+        get() = configuration.inputParameters
+
     actual fun initializeNative(agentOptions: String) {
         val environmentVariablesProvider = EnvironmentVariablesProvider()
         logger.debug { "initializeNative: Found environment variables: ${environmentVariablesProvider.configuration}" }
