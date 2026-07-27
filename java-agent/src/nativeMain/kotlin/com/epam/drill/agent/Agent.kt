@@ -87,6 +87,7 @@ object Agent {
         loadJvmModule("com.epam.drill.agent.test2code.Test2Code")
         if (isClassScanningEnabled() || isCoverageCollectionEnabled()) {
             JvmModuleMessageSender.sendAgentMetadata()
+            JvmModuleMessageSender.startHeartbeatReporting()
         }
         SessionController.startSession()
         AgentShutdownCoordinator.install()

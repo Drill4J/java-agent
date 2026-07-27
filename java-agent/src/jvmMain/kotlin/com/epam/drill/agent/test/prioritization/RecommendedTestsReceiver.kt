@@ -98,10 +98,12 @@ class RecommendedTestsReceiverImpl(
         logger.debug { "Loading tests to skip from file: $filePath" }
         return runCatching {
             val content = File(filePath).readText()
-            val entries = fileJson.decodeFromString(ListSerializer(TestDefinitionResponse.serializer()), content)
-            entries.map { it.toTestMethodInfo() }.also {
-                logger.info { "Loaded ${it.size} tests to skip from file: $filePath" }
-            }
+            fileJson.decodeFromString(ListSerializer(TestDefinitionResponse.serializer()), content)
+                .filter { it.impactStatus == "NOT_IMPACTED" }
+                .map { it.toTestMethodInfo() }
+                .also {
+                    logger.info { "Loaded ${it.size} tests to skip from file: $filePath" }
+                }
         }.onFailure {
             logger.warn { "Unable to load tests to skip from file '$filePath'. Error message: $it" }
         }.getOrElse {

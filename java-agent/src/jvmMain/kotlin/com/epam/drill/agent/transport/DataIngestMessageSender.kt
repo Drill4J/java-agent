@@ -76,6 +76,13 @@ fun messageSender(): AgentMessageSender {
     }
 }
 
+fun directMessageSender(): AgentMessageSender =
+    SimpleAgentMessageSender(
+        agentMessageTransport(),
+        JsonAgentMessageSerializer(),
+        HttpAgentMessageDestinationMapper()
+    )
+
 fun agentMessageTransport(): HttpAgentMessageTransport {
     val transport = HttpAgentMessageTransport(
         serverAddress = Configuration.parameters[ParameterDefinitions.API_URL],

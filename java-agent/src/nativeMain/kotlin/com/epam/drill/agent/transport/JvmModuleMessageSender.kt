@@ -22,4 +22,7 @@ actual object JvmModuleMessageSender {
     actual fun sendAgentMetadata(): Unit =
         callObjectVoidMethod(JvmModuleMessageSender::class, JvmModuleMessageSender::sendAgentMetadata)
 
+    actual fun startHeartbeatReporting(): Unit =
+        callObjectVoidMethod(JvmModuleMessageSender::class, JvmModuleMessageSender::startHeartbeatReporting)
+
 }

@@ -16,10 +16,23 @@
 package com.epam.drill.agent.transport
 
 import com.epam.drill.agent.configuration.Configuration
+import com.epam.drill.agent.configuration.ParameterDefinitions
+import com.epam.drill.agent.common.lifecycle.AgentShutdownRegistry
 import com.epam.drill.agent.common.transport.AgentMessageDestination
 import com.epam.drill.agent.common.transport.AgentMessageSender
 
 actual object JvmModuleMessageSender : AgentMessageSender by DataIngestMessageSender {
+
+    private val heartbeatSender: AgentHeartbeatSender by lazy {
+        IntervalAgentHeartbeatSender(
+            sender = directMessageSender(),
+            intervalMs = Configuration.parameters[ParameterDefinitions.HEARTBEAT_INTERVAL],
+            groupId = Configuration.agentMetadata.groupId,
+            appId = Configuration.agentMetadata.appId,
+            instanceId = Configuration.agentMetadata.instanceId
+        )
+    }
+
     actual fun sendAgentMetadata() {
         send(
             AgentMessageDestination("PUT", "instances"),
@@ -33,6 +46,14 @@ actual object JvmModuleMessageSender : AgentMessageSender by DataIngestMessageSe
             ),
             InstancePayload.serializer()
         )
+    }
+
+    actual fun startHeartbeatReporting() {
+        if (!Configuration.parameters[ParameterDefinitions.HEARTBEAT_ENABLED]) return
+        heartbeatSender.startSendingHeartbeat()
+        AgentShutdownRegistry.register("instance-heartbeat-sender") { remainingMs ->
+            heartbeatSender.stopSendingHeartbeat(remainingMs)
+        }
     }
 
     fun sendBuildMetadata() {
