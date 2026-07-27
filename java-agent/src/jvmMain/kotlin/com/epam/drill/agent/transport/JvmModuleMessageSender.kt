@@ -15,9 +15,18 @@
  */
 package com.epam.drill.agent.transport
 
+import java.net.InetAddress
+import com.epam.drill.agent.agentVersion
 import com.epam.drill.agent.configuration.Configuration
 import com.epam.drill.agent.common.transport.AgentMessageDestination
 import com.epam.drill.agent.common.transport.AgentMessageSender
+import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.JsonPrimitive
+import mu.KotlinLogging
+
+private val logger = KotlinLogging.logger {}
+
+private val AGENT_PARAMS_FILTER = setOf("apiKey", "sslTruststorePassword", "apiUrl", "groupId", "appId", "instanceId", "commitSha", "buildVersion", "envId")
 
 actual object JvmModuleMessageSender : AgentMessageSender by DataIngestMessageSender {
     actual fun sendAgentMetadata() {
@@ -29,7 +38,10 @@ actual object JvmModuleMessageSender : AgentMessageSender by DataIngestMessageSe
                 instanceId = Configuration.agentMetadata.instanceId,
                 commitSha = Configuration.agentMetadata.commitSha,
                 buildVersion = Configuration.agentMetadata.buildVersion,
-                envId = Configuration.agentMetadata.envId
+                envId = Configuration.agentMetadata.envId,
+                agentVersion = agentVersion,
+                agentEnvironment = agentEnvironment(),
+                agentParams = agentParams()
             ),
             InstancePayload.serializer()
         )
@@ -42,9 +54,33 @@ actual object JvmModuleMessageSender : AgentMessageSender by DataIngestMessageSe
                 groupId = Configuration.agentMetadata.groupId,
                 appId = Configuration.agentMetadata.appId,
                 commitSha = Configuration.agentMetadata.commitSha,
-                buildVersion = Configuration.agentMetadata.buildVersion
+                buildVersion = Configuration.agentMetadata.buildVersion,
+                agentVersion = agentVersion,
+                agentEnvironment = agentEnvironment(),
+                agentParams = agentParams()
             ),
             BuildPayload.serializer()
         )
     }
+
+    private fun agentParams(): JsonObject = JsonObject(
+        Configuration.inputParameters
+            .filterKeys { it !in AGENT_PARAMS_FILTER }
+            .mapValues { (_, value) -> JsonPrimitive(value) }
+    )
+
+    private fun agentEnvironment(): JsonObject = JsonObject(
+        buildMap {
+            put("osName", JsonPrimitive(System.getProperty("os.name")))
+            put("osVersion", JsonPrimitive(System.getProperty("os.version")))
+            put("osArch", JsonPrimitive(System.getProperty("os.arch")))
+            put("javaVersion", JsonPrimitive(System.getProperty("java.version")))
+            put("javaVendor", JsonPrimitive(System.getProperty("java.vendor")))
+            put("host", JsonPrimitive(hostName()))
+        }
+    )
+
+    private fun hostName(): String? = runCatching { InetAddress.getLocalHost().hostName }
+        .onFailure { logger.debug(it) { "Unable to resolve local host name for agent environment." } }
+        .getOrNull()
 }
