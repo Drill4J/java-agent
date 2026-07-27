@@ -16,6 +16,7 @@
 
 package com.epam.drill.agent.test2code.classparsing
 
+import com.epam.drill.agent.test2code.common.api.AstMethod
 import mu.KotlinLogging
 import org.apache.bcel.classfile.ClassParser
 import org.apache.bcel.classfile.Method
@@ -50,5 +51,41 @@ private fun calculateChecksum(
     } catch (ex: CodeToStringException) {
         logger.error { "Failed to calculate method checksum. Class: $className. Method: ${method.name}. Opcode: ${ex.opcode}. Error: ${ex.error}. Stacktrace: ${ex.stackTraceToString()}" }
         return ""
+    }
+}
+
+const val CHECKSUM_RADIX = 36
+class InvalidChecksumException(checksum: String) : Exception("Invalid checksum value: $checksum")
+
+/**
+ * Incrementally combines the CRC64 checksums of all methods of a build into a single build checksum
+ * by summing them modulo 2^64 (i.e. relying on natural `Long` overflow), then re-encoding the result the same way.
+ */
+class CumulativeChecksumCalculator {
+
+    private var sum = 0L
+    private var count = 0
+
+    /**
+     * The combined build checksum, encoded as a signed base-36 string.
+     */
+    val methodsChecksum: String
+        get() = sum.toString(CHECKSUM_RADIX)
+
+    /**
+     * The total number of methods added to the build.
+     */
+    val methodsCount: Int
+        get() = count
+
+    /**
+     * Add a single method to the build checksum.
+     *
+     * @throws InvalidChecksumException if the checksum is not blank and cannot be parsed as base-36.
+     */
+    fun add(method: AstMethod) {
+        count++
+        if (method.bodyChecksum.isBlank()) return
+        sum += method.bodyChecksum.toLongOrNull(CHECKSUM_RADIX) ?: throw InvalidChecksumException(method.bodyChecksum)
     }
 }

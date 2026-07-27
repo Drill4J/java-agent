@@ -32,9 +32,11 @@ import com.epam.drill.agent.configuration.AgentParametersValidator
 import com.epam.drill.agent.configuration.CapabilityParameterDefinitions.CLASS_SCANNING_ENABLED
 import com.epam.drill.agent.configuration.CapabilityParameterDefinitions.COVERAGE_COLLECTION_ENABLED
 import com.epam.drill.agent.test2code.common.api.AstMethod
+import com.epam.drill.agent.test2code.common.transport.BuildFinalizePayload
 import com.epam.drill.agent.test2code.common.transport.ClassMetadata
 import com.epam.drill.agent.test2code.classloading.ClassLoadersScanner
 import com.epam.drill.agent.test2code.classloading.ClassScanner
+import com.epam.drill.agent.test2code.classparsing.CumulativeChecksumCalculator
 import com.epam.drill.agent.test2code.classparsing.parseAstClass
 import com.epam.drill.agent.test2code.configuration.Test2CodeParameterDefinitions
 import com.epam.drill.agent.common.lifecycle.AgentShutdownRegistry
@@ -153,7 +155,7 @@ class Test2Code(
         }
         var classCount = 0
         var totalMethodsCount = 0
-        var filteredMethodsCount = 0
+        val checksumCalculator = CumulativeChecksumCalculator()
 
         val excludeMethodsByAnnotationPackage =
             configuration.parameters[Test2CodeParameterDefinitions.EXCLUDE_METHODS_BY_ANNOTATION_PACKAGE]  as List<String>
@@ -171,17 +173,20 @@ class Test2Code(
                                 excludeMethodsByAnnotationPackage.any { key.contains(it) }
                             } ?: false
                 }
-                .onEach { filteredMethodsCount++ }
+                .onEach(checksumCalculator::add)
                 .chunkedLazy(configuration.parameters[Test2CodeParameterDefinitions.METHODS_SEND_PAGE_SIZE])
                 .forEach(::sendClassMetadata)
         }
-        logger.info { """Scanned $classCount classes with $filteredMethodsCount methods
-            | total methods: ${totalMethodsCount + filteredMethodsCount};
-            | methods excluded by annotations: ${totalMethodsCount - filteredMethodsCount}
+        sendBuildFinalize(checksumCalculator)
+        logger.info { """Scanned $classCount classes with ${checksumCalculator.methodsCount} methods
+            | methods checksum: ${checksumCalculator.methodsChecksum}
+            | total methods: ${totalMethodsCount};
+            | methods excluded by annotations: ${totalMethodsCount - checksumCalculator.methodsCount}
             | packages for annotations-based exclusion are specified in ${Test2CodeParameterDefinitions.EXCLUDE_METHODS_BY_ANNOTATION_PACKAGE.name} parameter """.trimMargin() }
     }
 
     private val classMetadataDestination = AgentMessageDestination("PUT", "methods")
+    private val buildFinalizeDestination = AgentMessageDestination("PUT", "builds/finalize")
 
     private fun sendClassMetadata(methods: List<AstMethod>) {
         val message = ClassMetadata(
@@ -194,6 +199,20 @@ class Test2Code(
         )
         logger.debug { "sendClassMetadata: Sending methods: $message" }
         sender.send(classMetadataDestination, message, ClassMetadata.serializer())
+    }
+
+    private fun sendBuildFinalize(buildChecksumCalculator: CumulativeChecksumCalculator) {
+        val message = BuildFinalizePayload(
+            groupId = configuration.agentMetadata.groupId,
+            appId = configuration.agentMetadata.appId,
+            commitSha = configuration.agentMetadata.commitSha,
+            buildVersion = configuration.agentMetadata.buildVersion,
+            instanceId = configuration.agentMetadata.instanceId,
+            methodsChecksum = buildChecksumCalculator.methodsChecksum,
+            methodsCount = buildChecksumCalculator.methodsCount
+        )
+        logger.debug { "sendBuildFinalize: Finalizing build: $message" }
+        sender.send(buildFinalizeDestination, message, BuildFinalizePayload.serializer())
     }
 }
 
