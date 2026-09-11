@@ -19,8 +19,9 @@ import com.epam.drill.agent.common.transport.AgentMessage
 import kotlinx.serialization.Serializable
 
 @Serializable
-data class AddTestsPayload(
+class AddTestLaunchesPayload(
     val groupId: String,
-    val sessionId: String,
-    val tests: List<TestLaunchPayload> = emptyList(),
+    val testProjectId: String? = null,
+    val testSessionId: String,
+    val launches: List<TestLaunchPayload>,
 ): AgentMessage()

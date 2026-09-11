@@ -15,14 +15,12 @@
  */
 package com.epam.drill.agent.test.sending
 
-import com.epam.drill.agent.test.execution.TestResult
 import kotlinx.serialization.Serializable
 
 @Serializable
 data class TestLaunchPayload(
-    val testLaunchId: String,
+    val id: String,
     val testDefinitionId: String,
-    val result: TestResult,
-    val duration: Int?,
-    val details: TestDefinitionPayload,
+    val result: String?,
+    val duration: Int? = null,
 )

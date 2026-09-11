@@ -32,5 +32,7 @@ interface TestExecutionRecorder {
 
     fun getFinishedTests(): List<TestExecutionInfo>
 
+    fun getStartedTests(): List<TestMethodInfo>
+
     fun reset()
 }

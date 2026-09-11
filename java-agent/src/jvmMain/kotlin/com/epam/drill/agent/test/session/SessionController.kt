@@ -31,6 +31,10 @@ import com.epam.drill.agent.test.execution.TestExecutionInfo
 import com.epam.drill.agent.test.sending.TestDefinitionPayload
 import com.epam.drill.agent.test.sending.TestLaunchPayload
 import com.epam.drill.agent.common.lifecycle.AgentShutdownRegistry
+import com.epam.drill.agent.test.execution.TestMethodInfo
+import com.epam.drill.agent.test.sending.AddTestDefinitionsPayload
+import com.epam.drill.agent.test.sending.AddTestLaunchesPayload
+import com.epam.drill.agent.test.session.SessionController.getSessionId
 import com.epam.drill.agent.transport.DataIngestMessageSender
 import mu.KotlinLogging
 import java.time.Instant
@@ -46,7 +50,8 @@ actual object SessionController {
     )
     private val testInfoSender: TestInfoSender = IntervalTestInfoSender(
         messageSender = DataIngestMessageSender,
-        collectTests = { TestController.getFinishedTests().toTestLaunchPayloads() }
+        collectTestDefinitions = { TestController.getStartedTests().toTestDefinitionPayloads() },
+        collectTestLaunches = { TestController.getFinishedTests().toTestLaunchPayloads() }
     )
     private lateinit var sessionId: String
 
@@ -80,6 +85,7 @@ actual object SessionController {
             SessionPayload(
                 id = sessionId,
                 groupId = Configuration.parameters[DefaultParameterDefinitions.GROUP_ID],
+                testProjectId = Configuration.parameters[ParameterDefinitions.TEST_PROJECT_ID],
                 testTaskId = Configuration.parameters[ParameterDefinitions.TEST_TASK_ID],
                 startedAt = System.currentTimeMillis().toIsoTimeFormat(),
                 builds = builds
@@ -90,24 +96,27 @@ actual object SessionController {
     fun getSessionId(): String = sessionId
 
     private fun isTestTracingEnabled(): Boolean = Configuration.parameters[TEST_TRACING_ENABLED]
-    private fun isTestLaunchMetadataSendingEnabled(): Boolean = isTestTracingEnabled() && Configuration.parameters[ParameterDefinitions.TEST_TRACING_PER_TEST_LAUNCH_ENABLED]
+    private fun isTestLaunchMetadataSendingEnabled(): Boolean =
+        isTestTracingEnabled() && Configuration.parameters[ParameterDefinitions.TEST_TRACING_PER_TEST_LAUNCH_ENABLED]
 }
 
 private fun List<TestExecutionInfo>.toTestLaunchPayloads(): List<TestLaunchPayload> = map { info ->
-    val testDefinitionPayload = TestDefinitionPayload(
-        runner = info.testMethod.engine,
-        path = info.testMethod.className,
-        testName = info.testMethod.method,
-        testParams = info.testMethod.methodParams.removeSurrounding("(", ")").split(",").filter { it.isNotEmpty() },
-        metadata = info.testMethod.metadata,
-        tags = info.testMethod.tags
-    )
     TestLaunchPayload(
-        testLaunchId = info.testLaunchId,
+        id = info.testLaunchId,
         testDefinitionId = hash(info.testMethod.signature),
-        result = info.result,
+        result = info.result.name,
         duration = info.finishedAt?.minus(info.startedAt ?: 0)?.toInt(),
-        details = testDefinitionPayload
+    )
+}
+
+private fun List<TestMethodInfo>.toTestDefinitionPayloads(): List<TestDefinitionPayload> = map { info ->
+    TestDefinitionPayload(
+        id = hash(info.signature),
+        runner = info.engine,
+        name = info.method,
+        path = info.className,
+        tags = info.tags,
+        metadata = info.metadata
     )
 }
 
