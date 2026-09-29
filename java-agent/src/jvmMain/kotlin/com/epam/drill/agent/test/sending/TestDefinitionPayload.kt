@@ -19,10 +19,11 @@ import kotlinx.serialization.Serializable
 
 @Serializable
 class TestDefinitionPayload(
-    val runner: String = "",
-    val path: String = "",
-    val testName: String = "",
-    val testParams: List<String> = emptyList(),
-    val metadata: Map<String, String> = emptyMap(),
+    val id: String,
+    val runner: String,
+    val name: String,
+    val type: String? = null,
+    val path: String?,
     val tags: List<String> = emptyList(),
+    val metadata: Map<String, String> = emptyMap(),
 )

@@ -20,7 +20,7 @@ import com.epam.drill.agent.common.transport.AgentMessageSender
 import com.epam.drill.agent.configuration.Configuration
 import com.epam.drill.agent.configuration.DefaultParameterDefinitions
 import com.epam.drill.agent.configuration.ParameterDefinitions
-import com.epam.drill.agent.test.session.SessionController
+import com.epam.drill.agent.test.session.SessionController.getSessionId
 import mu.KotlinLogging
 import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
@@ -33,7 +33,8 @@ interface TestInfoSender {
 class IntervalTestInfoSender(
     private val messageSender: AgentMessageSender,
     private val intervalMs: Long = 1000,
-    private val collectTests: () -> List<TestLaunchPayload> = { emptyList() }
+    private val collectTestDefinitions: () -> List<TestDefinitionPayload>,
+    private val collectTestLaunches: () -> List<TestLaunchPayload>,
 ) : TestInfoSender {
     private val logger = KotlinLogging.logger {}
     private val scheduledThreadPool = Executors.newSingleThreadScheduledExecutor { r ->
@@ -46,9 +47,14 @@ class IntervalTestInfoSender(
         scheduledThreadPool.scheduleAtFixedRate(
             {
                 try {
-                    sendTests(collectTests())
+                    sendTestDefinitions(collectTestDefinitions())
                 } catch (t: Throwable) {
-                    logger.error(t) { "Test sending job failed" }
+                    logger.error(t) { "Test definition sending job failed" }
+                }
+                try {
+                    sendTestLaunches(collectTestLaunches())
+                } catch (t: Throwable) {
+                    logger.error(t) { "Test launch sending job failed" }
                 }
             },
             0,
@@ -59,7 +65,8 @@ class IntervalTestInfoSender(
     }
 
     override fun stopSendingTests(remainingMs: Long) {
-        sendTests(collectTests())
+        sendTestDefinitions(collectTestDefinitions())
+        sendTestLaunches(collectTestLaunches())
         scheduledThreadPool.shutdown()
         if (remainingMs > 0 && !scheduledThreadPool.awaitTermination(remainingMs, TimeUnit.MILLISECONDS)) {
             logger.warn { "Test sending scheduler did not stop within ${remainingMs}ms; leaving it for JVM exit." }
@@ -67,17 +74,32 @@ class IntervalTestInfoSender(
         logger.info { "Test sending job is stopped." }
     }
 
-    private fun sendTests(tests: List<TestLaunchPayload>) {
-        if (tests.isEmpty()) return
-        logger.debug { "Sending ${tests.size} tests..." }
+    private fun sendTestLaunches(launches: List<TestLaunchPayload>) {
+        if (launches.isEmpty()) return
+        logger.debug { "Sending ${launches.size} test launches..." }
         messageSender.send(
-            destination = AgentMessageDestination("POST", "tests-metadata"),
-            message = AddTestsPayload(
+            destination = AgentMessageDestination("POST", "test-launches"),
+            message = AddTestLaunchesPayload(
                 groupId = Configuration.parameters[DefaultParameterDefinitions.GROUP_ID],
-                sessionId = SessionController.getSessionId(),
-                tests = tests
+                testProjectId = Configuration.parameters[ParameterDefinitions.TEST_PROJECT_ID],
+                testSessionId = getSessionId(),
+                launches = launches
             ),
-            serializer = AddTestsPayload.serializer()
+            serializer = AddTestLaunchesPayload.serializer()
+        )
+    }
+
+    private fun sendTestDefinitions(definitions: List<TestDefinitionPayload>) {
+        if (definitions.isEmpty()) return
+        logger.debug { "Sending ${definitions.size} test definitions..." }
+        messageSender.send(
+            destination = AgentMessageDestination("POST", "test-definitions"),
+            message = AddTestDefinitionsPayload(
+                groupId = Configuration.parameters[DefaultParameterDefinitions.GROUP_ID],
+                testProjectId = Configuration.parameters[ParameterDefinitions.TEST_PROJECT_ID],
+                definitions = definitions
+            ),
+            serializer = AddTestDefinitionsPayload.serializer()
         )
     }
 }

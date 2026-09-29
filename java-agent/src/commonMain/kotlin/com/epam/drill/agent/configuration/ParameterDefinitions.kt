@@ -18,6 +18,7 @@ package com.epam.drill.agent.configuration
 import com.epam.drill.agent.common.configuration.AgentParameterDefinition
 import com.epam.drill.agent.common.configuration.AgentParameterDefinitionCollection
 import com.epam.drill.agent.common.configuration.NullableAgentParameterDefinition
+import com.epam.drill.agent.konform.validation.jsonschema.minLength
 
 object ParameterDefinitions: AgentParameterDefinitionCollection() {
 
@@ -64,6 +65,13 @@ object ParameterDefinitions: AgentParameterDefinitionCollection() {
     val JS_AGENT_BUILD_VERSION = NullableAgentParameterDefinition.forString(name = "jsAgentBuildVersion").register()
     val JS_AGENT_ID = NullableAgentParameterDefinition.forString(name = "jsAgentId").register()
 
+    val TEST_PROJECT_ID = AgentParameterDefinition.forString(
+        name = "testProjectId",
+        description = "Unique arbitrary string identifying your test project. Example: my-test-project",
+        validator = {
+            identifier()
+            minLength(3)
+        }).register()
     val TEST_TASK_ID = AgentParameterDefinition.forString(name = "testTaskId", defaultValue = "").register()
     val RECOMMENDED_TESTS_ENABLED = AgentParameterDefinition.forBoolean(name = "recommendedTestsEnabled", defaultValue = false).register()
     val RECOMMENDED_TESTS_TARGET_APP_ID = AgentParameterDefinition.forString(name = "recommendedTestsTargetAppId", defaultValue = "").register()

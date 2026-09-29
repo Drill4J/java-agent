@@ -13,25 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.epam.drill.agent.test.session
+package com.epam.drill.agent.test.sending
 
 import com.epam.drill.agent.common.transport.AgentMessage
 import kotlinx.serialization.Serializable
 
 @Serializable
-class SingleSessionBuildPayload(
-    val appId: String,
-    val instanceId: String? = null,
-    val buildVersion: String? = null,
-    val commitSha: String? = null
-)
-
-@Serializable
-class SessionPayload(
-    val id: String,
+class AddTestDefinitionsPayload(
     val groupId: String,
-    val testProjectId: String,
-    val testTaskId: String,
-    val startedAt: String,
-    val builds: List<SingleSessionBuildPayload> = emptyList()
+    val testProjectId: String? = null,
+    val definitions: List<TestDefinitionPayload>
 ): AgentMessage()

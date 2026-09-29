@@ -30,6 +30,7 @@ class ThreadTestExecutionRecorder(
     private val listeners: List<TestExecutionListener> = emptyList()
 ) : TestExecutionRecorder {
     private val logger = KotlinLogging.logger {}
+    private val testDefinitionData: ConcurrentHashMap<String, TestMethodInfo> = ConcurrentHashMap()
     private val testExecutionData: ConcurrentHashMap<String, TestExecutionInfo> = ConcurrentHashMap()
     private val testLaunchHolder: ThreadLocal<String> = ThreadLocal.withInitial { null }
 
@@ -38,6 +39,7 @@ class ThreadTestExecutionRecorder(
     ) {
         val testLaunchId = generateTestLaunchId()
         testLaunchHolder.set(testLaunchId)
+        testDefinitionData.computeIfAbsent(testMethod.signature) { testMethod }
         updateTestInfo(testLaunchId, testMethod) {
             it.startedAt = System.currentTimeMillis()
         }
@@ -85,6 +87,12 @@ class ThreadTestExecutionRecorder(
 
     override fun reset() {
         testExecutionData.clear()
+    }
+
+    override fun getStartedTests(): List<TestMethodInfo> {
+        return testDefinitionData.onEach {
+            testExecutionData.remove(it.key)
+        }.values.toList()
     }
 
     override fun getFinishedTests(): List<TestExecutionInfo> = testExecutionData
