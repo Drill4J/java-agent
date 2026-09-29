@@ -85,7 +85,7 @@ actual object SessionController {
             SessionPayload(
                 id = sessionId,
                 groupId = Configuration.parameters[DefaultParameterDefinitions.GROUP_ID],
-                testProjectId = Configuration.parameters[ParameterDefinitions.TEST_PROJECT_ID],
+                testProjectId = Configuration.parameters[ParameterDefinitions.TEST_PROJECT_ID] ?: error("Test project ID is not set"),
                 testTaskId = Configuration.parameters[ParameterDefinitions.TEST_TASK_ID],
                 startedAt = System.currentTimeMillis().toIsoTimeFormat(),
                 builds = builds
