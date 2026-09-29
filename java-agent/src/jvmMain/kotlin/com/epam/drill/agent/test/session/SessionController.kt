@@ -32,10 +32,9 @@ import com.epam.drill.agent.test.sending.TestDefinitionPayload
 import com.epam.drill.agent.test.sending.TestLaunchPayload
 import com.epam.drill.agent.common.lifecycle.AgentShutdownRegistry
 import com.epam.drill.agent.test.execution.TestMethodInfo
-import com.epam.drill.agent.test.sending.AddTestDefinitionsPayload
-import com.epam.drill.agent.test.sending.AddTestLaunchesPayload
-import com.epam.drill.agent.test.session.SessionController.getSessionId
 import com.epam.drill.agent.transport.DataIngestMessageSender
+import com.epam.drill.agent.transport.IntervalTestSessionHeartbeatSender
+import com.epam.drill.agent.transport.directMessageSender
 import mu.KotlinLogging
 import java.time.Instant
 import java.time.ZoneId
@@ -73,6 +72,8 @@ actual object SessionController {
             testInfoSender.stopSendingTests(remainingMs)
         }
 
+        startHeartbeatReporting()
+
         val builds =
             takeIf { Configuration.parameters[ParameterDefinitions.RECOMMENDED_TESTS_TARGET_APP_ID].isNotEmpty() }?.let {
                 SingleSessionBuildPayload(
@@ -85,7 +86,8 @@ actual object SessionController {
             SessionPayload(
                 id = sessionId,
                 groupId = Configuration.parameters[DefaultParameterDefinitions.GROUP_ID],
-                testProjectId = Configuration.parameters[ParameterDefinitions.TEST_PROJECT_ID] ?: error("Test project ID is not set"),
+                testProjectId = Configuration.parameters[ParameterDefinitions.TEST_PROJECT_ID]
+                    ?: error("Test project ID is not set"),
                 testTaskId = Configuration.parameters[ParameterDefinitions.TEST_TASK_ID],
                 startedAt = System.currentTimeMillis().toIsoTimeFormat(),
                 builds = builds
@@ -98,6 +100,22 @@ actual object SessionController {
     private fun isTestTracingEnabled(): Boolean = Configuration.parameters[TEST_TRACING_ENABLED]
     private fun isTestLaunchMetadataSendingEnabled(): Boolean =
         isTestTracingEnabled() && Configuration.parameters[ParameterDefinitions.TEST_TRACING_PER_TEST_LAUNCH_ENABLED]
+
+    private fun startHeartbeatReporting() {
+        if (!Configuration.parameters[ParameterDefinitions.HEARTBEAT_ENABLED]) return
+        val heartbeatSender = IntervalTestSessionHeartbeatSender(
+            sender = directMessageSender(),
+            intervalMs = Configuration.parameters[ParameterDefinitions.HEARTBEAT_INTERVAL],
+            groupId = Configuration.parameters[DefaultParameterDefinitions.GROUP_ID],
+            testProjectId = Configuration.parameters[ParameterDefinitions.TEST_PROJECT_ID]
+                ?: error("Test project ID is not set"),
+            testSessionId = sessionId
+        )
+        heartbeatSender.startSendingHeartbeat()
+        AgentShutdownRegistry.register("session-heartbeat-sender") { remainingMs ->
+            heartbeatSender.stopSendingHeartbeat(remainingMs)
+        }
+    }
 }
 
 private fun List<TestExecutionInfo>.toTestLaunchPayloads(): List<TestLaunchPayload> = map { info ->
