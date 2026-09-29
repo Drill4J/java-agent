@@ -17,10 +17,12 @@ package com.epam.drill.agent.configuration
 
 import com.epam.drill.agent.common.configuration.AgentParameterDefinition
 import com.epam.drill.agent.common.configuration.AgentParameterDefinitionCollection
+import com.epam.drill.agent.common.configuration.AgentParameters
 import com.epam.drill.agent.common.configuration.NullableAgentParameterDefinition
 import com.epam.drill.agent.konform.validation.jsonschema.minLength
 
 object ParameterDefinitions: AgentParameterDefinitionCollection() {
+    val testTracingEnabled: (AgentParameters) -> Boolean = { config -> config[CapabilityParameterDefinitions.TEST_TRACING_ENABLED] }
 
     val API_URL = AgentParameterDefinition.forString(
         name = "apiUrl",
@@ -65,9 +67,10 @@ object ParameterDefinitions: AgentParameterDefinitionCollection() {
     val JS_AGENT_BUILD_VERSION = NullableAgentParameterDefinition.forString(name = "jsAgentBuildVersion").register()
     val JS_AGENT_ID = NullableAgentParameterDefinition.forString(name = "jsAgentId").register()
 
-    val TEST_PROJECT_ID = AgentParameterDefinition.forString(
+    val TEST_PROJECT_ID = NullableAgentParameterDefinition.forString(
         name = "testProjectId",
         description = "Unique arbitrary string identifying your test project. Example: my-test-project",
+        requiredIf = testTracingEnabled,
         validator = {
             identifier()
             minLength(3)
