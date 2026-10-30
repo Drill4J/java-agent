@@ -37,7 +37,9 @@ class IntervalAgentHeartbeatSenderTest {
         intervalMs = intervalMs,
         groupId = "someGroupId",
         appId = "someAppId",
-        instanceId = "someInstanceId"
+        instanceId = "someInstanceId",
+        commitSha = null,
+        buildVersion = null
     )
 
     @Test
