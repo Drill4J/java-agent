@@ -38,7 +38,9 @@ actual object JvmModuleMessageSender : AgentMessageSender by DataIngestMessageSe
             intervalMs = Configuration.parameters[ParameterDefinitions.HEARTBEAT_INTERVAL],
             groupId = Configuration.agentMetadata.groupId,
             appId = Configuration.agentMetadata.appId,
-            instanceId = Configuration.agentMetadata.instanceId
+            instanceId = Configuration.agentMetadata.instanceId,
+            commitSha = Configuration.agentMetadata.commitSha,
+            buildVersion = Configuration.agentMetadata.buildVersion
         )
     }
 

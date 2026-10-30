@@ -23,6 +23,8 @@ class AgentHeartbeatPayload(
     val groupId: String,
     val appId: String,
     val instanceId: String,
+    val commitSha: String?,
+    val buildVersion: String?,
     val status: AgentHeartbeatStatus,
 ) : AgentMessage()
 

@@ -40,6 +40,8 @@ class IntervalAgentHeartbeatSender(
     private val groupId: String,
     private val appId: String,
     private val instanceId: String,
+    private val commitSha: String?,
+    private val buildVersion: String?,
 ) : AgentHeartbeatSender {
     private val logger = KotlinLogging.logger {}
     private val destination = AgentMessageDestination("PUT", "instances/heartbeat")
@@ -83,6 +85,8 @@ class IntervalAgentHeartbeatSender(
                 groupId = groupId,
                 appId = appId,
                 instanceId = instanceId,
+                commitSha = commitSha,
+                buildVersion = buildVersion,
                 status = status
             ),
             AgentHeartbeatPayload.serializer()
