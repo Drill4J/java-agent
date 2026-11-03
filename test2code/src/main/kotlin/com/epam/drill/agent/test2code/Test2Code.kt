@@ -177,7 +177,8 @@ class Test2Code(
                 .chunkedLazy(configuration.parameters[Test2CodeParameterDefinitions.METHODS_SEND_PAGE_SIZE])
                 .forEach(::sendClassMetadata)
         }
-        sendBuildFinalize(checksumCalculator)
+        if (checksumCalculator.methodsCount > 0)
+            sendBuildFinalize(checksumCalculator)
         logger.info { """Scanned $classCount classes with ${checksumCalculator.methodsCount} methods
             | methods checksum: ${checksumCalculator.methodsChecksum}
             | total methods: ${totalMethodsCount};
