@@ -20,6 +20,7 @@ import java.io.File
 import java.net.URI
 import java.util.jar.Attributes
 import java.util.jar.JarEntry
+import java.util.jar.JarFile
 import java.util.jar.JarInputStream
 import org.objectweb.asm.ClassReader
 import mu.KotlinLogging
@@ -29,7 +30,6 @@ private const val PREFIX_SPRING_BOOT = "BOOT-INF/classes/"
 private const val PREFIX_WEB_APP = "WEB-INF/classes/"
 private const val PREFIX_JAR = ".jar/"
 private const val PACKAGE_DRILL = "com/epam/drill/agent"
-private const val JAR_BUFFER_SIZE = 256 * 1024
 
 class ClassPathScanner(
     private val packagePrefixes: List<String>,
@@ -99,13 +99,16 @@ class ClassPathScanner(
      */
     private fun scanJarFile(file: File): Result<Int> = file.runCatching {
         val isNotScanned: (File) -> Boolean = { !scannedJarFiles.contains(it.absolutePath) }
-        val fileToStream: (File) -> JarInputStream = { JarInputStream(it.inputStream().buffered(JAR_BUFFER_SIZE)) }
         val pathToFile: (String) -> File? = { File(this.parent, it).takeIf(File::exists) }
         var scanned = 0
         logger.debug { "scanJarFile: scanning file: ${this.absolutePath}" }
-        this.takeIf(isNotScanned)?.let(fileToStream)?.use {
-            scanned += scanJarInputStream(it).also { scannedJarFiles.add(this.absolutePath) }
-            scanned += it.manifest?.mainAttributes?.getValue(Attributes.Name.CLASS_PATH)?.split(" ")
+        // JarFile reads the central directory, so archives with a prepended launch script
+        // (e.g. Spring Boot "fully executable" jars) are supported, unlike JarInputStream.
+        this.takeIf(isNotScanned)?.let(::JarFile)?.use { jarFile ->
+            scanned += jarFile.entries().asSequence().sumOf { entry ->
+                scanEntry(entry) { jarFile.getInputStream(entry).use { it.readBytes() } }
+            }.also { scannedJarFiles.add(this.absolutePath) }
+            scanned += jarFile.manifest?.mainAttributes?.getValue(Attributes.Name.CLASS_PATH)?.split(" ")
                 ?.mapNotNull(pathToFile)?.map(::scanJarFile)?.sumOf(getOrLogFail) ?: 0
         }
         scanned
@@ -121,14 +124,25 @@ class ClassPathScanner(
         var scanned = 0
         var jarEntry = this.nextJarEntry
         while (jarEntry != null) {
-            when (jarEntry.takeUnless(JarEntry::isDirectory)?.name?.substringAfterLast('.')) {
-                "jar", "war", "rar" -> scanned += scanJarEntry(jarEntry, this.readBytes()).getOrLogFail()
-                "class" -> scanned += scanClassEntry(jarEntry, this.readBytes()).getOrLogFail()
-            }
+            scanned += scanEntry(jarEntry, this::readBytes)
             jarEntry = this.nextJarEntry
         }
         scanned
     }
+
+    /**
+     * Scan archive entry: nested archive or class file.
+     *
+     * @param entry entry to scan
+     * @param readBytes function to read entry bytes (called only for entries to be scanned)
+     * @return scanned classes count
+     */
+    private fun scanEntry(entry: JarEntry, readBytes: () -> ByteArray) =
+        when (entry.takeUnless(JarEntry::isDirectory)?.name?.substringAfterLast('.')) {
+            "jar", "war", "rar" -> scanJarEntry(entry, readBytes()).getOrLogFail()
+            "class" -> scanClassEntry(entry, readBytes()).getOrLogFail()
+            else -> 0
+        }
 
     private val isPrefixMatches: (ClassSource) -> Boolean = { it.prefixMatches(packagePrefixes) }
     private val isClassAccepted: (ClassSource) -> Boolean = {
