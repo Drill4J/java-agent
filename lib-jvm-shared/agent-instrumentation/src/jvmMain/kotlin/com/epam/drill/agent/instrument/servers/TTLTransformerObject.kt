@@ -67,7 +67,7 @@ abstract class TTLTransformerObject(agentConfiguration: AgentConfiguration) : Ab
         classFileBuffer: ByteArray,
         loader: Any?,
         protectionDomain: Any?
-    ) = try {
+    ): ByteArray? = try {
         val classInfo = ClassInfo(className.replace('/', '.'), classFileBuffer, (loader as? ClassLoader))
         transformletList.firstOrNull { classInfo.also(it::doTransform).isModified }
             ?.let { classInfo.ctClass.toBytecode() }
