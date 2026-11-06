@@ -15,7 +15,7 @@ jobs:
           - {os: ubuntu-latest, preset: linuxX64}
           - {os: windows-latest, preset: mingwX64}
 #          - {os: macos-12, preset: macosX64} deprecated in GitHub Actions
-          - {os: macos-15, preset: macosArm64}
+#          - {os: macos-15, preset: macosArm64}
     runs-on: ${{ matrix.config.os }}
     steps:
       - uses: actions/checkout@v3
@@ -70,7 +70,7 @@ jobs:
           - {os: ubuntu-latest, preset: linuxX64}
           - {os: windows-latest, preset: mingwX64}
 #          - {os: macos-12, preset: macosX64} deprecated in GitHub Actions
-          - {os: macos-15, preset: macosArm64}
+#          - {os: macos-15, preset: macosArm64}
     runs-on: ${{ matrix.config.os }}
     outputs:
       tag: ${{ needs.release.outputs.tag }}
